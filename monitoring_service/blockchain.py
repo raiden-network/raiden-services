@@ -1,4 +1,5 @@
 import gevent
+import gevent.event
 import logging
 from monitoring_service.constants import EVENT_CHANNEL_CLOSE, EVENT_CHANNEL_CREATE
 

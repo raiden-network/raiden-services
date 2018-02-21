@@ -29,7 +29,14 @@ class EventGenerator(gevent.Greenlet):
         )
 
     def put_event(self, event):
-        requests.put(self.uri, data=json.dumps(event), headers=self.headers)
+        while self.is_running.is_set():
+            try:
+                requests.put(self.uri, data=json.dumps(event), headers=self.headers)
+            except requests.exceptions.ConnectionError as e:
+                log.warn("Can't POST to %s: %s" % (self.uri, str(e)))
+            finally:
+                return
+            gevent.sleep(1)
 
     def delete_channel(self):
         if len(self.db.channel_db) == 0:

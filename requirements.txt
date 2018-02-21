@@ -1,2 +1,6 @@
 click
 matrix-client
+gevent
+jsonschema
+eth-utils
+coincurve
