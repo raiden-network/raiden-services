@@ -9,3 +9,4 @@ def test_message_dispatch(monitoring_service, get_random_address):
     msg = BalanceProof(channel_address, p1, p2)
 
     transport.send_message(msg)
+    assert msg.channel_address in monitoring_service.balance_proofs

@@ -1,10 +1,9 @@
 import click
 import logging
-import json
-import time
 import random
 import gevent
 from monitoring_service.transport import MatrixTransport
+from monitoring_service.messages import BalanceProof
 from monitoring_service.tools.random_channel import (
     SeededRandomizer,
     use_random_state
@@ -18,22 +17,19 @@ class MockClient(SeededRandomizer):
     def __init__(self, transport, seed, channel_db):
         super().__init__(seed)
         self.transport = transport
-        self.sleep_mu = 20
+        self.sleep_mu = 5
         self.sleep_sigma = 0.9
         self.channel_db = channel_db
 
-    def generate_json(self):
+    def generate_msg(self):
         if len(self.channel_db.channel_db) == 0:
             return
         channel = random.choice(self.channel_db.channel_db)
-        msg = {
-            'channel_address': channel['channel_address'],
-            'participant1': channel['participant1'],
-            'participant2': channel['participant2'],
-            'balance_proof': self.get_balance_proof(channel['channel_address']),
-            'timestamp': time.time()
-        }
-        return json.dumps(msg)
+        return BalanceProof(
+            channel['channel_address'],
+            channel['participant1'],
+            channel['participant2']
+        )
 
     @use_random_state
     def get_balance_proof(self, address):
@@ -44,9 +40,9 @@ class MockClient(SeededRandomizer):
         self.transport.connect()
 
         while True:
-            data = self.generate_json()
-            if data is not None:
-                self.transport.room.send_text(data)
+            msg = self.generate_msg()
+            if msg is not None:
+                self.transport.send_message(msg)
             sleep_for = random.normalvariate(self.sleep_mu, self.sleep_sigma)
             log.debug('sleeping for %fs before submitting another BP' % (sleep_for))
             gevent.sleep(sleep_for)
@@ -85,12 +81,18 @@ class MockClient(SeededRandomizer):
     default='http://localhost:5001',
     help='monitor RPC endpoint'
 )
+@click.option(
+    '--private-key',
+    required=True,
+    type=str
+)
 def main(monitoring_channel,
          matrix_homeserver,
          matrix_username,
          matrix_password,
          seed,
-         monitor_host
+         monitor_host,
+         private_key
          ):
     event_generator = EventGenerator(monitor_host, seed)
     transport = MatrixTransport(
@@ -99,6 +101,7 @@ def main(monitoring_channel,
         matrix_password,
         monitoring_channel
     )
+    transport.privkey = private_key
     mock_client = MockClient(transport, seed, event_generator.db)
     event_generator.start()
     mock_client.run()

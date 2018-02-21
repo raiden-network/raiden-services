@@ -1,5 +1,6 @@
 import gevent
 import json
+import jsonschema
 from monitoring_service.messages import Message
 
 
@@ -30,8 +31,16 @@ class Transport(gevent.Greenlet):
 
     def run_message_callbacks(self, data):
         """Called whenever a message is received"""
-        json_msg = json.loads(data)
-        deserialized_msg = Message.deserialize(json_msg)
+        # ignore if message is not a JSON
+        try:
+            json_msg = json.loads(data)
+        except json.decoder.JSONDecodeError:
+            return
+        # ignore message if JSON schema validation fails
+        try:
+            deserialized_msg = Message.deserialize(json_msg)
+        except jsonschema.exceptions.ValidationError as e:
+            return
         for callback in self.message_callbacks:
             callback(deserialized_msg)
 
@@ -46,7 +55,6 @@ class Transport(gevent.Greenlet):
         assert isinstance(message, (str, Message))
         if isinstance(message, Message):
             data = message.serialize_full(self.privkey)
-            data = json.dumps(data)
         self.transmit_data(data)
 
     def transmit_data(self, data):

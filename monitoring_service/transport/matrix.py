@@ -44,12 +44,12 @@ class MatrixTransport(Transport):
     def dispatch(self, room, event):
         if event['type'] == "m.room.message":
             if event['content']['msgtype'] == "m.text":
-                self.run_message_callbacks(event)
+                self.run_message_callbacks(event['content']['body'])
                 log.debug("{0}: {1}".format(event['sender'], event['content']['body']))
 
-    def send_message(self, message):
-        assert self.transport.room is not None
-        self.transport.room.send_text(message)
+    def transmit_data(self, message):
+        assert self.room is not None
+        self.room.send_text(message)
 
     def _run(self):
         self.connect()

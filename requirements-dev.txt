@@ -2,3 +2,4 @@ pytest
 flake8
 pudb
 pytest-pudb
+flask_restful

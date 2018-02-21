@@ -1,11 +1,15 @@
 import json
 import time
+import jsonschema
 from monitoring_service.utils import privkey_to_addr
 from monitoring_service.messages.deserializer import deserialize
+from monitoring_service.json_schema import ENVELOPE_SCHEMA
 
 
 class Message:
     """Generic Raiden message"""
+    json_schema = ENVELOPE_SCHEMA
+
     def __init__(self):
         self._type = None
 
@@ -54,7 +58,11 @@ class Message:
 
     @staticmethod
     def deserialize(data):
-        json_message = json.loads(data)
+        if isinstance(data, str):
+            json_message = json.loads(data)
+        else:
+            json_message = data
+        jsonschema.validate(json_message, Message.json_schema)
         json_data = json.loads(json_message['data'])
         cls = deserialize(json_data)
         cls.header = json_data['header']

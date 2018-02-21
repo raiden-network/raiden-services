@@ -19,3 +19,16 @@ BALANCE_PROOF_SCHEMA = {
         }
     }
 }
+
+ENVELOPE_SCHEMA = {
+    'type': 'object',
+    'required': ['signature', 'data'],
+    'properties': {
+        'signature': {
+            'type': 'string'
+        },
+        'data': {
+            'type': 'string'
+        }
+    }
+}

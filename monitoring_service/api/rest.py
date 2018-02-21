@@ -30,7 +30,7 @@ class BalanceProofResource(Resource):
         self.monitor = monitor
 
     def get(self):
-        return self.monitor.balance_proofs
+        return [x.serialize_data() for x in self.monitor.balance_proofs.values()]
 
 
 class BlockchainEvents(Resource):
