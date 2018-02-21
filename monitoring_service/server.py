@@ -79,8 +79,8 @@ class MonitoringService(gevent.Greenlet):
 
     def check_event_data(self, balance_proof: dict, event: dict):
         participant1_bp, participant2_bp = order_participants(
-            balance_proof['participant1'],
-            balance_proof['participant2']
+            balance_proof.participant1,
+            balance_proof.participant2
         )
         participant1_event, participant2_event = order_participants(
             event['participant1'],
@@ -88,7 +88,7 @@ class MonitoringService(gevent.Greenlet):
         )
         return ((participant1_bp == participant1_event) and
                 (participant2_bp == participant2_event) and
-                (balance_proof['channel_address'] == event['channel_address']))
+                (balance_proof.channel_address == event['channel_address']))
 
     def on_channel_create(self, event):
         log.info('on channel create: %s' % str(event))
@@ -99,7 +99,7 @@ class MonitoringService(gevent.Greenlet):
         return random.random() < 0.3
 
     def challenge_proof(self, balance_proof_msg: BalanceProof):
-        balance_proof = self.balance_proofs.get(balance_proof_msg.channel_address, None)
+        balance_proof = self.balance_proofs.get(balance_proof_msg['channel_address'], None)
         log.info('challenging proof event=%s BP=%s' % (balance_proof_msg, balance_proof))
 
     def on_message_event(self, message):

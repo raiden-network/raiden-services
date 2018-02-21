@@ -2,6 +2,7 @@ import gevent
 import json
 import jsonschema
 from monitoring_service.messages import Message
+from monitoring_service.exceptions import MessageSignatureError, MessageFormatError
 
 
 class Transport(gevent.Greenlet):
@@ -39,7 +40,11 @@ class Transport(gevent.Greenlet):
         # ignore message if JSON schema validation fails
         try:
             deserialized_msg = Message.deserialize(json_msg)
-        except jsonschema.exceptions.ValidationError as e:
+        except (
+            jsonschema.exceptions.ValidationError,
+            MessageSignatureError,
+            MessageFormatError
+        ):
             return
         for callback in self.message_callbacks:
             callback(deserialized_msg)

@@ -3,7 +3,7 @@ import json
 
 from monitoring_service.messages import BalanceProof, Message
 from monitoring_service.utils import privkey_to_addr
-from monitoring_service.exceptions import MessageSignatureError
+from monitoring_service.exceptions import MessageSignatureError, MessageFormatError
 
 channel_address = '0x11e14d102DA61F1a5cA36cfa96C3B831332357b3'
 participant1 = '0x2E8ffB67C9929Bf817d375541f0A8f4E437Ee7BF'
@@ -51,4 +51,9 @@ def test_sign(get_random_bp, get_random_privkey):
     json_data1 = json.loads(data1)
     json_data['signature'] = json_data1['signature']
     with pytest.raises(MessageSignatureError):
+        signed_msg = Message.deserialize(json_data)
+
+    # test invalid signature format
+    json_data['signature'] = '0xabcdef'
+    with pytest.raises(MessageFormatError):
         signed_msg = Message.deserialize(json_data)

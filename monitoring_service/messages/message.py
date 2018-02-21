@@ -5,7 +5,7 @@ from eth_utils import decode_hex, encode_hex, to_checksum_address
 from monitoring_service.utils import privkey_to_addr, sign, keccak256, eth_verify
 from monitoring_service.messages.deserializer import deserialize
 from monitoring_service.json_schema import ENVELOPE_SCHEMA
-from monitoring_service.exceptions import MessageSignatureError
+from monitoring_service.exceptions import MessageSignatureError, MessageFormatError
 
 
 class Message:
@@ -69,9 +69,11 @@ class Message:
         json_data = json.loads(json_message['data'])
         cls = deserialize(json_data)
         cls.header = json_data['header']
+        if len(json_message['signature']) != 132:
+            raise MessageFormatError('Invalid signature value')
         cls.signer = to_checksum_address(
             eth_verify(decode_hex(json_message['signature']), json_message['data'])
         )
         if cls.signer != json_data['header']['sender']:
-            raise MessageSignatureError("Signature does not match the sender!")
+            raise MessageSignatureError('Signature does not match the sender!')
         return cls
