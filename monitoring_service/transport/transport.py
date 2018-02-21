@@ -54,8 +54,8 @@ class Transport(gevent.Greenlet):
         """Wrapper that serializes Message type to a string, then sends it"""
         assert isinstance(message, (str, Message))
         if isinstance(message, Message):
-            data = message.serialize_full(self.privkey)
-        self.transmit_data(data)
+            message = message.serialize_full(self.privkey)
+        self.transmit_data(message)
 
     def transmit_data(self, data):
         """Send a single message over the transport

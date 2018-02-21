@@ -1,9 +1,11 @@
 import json
 import time
 import jsonschema
-from monitoring_service.utils import privkey_to_addr
+from eth_utils import decode_hex, encode_hex, to_checksum_address
+from monitoring_service.utils import privkey_to_addr, sign, keccak256, eth_verify
 from monitoring_service.messages.deserializer import deserialize
 from monitoring_service.json_schema import ENVELOPE_SCHEMA
+from monitoring_service.exceptions import MessageSignatureError
 
 
 class Message:
@@ -43,7 +45,8 @@ class Message:
         })
 
     def sign_data(self, private_key, data: str):
-        return '0x1111111111111111111111111111111'
+        data_hash = keccak256(data)
+        return encode_hex(sign(private_key, data_hash))
 
     def assemble_message(self):
         assert isinstance(self.type, str)
@@ -66,4 +69,9 @@ class Message:
         json_data = json.loads(json_message['data'])
         cls = deserialize(json_data)
         cls.header = json_data['header']
+        cls.signer = to_checksum_address(
+            eth_verify(decode_hex(json_message['signature']), json_message['data'])
+        )
+        if cls.signer != json_data['header']['sender']:
+            raise MessageSignatureError("Signature does not match the sender!")
         return cls
