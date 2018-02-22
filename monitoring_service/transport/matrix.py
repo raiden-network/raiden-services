@@ -1,10 +1,11 @@
 import json
 import gevent
 import logging
+import requests
 
 from matrix_client.client import MatrixClient
+from matrix_client.errors import MatrixHttpLibError
 from monitoring_service.transport import Transport
-
 log = logging.getLogger(__name__)
 
 
@@ -16,11 +17,26 @@ class MatrixTransport(Transport):
         self.password = password
         self.room_name = matrix_room
         self.is_running = gevent.event.Event()
+        self.retry_timeout = 5
+
+    def matrix_exception_handler(self, e):
+        """Called whenever an exception occurs in matrix client thread.
+
+            Any exception other than MatrixHttpLibError will be sent to parent hub,
+             terminating the program.
+        """
+        if isinstance(e, MatrixHttpLibError):
+            log.warning(str(e))
+            gevent.sleep(1)
+            return
+        gevent.get_hub().parent.throw(e)
 
     def connect(self):
         self.client = MatrixClient(self.homeserver)
         self.client.login_with_password(self.username, self.password)
-        self.client.start_listener_thread()
+        self.client.start_listener_thread(
+            exception_handler=lambda e: self.matrix_exception_handler(e)
+        )
 
         self.room = self.client.join_room(self.room_name)
 
@@ -52,7 +68,18 @@ class MatrixTransport(Transport):
         self.room.send_text(message)
 
     def _run(self):
-        self.connect()
-        self.room.add_listener(lambda room, event: self.dispatch(room, event))
-        self.sync_history()
-        self.is_running.wait()
+        self.is_running.set()
+        while self.is_running.is_set():
+            try:
+                self.connect()
+                self.room.add_listener(lambda room, event: self.dispatch(room, event))
+                self.sync_history()
+            except (requests.exceptions.ConnectionError,
+                    MatrixHttpLibError
+                    ) as e:
+                log.warn("Connection to %s failed. Retrying in %d seconds (%s)" %
+                         (self.homeserver,
+                          self.retry_timeout,
+                          str(e)
+                          ))
+            gevent.sleep(self.retry_timeout)

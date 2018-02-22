@@ -3,6 +3,8 @@ import logging
 import gevent
 import random
 import time
+import sys
+import traceback
 
 from monitoring_service.blockchain import BlockchainMonitor
 from monitoring_service.messages import Message, BalanceProof
@@ -11,6 +13,7 @@ from monitoring_service.constants import (
     EVENT_CHANNEL_CREATE,
     MAX_BALANCE_PROOF_AGE
 )
+from monitoring_service.gevent_error_handler import register_error_handler
 
 from eth_utils import (
     is_checksum_address
@@ -23,6 +26,16 @@ from monitoring_service.utils import privkey_to_addr
 
 def order_participants(p1: str, p2: str):
     return (p1, p2) if p1 < p2 else (p2, p1)
+
+
+def error_handler(context, exc_info):
+    log.fatal("Unhandled exception terminating the program")
+    traceback.print_exception(
+        etype=exc_info[0],
+        value=exc_info[1],
+        tb=exc_info[2]
+    )
+    sys.exit()
 
 
 class MonitoringService(gevent.Greenlet):
@@ -44,6 +57,7 @@ class MonitoringService(gevent.Greenlet):
         self.transport.privkey = lambda: self.private_key
 
     def _run(self):
+        register_error_handler(error_handler)
         self.transport.start()
         self.blockchain.start()
         self.blockchain.register_handler(

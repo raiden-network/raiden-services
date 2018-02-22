@@ -1,5 +1,6 @@
 click
-matrix-client
+# until a stable version with handle_exception is released on pip
+git+https://github.com/matrix-org/matrix-python-sdk.git
 gevent
 jsonschema
 eth-utils
