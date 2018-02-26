@@ -1,6 +1,5 @@
 import click
 import logging
-from gevent import monkey
 from monitoring_service import MonitoringService
 from monitoring_service.transport import MatrixTransport
 from monitoring_service.no_ssl_patch import no_ssl_verification
@@ -79,7 +78,6 @@ def main(
 
 
 if __name__ == "__main__":
-    monkey.patch_all()
     logging.basicConfig(level=logging.DEBUG)
     logging.getLogger('urllib3.connectionpool').setLevel(logging.WARN)
     with no_ssl_verification():
