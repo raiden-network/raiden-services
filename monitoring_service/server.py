@@ -1,4 +1,4 @@
-from monitoring_service.transport import MatrixTransport
+from monitoring_service.transport import Transport
 import logging
 import gevent
 import random
@@ -7,6 +7,7 @@ import sys
 import traceback
 
 from monitoring_service.blockchain import BlockchainMonitor
+from monitoring_service.state_db import StateDB
 from monitoring_service.messages import Message, BalanceProof
 from monitoring_service.constants import (
     EVENT_CHANNEL_CLOSE,
@@ -42,15 +43,20 @@ class MonitoringService(gevent.Greenlet):
     def __init__(
         self,
         private_key: str,
-        transport: MatrixTransport,
-        blockchain: BlockchainMonitor
+        state_db: StateDB = None,
+        transport: Transport = None,
+        blockchain: BlockchainMonitor = None
     ) -> None:
         super().__init__()
+        assert isinstance(private_key, str)
+        assert isinstance(transport, Transport)
+        assert isinstance(blockchain, BlockchainMonitor)
+        assert isinstance(state_db, StateDB)
         self.private_key = private_key
         self.transport = transport
         self.blockchain = blockchain
+        self.state_db = state_db
         self.is_running = gevent.event.Event()
-        self.balance_proofs = {}    # address: balance_proof
         self.channels = {}          # channel_address: channel
         assert is_checksum_address(privkey_to_addr(self.private_key))
         self.transport.add_message_callback(lambda message: self.on_message_event(message))
@@ -78,9 +84,9 @@ class MonitoringService(gevent.Greenlet):
         log.info('on channel close: %s' % str(event))
         event = event['data']
         # check if we have balance proof for the closing
-        if event['channel_address'] not in self.balance_proofs:
+        if event['channel_address'] not in self.state_db.balance_proofs:
             return
-        balance_proof = self.balance_proofs[event['channel_address']]
+        balance_proof = self.state_db.balance_proofs[event['channel_address']]
         if self.check_event_data(balance_proof, event) is False:
             log.warning('Event data do not match balance proof data! event=%s, bp=%s'
                         % (event, balance_proof))
@@ -113,7 +119,9 @@ class MonitoringService(gevent.Greenlet):
         return random.random() < 0.3
 
     def challenge_proof(self, balance_proof_msg: BalanceProof):
-        balance_proof = self.balance_proofs.get(balance_proof_msg['channel_address'], None)
+        balance_proof = self.state_db.balance_proofs.get(
+            balance_proof_msg['channel_address'], None
+        )
         log.info('challenging proof event=%s BP=%s' % (balance_proof_msg, balance_proof))
 
     def on_message_event(self, message):
@@ -124,7 +132,7 @@ class MonitoringService(gevent.Greenlet):
 
     def on_balance_proof(self, balance_proof):
         assert isinstance(balance_proof, BalanceProof)
-        existing_bp = self.balance_proofs.get(balance_proof.channel_address, None)
+        existing_bp = self.state_db.balance_proofs.get(balance_proof.channel_address, None)
         if existing_bp is not None:
             if existing_bp.timestamp > balance_proof.timestamp:
                 log.warning('attempt to update with an older BP: stored=%s, received=%s' %
@@ -140,4 +148,8 @@ class MonitoringService(gevent.Greenlet):
             return
 
         log.info('received balance proof: %s' % str(balance_proof))
-        self.balance_proofs[balance_proof.channel_address] = balance_proof
+        self.state_db.store_balance_proof(balance_proof.serialize_data())
+
+    @property
+    def balance_proofs(self):
+        return self.state_db.balance_proofs

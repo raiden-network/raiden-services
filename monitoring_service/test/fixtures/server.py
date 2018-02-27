@@ -21,9 +21,10 @@ def blockchain():
 
 
 @pytest.fixture
-def monitoring_service(server_private_key, blockchain, dummy_transport):
+def monitoring_service(server_private_key, blockchain, dummy_transport, state_db):
     return MonitoringService(
         server_private_key,
-        dummy_transport,
-        blockchain
+        transport=dummy_transport,
+        blockchain=blockchain,
+        state_db=state_db
     )

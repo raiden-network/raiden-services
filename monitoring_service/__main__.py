@@ -2,6 +2,7 @@ import click
 import logging
 from monitoring_service import MonitoringService
 from monitoring_service.transport import MatrixTransport
+from monitoring_service.state_db import StateDB
 from monitoring_service.no_ssl_patch import no_ssl_verification
 from monitoring_service.api.rest import ServiceApi
 from monitoring_service.blockchain import BlockchainMonitor
@@ -48,6 +49,12 @@ from monitoring_service.blockchain import BlockchainMonitor
     type=int,
     help='REST service endpoint'
 )
+@click.option(
+    '--state-db',
+    default=click.get_app_dir('raiden-monitoring-service'),
+    type=str,
+    help='state DB to save received balance proofs to'
+)
 def main(
     private_key,
     monitoring_channel,
@@ -55,7 +62,8 @@ def main(
     matrix_username,
     matrix_password,
     rest_host,
-    rest_port
+    rest_port,
+    state_db
 ):
     transport = MatrixTransport(
         matrix_homeserver,
@@ -64,11 +72,13 @@ def main(
         monitoring_channel
     )
     blockchain = BlockchainMonitor()
+    state_db = StateDB()
 
     monitor = MonitoringService(
         private_key,
-        transport,
-        blockchain
+        state_db=state_db,
+        transport=transport,
+        blockchain=blockchain
     )
 
     api = ServiceApi(monitor, blockchain)
