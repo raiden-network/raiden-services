@@ -57,10 +57,14 @@ class MonitoringService(gevent.Greenlet):
         self.blockchain = blockchain
         self.state_db = state_db
         self.is_running = gevent.event.Event()
-        self.channels = {}          # channel_address: channel
         assert is_checksum_address(privkey_to_addr(self.private_key))
         self.transport.add_message_callback(lambda message: self.on_message_event(message))
         self.transport.privkey = lambda: self.private_key
+        if state_db.is_initialized() is False:
+            network_id = 6
+            contract_address = '0xD5BE9a680AbbF01aB2d422035A64DB27ab01C624'
+            receiver = privkey_to_addr(private_key)
+            state_db.setup_db(network_id, contract_address, receiver)
 
     def _run(self):
         register_error_handler(error_handler)
@@ -110,11 +114,6 @@ class MonitoringService(gevent.Greenlet):
                 (participant2_bp == participant2_event) and
                 (balance_proof.channel_address == event['channel_address']))
 
-    def on_channel_create(self, event):
-        log.info('on channel create: %s' % str(event))
-        event = event['data']
-        self.channels[event['channel_address']] = event
-
     def check_event(self, event):
         return random.random() < 0.3
 
@@ -131,10 +130,11 @@ class MonitoringService(gevent.Greenlet):
             self.on_balance_proof(message)
 
     def on_balance_proof(self, balance_proof):
+        """Called whenever a balance proof message is received"""
         assert isinstance(balance_proof, BalanceProof)
         existing_bp = self.state_db.balance_proofs.get(balance_proof.channel_address, None)
         if existing_bp is not None:
-            if existing_bp.timestamp > balance_proof.timestamp:
+            if existing_bp['timestamp'] > balance_proof.timestamp:
                 log.warning('attempt to update with an older BP: stored=%s, received=%s' %
                             (existing_bp, balance_proof))
                 return

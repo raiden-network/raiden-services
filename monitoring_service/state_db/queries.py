@@ -15,7 +15,8 @@ CREATE TABLE `balance_proofs` (
     `channel_address`   CHAR(42)    NOT NULL,
     `participant1`      CHAR(42)    NOT NULL,
     `participant2`      CHAR(42)    NOT NULL,
-    `balance_proof`     CHAR(160)   NOT NULL
+    `balance_proof`     CHAR(160)   NOT NULL,
+    `timestamp`         INT         NOT NULL
 );
 INSERT INTO `metadata` VALUES (
     NULL,
@@ -33,10 +34,7 @@ INSERT INTO `syncstate` VALUES (
 
 ADD_BALANCE_PROOF_SQL = """
 INSERT OR REPLACE INTO `balance_proofs` VALUES (
-    ?,
-    ?,
-    ?,
-    ?
+    ?, ?, ?, ?, ?
 );"""
 
 UPDATE_METADATA_SQL = """

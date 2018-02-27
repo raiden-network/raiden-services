@@ -1,4 +1,5 @@
 import click
+import os
 import logging
 from monitoring_service import MonitoringService
 from monitoring_service.transport import MatrixTransport
@@ -51,7 +52,7 @@ from monitoring_service.blockchain import BlockchainMonitor
 )
 @click.option(
     '--state-db',
-    default=click.get_app_dir('raiden-monitoring-service'),
+    default=os.path.join(click.get_app_dir('raiden-monitoring-service'), 'state.db'),
     type=str,
     help='state DB to save received balance proofs to'
 )
@@ -65,6 +66,9 @@ def main(
     rest_port,
     state_db
 ):
+    app_dir = click.get_app_dir('raiden-monitoring-service')
+    if os.path.isdir(app_dir) is False:
+        os.makedirs(app_dir)
     transport = MatrixTransport(
         matrix_homeserver,
         matrix_username,
@@ -72,11 +76,11 @@ def main(
         monitoring_channel
     )
     blockchain = BlockchainMonitor()
-    state_db = StateDB()
+    db = StateDB(state_db)
 
     monitor = MonitoringService(
         private_key,
-        state_db=state_db,
+        state_db=db,
         transport=transport,
         blockchain=blockchain
     )

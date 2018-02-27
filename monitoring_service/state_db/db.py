@@ -29,7 +29,7 @@ class StateDB:
             os.chmod(filename, 0o600)
 
     def setup_db(self, network_id: int, contract_address: str, receiver: str):
-        """Initialize an empty database."""
+        """Initialize an empty database. Call this if `is_initialized()` returns False"""
         assert is_checksum_address(receiver)
         assert is_checksum_address(contract_address)
         assert network_id >= 0
@@ -52,7 +52,8 @@ class StateDB:
             balance_proof['channel_address'],
             balance_proof['participant1'],
             balance_proof['participant2'],
-            balance_proof['balance_proof']
+            balance_proof['balance_proof'],
+            balance_proof['timestamp']
         ]
         self.conn.execute(ADD_BALANCE_PROOF_SQL, params)
 
@@ -65,3 +66,8 @@ class StateDB:
         result = c.fetchone()
         assert c.fetchone() is None
         return result
+
+    def is_initialized(self) -> bool:
+        c = self.conn.cursor()
+        c.execute("SELECT name FROM `sqlite_master` WHERE type='table' AND name='metadata'")
+        return c.fetchone() is not None

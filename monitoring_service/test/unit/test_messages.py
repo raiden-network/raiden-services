@@ -28,13 +28,14 @@ def test_balance_proof():
         bp.channel_address = 123456789
     with pytest.raises(ValueError):
         bp.channel_address = '0x11e14d102DA61F1a5cA36cfa96C3B831332357b4'
+    # invalid addr checksum
     with pytest.raises(ValueError):
         bp.participant1 = '0x2E8ffB67C9929Bf817d375541f0A8f4E437Ee7B0'
     with pytest.raises(ValueError):
         bp.participant2 = '0xd046C85261E50d18c42F4972D9B32e7F874FA6a2'
 
 
-def test_sign(get_random_bp, get_random_privkey):
+def test_sign(get_random_bp, get_random_privkey, get_random_address):
     # test valid, signed message
     msg = get_random_bp()
     pk = get_random_privkey()
@@ -45,13 +46,23 @@ def test_sign(get_random_bp, get_random_privkey):
     assert signed_msg.signer == addr
     assert signed_msg.header['sender'] == addr
 
-    # test case where signer doesn't match value in the header
+    # test case where signature doesn't match value in the header
     data1 = msg.serialize_full(pk1)
     json_data = json.loads(data)
     json_data1 = json.loads(data1)
     json_data['signature'] = json_data1['signature']
     with pytest.raises(MessageSignatureError):
         signed_msg = Message.deserialize(json_data)
+
+    # test invalid 'sender' field in the message header
+    # (similar to previous test but vice versa)
+    json_data = msg.serialize_full(pk)
+    json_data = json.loads(json_data)
+    data = json.loads(json_data['data'])
+    data['header']['sender'] = get_random_address()
+    json_data['data'] = json.dumps(data)
+    with pytest.raises(MessageSignatureError):
+        Message.deserialize(json_data)
 
     # test invalid signature format
     json_data['signature'] = '0xabcdef'

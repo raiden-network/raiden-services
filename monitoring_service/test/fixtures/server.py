@@ -3,6 +3,7 @@ from monitoring_service.test.mockups.dummy_transport import DummyTransport
 
 from monitoring_service import MonitoringService
 from monitoring_service.blockchain import BlockchainMonitor
+from monitoring_service.api.rest import ServiceApi
 
 
 @pytest.fixture
@@ -28,3 +29,10 @@ def monitoring_service(server_private_key, blockchain, dummy_transport, state_db
         blockchain=blockchain,
         state_db=state_db
     )
+
+
+@pytest.fixture
+def rest_api(monitoring_service, blockchain, rest_host, rest_port):
+    api = ServiceApi(monitoring_service, blockchain)
+    api.run(rest_host, rest_port)
+    return api

@@ -8,21 +8,6 @@ from monitoring_service import MonitoringService
 API_PATH = '/api/1'
 
 
-class PingResource(Resource):
-    def get(self):
-        return "OK"
-
-
-class ChannelsResource(Resource):
-    def __init__(self, monitor=None):
-        super().__init__()
-        assert isinstance(monitor, MonitoringService)
-        self.monitor = monitor
-
-    def get(self):
-        return self.monitor.channels
-
-
 class BalanceProofResource(Resource):
     def __init__(self, monitor=None):
         super().__init__()
@@ -30,7 +15,7 @@ class BalanceProofResource(Resource):
         self.monitor = monitor
 
     def get(self):
-        return [x.serialize_data() for x in self.monitor.balance_proofs.values()]
+        return list(self.monitor.balance_proofs.values())
 
 
 class BlockchainEvents(Resource):
@@ -48,9 +33,6 @@ class ServiceApi:
     def __init__(self, monitor, blockchain):
         self.flask_app = Flask(__name__)
         self.api = Api(self.flask_app)
-        self.api.add_resource(PingResource, API_PATH + "/ping")
-        self.api.add_resource(ChannelsResource, API_PATH + "/channels",
-                              resource_class_kwargs={'monitor': monitor})
         self.api.add_resource(BlockchainEvents, API_PATH + "/events",
                               resource_class_kwargs={'blockchain': blockchain})
         self.api.add_resource(BalanceProofResource, API_PATH + "/balance_proofs",
