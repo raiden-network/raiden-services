@@ -5,4 +5,5 @@ gevent
 jsonschema
 eth-utils
 coincurve
-sqlite3
+ethereum
+eth-tester

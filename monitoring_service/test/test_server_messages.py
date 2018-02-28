@@ -1,20 +1,26 @@
 
-def test_bp_dispatch(monitoring_service, get_random_bp):
+def test_bp_dispatch(monitoring_service, generate_raiden_client):
     """Test if server accepts an incoming balance proof message"""
+    c1, c2 = generate_raiden_client(), generate_raiden_client()
+    channel_address = c1.open_channel(c2.address)
+    msg = c1.get_balance_proof(c2.address, 1)
     monitoring_service.start()
     transport = monitoring_service.transport
-    msg = get_random_bp()
 
     transport.send_message(msg)
-    assert msg.channel_address in monitoring_service.balance_proofs
+    monitoring_service.wait_tasks()
+    assert channel_address in monitoring_service.balance_proofs
 
 
-def test_old_bp_dispatch(monitoring_service, get_random_bp):
+def test_old_bp_dispatch(monitoring_service, generate_raiden_client):
     """Server should discard messages that are too old"""
+    c1, c2 = generate_raiden_client(), generate_raiden_client()
+    channel_address = c1.open_channel(c2.address)
+    msg = c1.get_balance_proof(c2.address, 1)
+
     monitoring_service.start()
     transport = monitoring_service.transport
-    msg = get_random_bp()
     msg.timestamp = 0
 
     transport.send_message(msg)
-    assert msg.channel_address not in monitoring_service.balance_proofs
+    assert channel_address not in monitoring_service.balance_proofs

@@ -17,12 +17,14 @@ def dummy_transport():
 
 
 @pytest.fixture
-def blockchain():
-    return BlockchainMonitor()
+def blockchain(web3):
+    blockchain = BlockchainMonitor(web3)
+    blockchain.poll_interval = 1
+    return blockchain
 
 
 @pytest.fixture
-def monitoring_service(server_private_key, blockchain, dummy_transport, state_db):
+def monitoring_service(server_private_key, blockchain, dummy_transport, state_db, web3):
     return MonitoringService(
         server_private_key,
         transport=dummy_transport,

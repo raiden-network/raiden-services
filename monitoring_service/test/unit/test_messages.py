@@ -2,8 +2,10 @@ import pytest
 import json
 
 from monitoring_service.messages import BalanceProof, Message
-from monitoring_service.utils import privkey_to_addr
+from monitoring_service.utils import privkey_to_addr, pubkey_to_addr
 from monitoring_service.exceptions import MessageSignatureError, MessageFormatError
+from coincurve import PrivateKey, PublicKey
+from eth_utils import remove_0x_prefix, is_same_address
 
 channel_address = '0x11e14d102DA61F1a5cA36cfa96C3B831332357b3'
 participant1 = '0x2E8ffB67C9929Bf817d375541f0A8f4E437Ee7BF'
@@ -68,3 +70,15 @@ def test_sign(get_random_bp, get_random_privkey, get_random_address):
     json_data['signature'] = '0xabcdef'
     with pytest.raises(MessageFormatError):
         signed_msg = Message.deserialize(json_data)
+
+
+def test_sign_and_recover(get_random_privkey, get_random_bp):
+    msg = get_random_bp()
+    privkey = get_random_privkey()
+    msg.participant1 = privkey_to_addr(privkey)
+    pk = PrivateKey.from_hex(remove_0x_prefix(privkey))
+    signature = pk.sign_recoverable(msg.serialize_bin())
+
+    pubk = PublicKey.from_signature_and_message(signature, msg.serialize_bin())
+    pubk_addr = pubkey_to_addr(pubk)
+    assert is_same_address(pubk_addr, msg.participant1)

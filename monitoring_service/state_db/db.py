@@ -67,6 +67,13 @@ class StateDB:
         assert c.fetchone() is None
         return result
 
+    def delete_balance_proof(self, channel_address: str) -> None:
+        assert is_address(channel_address)
+        c = self.conn.cursor()
+        sql = 'DELETE FROM `balance_proofs` WHERE `channel_address` = ?'
+        c.execute(sql, [to_checksum_address(channel_address)])
+        assert c.fetchone() is None
+
     def is_initialized(self) -> bool:
         c = self.conn.cursor()
         c.execute("SELECT name FROM `sqlite_master` WHERE type='table' AND name='metadata'")
