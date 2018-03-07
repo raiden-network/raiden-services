@@ -8,7 +8,12 @@ from setuptools import setup, find_packages
 with open('README.rst') as readme_file:
     readme = readme_file.read()
 
-requirements = [ ]
+requirements_replacements = {}
+
+requirements = list(set(
+    requirements_replacements.get(requirement.strip(), requirement.strip())
+    for requirement in open('requirements.txt') if not requirement.lstrip().startswith('#')
+))
 
 setup_requirements = ['pytest-runner', ]
 
