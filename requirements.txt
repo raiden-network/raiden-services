@@ -1,3 +1,6 @@
 eth-utils==1.0.1
-pysha3==1.0.2
 coincurve==7.1.0
+web3==4.0.0-beta.11
+pycryptodome==3.4.11
+
+gevent==1.2.2
