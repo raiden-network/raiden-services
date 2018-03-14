@@ -1,6 +1,8 @@
 import click
 import os
 import logging
+from web3 import Web3, HTTPProvider
+
 from monitoring_service import MonitoringService
 from monitoring_service.transport import MatrixTransport
 from monitoring_service.state_db import StateDB
@@ -51,6 +53,12 @@ from monitoring_service.blockchain import BlockchainMonitor
     help='REST service endpoint'
 )
 @click.option(
+    '--eth-rpc',
+    default='http://localhost:8545',
+    type=str,
+    help='Ethereum node RPC URI'
+)
+@click.option(
     '--state-db',
     default=os.path.join(click.get_app_dir('raiden-monitoring-service'), 'state.db'),
     type=str,
@@ -64,6 +72,7 @@ def main(
     matrix_password,
     rest_host,
     rest_port,
+    eth_rpc,
     state_db
 ):
     app_dir = click.get_app_dir('raiden-monitoring-service')
@@ -75,7 +84,8 @@ def main(
         matrix_password,
         monitoring_channel
     )
-    blockchain = BlockchainMonitor()
+    web3 = Web3(HTTPProvider(eth_rpc))
+    blockchain = BlockchainMonitor(web3)
     db = StateDB(state_db)
 
     monitor = MonitoringService(
