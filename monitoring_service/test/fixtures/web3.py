@@ -8,7 +8,6 @@ from _pytest.monkeypatch import MonkeyPatch
 from eth_utils import decode_hex, denoms
 from ethereum.transactions import Transaction
 from eth_tester import EthereumTester, PyEVMBackend
-#from populus.wait import Wait
 
 from web3 import Web3
 from web3.providers.eth_tester import EthereumTesterProvider
@@ -166,6 +165,7 @@ def patched_contract(use_tester: bool, monkeypatch: MonkeyPatch, web3: Web3):
 @pytest.fixture(scope='session')
 def wait(web3, kovan_block_time):
     poll_interval = kovan_block_time / 2
+    gevent.sleep(poll_interval)
 #    return Wait(web3, poll_interval=poll_interval)
 
 

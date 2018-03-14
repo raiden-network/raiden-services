@@ -96,7 +96,7 @@ class CompileContracts(Command):
 
 class BuildPyCommand(build_py):
     def run(self):
-        self.run_command('compile_contracts')
+        #  self.run_command('compile_contracts')
         build_py.run(self)
 
 
