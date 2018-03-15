@@ -1,20 +1,61 @@
 # -*- coding: utf-8 -*-
+import functools
 import logging
 import sys
 import requests
 from typing import Callable, Dict, Union, List
 
 from web3 import Web3
-from web3.contract import Contract
+from web3.contract import get_event_data
+from web3.utils.filters import construct_event_filter_params, LogFilter
 import gevent
+
+from raiden_libs.contracts import ContractManager
 
 
 log = logging.getLogger(__name__)
 
 
+def create_event_filter(
+    web3: Web3,
+    event_name: str,
+    event_abi: Dict,
+    filter_params: Dict = {}
+) -> LogFilter:
+    """
+    Create filter object that tracks events emitted.
+
+    Args:
+        web3: A web3 client
+        event_name: The name of the event to track
+        event_abi: The ABI of the event to track
+        filter_params: Other parameters to limit the events
+
+    Returns:
+        A LogFilter instance
+    """
+    filter_meta_params = dict(filter_params)
+
+    data_filter_set, event_filter_params = construct_event_filter_params(
+        event_abi,
+        **filter_meta_params
+    )
+
+    log_data_extract_fn = functools.partial(get_event_data, event_abi)
+
+    log_filter = web3.eth.filter(event_filter_params)
+
+    log_filter.set_data_filters(data_filter_set)
+    log_filter.log_entry_formatter = log_data_extract_fn
+    log_filter.filter_params = event_filter_params
+
+    return log_filter
+
+
 def get_events(
     w3: Web3,
-    contract: Contract,
+    contract_manager: ContractManager,
+    contract_name: str,
     event_name: str,
     from_block: Union[int, str] = 0,
     to_block: Union[int, str] = 'latest',
@@ -25,20 +66,24 @@ def get_events(
 
     Args:
         w3: A Web3 instance
-        contract: A contract
-        event_name: The name of the event(s)
+        contract_manager: A contract manager
+        contract_name: The name of the contract
+        event_name: The name of the event
         from_block: The block to start search events
         to_block: The block to stop searching for events
 
     Returns:
-        Matching events
+        All matching events
     """
-
-    filter = contract.eventFilter(event_name, {
-        'fromBlock': from_block,
-        'toBlock': to_block,
-    })
-
+    filter = create_event_filter(
+        web3=w3,
+        event_name=event_name,
+        event_abi=contract_manager.get_event_abi(contract_name, event_name),
+        filter_params={
+            'fromBlock': from_block,
+            'toBlock': to_block,
+        }
+    )
     events = filter.get_all_entries()
 
     w3.eth.uninstallFilter(filter.filter_id)
@@ -51,8 +96,8 @@ class BlockchainListener(gevent.Greenlet):
     def __init__(
         self,
         web3: Web3,
-        contract_address: str,
-        contract_abi: Dict,
+        contract_manager: ContractManager,
+        contract_name: str,
         required_confirmations: int = 4,
         sync_chunk_size: int = 100_000,
         poll_interval: int = 2,
@@ -62,14 +107,15 @@ class BlockchainListener(gevent.Greenlet):
         Creates a new BlockchainListener
         Args:
             web3: A Web3 instance
-            contract_address: The address of the contract
-            contract_abi: The ABI of the contract
+            contract_manager: A contract manager
+            contract_name: The name of the contract
             required_confirmations: The number of confirmations required to call a block confirmed
             sync_chunk_size: The size of the chunks used during syncing
             poll_interval: The interval used between polls
             sync_start_block: The block number syncing is started at
         """
-        self.contract = web3.eth.contract(contract_address, abi=contract_abi)
+        self.contract_manager = contract_manager
+        self.contract_name = contract_name
 
         self.required_confirmations = required_confirmations
         self.web3 = web3
@@ -185,30 +231,26 @@ class BlockchainListener(gevent.Greenlet):
         for event_name, callback in self.confirmed_callbacks.items():
             events = get_events(
                 self.web3,
-                self.contract,
+                self.contract_manager,
+                self.contract_name,
                 event_name,
                 **filters_confirmed
             )
             for event in events:
-                log.debug(
-                    'Received confirmed %s event',
-                    event_name,
-                )
+                log.debug('Received confirmed %s event', event_name)
                 callback(event)
 
         # filter unconfirmed events
         for event_name, callback in self.unconfirmed_callbacks.items():
             events = get_events(
                 self.web3,
-                self.contract,
+                self.contract_manager,
+                self.contract_name,
                 event_name,
                 **filters_unconfirmed
             )
             for event in events:
-                log.debug(
-                    'Received unconfirmed %s event',
-                    event_name,
-                )
+                log.debug('Received unconfirmed %s event', event_name)
                 callback(event)
 
         # update head hash and number
