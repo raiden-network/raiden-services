@@ -17,13 +17,12 @@ log = logging.getLogger(__name__)
 
 
 def create_event_filter(
-    web3: Web3,
-    event_name: str,
-    event_abi: Dict,
-    filter_params: Dict = {}
+        web3: Web3,
+        event_name: str,
+        event_abi: Dict,
+        filter_params: Dict = {}
 ) -> LogFilter:
-    """
-    Create filter object that tracks events emitted.
+    """Create filter object that tracks events emitted.
 
     Args:
         web3: A web3 client
@@ -32,8 +31,7 @@ def create_event_filter(
         filter_params: Other parameters to limit the events
 
     Returns:
-        A LogFilter instance
-    """
+        A LogFilter instance"""
     filter_meta_params = dict(filter_params)
 
     data_filter_set, event_filter_params = construct_event_filter_params(
@@ -53,16 +51,14 @@ def create_event_filter(
 
 
 def get_events(
-    w3: Web3,
-    contract_manager: ContractManager,
-    contract_name: str,
-    event_name: str,
-    from_block: Union[int, str] = 0,
-    to_block: Union[int, str] = 'latest',
+        w3: Web3,
+        contract_manager: ContractManager,
+        contract_name: str,
+        event_name: str,
+        from_block: Union[int, str] = 0,
+        to_block: Union[int, str] = 'latest',
 ) -> List:
-    """
-    Returns events emmitted by a contract for a given event name,
-    within a certain range.
+    """Returns events emmitted by a contract for a given event name, within a certain range.
 
     Args:
         w3: A Web3 instance
@@ -73,8 +69,7 @@ def get_events(
         to_block: The block to stop searching for events
 
     Returns:
-        All matching events
-    """
+        All matching events"""
     filter = create_event_filter(
         web3=w3,
         event_name=event_name,
@@ -94,17 +89,17 @@ class BlockchainListener(gevent.Greenlet):
     """ A class listening for events on a given contract. """
 
     def __init__(
-        self,
-        web3: Web3,
-        contract_manager: ContractManager,
-        contract_name: str,
-        required_confirmations: int = 4,
-        sync_chunk_size: int = 100_000,
-        poll_interval: int = 2,
-        sync_start_block: int = 0
+            self,
+            web3: Web3,
+            contract_manager: ContractManager,
+            contract_name: str,
+            required_confirmations: int = 4,
+            sync_chunk_size: int = 100_000,
+            poll_interval: int = 2,
+            sync_start_block: int = 0
     ):
-        """
-        Creates a new BlockchainListener
+        """Creates a new BlockchainListener
+
         Args:
             web3: A Web3 instance
             contract_manager: A contract manager
@@ -112,8 +107,7 @@ class BlockchainListener(gevent.Greenlet):
             required_confirmations: The number of confirmations required to call a block confirmed
             sync_chunk_size: The size of the chunks used during syncing
             poll_interval: The interval used between polls
-            sync_start_block: The block number syncing is started at
-        """
+            sync_start_block: The block number syncing is started at"""
         self.contract_manager = contract_manager
         self.contract_name = contract_name
 
