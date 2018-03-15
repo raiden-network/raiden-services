@@ -19,7 +19,10 @@ class ContractManager:
             if x['type'] == 'event' and x['name'] == event_name
         ]
 
-        if len(result) == 0:
+        num_results = len(result)
+        if num_results == 0:
             raise KeyError(f"Event '{event_name}' not found.")
+        elif num_results >= 2:
+            raise KeyError(f"Multiple events '{event_name}' found.")
 
-        return result
+        return result[0]
