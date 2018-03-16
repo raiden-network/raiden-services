@@ -99,14 +99,17 @@ class MonitoringService(gevent.Greenlet):
     def on_channel_close(self, event, tx):
         log.info('on channel close: event=%s tx=%s' % (event, tx))
         # check if we have balance proof for the closing
-        closing_address = event['args']['closing_address']
-        channel_address = event['address']
-        assert is_address(closing_address)
-        assert is_address(channel_address)
-        if channel_address not in self.state_db.balance_proofs:
+        closing_participant = event['args']['closing_participant']
+        channel_id = event['args']['channel_identifier']
+        assert is_address(closing_participant)
+        assert channel_id > 0
+        if channel_id not in self.state_db.balance_proofs:
             return
-        balance_proof = self.state_db.balance_proofs[channel_address]
-        if closing_address not in (balance_proof['participant1'], balance_proof['participant2']):
+        balance_proof = self.state_db.balance_proofs[channel_id]
+        if closing_participant not in (
+            balance_proof['participant1'],
+            balance_proof['participant2']
+        ):
             log.warning('Event data do not match balance proof data! event=%s, bp=%s'
                         % (event, balance_proof))
             # TODO: remove balance proof?
@@ -115,10 +118,10 @@ class MonitoringService(gevent.Greenlet):
         # check if we should challenge closeChannel
         if self.check_event(event, balance_proof) is False:
             log.warning('Invalid balance proof submitted! Challenging! event=%s' % event)
-            self.challenge_proof(channel_address)
+            self.challenge_proof(channel_id)
 
     def on_channel_settled(self, event, tx):
-        self.state_db.delete_balance_proof(event['address'])
+        self.state_db.delete_balance_proof(event['args']['channel_identifier'])
 
     def on_transfer_updated(self, event, tx):
         log.warning('transferUpdated event! event=%s' % event)
@@ -126,11 +129,11 @@ class MonitoringService(gevent.Greenlet):
     def check_event(self, event, balance_proof: BalanceProof):
         return False
 
-    def challenge_proof(self, channel_address):
+    def challenge_proof(self, channel_id):
         balance_proof = self.state_db.balance_proofs.get(
-            channel_address, None
+            channel_id, None
         )
-        log.info('challenging proof channel=%s BP=%s' % (channel_address, balance_proof))
+        log.info('challenging proof channel=%s BP=%s' % (channel_id, balance_proof))
 
     def on_message_event(self, message):
         """This handles messages received over the Transport"""

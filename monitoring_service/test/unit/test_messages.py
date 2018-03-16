@@ -7,13 +7,9 @@ from monitoring_service.exceptions import MessageSignatureError, MessageFormatEr
 from coincurve import PrivateKey, PublicKey
 from eth_utils import remove_0x_prefix, is_same_address
 
-channel_address = '0x11e14d102DA61F1a5cA36cfa96C3B831332357b3'
-participant1 = '0x2E8ffB67C9929Bf817d375541f0A8f4E437Ee7BF'
-participant2 = '0xd046C85261E50d18c42F4972D9B32e7F874FA6a1'
 
-
-def test_serialize_deserialize():
-    bp = BalanceProof(channel_address, participant1, participant2)
+def test_serialize_deserialize(get_random_bp):
+    bp = get_random_bp()
     privkey = '0x1'
     serialized_message = bp.serialize_full(privkey)
 
@@ -21,15 +17,15 @@ def test_serialize_deserialize():
     assert isinstance(deserialized_message, BalanceProof)
 
 
-def test_balance_proof():
+def test_balance_proof(get_random_bp):
     # test set of checksummed addrs
-    bp = BalanceProof(channel_address, participant1, participant2)
+    bp = get_random_bp()
 
     # set of an invalid address should raise ValueError
     with pytest.raises(ValueError):
-        bp.channel_address = 123456789
+        bp.contract_address = 123456789
     with pytest.raises(ValueError):
-        bp.channel_address = '0x11e14d102DA61F1a5cA36cfa96C3B831332357b4'
+        bp.contract_address = '0x11e14d102DA61F1a5cA36cfa96C3B831332357b4'
     # invalid addr checksum
     with pytest.raises(ValueError):
         bp.participant1 = '0x2E8ffB67C9929Bf817d375541f0A8f4E437Ee7B0'
