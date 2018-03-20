@@ -11,6 +11,10 @@ class ContractManager:
         """ Returns the ABI for a given contract. """
         return self.data[contract_name]['abi']
 
+    def get_contract_bytecode(self, contract_name: str) -> dict:
+        """ Returns the bytecode for a given contract. """
+        return self.data[contract_name]['bytecode']
+
     def get_event_abi(self, contract_name: str, event_name: str):
         """ Returns the ABI for a given event. """
         contract_abi = self.get_contract_abi(contract_name)
