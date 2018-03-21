@@ -108,6 +108,8 @@ class BlockchainListener(gevent.Greenlet):
             sync_chunk_size: The size of the chunks used during syncing
             poll_interval: The interval used between polls
             sync_start_block: The block number syncing is started at"""
+        super().__init__()
+
         self.contract_manager = contract_manager
         self.contract_name = contract_name
 
@@ -153,7 +155,7 @@ class BlockchainListener(gevent.Greenlet):
                 )
                 gevent.sleep(self.poll_interval)
                 self.is_connected.clear()
-            log.info('Stopped blockchain polling')
+        log.info('Stopped blockchain polling')
 
     def stop(self):
         """ Stops the BlockchainListener. """
