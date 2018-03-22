@@ -206,13 +206,15 @@ class BlockchainListener(gevent.Greenlet):
             return
 
         # filter for events after block_number
+        # to_block is incremented because eth-tester doesn't include events from the end block
+        # see https://github.com/raiden-network/raiden/pull/1321
         filters_confirmed = {
             'from_block': self.confirmed_head_number + 1,
-            'to_block': new_confirmed_head_number,
+            'to_block': new_confirmed_head_number + 1,
         }
         filters_unconfirmed = {
             'from_block': self.unconfirmed_head_number + 1,
-            'to_block': new_unconfirmed_head_number,
+            'to_block': new_unconfirmed_head_number + 1,
         }
         log.debug(
             'Filtering for events u:%s-%s c:%s-%s @%d',
