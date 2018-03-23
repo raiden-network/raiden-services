@@ -14,15 +14,14 @@ from monitoring_service.constants import (
     EVENT_CHANNEL_SETTLED,
     EVENT_TRANSFER_UPDATED
 )
-from monitoring_service.gevent_error_handler import register_error_handler
+from raiden_libs.gevent_error_handler import register_error_handler
+from raiden_libs.utils import private_key_to_address
 
 from eth_utils import (
     is_checksum_address
 )
 
 log = logging.getLogger(__name__)
-
-from monitoring_service.utils import privkey_to_addr
 
 
 def order_participants(p1: str, p2: str):
@@ -57,13 +56,13 @@ class MonitoringService(gevent.Greenlet):
         self.blockchain = blockchain
         self.state_db = state_db
         self.stop_event = gevent.event.Event()
-        assert is_checksum_address(privkey_to_addr(self.private_key))
+        assert is_checksum_address(private_key_to_address(self.private_key))
         self.transport.add_message_callback(lambda message: self.on_message_event(message))
         self.transport.privkey = lambda: self.private_key
         if state_db.is_initialized() is False:
             network_id = 6
             contract_address = '0xD5BE9a680AbbF01aB2d422035A64DB27ab01C624'
-            receiver = privkey_to_addr(private_key)
+            receiver = private_key_to_address(private_key)
             state_db.setup_db(network_id, contract_address, receiver)
         self.task_list = []  # list of greenlets spawned by this class
 

@@ -2,7 +2,7 @@ import json
 import time
 import jsonschema
 from eth_utils import decode_hex, encode_hex, to_checksum_address
-from monitoring_service.utils import privkey_to_addr, sign, keccak256, eth_verify
+from raiden_libs.utils import private_key_to_address, sign, keccak256, eth_verify
 from monitoring_service.messages.deserializer import deserialize
 from monitoring_service.json_schema import ENVELOPE_SCHEMA
 from monitoring_service.exceptions import MessageSignatureError, MessageFormatError
@@ -37,7 +37,7 @@ class Message:
         """Serialize message to a standardized format, including message envelope"""
 
         msg_data = self.assemble_message()
-        msg_data['header']['sender'] = privkey_to_addr(private_key)
+        msg_data['header']['sender'] = private_key_to_address(private_key)
         msg_data = json.dumps(msg_data)
         return json.dumps({
             'signature': self.sign_data(private_key, msg_data),

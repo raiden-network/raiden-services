@@ -2,7 +2,7 @@ import pytest
 import json
 
 from monitoring_service.messages import BalanceProof, Message
-from monitoring_service.utils import privkey_to_addr, pubkey_to_addr
+from raiden_libs.utils import private_key_to_address, public_key_to_address
 from monitoring_service.exceptions import MessageSignatureError, MessageFormatError
 from coincurve import PrivateKey, PublicKey
 from eth_utils import remove_0x_prefix, is_same_address
@@ -38,7 +38,7 @@ def test_sign(get_random_bp, get_random_privkey, get_random_address):
     msg = get_random_bp()
     pk = get_random_privkey()
     pk1 = get_random_privkey()
-    addr = privkey_to_addr(pk)
+    addr = private_key_to_address(pk)
     data = msg.serialize_full(pk)
     signed_msg = Message.deserialize(data)
     assert signed_msg.signer == addr
@@ -71,10 +71,10 @@ def test_sign(get_random_bp, get_random_privkey, get_random_address):
 def test_sign_and_recover(get_random_privkey, get_random_bp):
     msg = get_random_bp()
     privkey = get_random_privkey()
-    msg.participant1 = privkey_to_addr(privkey)
+    msg.participant1 = private_key_to_address(privkey)
     pk = PrivateKey.from_hex(remove_0x_prefix(privkey))
     signature = pk.sign_recoverable(msg.serialize_bin())
 
     pubk = PublicKey.from_signature_and_message(signature, msg.serialize_bin())
-    pubk_addr = pubkey_to_addr(pubk)
+    pubk_addr = public_key_to_address(pubk)
     assert is_same_address(pubk_addr, msg.participant1)
