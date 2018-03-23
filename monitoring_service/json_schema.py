@@ -1,9 +1,15 @@
 BALANCE_PROOF_SCHEMA = {
     'type': 'object',
-    'required': ['channel_address', 'participant1', 'participant2', 'balance_proof', 'timestamp'],
+    'required': [
+        'channel_id', 'contract_address', 'participant1', 'participant2',
+        'balance_proof', 'timestamp'
+    ],
     'properties': {
-        'channel_address': {
-            'type': 'string',
+        'channel_id': {
+            'type': 'integer',
+        },
+        'contract_address': {
+            'type': 'string'
         },
         'participant1': {
             'type': 'string'

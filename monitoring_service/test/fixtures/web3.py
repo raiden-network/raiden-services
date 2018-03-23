@@ -1,13 +1,13 @@
 import logging
 import pytest
 import gevent
-import types
 
 import rlp
 from _pytest.monkeypatch import MonkeyPatch
 from eth_utils import decode_hex, denoms
 from ethereum.transactions import Transaction
 from eth_tester import EthereumTester, PyEVMBackend
+
 
 from web3 import Web3
 from web3.providers.eth_tester import EthereumTesterProvider
@@ -25,6 +25,8 @@ DEFAULT_RETRY_INTERVAL = 3
 FAUCET_ALLOWANCE = 100 * denoms.ether
 INITIAL_TOKEN_SUPPLY = 200000000000
 WEB3_PROVIDER_DEFAULT = 'http://localhost:8545'
+
+log = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope='session')
@@ -44,7 +46,7 @@ def disable_requests_loggin():
 
 
 @pytest.fixture
-def deploy_contract():
+def deploy_contract(revert_chain):
     def fn(
             web3,
             deployer_address,
@@ -65,23 +67,11 @@ def deploy_contract():
 def web3(use_tester: bool,
          faucet_private_key: str,
          faucet_address: str,
-         mine_sync_event,
          ethereum_tester
          ):
     if use_tester:
         provider = EthereumTesterProvider(ethereum_tester)
         web3 = Web3(provider)
-        x = web3.testing.mine
-
-        def mine_patched(self, count):
-            x(count)
-            mine_sync_event.set()
-            gevent.sleep(0)  # switch context
-            mine_sync_event.clear()
-
-        web3.testing.mine = types.MethodType(
-            mine_patched, web3.testing.mine
-        )
 
         # Tester chain uses Transaction to send and validate transactions but does not support
         # EIP-155 yet. This patches the sender address recovery to handle EIP-155.
@@ -183,15 +173,21 @@ def wait_for_blocks(web3, kovan_block_time, use_tester):
 
 
 @pytest.fixture(scope='session')
-def wait_for_transaction(wait):
-    def wait_for_transaction(tx_hash):
-        wait.for_receipt(tx_hash)
-        gevent.sleep(0)
+def wait_for_transaction(web3):
+    def wait_for_transaction(tx_hash, max_blocks=5):
+        block = web3.eth.blockNumber
+        while True:
+            tx = web3.eth.getTransactionReceipt(tx_hash)
+            if tx is not None:
+                return tx
+            gevent.sleep(0.1)
+            block_diff = web3.eth.blockNumber - block
+            assert block_diff < max_blocks
     return wait_for_transaction
 
 
 @pytest.fixture
-def revert_chain(web3: Web3, use_tester: bool, sender_privkey: str, receiver_privkey: str):
+def revert_chain(web3: Web3, use_tester):
     if use_tester:
         snapshot_id = web3.testing.snapshot()
         yield
@@ -200,11 +196,13 @@ def revert_chain(web3: Web3, use_tester: bool, sender_privkey: str, receiver_pri
         yield
 
 
-@pytest.fixture(scope='session')
 def token_contract(web3: Web3, token_address: str, token_abi):
     return web3.eth.contract(abi=token_abi, address=token_address)
 
 
-@pytest.fixture(scope='session')
-def channel_manager_contract(web3: Web3, channel_manager_address: str, channel_manager_abi):
-    return web3.eth.contract(abi=channel_manager_abi, address=channel_manager_address)
+def token_networks_registry_contract(
+    web3: Web3,
+    token_network_registry_address: str,
+    channel_manager_abi
+):
+    return web3.eth.contract(abi=channel_manager_abi, address=token_network_registry_address)

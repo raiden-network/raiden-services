@@ -42,7 +42,7 @@ class StoreBalanceProof(gevent.Greenlet):
         return not (False in results)
 
     def verify_contract_code(self, balance_proof):
-        return self.web3.eth.getCode(balance_proof.channel_address) != HexBytes('0x')
+        return self.web3.eth.getCode(balance_proof.contract_address) != HexBytes('0x')
 
     @staticmethod
     def verify_age(balance_proof):
@@ -58,7 +58,7 @@ class StoreBalanceProof(gevent.Greenlet):
 
     def verify_existing_bp(self, balance_proof):
         # this may be part of state database...
-        existing_bp = self.state_db.balance_proofs.get(balance_proof.channel_address, None)
+        existing_bp = self.state_db.balance_proofs.get(balance_proof.channel_id, None)
         if existing_bp is None:
             return True
         if existing_bp['timestamp'] > balance_proof.timestamp:

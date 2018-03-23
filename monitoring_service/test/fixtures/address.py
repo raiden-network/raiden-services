@@ -23,11 +23,17 @@ def get_random_address(get_random_privkey):
 @pytest.fixture
 def get_random_bp(get_random_address):
     """Returns a balance proof filled in with a random values"""
-    def f(participant1: str = None, participant2: str = None, channel_address: str = None):
+    def f(
+        channel_id: int = None,
+        participant1: str = None,
+        participant2: str = None,
+        contract_address: str = None
+    ):
         p1 = participant1 or get_random_address()
         p2 = participant2 or get_random_address()
-        channel_address = channel_address or get_random_address()
-        msg = BalanceProof(channel_address, p1, p2)
+        contract_address = contract_address or get_random_address()
+        channel_id = channel_id or random.randint(0, 0xffffffffffffffff)
+        msg = BalanceProof(channel_id, contract_address, p1, p2)
         msg.nonce = random.randint(0, 0xffffffffffffffff)
         msg.transferred_amount = random.randint(0, 0xffffffffffffffff)  # actual maximum is uint256
         # locksroot and extra_hash are 32bytes each

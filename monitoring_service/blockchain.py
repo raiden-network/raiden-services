@@ -7,7 +7,7 @@ from monitoring_service.constants import (
     EVENT_CHANNEL_SETTLED,
     EVENT_TRANSFER_UPDATED
 )
-from monitoring_service.contract_manager import CONTRACT_MANAGER
+from raiden_contracts.contract_manager import CONTRACT_MANAGER
 from monitoring_service.utils import make_filter, decode_contract_call
 
 log = logging.getLogger(__name__)
@@ -30,9 +30,9 @@ class BlockchainMonitor(gevent.Greenlet):
     def make_filters(self):
         ret = []
         for event_name in self.event_handlers.keys():
-            abi = CONTRACT_MANAGER.get_event_abi('NettingChannelContract', event_name)
+            abi = CONTRACT_MANAGER.get_event_abi('TokenNetwork', event_name)
             assert abi is not None
-            ret.append(make_filter(self.web3, abi[0]))
+            ret.append(make_filter(self.web3, abi))
         return ret
 
     def _run(self):
@@ -54,7 +54,7 @@ class BlockchainMonitor(gevent.Greenlet):
     def uninstall_filters(self):
         if self.event_filters is None:
             return
-        [self.web3.uninstallFilter(f.filter_id)
+        [self.web3.eth.uninstallFilter(f.filter_id)
          for f in self.event_filters]
         self.event_filters = None
 
@@ -72,8 +72,8 @@ class BlockchainMonitor(gevent.Greenlet):
 
     def handle_event(self, event):
         tx = self.web3.eth.getTransaction(event['transactionHash'])
-        abi = CONTRACT_MANAGER.get_contract_abi('NettingChannelContract')
-        s = decode_contract_call(abi['abi'], tx['data'])
+        abi = CONTRACT_MANAGER.get_contract_abi('TokenNetwork')
+        s = decode_contract_call(abi, tx['data'])
         assert s is not None
         handlers = self.event_handlers.get(event['event'], None)
         log.info(event)

@@ -1,11 +1,10 @@
 import gevent
-from eth_utils import is_same_address
 from monitoring_service.constants import (
     EVENT_CHANNEL_CLOSE,
     EVENT_CHANNEL_SETTLED,
     EVENT_TRANSFER_UPDATED
 )
-from monitoring_service.contract_manager import CONTRACT_MANAGER
+from raiden_contracts.contract_manager import CONTRACT_MANAGER
 from monitoring_service.utils import make_filter
 
 
@@ -40,7 +39,11 @@ def test_blockchain(generate_raiden_client, blockchain, wait_for_blocks):
     c1 = generate_raiden_client()
     c2 = generate_raiden_client()
     c1.open_channel(c2.address)
-    c1.close_channel(c2.address)
+    c2.open_channel(c1.address)
+    c2.deposit_to_channel(c1.address, 10)
+    c1.deposit_to_channel(c2.address, 10)
+    bp = c2.get_balance_proof(c1.address, transferred_amount=1, nonce=1)
+    c1.close_channel(c2.address, bp)
     blockchain.poll_blockchain()
 
     assert t.trigger_count == 1
@@ -57,19 +60,29 @@ def test_filter(generate_raiden_client, web3):
     c1 = generate_raiden_client()
     c2 = generate_raiden_client()
     c3 = generate_raiden_client()
-    channel_addr = c1.open_channel(c2.address)
-    c1.close_channel(c2.address)
+    channel_id = c1.open_channel(c2.address)
+    bp = c2.get_balance_proof(c1.address, transferred_amount=1, nonce=1)
+
+    c1.close_channel(c2.address, bp)
     gevent.sleep(0)
 
-    abi = CONTRACT_MANAGER.get_event_abi('NettingChannelContract', 'ChannelClosed')
+    abi = CONTRACT_MANAGER.get_event_abi('TokenNetwork', 'ChannelClosed')
     assert abi is not None
-    f = make_filter(web3, abi[0], fromBlock=0)
+    f = make_filter(web3, abi, fromBlock=0)
     entries = f.get_new_entries()
     assert len([
         x for x in entries
-        if is_same_address(x['address'], channel_addr)
+        if (x['args']['channel_identifier'] == channel_id) and
+        (x['address'] == c1.contract.address)
     ]) == 1
-    c1.open_channel(c3.address)
-    c1.close_channel(c3.address)
-    assert len(f.get_new_entries()) == 1
+
+    channel_id = c1.open_channel(c3.address)
+    bp = c3.get_balance_proof(c1.address, transferred_amount=1, nonce=1)
+    c1.close_channel(c3.address, bp)
+    entries = f.get_new_entries()
+    assert len([
+        x for x in entries
+        if (x['args']['channel_identifier'] == channel_id) and
+        (x['address'] == c1.contract.address)
+    ]) == 1
     assert len(f.get_all_entries()) > 0

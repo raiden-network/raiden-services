@@ -5,10 +5,9 @@ language: generic
 jobs:
   include:
     - language: python
-      if: type = pull_request
-      python: '3.5'
+      python: '3.6'
       env:
-        - TEST_TYPE=raiden-monitoring-service
+        - TEST_TYPE=monitoring_service
         - SOLC_URL='https://github.com/ethereum/solidity/releases/download/v0.4.17/solc-static-linux'
         - SOLC_VERSION='v0.4.17'
 
@@ -27,11 +26,9 @@ jobs:
         - pip install pytest-travis-fold
         - pip install flake8
         - pip install -r requirements-dev.txt
-        - pip install .[dev]
 
       before_script:
         - flake8 monitoring_service
 
       script:
-          #          - coverage run --source monitoring_service/ --omit 'monitoring_service/test/*' -m py.test --travis-fold=always -vvvvvvvvs $TEST_TYPE
-        - true
+        - coverage run --source monitoring_service/ --omit 'monitoring_service/test/*' -m py.test --travis-fold=always -vvvvvvvvs $TEST_TYPE
