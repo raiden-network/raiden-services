@@ -2,5 +2,5 @@ eth-utils>=1.0.1,<2.0
 coincurve>=7.1.0,<8.0
 web3>=4.0.0-beta.11,<5.0
 pycryptodome>=3.5.1,<4.0
-
+ethereum
 gevent>=1.2.2,<2.0

@@ -1,25 +1,12 @@
-# -*- coding: utf-8 -*-
-from typing import Iterable, Union
-from itertools import zip_longest
 from collections import namedtuple
-
-from coincurve import PrivateKey, PublicKey
-from eth_utils import to_checksum_address, encode_hex, keccak, remove_0x_prefix
-
-
-def public_key_to_address(public_key: Union[PublicKey, bytes]) -> str:
-    """ Converts a public key to an Ethereum address. """
-    if isinstance(public_key, PublicKey):
-        public_key = public_key.format(compressed=False)
-    assert isinstance(public_key, bytes)
-    return encode_hex(keccak(public_key[1:])[-20:])
+from typing import Iterable
+from itertools import zip_longest
+from eth_utils import keccak
 
 
-def private_key_to_address(private_key: str) -> str:
-    """ Converts a private key to an Ethereum address. """
-    return to_checksum_address(
-        public_key_to_address(PrivateKey.from_hex(remove_0x_prefix(private_key)).public_key)
-    )
+EMPTY_MERKLE_ROOT = b'\x00' * 32
+
+MerkleTree = namedtuple('MerkleTree', ['layers'])
 
 
 def _hash_pair(first: bytes, second: bytes) -> bytes:
@@ -34,11 +21,6 @@ def _hash_pair(first: bytes, second: bytes) -> bytes:
         return keccak(second + first)
     else:
         return keccak(first + second)
-
-
-EMPTY_MERKLE_ROOT = b'\x00' * 32
-
-MerkleTree = namedtuple('MerkleTree', ['layers'])
 
 
 def compute_merkle_tree(items: Iterable[bytes]) -> MerkleTree:
