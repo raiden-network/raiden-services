@@ -14,8 +14,8 @@ from web3.providers.eth_tester import EthereumTesterProvider
 from web3.contract import Contract
 from web3.providers.rpc import HTTPProvider
 
-from monitoring_service.utils import (
-    addr_from_sig,
+from raiden_libs.utils import (
+    address_from_signature,
     keccak256,
 )
 # import microraiden.utils.contract
@@ -90,7 +90,7 @@ def web3(use_tester: bool,
                     (self.v - 35) // 2, 0, 0
                 )
                 msg = keccak256(rlp.encode(raw_tx))
-                self._sender = decode_hex(addr_from_sig(r + s + v, msg))
+                self._sender = decode_hex(address_from_signature(r + s + v, msg))
                 return self._sender
             else:
                 return sender_property_original(self)

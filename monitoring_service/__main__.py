@@ -6,9 +6,9 @@ from web3 import Web3, HTTPProvider
 from monitoring_service import MonitoringService
 from monitoring_service.transport import MatrixTransport
 from monitoring_service.state_db import StateDB
-from monitoring_service.no_ssl_patch import no_ssl_verification
 from monitoring_service.api.rest import ServiceApi
 from monitoring_service.blockchain import BlockchainMonitor
+from raiden_libs.no_ssl_patch import no_ssl_verification
 
 
 @click.command()

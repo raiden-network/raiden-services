@@ -1,6 +1,6 @@
 import pytest
 import random
-from monitoring_service.utils import privkey_to_addr
+from raiden_libs.utils import private_key_to_address
 from monitoring_service.messages import BalanceProof
 from sha3 import keccak_256
 
@@ -16,7 +16,7 @@ def get_random_privkey():
 @pytest.fixture
 def get_random_address(get_random_privkey):
     def f():
-        return privkey_to_addr(get_random_privkey())
+        return private_key_to_address(get_random_privkey())
     return f
 
 
@@ -52,4 +52,4 @@ def faucet_private_key():
 
 @pytest.fixture(scope='session')
 def faucet_address(faucet_private_key):
-    return privkey_to_addr(faucet_private_key)
+    return private_key_to_address(faucet_private_key)

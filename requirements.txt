@@ -2,6 +2,7 @@ click
 # until a stable version with handle_exception is released on pip
 git+https://github.com/matrix-org/matrix-python-sdk.git
 git+https://github.com/pcppcp/raiden-contracts.git@travis_requirements
+git+https://github.com/raiden-network/raiden-libs.git
 gevent
 jsonschema
 eth-utils

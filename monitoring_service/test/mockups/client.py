@@ -8,7 +8,7 @@ import logging
 
 from raiden_contracts.contract_manager import get_event_from_abi
 
-from monitoring_service.utils import privkey_to_addr, make_filter
+from raiden_libs.utils import private_key_to_address, make_filter
 from monitoring_service.messages import BalanceProof
 
 
@@ -55,7 +55,7 @@ def sync_channels(func):
 class MockRaidenNode:
     def __init__(self, privkey, channel_contract):
         self.privkey = privkey
-        self.address = privkey_to_addr(privkey)
+        self.address = private_key_to_address(privkey)
         self.contract = channel_contract
         self.partner_to_channel_id = dict()
         self.token_network_abi = None

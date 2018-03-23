@@ -2,7 +2,7 @@ import pytest
 import gevent
 from eth_utils import is_same_address
 from eth_tester.exceptions import TransactionFailed
-from monitoring_service.utils import make_filter
+from raiden_libs.utils import make_filter
 from raiden_contracts.contract_manager import CONTRACT_MANAGER
 
 

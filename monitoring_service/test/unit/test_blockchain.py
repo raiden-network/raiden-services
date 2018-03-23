@@ -5,7 +5,7 @@ from monitoring_service.constants import (
     EVENT_TRANSFER_UPDATED
 )
 from raiden_contracts.contract_manager import CONTRACT_MANAGER
-from monitoring_service.utils import make_filter
+from raiden_libs.utils import make_filter
 
 
 # test if ChannelClosed event triggers an callback of the blockchain wrapper
