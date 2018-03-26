@@ -7,7 +7,7 @@ from eth_utils import is_address
 
 from monitoring_service.blockchain import BlockchainMonitor
 from monitoring_service.state_db import StateDB
-from monitoring_service.messages import Message, BalanceProof
+from raiden_libs.messages import Message, BalanceProof
 from monitoring_service.tasks import StoreBalanceProof
 from monitoring_service.constants import (
     EVENT_CHANNEL_CLOSE,

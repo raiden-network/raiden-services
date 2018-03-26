@@ -1,8 +1,8 @@
 import gevent
 import json
 import jsonschema
-from monitoring_service.messages import Message
-from monitoring_service.exceptions import MessageSignatureError, MessageFormatError
+from raiden_libs.messages import Message
+from raiden_libs.exceptions import MessageSignatureError, MessageFormatError
 
 
 class Transport(gevent.Greenlet):
