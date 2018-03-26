@@ -12,7 +12,7 @@ API_PATH = '/api/1/events'
 
 
 class EventGenerator(gevent.Greenlet):
-    def __init__(self, host: str, seed: int):
+    def __init__(self, host: str, seed: int) -> None:
         super().__init__()
         self.db = RandomChannelDB(seed)
         self.uri = host + API_PATH
