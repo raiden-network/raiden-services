@@ -35,7 +35,7 @@ setup(
     include_package_data=False,
     keywords='raiden_libs',
     name='raiden_libs',
-    packages=find_packages(exclude=['tests',]),
+    packages=find_packages(exclude=['tests', ]),
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,
