@@ -1,6 +1,6 @@
 import pytest
 from eth_utils import denoms
-from monitoring_service.test.mockups.client import MockRaidenNode
+from raiden_libs.test.mocks.client import MockRaidenNode
 
 
 @pytest.fixture

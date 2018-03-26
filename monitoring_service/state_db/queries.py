@@ -12,13 +12,19 @@ CREATE TABLE `syncstate` (
 );
 
 -- channel_id is uint256
+-- transferred_amount is uint256
+-- nonce is uint64
 CREATE TABLE `balance_proofs` (
     `channel_id`        CHAR(34)    NOT NULL,
     `contract_address`  CHAR(42)    NOT NULL,
     `participant1`      CHAR(42)    NOT NULL,
     `participant2`      CHAR(42)    NOT NULL,
-    `balance_proof`     CHAR(160)   NOT NULL,
-    `timestamp`         INT         NOT NULL
+    `nonce`             CHAR(34)    NOT NULL,
+    `transferred_amount` CHAR(34)   NOT NULL,
+    `extra_hash`        CHAR(32)    NOT NULL,
+    `signature`         CHAR(160)   NOT NULL,
+    `timestamp`         INT         NOT NULL,
+    `chain_id`          INT         NOT NULL
 );
 INSERT INTO `metadata` VALUES (
     NULL,
@@ -36,7 +42,7 @@ INSERT INTO `syncstate` VALUES (
 
 ADD_BALANCE_PROOF_SQL = """
 INSERT OR REPLACE INTO `balance_proofs` VALUES (
-    ?, ?, ?, ?, ?, ?
+    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
 );"""
 
 UPDATE_METADATA_SQL = """

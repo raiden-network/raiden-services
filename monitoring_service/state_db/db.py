@@ -18,7 +18,6 @@ def check_balance_proof(bp):
         assert is_checksum_address(bp['contract_address'])
         assert is_checksum_address(bp['participant1'])
         assert is_checksum_address(bp['participant2'])
-        assert isinstance(bp['balance_proof'], str)
 
 
 class StateDB:
@@ -45,6 +44,8 @@ class StateDB:
         ret = []
         for x in c.fetchall():
             x['channel_id'] = int(x['channel_id'], 16)
+            x['transferred_amount'] = int(x['transferred_amount'], 16)
+            x['nonce'] = int(x['nonce'], 16)
             ret.append(x)
 
         return {
@@ -59,8 +60,12 @@ class StateDB:
             balance_proof['contract_address'],
             balance_proof['participant1'],
             balance_proof['participant2'],
-            balance_proof['balance_proof'],
-            balance_proof['timestamp']
+            hex(balance_proof['nonce']),
+            hex(balance_proof['transferred_amount']),
+            balance_proof['extra_hash'],
+            balance_proof['signature'],
+            balance_proof['timestamp'],
+            balance_proof['chain_id']
         ]
         self.conn.execute(ADD_BALANCE_PROOF_SQL, params)
 
@@ -74,7 +79,7 @@ class StateDB:
         assert c.fetchone() is None
         return result
 
-    def delete_balance_proof(self, channel_id: str) -> None:
+    def delete_balance_proof(self, channel_id: int) -> None:
         assert channel_id > 0
         c = self.conn.cursor()
         sql = 'DELETE FROM `balance_proofs` WHERE `channel_id` = ?'

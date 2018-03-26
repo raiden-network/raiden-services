@@ -1,19 +1,20 @@
-from monitoring_service.transport import Transport
 import logging
 import gevent
 import sys
 import traceback
+from typing import List
 from eth_utils import is_address
 
 from monitoring_service.blockchain import BlockchainMonitor
 from monitoring_service.state_db import StateDB
-from monitoring_service.messages import Message, BalanceProof
 from monitoring_service.tasks import StoreBalanceProof
+from monitoring_service.transport import Transport
 from monitoring_service.constants import (
     EVENT_CHANNEL_CLOSE,
     EVENT_CHANNEL_SETTLED,
     EVENT_TRANSFER_UPDATED
 )
+from raiden_libs.messages import Message, BalanceProof
 from raiden_libs.gevent_error_handler import register_error_handler
 from raiden_libs.utils import private_key_to_address
 
@@ -64,7 +65,7 @@ class MonitoringService(gevent.Greenlet):
             contract_address = '0xD5BE9a680AbbF01aB2d422035A64DB27ab01C624'
             receiver = private_key_to_address(private_key)
             state_db.setup_db(network_id, contract_address, receiver)
-        self.task_list = []  # list of greenlets spawned by this class
+        self.task_list: List[gevent.Greenlet] = []
 
     def _run(self):
         register_error_handler(error_handler)
