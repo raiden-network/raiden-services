@@ -108,11 +108,9 @@ def standard_token_network_contract(
         contract_deployer_address
 ):
     """Return instance of a deployed TokenNetwork for HumanStandardToken."""
-    txid = token_network_registry_contract.transact(
-        {'from': contract_deployer_address}
-    ).createERC20TokenNetwork(
+    txid = token_network_registry_contract.functions.createERC20TokenNetwork(
         standard_token_contract.address
-    )
+    ).transact({'from': contract_deployer_address})
     tx_receipt = wait_for_transaction(txid)
     assert len(tx_receipt['logs']) == 1
     event_abi = contracts_manager.get_event_abi(

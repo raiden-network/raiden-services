@@ -76,11 +76,11 @@ class MockRaidenNode:
         if partner_address in self.partner_to_channel_id:
             return self.partner_to_channel_id[partner_address]
         # if it doesn't exist, register new channel
-        txid = self.contract.transact({'from': self.address}).openChannel(
+        txid = self.contract.functions.openChannel(
             self.address,
             partner_address,
             15
-        )
+        ).transact({'from': self.address})
         assert txid is not None
         tx = self.web3.eth.getTransactionReceipt(txid)
         assert tx is not None
@@ -157,40 +157,39 @@ class MockRaidenNode:
             transaction hash of the transaction calling `TokenNetwork::setDeposit()` method
         """
         channel_id = self.partner_to_channel_id[partner_address]
-        self.token_contract.transact(
-            {'from': self.address}
-        ).approve(self.contract.address, amount)
-        return self.contract.transact(
-            {'from': self.address}
-        ).setDeposit(
+        self.token_contract.functions.approve(
+            self.contract.address,
+            amount
+        ).transact({'from': self.address})
+        return self.contract.functions.setDeposit(
             channel_id,
             partner_address,
             amount
-        )
+        ).transact({'from': self.address})
 
     @assert_channel_existence
     def close_channel(self, partner_address, balance_proof) -> None:
         """Closes an open channel"""
         assert balance_proof is not None
         channel_id = self.partner_to_channel_id[partner_address]
-        self.contract.transact({'from': self.address}).closeChannel(
+        self.contract.functions.closeChannel(
             channel_id,
             balance_proof.nonce,
             balance_proof.transferred_amount,
             balance_proof.locksroot,
             balance_proof.extra_hash,
             balance_proof.signature
-        )
+        ).transact({'from': self.address})
 
     @assert_channel_existence
     def settle_channel(self, partner_address) -> None:
         """Settles a closed channel. Settling requires that the challenge period is over"""
         channel_id = self.partner_to_channel_id[partner_address]
-        self.contract.transact({'from': self.address}).settleChannel(
+        self.contract.functions.settleChannel(
             channel_id,
             self.address,
             partner_address
-        )
+        ).transact({'from': self.address})
 
     @assert_channel_existence
     def get_balance_proof(self, partner_address, **kwargs) -> BalanceProof:
@@ -216,14 +215,14 @@ class MockRaidenNode:
         for an open channel
         """
         channel_id = self.partner_to_channel_id[partner_address]
-        self.contract.transact({'from': self.address}).updateTransfer(
+        self.contract.functions.updateTransfer(
             channel_id,
             balance_proof.nonce,
             balance_proof.transferred_amount,
             balance_proof.locksroot,
             balance_proof.extra_hash,
             balance_proof.signature
-        )
+        ).transact({'from': self.address})
 
     @staticmethod
     def sign_data(data, privkey):
