@@ -9,6 +9,7 @@ from web3 import Web3
 from web3.contract import get_event_data
 from web3.utils.filters import construct_event_filter_params, LogFilter
 import gevent
+import gevent.event
 
 from raiden_libs.contracts import ContractManager
 
@@ -174,7 +175,8 @@ class BlockchainListener(gevent.Greenlet):
                 log.info('Chain reorganization detected. '
                          'Resyncing unconfirmed events (unconfirmed_head=%d) [@%d]' %
                          (self.unconfirmed_head_number, self.web3.eth.blockNumber))
-                self.cm.reset_unconfirmed()
+                self.unconfirmed_head_number = self.confirmed_head_number
+                self.unconfirmed_head_hash = self.confirmed_head_hash
             try:
                 # raises if hash doesn't exist (i.e. block has been replaced)
                 self.web3.eth.getBlock(self.unconfirmed_head_hash)

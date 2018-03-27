@@ -27,6 +27,11 @@ log = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope='session')
+def use_tester(request):
+    return request.config.getoption('use_tester')
+
+
+@pytest.fixture(scope='session')
 def ethereum_tester():
     """Returns an instance of an Ethereum tester"""
     return EthereumTester(PyEVMBackend())
