@@ -12,7 +12,7 @@ from eth_utils import is_address, decode_hex
 class BalanceProof(Message):
     def __init__(
             self,
-            channel_id: str,
+            channel_id: int,
             contract_address: str,
             participant1: str,
             participant2: str,
@@ -87,7 +87,7 @@ class BalanceProof(Message):
         ret.timestamp = data['timestamp']
         return ret
 
-    contract_address = address_property('_contract')
-    participant1 = address_property('_participant1')
-    participant2 = address_property('_participant2')
+    contract_address = address_property('_contract')  # type: ignore
+    participant1 = address_property('_participant1')  # type: ignore
+    participant2 = address_property('_participant2')  # type: ignore
     json_schema = BALANCE_PROOF_SCHEMA

@@ -5,7 +5,7 @@ bumpversion
 wheel
 watchdog
 flake8
-tox
+mypy>=0.580
 coverage
 Sphinx
 sphinx_rtd_theme

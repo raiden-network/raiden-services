@@ -3,7 +3,7 @@ import json
 
 
 class ContractManager:
-    def __init__(self, abi_path: str):
+    def __init__(self, abi_path: str) -> None:
         with open(abi_path) as json_file:
             self.data = json.load(json_file)
 
