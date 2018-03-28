@@ -43,7 +43,7 @@ def deploy_contract(revert_chain):
             args
     ):
         contract = web3.eth.contract(abi=abi, bytecode=bytecode)
-        txhash = contract.deploy({'from': deployer_address}, args=args)
+        txhash = contract.constructor(*args).transact({'from': deployer_address})
         contract_address = web3.eth.getTransactionReceipt(txhash).contractAddress
         web3.testing.mine(1)
 

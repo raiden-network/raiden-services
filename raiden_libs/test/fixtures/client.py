@@ -23,10 +23,10 @@ def generate_raiden_client(
     def f():
         pk = get_random_privkey()
         c = MockRaidenNode(pk, standard_token_network_contract)
-        standard_token_contract.transact({'from': faucet_address}).transfer(
+        standard_token_contract.functions.transfer(
             c.address,
             10000
-        )
+        ).transact({'from': faucet_address})
         ethereum_tester.add_account(pk)
         c.token_contract = standard_token_contract
         c.client_registry = client_registry
@@ -42,9 +42,7 @@ def generate_raiden_client(
 
 
 @pytest.fixture
-def generate_raiden_clients(
-        generate_raiden_client
-):
+def generate_raiden_clients(generate_raiden_client):
     """Factory function to generate a list of raiden clients."""
     def f(count=1):
         return [generate_raiden_client() for x in range(count)]
