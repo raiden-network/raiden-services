@@ -98,7 +98,7 @@ class BlockchainListener(gevent.Greenlet):
             sync_chunk_size: int = 100_000,
             poll_interval: int = 2,
             sync_start_block: int = 0
-    ):
+    ) -> None:
         """Creates a new BlockchainListener
 
         Args:

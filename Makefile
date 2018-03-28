@@ -58,6 +58,9 @@ test: ## run tests quickly with the default Python
 test-all: ## run tests on every Python version with tox
 	tox
 
+typecheck: ## static analysis with mypy
+	mypy --ignore-missing-imports raiden_libs
+
 coverage: ## check code coverage quickly with the default Python
 	coverage run --source raiden_libs -m pytest
 	coverage report -m

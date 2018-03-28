@@ -5,6 +5,7 @@ bumpversion
 wheel
 watchdog
 flake8
+mypy>=0.580
 tox
 coverage
 Sphinx
