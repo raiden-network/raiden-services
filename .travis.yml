@@ -1,5 +1,3 @@
-# Config file for automatic testing at travis-ci.org
-
 language: python
 python: 3.6
 
@@ -18,9 +16,12 @@ before_install:
   - export PATH=$PATH:$HOME/.bin
   - ./.travis/download_solc.sh
 
-install: pip install -U tox-travis
+install:
+  - pip install -r requirements_dev.txt
 
-# Command to run tests, e.g. python setup.py test
-script: tox
+script:
+  - make lint
+  - make typecheck
+  - make test
 
 

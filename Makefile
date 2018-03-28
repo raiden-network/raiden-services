@@ -55,9 +55,6 @@ lint: ## check style with flake8
 test: ## run tests quickly with the default Python
 	py.test
 
-test-all: ## run tests on every Python version with tox
-	tox
-
 typecheck: ## static analysis with mypy
 	mypy --ignore-missing-imports raiden_libs
 
