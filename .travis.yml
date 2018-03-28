@@ -1,10 +1,23 @@
 # Config file for automatic testing at travis-ci.org
 
 language: python
-python:
-  - 3.6
+python: 3.6
 
-# Command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
+env:
+  global:
+    - SOLC_URL='https://github.com/ethereum/solidity/releases/download/v0.4.19/solc-static-linux'
+    - SOLC_VERSION='v0.4.19'
+
+cache:
+  pip: true
+  directories:
+    - $HOME/.cache/pip
+
+before_install:
+  - mkdir -p $HOME/.bin
+  - export PATH=$PATH:$HOME/.bin
+  - ./.travis/download_solc.sh
+
 install: pip install -U tox-travis
 
 # Command to run tests, e.g. python setup.py test
