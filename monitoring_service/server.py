@@ -71,15 +71,15 @@ class MonitoringService(gevent.Greenlet):
         register_error_handler(error_handler)
         self.transport.start()
         self.blockchain.start()
-        self.blockchain.register_handler(
+        self.blockchain.add_confirmed_listener(
             EVENT_CHANNEL_CLOSE,
             lambda event, tx: self.on_channel_close(event, tx)
         )
-        self.blockchain.register_handler(
+        self.blockchain.add_confirmed_listener(
             EVENT_CHANNEL_SETTLED,
             lambda event, tx: self.on_channel_settled(event, tx)
         )
-        self.blockchain.register_handler(
+        self.blockchain.add_confirmed_listener(
             EVENT_TRANSFER_UPDATED,
             lambda event, tx: self.on_transfer_updated(event, tx)
         )

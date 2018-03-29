@@ -21,20 +21,20 @@ def test_blockchain(generate_raiden_client, blockchain, wait_for_blocks):
 
     t = Trigger()
 
-    blockchain.register_handler(
+    blockchain.add_confirmed_listener(
         EVENT_CHANNEL_CLOSE,
         lambda ev, tx: t.trigger()
     )
-    blockchain.register_handler(
+    blockchain.add_confirmed_listener(
         EVENT_CHANNEL_SETTLED,
         lambda ev, tx: t.trigger()
     )
-    blockchain.register_handler(
+    blockchain.add_confirmed_listener(
         EVENT_TRANSFER_UPDATED,
         lambda ev, tx: t.trigger()
     )
-    blockchain.event_filters = blockchain.make_filters()
     blockchain.poll_interval = 0
+    blockchain._update()
 
     c1 = generate_raiden_client()
     c2 = generate_raiden_client()
@@ -44,13 +44,15 @@ def test_blockchain(generate_raiden_client, blockchain, wait_for_blocks):
     c1.deposit_to_channel(c2.address, 10)
     bp = c2.get_balance_proof(c1.address, transferred_amount=1, nonce=1)
     c1.close_channel(c2.address, bp)
-    blockchain.poll_blockchain()
+    wait_for_blocks(5)
+    blockchain._update()
 
     assert t.trigger_count == 1
 
     wait_for_blocks(30)
     c1.settle_channel(c2.address)
-    blockchain.poll_blockchain()
+    wait_for_blocks(4)
+    blockchain._update()
 
     assert t.trigger_count == 2
 
