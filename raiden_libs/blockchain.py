@@ -170,30 +170,7 @@ class BlockchainListener(gevent.Greenlet):
         current_block = self.web3.eth.blockNumber
 
         # reset unconfirmed channels in case of reorg
-        if self.wait_sync_event.is_set():  # but not on first sync
-            if current_block < self.unconfirmed_head_number:
-                log.info('Chain reorganization detected. '
-                         'Resyncing unconfirmed events (unconfirmed_head=%d) [@%d]' %
-                         (self.unconfirmed_head_number, self.web3.eth.blockNumber))
-                self.unconfirmed_head_number = self.confirmed_head_number
-                self.unconfirmed_head_hash = self.confirmed_head_hash
-            try:
-                # raises if hash doesn't exist (i.e. block has been replaced)
-                self.web3.eth.getBlock(self.unconfirmed_head_hash)
-            except ValueError:
-                log.info('Chain reorganization detected. '
-                         'Resyncing unconfirmed events (unconfirmed_head=%d) [@%d]. '
-                         '(getBlock() raised ValueError)' %
-                         (self.unconfirmed_head_number, current_block))
-                self.unconfirmed_head_number = self.confirmed_head_number
-                self.unconfirmed_head_hash = self.confirmed_head_hash
-
-            # in case of reorg longer than confirmation number fail
-            try:
-                self.web3.eth.getBlock(self.confirmed_head_hash)
-            except ValueError:
-                log.critical('Events considered confirmed have been reorganized')
-                assert False  # unreachable as long as confirmation level is set high enough
+        self.reset_unconfirmed_on_reorg(current_block)
 
         new_unconfirmed_head_number = self.unconfirmed_head_number + self.sync_chunk_size
         new_unconfirmed_head_number = min(new_unconfirmed_head_number, current_block)
@@ -207,17 +184,15 @@ class BlockchainListener(gevent.Greenlet):
                 self.unconfirmed_head_number >= new_unconfirmed_head_number):
             return
 
-        # filter for events after block_number
-        # to_block is incremented because eth-tester doesn't include events from the end block
-        # see https://github.com/raiden-network/raiden/pull/1321
-        filters_confirmed = {
-            'from_block': self.confirmed_head_number + 1,
-            'to_block': new_confirmed_head_number + 1,
-        }
-        filters_unconfirmed = {
-            'from_block': self.unconfirmed_head_number + 1,
-            'to_block': new_unconfirmed_head_number + 1,
-        }
+        # create filters depending on current head number
+        filters_confirmed = self.get_filter_params(
+            self.confirmed_head_number,
+            new_confirmed_head_number
+        )
+        filters_unconfirmed = self.get_filter_params(
+            self.unconfirmed_head_number,
+            new_unconfirmed_head_number
+        )
         log.debug(
             'Filtering for events u:%s-%s c:%s-%s @%d',
             filters_unconfirmed['from_block'],
@@ -227,31 +202,9 @@ class BlockchainListener(gevent.Greenlet):
             current_block
         )
 
-        # filter confirmed events
-        for event_name, callback in self.confirmed_callbacks.items():
-            events = get_events(
-                self.web3,
-                self.contract_manager,
-                self.contract_name,
-                event_name,
-                **filters_confirmed
-            )
-            for event in events:
-                log.debug('Received confirmed %s event', event_name)
-                callback(event)
-
-        # filter unconfirmed events
-        for event_name, callback in self.unconfirmed_callbacks.items():
-            events = get_events(
-                self.web3,
-                self.contract_manager,
-                self.contract_name,
-                event_name,
-                **filters_unconfirmed
-            )
-            for event in events:
-                log.debug('Received unconfirmed %s event', event_name)
-                callback(event)
+        # filter the events and run callbacks
+        self.filter_events(filters_confirmed, self.confirmed_callbacks)
+        self.filter_events(filters_unconfirmed, self.unconfirmed_callbacks)
 
         # update head hash and number
         try:
@@ -272,3 +225,61 @@ class BlockchainListener(gevent.Greenlet):
 
         if not self.wait_sync_event.is_set() and new_unconfirmed_head_number == current_block:
             self.wait_sync_event.set()
+
+    def filter_events(self, filter_params: dict, name_to_callback: dict) -> None:
+        """Params:
+            filter_params: arguments for the filter call
+            name_to_callback: dict that maps event name to callbacks executed
+                if the event is emmited"""
+        for event_name, callback in name_to_callback.items():
+            events = get_events(
+                self.web3,
+                self.contract_manager,
+                self.contract_name,
+                event_name,
+                **filter_params
+            )
+            for event in events:
+                log.debug('Received confirmed %s event', event_name)
+                callback(event)
+
+    def reset_unconfirmed_on_reorg(self, current_block):
+        """Test if chain reorganization happened (head number used in previous pass is greater than
+        current_block parameter) and in that case reset unconfirmed event list."""
+        if self.wait_sync_event.is_set():  # but not on first sync
+            if current_block < self.unconfirmed_head_number:
+                log.info('Chain reorganization detected. '
+                         'Resyncing unconfirmed events (unconfirmed_head=%d) [@%d]' %
+                         (self.unconfirmed_head_number, self.web3.eth.blockNumber))
+                # here we should probably have a callback or a user-overriden method
+                self.unconfirmed_head_number = self.confirmed_head_number
+                self.unconfirmed_head_hash = self.confirmed_head_hash
+            try:
+                # raises if hash doesn't exist (i.e. block has been replaced)
+                self.web3.eth.getBlock(self.unconfirmed_head_hash)
+            except ValueError:
+                log.info(
+                    'Chain reorganization detected. '
+                    'Resyncing unconfirmed events (unconfirmed_head=%d) [@%d]. '
+                    '(getBlock() raised ValueError)' %
+                    (self.unconfirmed_head_number, current_block)
+                )
+                self.unconfirmed_head_number = self.confirmed_head_number
+                self.unconfirmed_head_hash = self.confirmed_head_hash
+
+            # in case of reorg longer than confirmation number fail
+            try:
+                self.web3.eth.getBlock(self.confirmed_head_hash)
+            except ValueError:
+                log.critical('Events considered confirmed have been reorganized')
+                assert False  # unreachable as long as confirmation level is set high enough
+
+    # filter for events after block_number
+    # to_block is incremented because eth-tester doesn't include events from the end block
+    # see https://github.com/raiden-network/raiden/pull/1321
+    def get_filter_params(self, from_block, to_block):
+        assert from_block <= to_block
+        return {
+            'from_block': from_block + 1,
+            'to_block': to_block + 1,
+        }
