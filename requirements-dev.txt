@@ -4,4 +4,4 @@ flake8
 pudb
 pytest-pudb
 flask_restful
-py-evm>=0.2.0a12
+py-evm==0.2.0a12
