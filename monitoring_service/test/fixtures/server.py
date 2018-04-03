@@ -1,5 +1,5 @@
 import pytest
-from monitoring_service.test.mockups.dummy_transport import DummyTransport
+from raiden_libs.test.mocks.dummy_transport import DummyTransport
 
 from monitoring_service import MonitoringService
 from monitoring_service.blockchain import BlockchainMonitor
