@@ -24,6 +24,8 @@ def test_close_event(
     wait_for_blocks(30)
     # settle
     c2.settle_channel(c1.address)
+    # wait 4 blocks to confirm the settle event
+    wait_for_blocks(4)
     gevent.sleep(1)
     # test if the channel is no longer in MS' channel list
     assert channel_id not in monitoring_service.balance_proofs
@@ -59,6 +61,7 @@ def test_transfer_update_event(
     wait_for_blocks(30)
     # settle
     c1.settle_channel(c2.address)
+    wait_for_blocks(4)
     gevent.sleep(1)
     # test if the channel is no longer in MS' channel list
     assert channel_id not in monitoring_service.balance_proofs

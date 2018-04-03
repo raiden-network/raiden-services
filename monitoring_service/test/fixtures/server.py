@@ -25,12 +25,15 @@ def blockchain(web3):
 
 @pytest.fixture
 def monitoring_service(server_private_key, blockchain, dummy_transport, state_db, web3):
-    return MonitoringService(
+    ms = MonitoringService(
         server_private_key,
         transport=dummy_transport,
         blockchain=blockchain,
         state_db=state_db
     )
+    yield ms
+    ms.blockchain.stop()
+    ms.stop()
 
 
 @pytest.fixture
