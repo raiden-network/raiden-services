@@ -225,7 +225,7 @@ class BlockchainListener(gevent.Greenlet):
         if not self.wait_sync_event.is_set() and new_unconfirmed_head_number == current_block:
             self.wait_sync_event.set()
 
-    def filter_events(self, filter_params: dict, name_to_callback: dict) -> None:
+    def filter_events(self, filter_params: Dict, name_to_callback: Dict):
         """Params:
             filter_params: arguments for the filter call
             name_to_callback: dict that maps event name to callbacks executed
@@ -242,41 +242,43 @@ class BlockchainListener(gevent.Greenlet):
                 log.debug('Received confirmed %s event', event_name)
                 callback(event)
 
-    def reset_unconfirmed_on_reorg(self, current_block):
+    def _detected_chain_reorg(self, current_block: int):
+        log.info(
+            'Chain reorganization detected. '
+            'Resyncing unconfirmed events (unconfirmed_head=%d) [@%d]' %
+            (self.unconfirmed_head_number, current_block)
+        )
+        # here we should probably have a callback or a user-overriden method
+        self.unconfirmed_head_number = self.confirmed_head_number
+        self.unconfirmed_head_hash = self.confirmed_head_hash
+
+    def reset_unconfirmed_on_reorg(self, current_block: int):
         """Test if chain reorganization happened (head number used in previous pass is greater than
         current_block parameter) and in that case reset unconfirmed event list."""
         if self.wait_sync_event.is_set():  # but not on first sync
-            if current_block < self.unconfirmed_head_number:
-                log.info('Chain reorganization detected. '
-                         'Resyncing unconfirmed events (unconfirmed_head=%d) [@%d]' %
-                         (self.unconfirmed_head_number, self.web3.eth.blockNumber))
-                # here we should probably have a callback or a user-overriden method
-                self.unconfirmed_head_number = self.confirmed_head_number
-                self.unconfirmed_head_hash = self.confirmed_head_hash
-            try:
-                # raises if hash doesn't exist (i.e. block has been replaced)
-                self.web3.eth.getBlock(self.unconfirmed_head_hash)
-            except ValueError:
-                log.info(
-                    'Chain reorganization detected. '
-                    'Resyncing unconfirmed events (unconfirmed_head=%d) [@%d]. '
-                    '(getBlock() raised ValueError)' %
-                    (self.unconfirmed_head_number, current_block)
-                )
-                self.unconfirmed_head_number = self.confirmed_head_number
-                self.unconfirmed_head_hash = self.confirmed_head_hash
 
-            # in case of reorg longer than confirmation number fail
-            try:
-                self.web3.eth.getBlock(self.confirmed_head_hash)
-            except ValueError:
+            # block number increased or stayed the same
+            if current_block >= self.unconfirmed_head_number:
+                # if the hash of our head changed, there was a chain reorg
+                current_unconfirmed_hash = self.web3.eth.getBlock(
+                    self.unconfirmed_head_number
+                ).hash
+                if current_unconfirmed_hash != self.unconfirmed_head_hash:
+                    self._detected_chain_reorg(current_block)
+            # block number decreased, there was a chain reorg
+            elif current_block < self.unconfirmed_head_number:
+                self._detected_chain_reorg(current_block)
+
+            # now we have to check that the confirmed_head_hash stayed the same
+            current_confirmed_hash = self.web3.eth.getBlock(self.confirmed_head_number).hash
+            if current_confirmed_hash != self.confirmed_head_hash:
                 log.critical('Events considered confirmed have been reorganized')
                 assert False  # unreachable as long as confirmation level is set high enough
 
     # filter for events after block_number
     # to_block is incremented because eth-tester doesn't include events from the end block
     # see https://github.com/raiden-network/raiden/pull/1321
-    def get_filter_params(self, from_block, to_block):
+    def get_filter_params(self, from_block: int, to_block: int) -> Dict[str, int]:
         assert from_block <= to_block
         return {
             'from_block': from_block + 1,
