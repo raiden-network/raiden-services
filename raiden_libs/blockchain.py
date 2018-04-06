@@ -10,8 +10,7 @@ from web3.contract import get_event_data
 from web3.utils.filters import construct_event_filter_params, LogFilter
 import gevent
 import gevent.event
-
-from raiden_libs.contracts import ContractManager
+from raiden_contracts.contract_manager import ContractManager
 
 
 log = logging.getLogger(__name__)
