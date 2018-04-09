@@ -175,7 +175,7 @@ class BlockchainListener(gevent.Greenlet):
         new_unconfirmed_head_number = min(new_unconfirmed_head_number, current_block)
         new_confirmed_head_number = max(
             new_unconfirmed_head_number - self.required_confirmations,
-            0
+            self.confirmed_head_number
         )
 
         # return if blocks have already been processed
@@ -183,27 +183,35 @@ class BlockchainListener(gevent.Greenlet):
                 self.unconfirmed_head_number >= new_unconfirmed_head_number):
             return
 
-        # create filters depending on current head number
-        filters_confirmed = self.get_filter_params(
-            self.confirmed_head_number,
-            new_confirmed_head_number
-        )
-        filters_unconfirmed = self.get_filter_params(
-            self.unconfirmed_head_number,
-            new_unconfirmed_head_number
-        )
-        log.debug(
-            'Filtering for events u:%s-%s c:%s-%s @%d',
-            filters_unconfirmed['from_block'],
-            filters_unconfirmed['to_block'],
-            filters_confirmed['from_block'],
-            filters_confirmed['to_block'],
-            current_block
-        )
+        if self.confirmed_head_number < new_confirmed_head_number:
+            # create filters depending on current head number
+            filters_confirmed = self.get_filter_params(
+                self.confirmed_head_number,
+                new_confirmed_head_number
+            )
+            log.debug(
+                'Filtering for confirmed events: %s-%s @%d',
+                filters_confirmed['from_block'],
+                filters_confirmed['to_block'],
+                current_block
+            )
+            # filter the events and run callbacks
+            self.filter_events(filters_confirmed, self.confirmed_callbacks)
 
-        # filter the events and run callbacks
-        self.filter_events(filters_confirmed, self.confirmed_callbacks)
-        self.filter_events(filters_unconfirmed, self.unconfirmed_callbacks)
+        if self.unconfirmed_head_number < new_unconfirmed_head_number:
+            # create filters depending on current head number
+            filters_unconfirmed = self.get_filter_params(
+                self.unconfirmed_head_number,
+                new_unconfirmed_head_number
+            )
+            log.debug(
+                'Filtering for unconfirmed events: %s-%s @%d',
+                filters_unconfirmed['from_block'],
+                filters_unconfirmed['to_block'],
+                current_block
+            )
+            # filter the events and run callbacks
+            self.filter_events(filters_unconfirmed, self.unconfirmed_callbacks)
 
         # update head hash and number
         try:
@@ -270,10 +278,15 @@ class BlockchainListener(gevent.Greenlet):
                 self._detected_chain_reorg(current_block)
 
             # now we have to check that the confirmed_head_hash stayed the same
-            current_confirmed_hash = self.web3.eth.getBlock(self.confirmed_head_number).hash
-            if current_confirmed_hash != self.confirmed_head_hash:
+            # otherwise the program aborts
+            try:
+                current_head_hash = self.web3.eth.getBlock(self.confirmed_head_number).hash
+                if current_head_hash != self.confirmed_head_hash:
+                    log.critical('Events considered confirmed have been reorganized')
+                    sys.exit(1)  # unreachable as long as confirmation level is set high enough
+            except AttributeError:
                 log.critical('Events considered confirmed have been reorganized')
-                assert False  # unreachable as long as confirmation level is set high enough
+                sys.exit(1)  # unreachable as long as confirmation level is set high enough
 
     # filter for events after block_number
     # to_block is incremented because eth-tester doesn't include events from the end block
