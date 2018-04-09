@@ -282,10 +282,23 @@ class BlockchainListener(gevent.Greenlet):
             try:
                 current_head_hash = self.web3.eth.getBlock(self.confirmed_head_number).hash
                 if current_head_hash != self.confirmed_head_hash:
-                    log.critical('Events considered confirmed have been reorganized')
+                    log.critical(
+                        'Events considered confirmed have been reorganized. '
+                        'Expected block hash %s for block number %d, but got block hash %s. '
+                        "The BlockchainListener's number of required confirmations is %d.",
+                        self.confirmed_head_hash,
+                        self.confirmed_head_number,
+                        current_head_hash,
+                        self.required_confirmations
+                    )
                     sys.exit(1)  # unreachable as long as confirmation level is set high enough
             except AttributeError:
-                log.critical('Events considered confirmed have been reorganized')
+                log.critical(
+                    'Events considered confirmed have been reorganized. '
+                    'The block %d with hash %s does not exist any more.',
+                    self.confirmed_head_number,
+                    self.confirmed_head_hash
+                )
                 sys.exit(1)  # unreachable as long as confirmation level is set high enough
 
     # filter for events after block_number
