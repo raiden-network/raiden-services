@@ -156,6 +156,7 @@ class MockRaidenNode:
         Return:
             transaction hash of the transaction calling `TokenNetwork::setDeposit()` method
         """
+        channel_info = self.get_channel_participant_info(partner_address)
         channel_id = self.partner_to_channel_id[partner_address]
         self.token_contract.functions.approve(
             self.contract.address,
@@ -164,7 +165,7 @@ class MockRaidenNode:
         return self.contract.functions.setDeposit(
             channel_id,
             partner_address,
-            amount
+            amount + channel_info['deposit']
         ).transact({'from': self.address})
 
     @assert_channel_existence
@@ -230,3 +231,18 @@ class MockRaidenNode:
         sha3 = lambda x: keccak_256(x).digest()
         sig = pk.sign_recoverable(data, hasher=sha3)
         return sig[:-1] + chr(sig[-1] + 27).encode()
+
+    @assert_channel_existence
+    def get_channel_participant_info(self, partner_address: str) -> Dict:
+        """Return an info about channel participant, serialized as a dict"""
+        channel_id = self.partner_to_channel_id[partner_address]
+        channel_info = self.contract.functions.getChannelParticipantInfo(
+            channel_id,
+            partner_address
+        ).call()
+        return_fields = ['initialized', 'deposit', 'transferred_amount', 'nonce', 'locksroot']
+        assert len(return_fields) == len(channel_info)
+        return {
+            field: channel_info[return_fields.index(field)]
+            for field in return_fields
+        }
