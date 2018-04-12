@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
+import rlp
 from typing import Union
 
 from coincurve import PrivateKey, PublicKey
+from ethereum.transactions import Transaction
 from eth_utils import (
     to_checksum_address,
     encode_hex,
@@ -101,3 +103,13 @@ def address_from_signature(sig: bytes, msg: bytes):
 
 def eth_verify(sig: bytes, msg: str) -> str:
     return address_from_signature(sig, keccak256(msg))
+
+
+def sign_transaction(tx: Transaction, privkey: str, network_id: int):
+    """Sign tx using EIP 155 signature."""
+    tx.v = network_id
+    sig = sign(privkey, keccak256(rlp.encode(tx)), v=35 + 2 * network_id)
+    v, r, s = sig[-1], sig[0:32], sig[32:-1]
+    tx.v = v
+    tx.r = int.from_bytes(r, byteorder='big')
+    tx.s = int.from_bytes(s, byteorder='big')

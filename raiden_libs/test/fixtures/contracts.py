@@ -54,13 +54,14 @@ def token_network_contract(
         secret_registry_contract,
         standard_token_contract
 ):
+    network_id = int(secret_registry_contract.web3.version.network)
     return deploy_tester_contract(
         'TokenNetwork',
         {
             'Token': standard_token_contract.address.encode(),
             'SecretRegistry': secret_registry_contract.address.encode()
         },
-        [standard_token_contract.address, secret_registry_contract.address]
+        [standard_token_contract.address, secret_registry_contract.address, network_id]
     )
 
 
