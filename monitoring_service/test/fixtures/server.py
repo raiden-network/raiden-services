@@ -24,12 +24,20 @@ def blockchain(web3):
 
 
 @pytest.fixture
-def monitoring_service(server_private_key, blockchain, dummy_transport, state_db_mock, web3):
+def monitoring_service(
+        server_private_key,
+        blockchain,
+        dummy_transport,
+        state_db_mock,
+        web3,
+        monitoring_service_contract
+):
     ms = MonitoringService(
         server_private_key,
         transport=dummy_transport,
         blockchain=blockchain,
-        state_db=state_db_mock
+        state_db=state_db_mock,
+        ms_contract_address=monitoring_service_contract.address
     )
     yield ms
     ms.blockchain.stop()

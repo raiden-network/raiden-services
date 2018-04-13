@@ -18,6 +18,9 @@ from raiden_libs.messages import Message, BalanceProof
 from raiden_libs.gevent_error_handler import register_error_handler
 from raiden_libs.utils import private_key_to_address
 
+from monitoring_service.exceptions import ServiceNotRegistered
+from monitoring_service.utils import is_service_registered
+
 from eth_utils import (
     is_checksum_address
 )
@@ -45,7 +48,8 @@ class MonitoringService(gevent.Greenlet):
         private_key: str,
         state_db: StateDB = None,
         transport: Transport = None,
-        blockchain: BlockchainMonitor = None
+        blockchain: BlockchainMonitor = None,
+        ms_contract_address: str = None
     ) -> None:
         super().__init__()
         assert isinstance(private_key, str)
@@ -60,12 +64,15 @@ class MonitoringService(gevent.Greenlet):
         assert is_checksum_address(private_key_to_address(self.private_key))
         self.transport.add_message_callback(lambda message: self.on_message_event(message))
         self.transport.privkey = lambda: self.private_key
+        self.address = private_key_to_address(self.private_key)
         if state_db.is_initialized() is False:
             network_id = 6
             contract_address = '0xD5BE9a680AbbF01aB2d422035A64DB27ab01C624'
-            receiver = private_key_to_address(private_key)
+            receiver = self.address
             state_db.setup_db(network_id, contract_address, receiver)
         self.task_list: List[gevent.Greenlet] = []
+        if is_service_registered(self.blockchain.web3, ms_contract_address, self.address) is False:
+            raise ServiceNotRegistered("MS not registered in the reward SC (%s)" % self.address)
 
     def _run(self):
         register_error_handler(error_handler)
