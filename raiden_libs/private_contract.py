@@ -1,4 +1,5 @@
-from raiden_libs.contract import create_signed_transaction
+from raiden_libs.contract import create_signed_transaction, GAS_LIMIT_CONTRACT
+from raiden_libs.utils import private_key_to_address
 from web3.utils.abi import get_abi_output_types
 from eth_abi import decode_abi
 from eth_utils import decode_hex
@@ -9,30 +10,32 @@ class Callable():
     def __init__(self, call):
         self._call = call
 
-    def prepare_tx(self, *args, **kwargs):
-        if len(args) == 1:
-            args[0].pop('from', None)
-        return self._call.buildTransaction(*args, **kwargs)
-
     def transact(self, *args, **kwargs) -> bytes:
         """Creates a transaction, signs it with a provided private key and sends it. """
         private_key = kwargs.pop('private_key', None)
-        tx_data = self.prepare_tx(*args, **kwargs)
+        if len(args) == 0:
+            args = ({},)
+        # buildTransaction requires 'from' field to be set properly
+        args[0]['from'] = private_key_to_address(private_key)
+        tx_data = self._call.buildTransaction(*args, **kwargs)
         signed_tx = create_signed_transaction(
             private_key,
             self._call.web3,
             tx_data['to'],
             value=tx_data['value'],
             data=decode_hex(tx_data['data']),
-            gas_limit=1300000
+            gas_limit=GAS_LIMIT_CONTRACT
         )
         return self._call.web3.eth.sendRawTransaction(signed_tx)
 
     def call(self, *args, **kwargs):
         kwargs.pop('private_key', None)
+        from_address = None
         if len(args) == 1:
-            args[0].pop('from', None)
+            from_address = args[0].pop('from', None)
         tx = self._call.buildTransaction(*args, **kwargs)
+        if from_address is not None:
+            tx['from'] = from_address
         output_types = get_abi_output_types(self._call.abi)
         return_data = self._call.web3.eth.call(tx)
         decoded = decode_abi(output_types, return_data)
