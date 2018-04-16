@@ -10,7 +10,7 @@ from typing import Dict
 from raiden_contracts.contract_manager import get_event_from_abi
 
 from raiden_libs.utils import private_key_to_address, make_filter
-from raiden_libs.messages import BalanceProof
+from raiden_libs.messages import BalanceProof, MonitorRequest
 
 
 log = logging.getLogger(__name__)
@@ -209,6 +209,39 @@ class MockRaidenNode:
         )
         bp.signature = encode_hex(self.sign_data(bp.serialize_bin(), self.privkey))
         return bp
+
+    @assert_channel_existence
+    def get_monitor_request(
+        self,
+        partner_address,
+        balance_proof,
+        reward_amount,
+        monitor_address
+    ) -> MonitorRequest:
+        """Get monitor request message for a given balance proof."""
+        channel_id = self.partner_to_channel_id[partner_address]
+
+        monitor_request = MonitorRequest(
+            channel_id,
+            balance_proof.nonce,
+            balance_proof.transferred_amount,
+            balance_proof.locksroot,
+            balance_proof.extra_hash,
+            balance_proof.signature,
+            reward_sender_address=self.address,
+            reward_proof_signature=None,
+            reward_amount=reward_amount,
+            token_network_address=self.contract.address,
+            chain_id=int(self.web3.version.network),
+            monitor_address=monitor_address
+        )
+        monitor_request.reward_proof_signature = encode_hex(
+            self.sign_data(
+                monitor_request.serialize_reward_proof(),
+                self.privkey
+            )
+        )
+        return monitor_request
 
     @assert_channel_existence
     def update_transfer(self, partner_address, balance_proof) -> None:
