@@ -1,9 +1,15 @@
 import pytest
 import random
-from raiden_libs.utils import private_key_to_address
-from raiden_libs.messages import BalanceProof
+from raiden_libs.utils import (
+    private_key_to_address,
+    UINT64_MAX,
+    UINT192_MAX,
+    UINT256_MAX
+)
+from raiden_libs.messages import BalanceProof, MonitorRequest
+from raiden_libs.utils.signing import sign_data
 from sha3 import keccak_256
-from eth_utils import denoms, is_address
+from eth_utils import denoms, is_address, encode_hex
 
 
 @pytest.fixture
@@ -11,7 +17,7 @@ def get_random_privkey():
     """Returns a random private key"""
     return lambda: "0x%064x" % random.randint(
         1,
-        0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+        UINT256_MAX
     )
 
 
@@ -28,23 +34,43 @@ def get_random_bp(get_random_address):
     """Returns a balance proof filled in with a random value"""
     def f(
         channel_id: int = None,
-        participant1: str = None,
-        participant2: str = None,
         contract_address: str = None
     ):
-        p1 = participant1 or get_random_address()
-        p2 = participant2 or get_random_address()
         contract_address = contract_address or get_random_address()
-        channel_id = channel_id or random.randint(0, 0xffffffffffffffff)
-        msg = BalanceProof(channel_id, contract_address, p1, p2)
-        msg.nonce = random.randint(0, 0xffffffffffffffff)
-        msg.transferred_amount = random.randint(0, 0xffffffffffffffff)  # actual maximum is uint256
+        channel_id = channel_id or random.randint(0, UINT64_MAX)
+        msg = BalanceProof(channel_id, contract_address)
+        msg.nonce = random.randint(0, UINT64_MAX)
+        msg.transferred_amount = random.randint(0, UINT64_MAX)  # actual maximum is uint256
         # locksroot and extra_hash are 32bytes each
-        hash_data = '%d' % random.randint(0, 0xffffffffffffffff)
+        hash_data = '%d' % random.randint(0, UINT64_MAX)
         msg.locksroot = keccak_256(hash_data.encode()).hexdigest()
-        hash_data = '%d' % random.randint(0, 0xffffffffffffffff)
+        hash_data = '%d' % random.randint(0, UINT64_MAX)
         msg.extra_hash = keccak_256(hash_data.encode()).hexdigest()
         return msg
+    return f
+
+
+@pytest.fixture
+def get_random_monitor_request(get_random_bp, get_random_address, get_random_privkey):
+    def f():
+        bp = get_random_bp()
+        privkey = get_random_privkey()
+        bp.signature = encode_hex(sign_data(privkey, bp.serialize_bin()))
+        mr = MonitorRequest(
+            bp.channel_id,
+            bp.nonce,
+            bp.transferred_amount,
+            bp.locksroot,
+            bp.extra_hash,
+            bp.signature,
+            reward_sender_address=get_random_address(),
+            reward_amount=random.randint(0, UINT192_MAX),
+            token_network_address=get_random_address(),
+            chain_id=random.randint(0, UINT256_MAX),
+            monitor_address=get_random_address()
+        )
+        mr.reward_proof_signature = encode_hex(sign_data(privkey, mr.serialize_reward_proof()))
+        return mr
     return f
 
 

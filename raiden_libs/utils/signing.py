@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import rlp
 from typing import Union
+from sha3 import keccak_256
 
 from coincurve import PrivateKey, PublicKey
 from ethereum.transactions import Transaction
@@ -70,6 +71,13 @@ def sign(privkey: str, msg: bytes, v=0) -> bytes:
     sig = sig[:-1] + bytes([sig[-1] + v])
 
     return sig
+
+
+def sign_data(privkey: str, msg: bytes, v=27):
+    pk = PrivateKey.from_hex(remove_0x_prefix(privkey))
+    sha3 = lambda x: keccak_256(x).digest()
+    sig = pk.sign_recoverable(msg, hasher=sha3)
+    return sig[:-1] + chr(sig[-1] + v).encode()
 
 
 def public_key_to_address(public_key: Union[PublicKey, bytes]) -> str:

@@ -1,13 +1,11 @@
 from raiden_libs.messages.message import Message
+from raiden_libs.messages.balance_proof import BalanceProof
 from raiden_libs.properties import address_property
 from eth_utils import is_address, to_checksum_address, decode_hex
 from raiden_libs.messages.json_schema import MONITOR_REQUEST_SCHEMA
+from raiden_libs.utils import UINT64_MAX, UINT192_MAX, UINT256_MAX
 import struct
 import jsonschema
-
-UINT64_MAX = (2**64) - 1
-UINT192_MAX = (2**192) - 1
-UINT256_MAX = (2**256) - 1
 
 
 class MonitorRequest(Message):
@@ -15,6 +13,8 @@ class MonitorRequest(Message):
     call MSC
     """
     reward_sender_address = address_property('_reward_sender_address')  # type: ignore
+    token_network_address = address_property('_token_network_address')  # type: ignore
+    monitor_address = address_property('_monitor_address')  # type: ignore
     _type = 'MonitorRequest'
 
     def __init__(
@@ -39,7 +39,7 @@ class MonitorRequest(Message):
         assert (reward_amount >= 0) and (reward_amount <= UINT192_MAX)
         assert len(decode_hex(locksroot)) == 32
         assert len(decode_hex(extra_hash)) == 32
-        assert len(decode_hex(signature)) == 65
+        assert signature is None or len(decode_hex(signature)) == 65
         assert is_address(reward_sender_address)
         assert is_address(token_network_address)
         assert is_address(monitor_address)
@@ -50,7 +50,7 @@ class MonitorRequest(Message):
         self.transferred_amount = transferred_amount
         self.locksroot = locksroot
         self.extra_hash = extra_hash
-        self.signature = signature
+        self.balance_proof_signature = signature
         self.reward_sender_address = to_checksum_address(reward_sender_address)
         self.reward_proof_signature = reward_proof_signature
         self.token_network_address = to_checksum_address(token_network_address)
@@ -59,8 +59,10 @@ class MonitorRequest(Message):
         self.monitor_address = monitor_address
 
     def serialize_data(self):
-        msg = self.__dict__
+        msg = self.__dict__.copy()
         msg['reward_sender_address'] = msg.pop('_reward_sender_address')
+        msg['token_network_address'] = msg.pop('_token_network_address')
+        msg['monitor_address'] = msg.pop('_monitor_address')
         return msg
 
     def serialize_reward_proof(self):
@@ -85,7 +87,7 @@ class MonitorRequest(Message):
             data['transferred_amount'],
             data['locksroot'],
             data['extra_hash'],
-            data['signature'],
+            data['balance_proof_signature'],
             data['reward_sender_address'],
             data['reward_proof_signature'],
             data['reward_amount'],
@@ -94,3 +96,15 @@ class MonitorRequest(Message):
             data['monitor_address']
         )
         return ret
+
+    def get_balance_proof(self):
+        return BalanceProof(
+            self.channel_identifier,
+            self.token_network_address,
+            self.nonce,
+            self.locksroot,
+            self.transferred_amount,
+            self.extra_hash,
+            self.chain_id,
+            self.balance_proof_signature
+        )
