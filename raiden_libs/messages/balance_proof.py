@@ -17,9 +17,9 @@ class BalanceProof(Message):
             participant1: str,
             participant2: str,
             nonce: int = 0,
-            locksroot: str = '0x%032x' % 0,
+            locksroot: str = '0x%064x' % 0,
             transferred_amount: int = 0,
-            extra_hash: str = '0x%032x' % 0,
+            extra_hash: str = '0x%064x' % 0,
             chain_id: int = 1
     ) -> None:
         super().__init__()

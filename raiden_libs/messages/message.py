@@ -1,11 +1,9 @@
 import json
-import time
 import jsonschema
-from eth_utils import decode_hex, encode_hex, to_checksum_address
-from raiden_libs.utils import private_key_to_address, sign, keccak256, eth_verify
+from eth_utils import encode_hex
+from raiden_libs.utils import sign, keccak256
 from raiden_libs.messages.deserializer import deserialize
 from raiden_libs.messages.json_schema import ENVELOPE_SCHEMA
-from raiden_libs.exceptions import MessageSignatureError, MessageFormatError
 
 
 class Message:
@@ -35,29 +33,13 @@ class Message:
 
     def serialize_full(self, private_key):
         """Serialize message to a standardized format, including message envelope"""
-
-        msg_data = self.assemble_message()
-        msg_data['header']['sender'] = private_key_to_address(private_key)
-        msg_data = json.dumps(msg_data)
-        return json.dumps({
-            'signature': self.sign_data(private_key, msg_data),
-            'data': msg_data
-        })
+        msg = self.serialize_data()
+        msg['message_type'] = self._type
+        return json.dumps(msg)
 
     def sign_data(self, private_key, data: str):
         data_hash = keccak256(data)
         return encode_hex(sign(private_key, data_hash))
-
-    def assemble_message(self):
-        assert isinstance(self.type, str)
-        return {
-            'header': {
-                'type': self.type,
-                'timestamp': time.time(),
-                'sender': None
-            },
-            'body': self.serialize_data()
-        }
 
     @staticmethod
     def deserialize(data):
@@ -66,14 +48,5 @@ class Message:
         else:
             json_message = data
         jsonschema.validate(json_message, Message.json_schema)
-        json_data = json.loads(json_message['data'])
-        cls = deserialize(json_data)
-        cls.header = json_data['header']
-        if len(json_message['signature']) != 132:
-            raise MessageFormatError('Invalid signature value')
-        cls.signer = to_checksum_address(
-            eth_verify(decode_hex(json_message['signature']), json_message['data'])
-        )
-        if cls.signer != json_data['header']['sender']:
-            raise MessageSignatureError('Signature does not match the sender!')
+        cls = deserialize(json_message)
         return cls

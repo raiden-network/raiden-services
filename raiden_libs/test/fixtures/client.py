@@ -1,5 +1,4 @@
 import pytest
-from eth_utils import denoms
 from raiden_libs.test.mocks.client import MockRaidenNode
 
 
@@ -11,32 +10,23 @@ def client_registry():
 
 @pytest.fixture
 def generate_raiden_client(
-        ethereum_tester,
         standard_token_network_contract,
         standard_token_contract,
-        faucet_address,
         get_random_privkey,
-        client_registry
+        client_registry,
+        send_funds,
+        ethereum_tester
 ):
     """Factory function to create a new Raiden client. The client has some funds
     allocated by default and has no open channels."""
     def f():
         pk = get_random_privkey()
-        c = MockRaidenNode(pk, standard_token_network_contract)
-        standard_token_contract.functions.transfer(
-            c.address,
-            10000
-        ).transact({'from': faucet_address})
         ethereum_tester.add_account(pk)
-        c.token_contract = standard_token_contract
+        c = MockRaidenNode(pk, standard_token_network_contract)
         c.client_registry = client_registry
-        ethereum_tester.send_transaction({
-            'from': faucet_address,
-            'to': c.address,
-            'gas': 21000,
-            'value': 1 * denoms.ether
-        })
+        c.token_contract = standard_token_contract
         client_registry[c.address] = c
+        send_funds(c.address)
         return c
     return f
 

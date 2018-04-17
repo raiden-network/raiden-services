@@ -1,8 +1,11 @@
 import gevent
 import json
 import jsonschema
+import logging
 from raiden_libs.messages import Message
 from raiden_libs.exceptions import MessageSignatureError, MessageFormatError
+
+log = logging.getLogger(__name__)
 
 
 class Transport(gevent.Greenlet):
@@ -45,7 +48,8 @@ class Transport(gevent.Greenlet):
             jsonschema.exceptions.ValidationError,
             MessageSignatureError,
             MessageFormatError
-        ):
+        ) as e:
+            log.warning('Error when deserializing message: %s' % str(e))
             return
         for callback in self.message_callbacks:
             callback(deserialized_msg)
