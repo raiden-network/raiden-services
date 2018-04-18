@@ -203,8 +203,6 @@ class MockRaidenNode:
         bp = BalanceProof(
             channel_id,
             self.contract.address,
-            self.address,
-            partner_address,
             **kwargs
         )
         bp.signature = encode_hex(self.sign_data(bp.serialize_bin(), self.privkey))

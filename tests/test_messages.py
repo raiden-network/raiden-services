@@ -21,8 +21,3 @@ def test_balance_proof(get_random_bp):
         bp.contract_address = 123456789
     with pytest.raises(ValueError):
         bp.contract_address = '0x11e14d102DA61F1a5cA36cfa96C3B831332357b4'
-    # invalid addr checksum
-    with pytest.raises(ValueError):
-        bp.participant1 = '0x2E8ffB67C9929Bf817d375541f0A8f4E437Ee7B0'
-    with pytest.raises(ValueError):
-        bp.participant2 = '0xd046C85261E50d18c42F4972D9B32e7F874FA6a2'

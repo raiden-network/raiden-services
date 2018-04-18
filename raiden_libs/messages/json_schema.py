@@ -1,9 +1,10 @@
+def make_properties_required(schema):
+    schema['required'] = list(schema['properties'].keys())
+
+
 BALANCE_PROOF_SCHEMA = {
     'type': 'object',
-    'required': [
-        'channel_id', 'contract_address', 'participant1', 'participant2',
-        'timestamp', 'extra_hash', 'transferred_amount', 'nonce', 'chain_id'
-    ],
+    'required': [],
     'properties': {
         'channel_id': {
             'type': 'integer',
@@ -23,26 +24,16 @@ BALANCE_PROOF_SCHEMA = {
         'transferred_amount': {
             'type': 'integer'
         },
-        'participant1': {
-            'type': 'string'
-        },
-        'participant2': {
-            'type': 'string'
-        },
         'timestamp': {
             'type': 'number',
         }
     }
 }
+make_properties_required(BALANCE_PROOF_SCHEMA)
 
 MONITOR_REQUEST_SCHEMA = {
     'type': 'object',
-    'required': [
-        'channel_identifier', 'nonce', 'transferred_amount', 'locksroot',
-        'extra_hash', 'signature',
-        'reward_sender_address', 'reward_proof_signature', 'reward_amount',
-        'token_network_address', 'chain_id', 'monitor_address'
-    ],
+    'required': [],
     'properties': {
         'channel_identifier': {
             'type': 'integer',
@@ -61,7 +52,7 @@ MONITOR_REQUEST_SCHEMA = {
         'extra_hash': {
             'type': 'string'
         },
-        'signature': {
+        'balance_proof_signature': {
             'type': 'string'
         },
         'reward_sender_address': {
@@ -84,6 +75,7 @@ MONITOR_REQUEST_SCHEMA = {
         }
     }
 }
+make_properties_required(MONITOR_REQUEST_SCHEMA)
 
 ENVELOPE_SCHEMA = {
     'type': 'object',
