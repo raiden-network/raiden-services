@@ -15,7 +15,7 @@ class BalanceProofResource(Resource):
         self.monitor = monitor
 
     def get(self):
-        return list(self.monitor.balance_proofs.values())
+        return list(self.monitor.monitor_requests.values())
 
 
 class BlockchainEvents(Resource):
@@ -35,7 +35,7 @@ class ServiceApi:
         self.api = Api(self.flask_app)
         self.api.add_resource(BlockchainEvents, API_PATH + "/events",
                               resource_class_kwargs={'blockchain': blockchain})
-        self.api.add_resource(BalanceProofResource, API_PATH + "/balance_proofs",
+        self.api.add_resource(BalanceProofResource, API_PATH + "/monitor_requests",
                               resource_class_kwargs={'monitor': monitor})
 
     def run(self, host, port):

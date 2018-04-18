@@ -1,9 +1,11 @@
 import pytest
 from raiden_libs.test.mocks.dummy_transport import DummyTransport
+from raiden_libs.utils import private_key_to_address
 
 from monitoring_service import MonitoringService
 from monitoring_service.blockchain import BlockchainMonitor
 from monitoring_service.api.rest import ServiceApi
+from monitoring_service.utils import register_service
 
 
 @pytest.fixture
@@ -30,8 +32,18 @@ def monitoring_service(
         dummy_transport,
         state_db_mock,
         web3,
-        monitoring_service_contract
+        monitoring_service_contract,
+        send_funds
 ):
+    # send some eth & tokens to MS
+    send_funds(private_key_to_address(server_private_key))
+    register_service(
+        web3,
+        monitoring_service_contract.address,
+        private_key_to_address(server_private_key),
+        server_private_key
+    )
+
     ms = MonitoringService(
         server_private_key,
         transport=dummy_transport,

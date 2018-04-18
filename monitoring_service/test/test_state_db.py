@@ -1,18 +1,10 @@
-def test_state_db_sqlite(state_db_sqlite, get_random_bp):
-    bp = get_random_bp()
-    bp = bp.serialize_data()
-    state_db_sqlite.store_balance_proof(bp)
-    ret = state_db_sqlite.balance_proofs
-    fields_to_check = [
-        'contract_address',
-        'participant1',
-        'participant2',
-        'nonce',
-        'transferred_amount',
-        'extra_hash',
-        'signature',
-        'timestamp',
-        'chain_id'
-    ]
+def test_state_db_sqlite(state_db_sqlite, get_random_monitor_request):
+    request = get_random_monitor_request()
+    request_json = request.serialize_data()
+    state_db_sqlite.store_monitor_request(request_json)
+    ret = state_db_sqlite.monitor_requests
+    fields_to_check = list(request_json.keys())
+    fields_to_check.remove('chain_id')
+    fields_to_check.remove('monitor_address')
     for x in fields_to_check:
-        assert bp[x] == ret[bp['channel_id']][x]
+        assert request_json[x] == ret[request_json['channel_identifier']][x]

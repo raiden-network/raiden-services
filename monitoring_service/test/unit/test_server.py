@@ -33,7 +33,7 @@ def test_server_registration(
         {'from': faucet_address}
     )
     # register MS
-    register_service(web3, monitoring_service_contract.address, server_address)
+    register_service(web3, monitoring_service_contract.address, server_address, server_private_key)
 
     # check if registration succeeded
     registered = monitoring_service_contract.functions.registered_monitoring_services(

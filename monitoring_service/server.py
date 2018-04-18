@@ -7,14 +7,14 @@ from eth_utils import is_address
 
 from monitoring_service.blockchain import BlockchainMonitor
 from monitoring_service.state_db import StateDB
-from monitoring_service.tasks import StoreBalanceProof
+from monitoring_service.tasks import StoreMonitorRequest
 from raiden_libs.transport import Transport
 from monitoring_service.constants import (
     EVENT_CHANNEL_CLOSE,
     EVENT_CHANNEL_SETTLED,
     EVENT_TRANSFER_UPDATED
 )
-from raiden_libs.messages import Message, BalanceProof
+from raiden_libs.messages import Message, BalanceProof, MonitorRequest
 from raiden_libs.gevent_error_handler import register_error_handler
 from raiden_libs.utils import private_key_to_address
 
@@ -69,7 +69,8 @@ class MonitoringService(gevent.Greenlet):
             network_id = 6
             contract_address = '0xD5BE9a680AbbF01aB2d422035A64DB27ab01C624'
             receiver = self.address
-            state_db.setup_db(network_id, contract_address, receiver)
+            chain_id = self.blockchain.web3.network.version()
+            state_db.setup_db(network_id, contract_address, receiver, chain_id)
         self.task_list: List[gevent.Greenlet] = []
         if is_service_registered(self.blockchain.web3, ms_contract_address, self.address) is False:
             raise ServiceNotRegistered("MS not registered in the reward SC (%s)" % self.address)
@@ -110,25 +111,17 @@ class MonitoringService(gevent.Greenlet):
         channel_id = event['args']['channel_identifier']
         assert is_address(closing_participant)
         assert channel_id > 0
-        if channel_id not in self.state_db.balance_proofs:
+        if channel_id not in self.state_db.monitor_requests:
             return
-        balance_proof = self.state_db.balance_proofs[channel_id]
-        if closing_participant not in (
-            balance_proof['participant1'],
-            balance_proof['participant2']
-        ):
-            log.warning('Event data do not match balance proof data! event=%s, bp=%s'
-                        % (event, balance_proof))
-            # TODO: remove balance proof?
-            return
+        monitor_request = self.state_db.monitor_requests[channel_id]
 
         # check if we should challenge closeChannel
-        if self.check_event(event, balance_proof) is False:
+        if self.check_event(event, monitor_request) is False:
             log.warning('Invalid balance proof submitted! Challenging! event=%s' % event)
             self.challenge_proof(channel_id)
 
     def on_channel_settled(self, event, tx):
-        self.state_db.delete_balance_proof(event['args']['channel_identifier'])
+        self.state_db.delete_monitor_request(event['args']['channel_identifier'])
 
     def on_transfer_updated(self, event, tx):
         log.warning('transferUpdated event! event=%s' % event)
@@ -145,21 +138,23 @@ class MonitoringService(gevent.Greenlet):
     def on_message_event(self, message):
         """This handles messages received over the Transport"""
         assert isinstance(message, Message)
-        if isinstance(message, BalanceProof):
-            self.on_balance_proof(message)
+        if isinstance(message, MonitorRequest):
+            self.on_monitor_request(message)
+        else:
+            log.warn('Ignoring unknown message type %s' % type(message))
 
-    def on_balance_proof(self, balance_proof):
-        """Called whenever a balance proof message is received.
+    def on_monitor_request(self, monitor_request):
+        """Called whenever a monitor proof message is received.
         This will spawn a greenlet and store its reference in an internal list.
         Return value of the greenlet is then checked in the main loop."""
-        assert isinstance(balance_proof, BalanceProof)
-        task = StoreBalanceProof(self.blockchain.web3, self.state_db, balance_proof)
+        assert isinstance(monitor_request, MonitorRequest)
+        task = StoreMonitorRequest(self.blockchain.web3, self.state_db, monitor_request)
         task.start()
         self.task_list.append(task)
 
     @property
-    def balance_proofs(self):
-        return self.state_db.balance_proofs
+    def monitor_requests(self):
+        return self.state_db.monitor_requests
 
     def wait_tasks(self):
         """Wait until all internal tasks are finished"""

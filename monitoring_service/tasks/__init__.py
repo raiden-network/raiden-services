@@ -1,5 +1,5 @@
-from .store_balance_proof import StoreBalanceProof
+from .store_monitor_request import StoreMonitorRequest
 
 __all__ = [
-    'StoreBalanceProof'
+    'StoreMonitorRequest'
 ]

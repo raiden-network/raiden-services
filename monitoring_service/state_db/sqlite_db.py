@@ -2,7 +2,7 @@ import sqlite3
 from eth_utils import is_checksum_address
 import os
 
-from .queries import DB_CREATION_SQL, ADD_BALANCE_PROOF_SQL, UPDATE_METADATA_SQL
+from .queries import DB_CREATION_SQL, ADD_MONITOR_REQUEST_SQL, UPDATE_METADATA_SQL
 from .db import StateDB
 
 
@@ -32,51 +32,52 @@ class StateDBSqlite(StateDB):
         self.conn.commit()
 
     @property
-    def balance_proofs(self) -> dict:
+    def monitor_requests(self) -> dict:
         c = self.conn.cursor()
-        c.execute('SELECT * FROM `balance_proofs`')
+        c.execute('SELECT * FROM `monitor_requests`')
         ret = []
         for x in c.fetchall():
-            x['channel_id'] = int(x['channel_id'], 16)
+            x['channel_identifier'] = int(x['channel_identifier'], 16)
             x['transferred_amount'] = int(x['transferred_amount'], 16)
+            x['reward_amount'] = int(x['reward_amount'], 16)
             x['nonce'] = int(x['nonce'], 16)
             ret.append(x)
 
         return {
-            x['channel_id']: x
+            x['channel_identifier']: x
             for x in ret
         }
 
-    def store_balance_proof(self, balance_proof) -> None:
-        StateDBSqlite.check_balance_proof(balance_proof)
+    def store_monitor_request(self, monitor_request) -> None:
+        StateDBSqlite.check_monitor_request(monitor_request)
         params = [
-            hex(balance_proof['channel_id']),
-            balance_proof['contract_address'],
-            balance_proof['participant1'],
-            balance_proof['participant2'],
-            hex(balance_proof['nonce']),
-            hex(balance_proof['transferred_amount']),
-            balance_proof['extra_hash'],
-            balance_proof['signature'],
-            balance_proof['timestamp'],
-            balance_proof['chain_id']
+            hex(monitor_request['channel_identifier']),
+            hex(monitor_request['nonce']),
+            hex(monitor_request['transferred_amount']),
+            monitor_request['locksroot'],
+            monitor_request['extra_hash'],
+            monitor_request['balance_proof_signature'],
+            monitor_request['reward_sender_address'],
+            monitor_request['reward_proof_signature'],
+            hex(monitor_request['reward_amount']),
+            monitor_request['token_network_address']
         ]
-        self.conn.execute(ADD_BALANCE_PROOF_SQL, params)
+        self.conn.execute(ADD_MONITOR_REQUEST_SQL, params)
 
-    def get_balance_proof(self, channel_id: int) -> dict:
+    def get_monitor_request(self, channel_id: int) -> dict:
         assert channel_id > 0
         # TODO unconfirmed topups
         c = self.conn.cursor()
-        sql = 'SELECT rowid,* FROM `balance_proofs` WHERE `channel_id` = ?'
+        sql = 'SELECT rowid,* FROM `monitor_requests` WHERE `channel_id` = ?'
         c.execute(sql, [hex(channel_id)])
         result = c.fetchone()
         assert c.fetchone() is None
         return result
 
-    def delete_balance_proof(self, channel_id: int) -> None:
+    def delete_monitor_request(self, channel_id: int) -> None:
         assert channel_id > 0
         c = self.conn.cursor()
-        sql = 'DELETE FROM `balance_proofs` WHERE `channel_id` = ?'
+        sql = 'DELETE FROM `monitor_requests` WHERE `channel_id` = ?'
         c.execute(sql, [hex(channel_id)])
         assert c.fetchone() is None
 
@@ -86,8 +87,8 @@ class StateDBSqlite(StateDB):
         return c.fetchone() is not None
 
     @staticmethod
-    def check_balance_proof(bp):
-            assert bp['channel_id'] > 0
-            assert is_checksum_address(bp['contract_address'])
-            assert is_checksum_address(bp['participant1'])
-            assert is_checksum_address(bp['participant2'])
+    def check_monitor_request(bp):
+        assert bp['channel_identifier'] > 0
+        assert is_checksum_address(bp['token_network_address'])
+        assert is_checksum_address(bp['reward_sender_address'])
+        assert is_checksum_address(bp['monitor_address'])

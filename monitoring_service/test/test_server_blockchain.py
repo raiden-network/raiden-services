@@ -28,7 +28,7 @@ def test_close_event(
     wait_for_blocks(4)
     gevent.sleep(1)
     # test if the channel is no longer in MS' channel list
-    assert channel_id not in monitoring_service.balance_proofs
+    assert channel_id not in monitoring_service.monitor_requests
 
 
 def test_transfer_update_event(
@@ -64,4 +64,4 @@ def test_transfer_update_event(
     wait_for_blocks(4)
     gevent.sleep(1)
     # test if the channel is no longer in MS' channel list
-    assert channel_id not in monitoring_service.balance_proofs
+    assert channel_id not in monitoring_service.monitor_requests
