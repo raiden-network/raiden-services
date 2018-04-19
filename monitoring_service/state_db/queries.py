@@ -1,8 +1,8 @@
 DB_CREATION_SQL = """
 CREATE TABLE `metadata` (
-    `chain_id`       INTEGER,
-    `contract_address` CHAR(42),
-    `receiver`         CHAR(42)
+    `chain_id`                              INTEGER,
+    `monitoring_contract_address`           CHAR(42),
+    `receiver`                              CHAR(42)
 );
 CREATE TABLE `syncstate` (
     `confirmed_head_number`   INTEGER,
@@ -14,7 +14,7 @@ CREATE TABLE `syncstate` (
 -- transferred_amount is uint256
 -- reward_amount is uint192
 -- nonce is uint64
-CREATE TABLE `MONITOR_REQUESTS` (
+CREATE TABLE `monitor_requests` (
     `channel_identifier` CHAR(34)    NOT NULL PRIMARY KEY,
     `nonce`              CHAR(34)    NOT NULL,
     `transferred_amount` CHAR(34)    NOT NULL,
@@ -41,13 +41,13 @@ INSERT INTO `syncstate` VALUES (
 
 
 ADD_MONITOR_REQUEST_SQL = """
-INSERT OR REPLACE INTO `MONITOR_REQUESTS` VALUES (
+INSERT OR REPLACE INTO `monitor_requests` VALUES (
     ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
 );"""
 
 UPDATE_METADATA_SQL = """
 UPDATE `metadata` SET
     `chain_id` = ?,
-    `contract_address` = ?,
+    `monitoring_contract_address` = ?,
     `receiver` = ?;
 """

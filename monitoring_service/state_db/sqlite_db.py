@@ -92,3 +92,10 @@ class StateDBSqlite(StateDB):
         assert is_checksum_address(bp['token_network_address'])
         assert is_checksum_address(bp['reward_sender_address'])
         assert is_checksum_address(bp['monitor_address'])
+
+    def chain_id(self):
+        c = self.conn.cursor()
+        c.execute("SELECT chain_id FROM `metadata`")
+        result = c.fetchone()
+        assert c.fetchone() is None
+        return int(result)

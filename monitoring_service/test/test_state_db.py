@@ -1,4 +1,5 @@
-def test_state_db_sqlite(state_db_sqlite, get_random_monitor_request):
+def test_state_db_sqlite(state_db_sqlite, get_random_monitor_request, get_random_address):
+    state_db_sqlite.setup_db(1, get_random_address(), get_random_address())
     request = get_random_monitor_request()
     request_json = request.serialize_data()
     state_db_sqlite.store_monitor_request(request_json)

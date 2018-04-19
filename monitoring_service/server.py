@@ -3,7 +3,7 @@ import gevent
 import sys
 import traceback
 from typing import List
-from eth_utils import is_address
+from eth_utils import is_address, is_same_address
 
 from monitoring_service.blockchain import BlockchainMonitor
 from monitoring_service.state_db import StateDB
@@ -18,7 +18,7 @@ from raiden_libs.messages import Message, BalanceProof, MonitorRequest
 from raiden_libs.gevent_error_handler import register_error_handler
 from raiden_libs.utils import private_key_to_address
 
-from monitoring_service.exceptions import ServiceNotRegistered
+from monitoring_service.exceptions import ServiceNotRegistered, StateDBInvalid
 from monitoring_service.utils import is_service_registered
 
 from eth_utils import (
@@ -65,15 +65,21 @@ class MonitoringService(gevent.Greenlet):
         self.transport.add_message_callback(lambda message: self.on_message_event(message))
         self.transport.privkey = lambda: self.private_key
         self.address = private_key_to_address(self.private_key)
+        chain_id = int(self.blockchain.web3.version.network)
         if state_db.is_initialized() is False:
-            network_id = 6
-            contract_address = '0xD5BE9a680AbbF01aB2d422035A64DB27ab01C624'
-            receiver = self.address
-            chain_id = self.blockchain.web3.network.version()
-            state_db.setup_db(network_id, contract_address, receiver, chain_id)
+            state_db.setup_db(chain_id, ms_contract_address, self.address)
+        if state_db.chain_id() != chain_id:
+            raise StateDBInvalid("Chain id doesn't match!")
+        if not is_same_address(state_db.server_address(), self.address):
+            raise StateDBInvalid("Monitor service address doesn't match!")
+        if not is_same_address(state_db.monitoring_contract_address(), ms_contract_address):
+            raise StateDBInvalid("Monitoring contract address doesn't match!")
         self.task_list: List[gevent.Greenlet] = []
         if is_service_registered(self.blockchain.web3, ms_contract_address, self.address) is False:
-            raise ServiceNotRegistered("MS not registered in the reward SC (%s)" % self.address)
+            raise ServiceNotRegistered(
+                "Monitoring service %s is not registered in the Monitoring smart contract (%s)" %
+                (self.address, ms_contract_address)
+            )
 
     def _run(self):
         register_error_handler(error_handler)

@@ -39,9 +39,11 @@ class StoreMonitorRequest(gevent.Greenlet):
         return not (False in results)
 
     def verify_contract_code(self, monitor_request):
+        """Verify if address set in token_network_address field contains code"""
         return self.web3.eth.getCode(monitor_request.token_network_address) != HexBytes('0x')
 
     def check_signatures(self, monitor_request):
+        """Check if signatures set in the message are correct"""
         bp = monitor_request.get_balance_proof()
         balance_proof_signer = eth_verify(decode_hex(bp.signature), bp.serialize_bin()) # flake8: noqa
         reward_proof_signer = eth_verify(
@@ -51,4 +53,5 @@ class StoreMonitorRequest(gevent.Greenlet):
         return is_same_address(reward_proof_signer, monitor_request.reward_sender_address)
 
     def check_balance(self, monitor_request):
+        """Check if there is enough tokens to pay out reward amount"""
         return True

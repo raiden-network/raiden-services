@@ -5,6 +5,7 @@ import copy
 def test_validate_bp(web3, generate_raiden_client, get_random_address, state_db_sqlite):
     c1, c2 = generate_raiden_client(), generate_raiden_client()
     c1.open_channel(c2.address)
+    state_db_sqlite.setup_db(1, get_random_address(), get_random_address())
 
     balance_proof = c1.get_balance_proof(c2.address, transferred_amount=1, nonce=1)
     monitor_request = c1.get_monitor_request(c2.address, balance_proof, 1, get_random_address())
