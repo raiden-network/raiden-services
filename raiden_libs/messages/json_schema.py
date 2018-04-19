@@ -84,8 +84,7 @@ FEE_INFO_SCHEMA = {
         'chain_id',
         'channel_identifier',
         'nonce',
-        'base_fee',
-        'percentage_fee'
+        'percentage_fee',
         'signature',
     ],
     'properties': {
