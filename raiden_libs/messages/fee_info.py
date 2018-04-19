@@ -33,7 +33,6 @@ class FeeInfo(Message):
         self.channel_identifier = channel_identifier
         self.signature = signature
         self.nonce = nonce
-        self.base_fee = base_fee
         self.percentage_fee = percentage_fee
         self.chain_id = chain_id
 
@@ -42,7 +41,6 @@ class FeeInfo(Message):
             'token_network_address': self.token_network_address,
             'channel_identifier': self.channel_identifier,
             'nonce': self.nonce,
-            'base_fee': self.base_fee,
             'percentage_fee': str(self.percentage_fee),
             'chain_id': self.chain_id,
             'signature': self.signature,
@@ -56,7 +54,6 @@ class FeeInfo(Message):
             channel_identifier=data['channel_identifier'],
             signature=data['signature'],
             nonce=data['nonce'],
-            base_fee=data['base_fee'],
             percentage_fee=data['percentage_fee'],
             chain_id=data['chain_id']
         )

@@ -103,9 +103,6 @@ FEE_INFO_SCHEMA = {
             'type': 'integer',
             'minimum': 0
         },
-        'base_fee': {
-            'type': 'string',
-        },
         'percentage_fee': {
             'type': 'string',
         },
