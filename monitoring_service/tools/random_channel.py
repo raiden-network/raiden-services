@@ -1,6 +1,6 @@
 import random
 import logging
-from monitoring_service.utils import privkey_to_addr
+from raiden_libs.utils import private_key_to_address
 
 
 log = logging.getLogger(__name__)
@@ -30,7 +30,7 @@ class RandomAddressDB(SeededRandomizer):
 
     @use_random_state
     def get_addr(self):
-        return privkey_to_addr(hex(random.randint(1, 2**256)))
+        return private_key_to_address(hex(random.randint(1, 2**256)))
 
     def generate_addr(self):
         addr = self.get_addr()

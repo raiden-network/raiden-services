@@ -1,7 +1,9 @@
 click
 # until a stable version with handle_exception is released on pip
 git+https://github.com/matrix-org/matrix-python-sdk.git
-git+https://github.com/raiden-network/raiden-contracts.git
+# use czepluch's branch that implements MS contract
+# git+https://github.com/raiden-network/raiden-contracts.git
+git+https://github.com/czepluch/raiden-contracts.git@ms_smart_contract
 git+https://github.com/raiden-network/raiden-libs.git
 gevent
 jsonschema
