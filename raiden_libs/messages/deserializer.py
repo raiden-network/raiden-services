@@ -3,9 +3,11 @@
 def deserialize(message: dict):
     from .balance_proof import BalanceProof
     from .monitor_request import MonitorRequest
+    from .fee_info import FeeInfo
     type_to_class = {
         'BalanceProof': BalanceProof,
-        'MonitorRequest': MonitorRequest
+        'MonitorRequest': MonitorRequest,
+        'FeeInfo': FeeInfo,
     }
 
     message_type = message.pop('message_type')

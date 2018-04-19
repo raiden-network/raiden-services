@@ -6,4 +6,5 @@ __all__ = [
     'Message',
     'BalanceProof',
     'MonitorRequest',
+    'FeeInfo'
 ]

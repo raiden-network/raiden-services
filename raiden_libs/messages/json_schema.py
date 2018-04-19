@@ -77,6 +77,44 @@ MONITOR_REQUEST_SCHEMA = {
 }
 make_properties_required(MONITOR_REQUEST_SCHEMA)
 
+FEE_INFO_SCHEMA = {
+    'type': 'object',
+    'required': [
+        'token_network_address',
+        'chain_id',
+        'channel_identifier',
+        'nonce',
+        'base_fee',
+        'percentage_fee'
+        'signature',
+    ],
+    'properties': {
+        'token_network_address': {
+            'type': 'string',
+        },
+        'chain_id': {
+            'type': 'integer',
+        },
+        'channel_identifier': {
+            'type': 'integer',
+            'minimum': 1
+        },
+        'nonce': {
+            'type': 'integer',
+            'minimum': 0
+        },
+        'base_fee': {
+            'type': 'string',
+        },
+        'percentage_fee': {
+            'type': 'string',
+        },
+        'signature': {
+            'type': 'string'
+        },
+    }
+}
+
 ENVELOPE_SCHEMA = {
     'type': 'object',
     'required': ['message_type'],

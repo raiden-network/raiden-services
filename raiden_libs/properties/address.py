@@ -12,9 +12,9 @@ class address_property(object):
         return getattr(obj, self.private_attribute_name, self.default)
 
     def __set__(self, obj, value):
-        if isinstance(value, str) is False:
+        if not isinstance(value, str):
             raise ValueError("%s requires a string" % (self.__class__.__name__))
-        if is_checksum_address(value) is False:
+        if not is_checksum_address(value):
             raise ValueError("%s requires a checksummed ethereum address" %
                              (self.__class__.__name__))
         setattr(obj, self.private_attribute_name, value)
