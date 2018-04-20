@@ -3,7 +3,7 @@ from raiden_libs.messages.balance_proof import BalanceProof
 from raiden_libs.properties import address_property
 from eth_utils import is_address, to_checksum_address, decode_hex
 from raiden_libs.messages.json_schema import MONITOR_REQUEST_SCHEMA
-from raiden_libs.utils import UINT64_MAX, UINT192_MAX, UINT256_MAX
+from raiden_libs.utils import UINT64_MAX, UINT192_MAX, UINT256_MAX, eth_verify
 import struct
 import jsonschema
 
@@ -107,4 +107,11 @@ class MonitorRequest(Message):
             self.extra_hash,
             self.chain_id,
             self.balance_proof_signature
+        )
+
+    @property
+    def reward_proof_signer(self) -> str:
+        return eth_verify(
+            decode_hex(self.reward_proof_signature),
+            self.serialize_reward_proof()
         )

@@ -28,3 +28,15 @@ def test_client_fee_info(generate_raiden_clients):
     assert fi.nonce == 5
     assert isclose(fi.percentage_fee, 0.1)
     assert fi.chain_id == 2
+
+
+def test_message_signature(generate_raiden_clients):
+    c1, c2 = generate_raiden_clients(2)
+    c1.open_channel(c2.address)
+
+    balance_proof = c1.get_balance_proof(c2.address, nonce=1, transferred_amount=5)
+    assert is_same_address(balance_proof.signer, c1.address)
+    monitor_request = c1.get_monitor_request(c2.address, balance_proof, 1, c2.address)
+    assert is_same_address(monitor_request.reward_proof_signer, c1.address)
+    fee_info = c1.get_fee_info(c2.address)
+    assert is_same_address(fee_info.signer, c1.address)

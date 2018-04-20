@@ -5,6 +5,7 @@ import struct
 from raiden_libs.messages.message import Message
 from raiden_libs.properties import address_property
 from raiden_libs.messages.json_schema import BALANCE_PROOF_SCHEMA
+from raiden_libs.utils import eth_verify
 
 from eth_utils import is_address, decode_hex
 
@@ -80,3 +81,10 @@ class BalanceProof(Message):
 
     contract_address = address_property('_contract')  # type: ignore
     json_schema = BALANCE_PROOF_SCHEMA
+
+    @property
+    def signer(self) -> str:
+        return eth_verify(
+            decode_hex(self.signature),
+            self.serialize_bin()
+        )
