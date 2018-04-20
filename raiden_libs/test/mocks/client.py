@@ -10,7 +10,7 @@ from typing import Dict
 from raiden_contracts.contract_manager import get_event_from_abi
 
 from raiden_libs.utils import private_key_to_address, make_filter
-from raiden_libs.messages import BalanceProof, MonitorRequest
+from raiden_libs.messages import BalanceProof, MonitorRequest, FeeInfo
 
 
 log = logging.getLogger(__name__)
@@ -240,6 +240,22 @@ class MockRaidenNode:
             )
         )
         return monitor_request
+
+    @assert_channel_existence
+    def get_fee_info(self, partner_address, **kwargs) -> FeeInfo:
+        """Get a signed fee info message for an open channel.
+        Parameters:
+            partner_address - address of a partner the node has channel open with
+            **kwargs - arguments to FeeInfo constructor
+        """
+        channel_id = self.partner_to_channel_id[partner_address]
+        fi = FeeInfo(
+            self.contract.address,
+            channel_id,
+            **kwargs
+        )
+        fi.signature = encode_hex(self.sign_data(fi.serialize_bin(), self.privkey))
+        return fi
 
     @assert_channel_existence
     def update_transfer(self, partner_address, balance_proof) -> None:

@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 from typing import Dict
+import struct
 
 import jsonschema
+from eth_utils import is_address, decode_hex
 
 from raiden_libs.messages.message import Message
 from raiden_libs.properties import address_property
 from raiden_libs.messages.json_schema import FEE_INFO_SCHEMA
-
-from eth_utils import is_address
 
 
 class FeeInfo(Message):
@@ -16,46 +16,56 @@ class FeeInfo(Message):
         self,
         token_network_address: str,
         channel_identifier: int,
-        signature: str,
-        nonce: int = 0,
-        base_fee: int = 0,
-        percentage_fee: float = 0.0,
         chain_id: int = 1,
+        nonce: int = 0,
+        percentage_fee: float = 0.0,
+        signature: str = None,
     ) -> None:
         super().__init__()
-        assert channel_identifier > 0
+        assert channel_identifier >= 0
         assert is_address(token_network_address)
-        assert base_fee > 0
 
         self._type = 'FeeInfo'
 
         self.token_network_address = token_network_address
         self.channel_identifier = channel_identifier
-        self.signature = signature
+        self.chain_id = chain_id
         self.nonce = nonce
         self.percentage_fee = percentage_fee
-        self.chain_id = chain_id
+        self.signature = signature
 
     def serialize_data(self) -> Dict:
         return {
             'token_network_address': self.token_network_address,
             'channel_identifier': self.channel_identifier,
+            'chain_id': self.chain_id,
             'nonce': self.nonce,
             'percentage_fee': str(self.percentage_fee),
-            'chain_id': self.chain_id,
             'signature': self.signature,
         }
 
+    def serialize_bin(self):
+        """Return FeeInfo serialized to binary"""
+        order = '>20s32s32s8sd'
+        return struct.pack(
+            order,
+            decode_hex(self.token_network_address),
+            self.channel_identifier.to_bytes(32, byteorder='big'),
+            self.chain_id.to_bytes(32, byteorder='big'),
+            self.nonce.to_bytes(8, byteorder='big'),
+            self.percentage_fee
+        )
+
     @classmethod
-    def deserialize(cls, data: Dict) -> 'FeeInfo':
+    def deserialize(cls, data):
         jsonschema.validate(data, FEE_INFO_SCHEMA)
         ret = cls(
             token_network_address=data['token_network_address'],
             channel_identifier=data['channel_identifier'],
-            signature=data['signature'],
+            chain_id=data['chain_id'],
             nonce=data['nonce'],
-            percentage_fee=data['percentage_fee'],
-            chain_id=data['chain_id']
+            percentage_fee=float(data['percentage_fee']),
+            signature=data['signature'],
         )
 
         return ret

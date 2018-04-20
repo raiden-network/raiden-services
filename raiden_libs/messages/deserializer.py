@@ -1,6 +1,7 @@
+from typing import Dict
 
 
-def deserialize(message: dict):
+def deserialize(message: Dict):
     from .balance_proof import BalanceProof
     from .monitor_request import MonitorRequest
     from .fee_info import FeeInfo

@@ -1,9 +1,13 @@
 import json
+from typing import Type
+
 import jsonschema
 from eth_utils import encode_hex
+
 from raiden_libs.utils import sign, keccak256
 from raiden_libs.messages.deserializer import deserialize
 from raiden_libs.messages.json_schema import ENVELOPE_SCHEMA
+from raiden_libs.exceptions import MessageTypeError
 
 
 class Message:
@@ -42,11 +46,25 @@ class Message:
         return encode_hex(sign(private_key, data_hash))
 
     @staticmethod
-    def deserialize(data):
+    def deserialize(data, type: Type = None) -> 'Message':
+        """ Deserializes a message.
+
+        Args:
+            data: The message data
+            type: An optional message type. If this is set and the message in `data`
+                has a different type, a `MessageTypeError` is raised.
+
+        Returns:
+            The deserialized `Message`
+        """
         if isinstance(data, str):
             json_message = json.loads(data)
         else:
             json_message = data
         jsonschema.validate(json_message, Message.json_schema)
-        cls = deserialize(json_message)
-        return cls
+
+        message_type = json_message.get('message_type', None)
+        if type and type.__name__ != message_type:
+            raise MessageTypeError
+
+        return deserialize(json_message)
