@@ -8,6 +8,7 @@ from eth_utils import is_address, decode_hex
 from raiden_libs.messages.message import Message
 from raiden_libs.properties import address_property
 from raiden_libs.messages.json_schema import FEE_INFO_SCHEMA
+from raiden_libs.utils import eth_verify
 
 
 class FeeInfo(Message):
@@ -69,6 +70,13 @@ class FeeInfo(Message):
         )
 
         return ret
+
+    @property
+    def signer(self) -> str:
+        return eth_verify(
+            decode_hex(self.signature),
+            self.serialize_bin()
+        )
 
     token_network_address = address_property('_contract')  # type: ignore
     json_schema = FEE_INFO_SCHEMA

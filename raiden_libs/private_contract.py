@@ -65,3 +65,9 @@ class PrivateContract:
     def __init__(self, contract):
         self.contract = contract
         self.functions = FunctionsMap(self.contract.abi, contract)
+
+    def __getattr__(self, attr):
+        if attr == 'functions':
+            return self.functions
+        else:
+            return self.contract.__getattribute__(attr)
