@@ -286,6 +286,7 @@ class MockRaidenNode:
         channel_id = self.partner_to_channel_id[partner_address]
         channel_info = self.contract.functions.getChannelParticipantInfo(
             channel_id,
+            self.address,
             partner_address
         ).call()
         return_fields = ['initialized', 'deposit', 'transferred_amount', 'nonce', 'locksroot']
