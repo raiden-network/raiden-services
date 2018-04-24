@@ -39,8 +39,10 @@ class Transport(gevent.Greenlet):
         # ignore if message is not a JSON
         try:
             json_msg = json.loads(data)
-        except json.decoder.JSONDecodeError:
+        except json.decoder.JSONDecodeError as ex:
+            log.error('Error when reading JSON: %s', str(ex))
             return
+
         # ignore message if JSON schema validation fails
         try:
             deserialized_msg = Message.deserialize(json_msg)
@@ -48,9 +50,10 @@ class Transport(gevent.Greenlet):
             jsonschema.exceptions.ValidationError,
             MessageSignatureError,
             MessageFormatError
-        ) as e:
-            log.warning('Error when deserializing message: %s' % str(e))
+        ) as ex:
+            log.error('Error when deserializing message: %s', str(ex))
             return
+
         for callback in self.message_callbacks:
             callback(deserialized_msg)
 
