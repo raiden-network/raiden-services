@@ -16,20 +16,6 @@ class Transport(gevent.Greenlet):
     def __init__(self):
         super().__init__()
         self.message_callbacks = list()
-        self._private_key = None
-
-    @property
-    def privkey(self):
-        """Private key used to sign the messages"""
-        if callable(self._private_key):
-            return self._private_key()
-        return self._private_key
-
-    @privkey.setter
-    def privkey(self, private_key):
-        """Set key to sign messages sent over the transport"""
-        assert isinstance(private_key, str) or callable(private_key)
-        self._private_key = private_key
 
     def add_message_callback(self, callback):
         self.message_callbacks.append(callback)
@@ -67,7 +53,7 @@ class Transport(gevent.Greenlet):
         """Wrapper that serializes Message type to a string, then sends it"""
         assert isinstance(message, (str, Message))
         if isinstance(message, Message):
-            message = message.serialize_full(self.privkey)
+            message = message.serialize_full()
         self.transmit_data(message)
 
     def transmit_data(self, data):
