@@ -8,8 +8,7 @@ from raiden_libs.exceptions import MessageTypeError
 
 def test_serialize_deserialize(get_random_bp):
     bp = get_random_bp()
-    privkey = '0x1'
-    serialized_message = bp.serialize_full(privkey)
+    serialized_message = bp.serialize_full()
 
     deserialized_message = Message.deserialize(serialized_message)
     assert isinstance(deserialized_message, BalanceProof)

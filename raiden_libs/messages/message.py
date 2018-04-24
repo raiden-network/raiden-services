@@ -35,7 +35,7 @@ class Message:
         assert isinstance(self._type, str)
         self._type = value
 
-    def serialize_full(self, private_key):
+    def serialize_full(self):
         """Serialize message to a standardized format, including message envelope"""
         msg = self.serialize_data()
         msg['message_type'] = self._type
