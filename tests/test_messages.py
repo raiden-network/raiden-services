@@ -20,9 +20,9 @@ def test_balance_proof(get_random_bp):
 
     # set of an invalid address should raise ValueError
     with pytest.raises(ValueError):
-        bp.contract_address = 123456789
+        bp.token_network_address = 123456789
     with pytest.raises(ValueError):
-        bp.contract_address = '0x11e14d102DA61F1a5cA36cfa96C3B831332357b4'
+        bp.token_network_address = '0x11e14d102DA61F1a5cA36cfa96C3B831332357b4'
 
 
 def test_fee_info():

@@ -1,7 +1,7 @@
 import jsonschema
 import time
-import struct
 
+from web3 import Web3
 from eth_utils import is_address, decode_hex
 
 from raiden_libs.messages.message import Message
@@ -12,75 +12,102 @@ from raiden_libs.types import Address, ChannelIdentifier
 
 
 class BalanceProof(Message):
+    """ A Balance Proof
+
+    This optionally includse the data for calculating the balance_hash.
+    """
     def __init__(
-            self,
-            channel_id: ChannelIdentifier,
-            contract_address: Address,
-            nonce: int = 0,
-            locksroot: str = '0x%064x' % 0,
-            transferred_amount: int = 0,
-            extra_hash: str = '0x%064x' % 0,
-            chain_id: int = 1,
-            signature: str = None
+        self,
+        channel_identifier: ChannelIdentifier,
+        token_network_address: Address,
+
+        balance_hash: str = '',
+        nonce: int = 0,
+        additional_hash: str = '',
+        chain_id: int = 1,
+        signature: str = '',
+
+        transferred_amount: int = None,
+        locked_amount: int = None,
+        locksroot: str = None,
     ) -> None:
         super().__init__()
-        assert channel_id > 0
-        assert is_address(contract_address)
-        self.channel_id = channel_id
-        self.contract_address = contract_address
+        assert channel_identifier > 0
+        assert is_address(token_network_address)
+
         self._type = 'BalanceProof'
-        self.timestamp = time.time()
+
+        self.channel_identifier = channel_identifier
+        self.token_network_address = token_network_address
+
+        self.balance_hash = balance_hash
+        self.additional_hash = additional_hash
         self.nonce = nonce
-        self.locksroot = locksroot
-        self.transferred_amount = transferred_amount
-        self.extra_hash = extra_hash
-        self.signature = signature
         self.chain_id = chain_id
+        self.signature = signature
+
+        if transferred_amount and locked_amount and locksroot:
+            assert self.hash_balance_data(
+                transferred_amount,
+                locked_amount,
+                locksroot
+            ) == self.balance_hash
+
+        self.transferred_amount = transferred_amount
+        self.locked_amount = locked_amount
+        self.locksroot = locksroot
+
+        self.timestamp = time.time()
 
     def serialize_data(self) -> dict:
-        return {
-            'channel_id': self.channel_id,
-            'contract_address': self.contract_address,
-            'timestamp': self.timestamp,
+        result = {
+            'channel_identifier': self.channel_identifier,
+            'token_network_address': self.token_network_address,
+
+            'balance_hash': self.balance_hash,
+            'additional_hash': self.additional_hash,
             'nonce': self.nonce,
-            'locksroot': self.locksroot,
-            'extra_hash': self.extra_hash,
-            'transferred_amount': self.transferred_amount,
+            'chain_id': self.chain_id,
             'signature': self.signature,
-            'chain_id': self.chain_id
+
+            'timestamp': self.timestamp,
         }
 
+        if self.transferred_amount and self.locked_amount and self.locksroot:
+            result['transferred_amount'] = self.transferred_amount
+            result['locked_amount'] = self.locked_amount
+            result['locksroot'] = self.locksroot
+
+        return result
+
     def serialize_bin(self):
-        # nonce, amount, channel address, locksroot
-        order = '>8s32s32s32s20s32s32s'
-        assert isinstance(self.channel_id, int)
-        assert isinstance(self.nonce, int)
-        assert isinstance(self.transferred_amount, int)
-        assert isinstance(self.locksroot, (bytes, str))
-        assert isinstance(self.extra_hash, (bytes, str))
-        assert is_address(self.contract_address)
-        return struct.pack(
-            order,
-            self.nonce.to_bytes(8, byteorder='big'),
-            self.transferred_amount.to_bytes(32, byteorder='big'),
-            decode_hex(self.locksroot),
-            self.channel_id.to_bytes(32, byteorder='big'),
-            decode_hex(self.contract_address),
-            self.chain_id.to_bytes(32, byteorder='big'),
-            decode_hex(self.extra_hash)
-        )
+        return Web3.soliditySha3([
+            'bytes32',
+            'uint256',
+            'bytes32',
+            'uint256',
+            'address',
+            'uint256'
+        ], [
+            self.balance_hash.encode(),
+            self.nonce,
+            self.additional_hash.encode(),
+            self.channel_identifier,
+            self.token_network_address,
+            self.chain_id
+        ])
 
     @classmethod
     def deserialize(cls, data):
         jsonschema.validate(data, BALANCE_PROOF_SCHEMA)
-        ret = cls(
-            data['channel_id'],
-            data['contract_address'],
+        result = cls(
+            data['channel_identifier'],
+            data['token_network_address'],
         )
-        ret.timestamp = data['timestamp']
-        return ret
+        result.timestamp = data['timestamp']
+        return result
 
-    contract_address = address_property('_contract')  # type: ignore
+    token_network_address = address_property('_contract')  # type: ignore
     json_schema = BALANCE_PROOF_SCHEMA
 
     @property
@@ -89,3 +116,34 @@ class BalanceProof(Message):
             decode_hex(self.signature),
             self.serialize_bin()
         )
+
+    def hash_balance_data(
+        self,
+        transferred_amount: int,
+        locked_amount: int,
+        locksroot: str
+    ) -> str:
+        return Web3.soliditySha3(
+            ['uint256', 'uint256', 'bytes32'],
+            [transferred_amount, locked_amount, locksroot]
+        )
+
+    # def sign_balance_proof(
+    #         privatekey,
+    #         token_network_address,
+    #         chain_identifier,
+    #         channel_identifier,
+    #         balance_hash,
+    #         nonce,
+    #         additional_hash,
+    #         v=27):
+    #     message_hash = hash_balance_proof(
+    #         token_network_address,
+    #         chain_identifier,
+    #         channel_identifier,
+    #         balance_hash,
+    #         nonce,
+    #         additional_hash
+    #     )
+    #
+    #     return sign(privatekey, message_hash, v)

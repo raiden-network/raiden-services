@@ -40,8 +40,8 @@ class MonitorRequest(Message):
         assert (nonce >= 1) and (nonce < UINT64_MAX)
         assert (transferred_amount >= 0) and (transferred_amount <= UINT256_MAX)
         assert (reward_amount >= 0) and (reward_amount <= UINT192_MAX)
-        assert len(decode_hex(locksroot)) == 32
-        assert len(decode_hex(extra_hash)) == 32
+        # assert len(decode_hex(locksroot)) == 32
+        # assert len(decode_hex(extra_hash)) == 32
         assert signature is None or len(decode_hex(signature)) == 65
         assert is_address(reward_sender_address)
         assert is_address(token_network_address)

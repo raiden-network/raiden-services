@@ -4,9 +4,18 @@ def make_properties_required(schema):
 
 BALANCE_PROOF_SCHEMA = {
     'type': 'object',
-    'required': [],
+    'required': [
+        'channel_identifier',
+        'nonce',
+        'chain_id',
+        'token_network_address',
+        'balance_hash',
+        'additional_hash',
+        'signature',
+        'timestamp'
+    ],
     'properties': {
-        'channel_id': {
+        'channel_identifier': {
             'type': 'integer',
         },
         'nonce': {
@@ -15,21 +24,32 @@ BALANCE_PROOF_SCHEMA = {
         'chain_id': {
             'type': 'integer',
         },
-        'contract_address': {
+        'token_network_address': {
             'type': 'string'
         },
-        'extra_hash': {
+        'balance_hash': {
             'type': 'string'
         },
-        'transferred_amount': {
-            'type': 'integer'
+        'additional_hash': {
+            'type': 'string'
+        },
+        'signature': {
+            'type': 'string'
         },
         'timestamp': {
             'type': 'number',
-        }
+        },
+        'transferred_amount': {
+            'type': 'integer',
+        },
+        'locked_amount': {
+            'type': 'integer',
+        },
+        'locksroot': {
+            'type': 'string'
+        },
     }
 }
-make_properties_required(BALANCE_PROOF_SCHEMA)
 
 MONITOR_REQUEST_SCHEMA = {
     'type': 'object',
