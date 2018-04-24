@@ -1,5 +1,10 @@
-import pytest
 import random
+from typing import Callable
+
+import pytest
+from sha3 import keccak_256
+from eth_utils import denoms, is_address, encode_hex
+
 from raiden_libs.utils import (
     private_key_to_address,
     UINT64_MAX,
@@ -8,12 +13,11 @@ from raiden_libs.utils import (
 )
 from raiden_libs.messages import BalanceProof, MonitorRequest
 from raiden_libs.utils.signing import sign_data
-from sha3 import keccak_256
-from eth_utils import denoms, is_address, encode_hex
+from raiden_libs.types import Address, ChannelIdentifier
 
 
 @pytest.fixture
-def get_random_privkey():
+def get_random_privkey() -> Callable:
     """Returns a random private key"""
     return lambda: "0x%064x" % random.randint(
         1,
@@ -22,7 +26,7 @@ def get_random_privkey():
 
 
 @pytest.fixture
-def get_random_address(get_random_privkey):
+def get_random_address(get_random_privkey) -> Callable:
     """Returns a random valid ethereum address"""
     def f():
         return private_key_to_address(get_random_privkey())
@@ -30,14 +34,14 @@ def get_random_address(get_random_privkey):
 
 
 @pytest.fixture
-def get_random_bp(get_random_address):
+def get_random_bp(get_random_address) -> Callable:
     """Returns a balance proof filled in with a random value"""
     def f(
-        channel_id: int = None,
-        contract_address: str = None
+        channel_id: ChannelIdentifier = None,
+        contract_address: Address = None
     ):
-        contract_address = contract_address or get_random_address()
-        channel_id = channel_id or random.randint(0, UINT64_MAX)
+        contract_address = contract_address or Address(get_random_address())
+        channel_id = channel_id or ChannelIdentifier(random.randint(0, UINT64_MAX))
         msg = BalanceProof(channel_id, contract_address)
         msg.nonce = random.randint(0, UINT64_MAX)
         msg.transferred_amount = random.randint(0, UINT64_MAX)  # actual maximum is uint256

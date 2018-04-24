@@ -6,8 +6,6 @@ import rlp
 from eth_utils import decode_hex, denoms
 from ethereum.transactions import Transaction
 from eth_tester import EthereumTester, PyEVMBackend
-
-
 from web3 import Web3
 from web3.providers.eth_tester import EthereumTesterProvider
 
@@ -15,6 +13,7 @@ from raiden_libs.utils import (
     address_from_signature,
     keccak256,
 )
+from raiden_libs.types import Address
 
 DEFAULT_TIMEOUT = 5
 DEFAULT_RETRY_INTERVAL = 3
@@ -52,7 +51,7 @@ def deploy_contract(revert_chain):
 @pytest.fixture(scope='session')
 def web3(
         faucet_private_key: str,
-        faucet_address: str,
+        faucet_address: Address,
         ethereum_tester
 ):
     """Returns an initialized Web3 instance"""

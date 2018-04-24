@@ -2,19 +2,20 @@ import jsonschema
 import time
 import struct
 
+from eth_utils import is_address, decode_hex
+
 from raiden_libs.messages.message import Message
 from raiden_libs.properties import address_property
 from raiden_libs.messages.json_schema import BALANCE_PROOF_SCHEMA
 from raiden_libs.utils import eth_verify
-
-from eth_utils import is_address, decode_hex
+from raiden_libs.types import Address, ChannelIdentifier
 
 
 class BalanceProof(Message):
     def __init__(
             self,
-            channel_id: int,
-            contract_address: str,
+            channel_id: ChannelIdentifier,
+            contract_address: Address,
             nonce: int = 0,
             locksroot: str = '0x%064x' % 0,
             transferred_amount: int = 0,

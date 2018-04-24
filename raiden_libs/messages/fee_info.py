@@ -9,14 +9,15 @@ from raiden_libs.messages.message import Message
 from raiden_libs.properties import address_property
 from raiden_libs.messages.json_schema import FEE_INFO_SCHEMA
 from raiden_libs.utils import eth_verify
+from raiden_libs.types import Address, ChannelIdentifier
 
 
 class FeeInfo(Message):
     """ A message to update the fee. It is sent from a raiden node to the PFS. """
     def __init__(
         self,
-        token_network_address: str,
-        channel_identifier: int,
+        token_network_address: Address,
+        channel_identifier: ChannelIdentifier,
         chain_id: int = 1,
         nonce: int = 0,
         percentage_fee: float = 0.0,

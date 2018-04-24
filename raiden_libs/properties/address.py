@@ -1,5 +1,7 @@
 from eth_utils import is_checksum_address
 
+from raiden_libs.types import Address
+
 
 class address_property(object):
     def __init__(self, private_attribute_name, default=0):
@@ -17,4 +19,4 @@ class address_property(object):
         if not is_checksum_address(value):
             raise ValueError("%s requires a checksummed ethereum address" %
                              (self.__class__.__name__))
-        setattr(obj, self.private_attribute_name, value)
+        setattr(obj, self.private_attribute_name, Address(value))

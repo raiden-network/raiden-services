@@ -11,6 +11,7 @@ from raiden_contracts.contract_manager import get_event_from_abi
 
 from raiden_libs.utils import private_key_to_address, make_filter
 from raiden_libs.messages import BalanceProof, MonitorRequest, FeeInfo
+from raiden_libs.types import Address
 
 
 log = logging.getLogger(__name__)
@@ -63,7 +64,7 @@ class MockRaidenNode:
         self.web3 = self.contract.web3
 
     @sync_channels
-    def open_channel(self, partner_address: str) -> int:
+    def open_channel(self, partner_address: Address) -> int:
         """Opens channel with a single partner
         Parameters:
             partner_address - a valid ethereum address of the partner
@@ -148,7 +149,7 @@ class MockRaidenNode:
         }
 
     @assert_channel_existence
-    def deposit_to_channel(self, partner_address: str, amount: int) -> str:
+    def deposit_to_channel(self, partner_address: Address, amount: int) -> str:
         """Deposits specified amount to an open channel
         Parameters:
             partner_address - address of a partner the client has open channel with
@@ -280,7 +281,7 @@ class MockRaidenNode:
         return sig[:-1] + chr(sig[-1] + 27).encode()
 
     @assert_channel_existence
-    def get_channel_participant_info(self, partner_address: str) -> Dict:
+    def get_channel_participant_info(self, partner_address: Address) -> Dict:
         """Return an info about channel participant, serialized as a dict"""
         channel_id = self.partner_to_channel_id[partner_address]
         channel_info = self.contract.functions.getChannelParticipantInfo(

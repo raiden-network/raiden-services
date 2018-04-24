@@ -1,11 +1,14 @@
+import struct
+
+import jsonschema
+from eth_utils import is_address, to_checksum_address, decode_hex
+
 from raiden_libs.messages.message import Message
 from raiden_libs.messages.balance_proof import BalanceProof
 from raiden_libs.properties import address_property
-from eth_utils import is_address, to_checksum_address, decode_hex
 from raiden_libs.messages.json_schema import MONITOR_REQUEST_SCHEMA
 from raiden_libs.utils import UINT64_MAX, UINT192_MAX, UINT256_MAX, eth_verify
-import struct
-import jsonschema
+from raiden_libs.types import Address, ChannelIdentifier
 
 
 class MonitorRequest(Message):
@@ -19,18 +22,18 @@ class MonitorRequest(Message):
 
     def __init__(
         self,
-        channel_identifier: int,        # uint256
+        channel_identifier: ChannelIdentifier,        # uint256
         nonce: int,                     # uint64
         transferred_amount: int,        # uint256
         locksroot: str = None,               # str -> bytes 32
         extra_hash: bytes = None,         # bytes 32
         signature: bytes = None,          # bytes
-        reward_sender_address: bytes = None,   # address
+        reward_sender_address: Address = None,   # address
         reward_proof_signature: bytes = None,  # bytes
         reward_amount: int = None,             # uint192
-        token_network_address: str = None,     # address
+        token_network_address: Address = None,     # address
         chain_id: int = None,                  # uint256 (ethereum chain id)
-        monitor_address: str = None
+        monitor_address: Address = None
     ) -> None:
         # TODO: how does server know which chain should be used?
         assert (channel_identifier > 0) and (channel_identifier <= UINT256_MAX)
