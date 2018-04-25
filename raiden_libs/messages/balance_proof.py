@@ -1,5 +1,4 @@
 import jsonschema
-import time
 
 from web3 import Web3
 from eth_utils import is_address, decode_hex
@@ -57,8 +56,6 @@ class BalanceProof(Message):
         self.locked_amount = locked_amount
         self.locksroot = locksroot
 
-        self.timestamp = time.time()
-
     def serialize_data(self) -> dict:
         result = {
             'channel_identifier': self.channel_identifier,
@@ -70,7 +67,6 @@ class BalanceProof(Message):
             'chain_id': self.chain_id,
             'signature': self.signature,
 
-            'timestamp': self.timestamp,
         }
 
         if self.transferred_amount and self.locked_amount and self.locksroot:
@@ -103,8 +99,12 @@ class BalanceProof(Message):
         result = cls(
             data['channel_identifier'],
             data['token_network_address'],
+            balance_hash=data['balance_hash'],
+            nonce=data['nonce'],
+            additional_hash=data['additional_hash'],
+            chain_id=data['chain_id'],
+            signature=data['signature']
         )
-        result.timestamp = data['timestamp']
         return result
 
     token_network_address = address_property('_contract')  # type: ignore

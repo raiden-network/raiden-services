@@ -12,7 +12,6 @@ BALANCE_PROOF_SCHEMA = {
         'balance_hash',
         'additional_hash',
         'signature',
-        'timestamp'
     ],
     'properties': {
         'channel_identifier': {
@@ -36,9 +35,6 @@ BALANCE_PROOF_SCHEMA = {
         'signature': {
             'type': 'string'
         },
-        'timestamp': {
-            'type': 'number',
-        },
         'transferred_amount': {
             'type': 'integer',
         },
@@ -55,26 +51,6 @@ MONITOR_REQUEST_SCHEMA = {
     'type': 'object',
     'required': [],
     'properties': {
-        'channel_identifier': {
-            'type': 'integer',
-            'minimum': 1
-        },
-        'nonce': {
-            'type': 'integer',
-            'minimum': 0
-        },
-        'transferred_amount': {
-            'type': 'integer'
-        },
-        'locksroot': {
-            'type': 'string'
-        },
-        'extra_hash': {
-            'type': 'string'
-        },
-        'balance_proof_signature': {
-            'type': 'string'
-        },
         'reward_sender_address': {
             'type': 'string'
         },
@@ -84,14 +60,11 @@ MONITOR_REQUEST_SCHEMA = {
         'reward_amount': {
             'type': 'integer',
         },
-        'token_network_address': {
-            'type': 'string',
-        },
         'monitor_address': {
             'type': 'string',
         },
-        'chain_id': {
-            'type': 'integer',
+        'balance_proof': {
+            'type': 'object',
         }
     }
 }

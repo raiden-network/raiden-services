@@ -1,14 +1,13 @@
-import struct
-
-import jsonschema
 from eth_utils import is_address, to_checksum_address, decode_hex
 
 from raiden_libs.messages.message import Message
 from raiden_libs.messages.balance_proof import BalanceProof
 from raiden_libs.properties import address_property
 from raiden_libs.messages.json_schema import MONITOR_REQUEST_SCHEMA
-from raiden_libs.utils import UINT64_MAX, UINT192_MAX, UINT256_MAX, eth_verify
-from raiden_libs.types import Address, ChannelIdentifier
+from raiden_libs.types import Address
+from raiden_libs.utils import UINT192_MAX, eth_verify
+import jsonschema
+from web3 import Web3
 
 
 class MonitorRequest(Message):
@@ -22,95 +21,70 @@ class MonitorRequest(Message):
 
     def __init__(
         self,
-        channel_identifier: ChannelIdentifier,        # uint256
-        nonce: int,                     # uint64
-        transferred_amount: int,        # uint256
-        locksroot: str = None,               # str -> bytes 32
-        extra_hash: bytes = None,         # bytes 32
-        signature: bytes = None,          # bytes
+        balance_proof: BalanceProof,
+        non_closing_signature: str = '',
         reward_sender_address: Address = None,   # address
         reward_proof_signature: bytes = None,  # bytes
         reward_amount: int = None,             # uint192
-        token_network_address: Address = None,     # address
-        chain_id: int = None,                  # uint256 (ethereum chain id)
-        monitor_address: Address = None
+        monitor_address: Address = ''
     ) -> None:
-        # TODO: how does server know which chain should be used?
-        assert (channel_identifier > 0) and (channel_identifier <= UINT256_MAX)
-        assert (nonce >= 1) and (nonce < UINT64_MAX)
-        assert (transferred_amount >= 0) and (transferred_amount <= UINT256_MAX)
+        assert non_closing_signature is None or len(decode_hex(non_closing_signature)) == 65
         assert (reward_amount >= 0) and (reward_amount <= UINT192_MAX)
-        # assert len(decode_hex(locksroot)) == 32
-        # assert len(decode_hex(extra_hash)) == 32
-        assert signature is None or len(decode_hex(signature)) == 65
+        # todo: validate reward proof signature
         assert is_address(reward_sender_address)
-        assert is_address(token_network_address)
         assert is_address(monitor_address)
-        assert chain_id > 0
+        assert isinstance(balance_proof, BalanceProof)
 
-        self.channel_identifier = channel_identifier
-        self.nonce = nonce
-        self.transferred_amount = transferred_amount
-        self.locksroot = locksroot
-        self.extra_hash = extra_hash
-        self.balance_proof_signature = signature
+        self._balance_proof = balance_proof
+        self.non_closing_signature = non_closing_signature
         self.reward_sender_address = to_checksum_address(reward_sender_address)
         self.reward_proof_signature = reward_proof_signature
-        self.token_network_address = to_checksum_address(token_network_address)
         self.reward_amount = reward_amount
-        self.chain_id = chain_id
         self.monitor_address = monitor_address
 
     def serialize_data(self):
         msg = self.__dict__.copy()
+        msg.pop('_balance_proof')
         msg['reward_sender_address'] = msg.pop('_reward_sender_address')
-        msg['token_network_address'] = msg.pop('_token_network_address')
         msg['monitor_address'] = msg.pop('_monitor_address')
+        msg['balance_proof'] = self.balance_proof.serialize_data()
         return msg
 
     def serialize_reward_proof(self):
         """Return reward proof data serialized to binary"""
-        order = '>32s24s20s32s8s20s'
-        return struct.pack(
-            order,
-            self.channel_identifier.to_bytes(32, byteorder='big'),
+        return Web3.soliditySha3([
+            'uint256',
+            'uint192',
+            'address',
+            'uint256',
+            'uint8',
+            'address'
+        ], [
+            self.balance_proof.channel_identifier.to_bytes(32, byteorder='big'),
             self.reward_amount.to_bytes(24, byteorder='big'),
-            decode_hex(self.token_network_address),
-            self.chain_id.to_bytes(32, byteorder='big'),
-            self.nonce.to_bytes(8, byteorder='big'),
+            decode_hex(self.balance_proof.token_network_address),
+            self.balance_proof.chain_id.to_bytes(32, byteorder='big'),
+            self.balance_proof.nonce.to_bytes(8, byteorder='big'),
             decode_hex(self.monitor_address)
-        )
+        ])
 
     @classmethod
     def deserialize(cls, data):
         jsonschema.validate(data, MONITOR_REQUEST_SCHEMA)
-        ret = cls(
-            data['channel_identifier'],
-            data['nonce'],
-            data['transferred_amount'],
-            data['locksroot'],
-            data['extra_hash'],
-            data['balance_proof_signature'],
+        balance_proof = BalanceProof.deserialize(data['balance_proof'])
+        result = cls(
+            balance_proof,
+            data['non_closing_signature'],
             data['reward_sender_address'],
             data['reward_proof_signature'],
             data['reward_amount'],
-            data['token_network_address'],
-            data['chain_id'],
             data['monitor_address']
         )
-        return ret
+        return result
 
-    def get_balance_proof(self):
-        return BalanceProof(
-            self.channel_identifier,
-            self.token_network_address,
-            self.nonce,
-            self.locksroot,
-            self.transferred_amount,
-            self.extra_hash,
-            self.chain_id,
-            self.balance_proof_signature
-        )
+    @property
+    def balance_proof(self):
+        return self._balance_proof
 
     @property
     def reward_proof_signer(self) -> str:

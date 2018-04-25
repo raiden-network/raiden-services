@@ -1,7 +1,5 @@
-from eth_utils import is_checksum_address, remove_0x_prefix, is_same_address, encode_hex
-from coincurve import PrivateKey
+from eth_utils import is_checksum_address, is_same_address, encode_hex
 from functools import wraps
-from sha3 import keccak_256
 from web3.utils.events import get_event_data
 from web3 import Web3
 import logging
@@ -9,7 +7,7 @@ from typing import Dict
 
 from raiden_contracts.contract_manager import get_event_from_abi
 
-from raiden_libs.utils import private_key_to_address, make_filter
+from raiden_libs.utils import private_key_to_address, make_filter, sign_data
 from raiden_libs.messages import BalanceProof, MonitorRequest, FeeInfo
 from raiden_libs.types import Address
 
@@ -275,10 +273,7 @@ class MockRaidenNode:
 
     @staticmethod
     def sign_data(data, privkey):
-        pk = PrivateKey.from_hex(remove_0x_prefix(privkey))
-        sha3 = lambda x: keccak_256(x).digest()
-        sig = pk.sign_recoverable(data, hasher=sha3)
-        return sig[:-1] + chr(sig[-1] + 27).encode()
+        return sign_data(data, privkey)
 
     @assert_channel_existence
     def get_channel_participant_info(self, partner_address: Address) -> Dict:
