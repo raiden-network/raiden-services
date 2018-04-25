@@ -1,5 +1,5 @@
 from collections import namedtuple
-from typing import Iterable
+from typing import Iterable, Tuple
 from itertools import zip_longest
 from eth_utils import keccak
 
@@ -7,6 +7,17 @@ from eth_utils import keccak
 EMPTY_MERKLE_ROOT = b'\x00' * 32
 
 MerkleTree = namedtuple('MerkleTree', ['layers'])
+
+
+def split_in_pairs(arg: Iterable) -> Iterable[Tuple]:
+    """ Split given iterable in pairs [a, b, c, d, e] -> [(a, b), (c, d), (e, None)]"""
+    # We are using zip_longest with one clever hack:
+    # https://docs.python.org/3/library/itertools.html#itertools.zip_longest
+    # We create an iterator out of the list and then pass the same iterator to
+    # the function two times. Thus the function consumes a different element
+    # from the iterator each time and produces the desired result.
+    iterator = iter(arg)
+    return zip_longest(iterator, iterator)
 
 
 def _hash_pair(first: bytes, second: bytes) -> bytes:
@@ -39,9 +50,7 @@ def compute_merkle_tree(items: Iterable[bytes]) -> MerkleTree:
     tree = [leaves]
     layer = leaves
     while len(layer) > 1:
-        # [a, b, c, d, e] -> [(a, b), (c, d), (e, None)]
-        iterator = iter(layer)
-        paired_items = zip_longest(iterator, iterator)
+        paired_items = split_in_pairs(layer)
 
         layer = [_hash_pair(a, b) for a, b in paired_items]
         tree.append(layer)
