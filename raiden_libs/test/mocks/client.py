@@ -284,7 +284,7 @@ class MockRaidenNode:
             self.address,
             partner_address
         ).call()
-        return_fields = ['initialized', 'deposit', 'transferred_amount', 'nonce', 'locksroot']
+        return_fields = ['deposit', 'initialized', 'is_the_closer', 'balance_hash_or_locksroot', 'nonce_or_locked_amount']
         assert len(return_fields) == len(channel_info)
         return {
             field: channel_info[return_fields.index(field)]
