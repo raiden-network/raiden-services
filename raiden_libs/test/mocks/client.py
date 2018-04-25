@@ -155,7 +155,7 @@ class MockRaidenNode:
         Return:
             transaction hash of the transaction calling `TokenNetwork::setDeposit()` method
         """
-        channel_info = self.get_channel_participant_info(partner_address)
+        channel_info = self.get_our_channel_state(partner_address)
         channel_id = self.partner_to_channel_id[partner_address]
         self.token_contract.functions.approve(
             self.contract.address,
@@ -276,15 +276,28 @@ class MockRaidenNode:
         return sign_data(data, privkey)
 
     @assert_channel_existence
-    def get_channel_participant_info(self, partner_address: Address) -> Dict:
+    def get_partner_channel_state(self, partner_address: Address) -> Dict:
         """Return an info about channel participant, serialized as a dict"""
         channel_id = self.partner_to_channel_id[partner_address]
+        return self.get_channel_info(channel_id, partner_address, self.address)
+
+    @assert_channel_existence
+    def get_our_channel_state(self, partner_address: Address) -> Dict:
+        """Return an info our channel state, serialized as a dict"""
+        channel_id = self.partner_to_channel_id[partner_address]
+        return self.get_channel_info(channel_id, partner_address, self.address)
+
+    def get_channel_info(self, channel_id, participant, partner) -> Dict:
         channel_info = self.contract.functions.getChannelParticipantInfo(
             channel_id,
-            self.address,
-            partner_address
+            participant,
+            partner
         ).call()
-        return_fields = ['deposit', 'initialized', 'is_the_closer', 'balance_hash_or_locksroot', 'nonce_or_locked_amount']
+
+        return_fields = [
+            'deposit', 'initialized', 'is_the_closer',
+            'balance_hash_or_locksroot', 'nonce_or_locked_amount'
+        ]
         assert len(return_fields) == len(channel_info)
         return {
             field: channel_info[return_fields.index(field)]
