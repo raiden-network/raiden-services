@@ -97,9 +97,24 @@ def test_fee_info():
         percentage_fee='0.1',
         signature='signature'
     )
+    assert message == Message.deserialize(message).serialize_data()
+    message['message_type'] = 'FeeInfo'
+    assert isinstance(Message.deserialize(message), FeeInfo)
 
-    deserialized_message = Message.deserialize(message)
-    assert isinstance(deserialized_message, FeeInfo)
+
+def test_request_paths():
+    message: Dict = dict(
+        message_type='PathsRequest',
+        token_network_address='0x82dd0e0eA3E84D00Cc119c46Ee22060939E5D1FC',
+        target_address='0x82dd0e0eA3E84D00Cc119c46Ee22060939E5D1FC',
+        value=1000,
+        num_paths=1,
+        chain_id=1,
+        nonce=1,
+        signature='signature'
+    )
+
+    assert message == Message.deserialize(message).serialize_data()
 
 
 def test_deserialize_with_required_type():
@@ -116,7 +131,7 @@ def test_deserialize_with_required_type():
     deserialized_message = Message.deserialize(message, FeeInfo)
     assert isinstance(deserialized_message, FeeInfo)
 
-    # during deseriaisation the `message_type`is removed, add it back
+    # during deserialization the `message_type` is removed, add it back
     message['message_type'] = 'FeeInfo'
     with pytest.raises(MessageTypeError):
         Message.deserialize(message, BalanceProof)

@@ -5,10 +5,12 @@ def deserialize(message: Dict):
     from .balance_proof import BalanceProof
     from .monitor_request import MonitorRequest
     from .fee_info import FeeInfo
+    from .paths_request import PathsRequest
     type_to_class = {
         'BalanceProof': BalanceProof,
         'MonitorRequest': MonitorRequest,
         'FeeInfo': FeeInfo,
+        'PathsRequest': PathsRequest
     }
 
     message_type = message.pop('message_type')
