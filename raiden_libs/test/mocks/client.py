@@ -272,8 +272,8 @@ class MockRaidenNode:
         ).transact({'from': self.address})
 
     @staticmethod
-    def sign_data(data, privkey):
-        return sign_data(data, privkey)
+    def sign_data(data: bytes, privkey: str):
+        return sign_data(privkey, data)
 
     @assert_channel_existence
     def get_partner_channel_state(self, partner_address: Address) -> Dict:
