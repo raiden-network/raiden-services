@@ -126,7 +126,7 @@ class MockRaidenNode:
             return address1
         assert False
 
-    def sync_open_channels(self) -> Dict[int, Dict]:
+    def sync_open_channels(self) -> Dict[Address, Dict]:
         """Parses logs and update internal channel state to include all already open channels."""
         entries = get_event_logs(self.web3, self.contract.abi, 'ChannelOpened')
         open_channels = {
@@ -253,20 +253,21 @@ class MockRaidenNode:
         fi.signature = encode_hex(sign_data(self.privkey, fi.serialize_bin()))
         return fi
 
-    @assert_channel_existence
-    def update_transfer(self, partner_address: Address, balance_proof: BalanceProof):
-        """Given a valid signed balance proof, this method calls `updateTransfer`
-        for an open channel
-        """
-        channel_id = self.partner_to_channel_id[partner_address]
-        self.contract.functions.updateTransfer(
-            channel_id,
-            balance_proof.nonce,
-            balance_proof.transferred_amount,
-            balance_proof.locksroot,
-            balance_proof.extra_hash,
-            balance_proof.signature
-        ).transact({'from': self.address})
+    # TODO: has to be updated for the new smart contracts
+    # @assert_channel_existence
+    # def update_transfer(self, partner_address: Address, balance_proof: BalanceProof):
+    #     """Given a valid signed balance proof, this method calls `updateTransfer`
+    #     for an open channel
+    #     """
+    #     channel_id = self.partner_to_channel_id[partner_address]
+    #     self.contract.functions.updateTransfer(
+    #         channel_id,
+    #         balance_proof.nonce,
+    #         balance_proof.transferred_amount,
+    #         balance_proof.locksroot,
+    #         balance_proof.extra_hash,
+    #         balance_proof.signature
+    #     ).transact({'from': self.address})
 
     @assert_channel_existence
     def get_partner_channel_info(self, partner_address: Address) -> Dict:
