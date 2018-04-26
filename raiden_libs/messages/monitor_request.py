@@ -21,7 +21,7 @@ class MonitorRequest(Message):
     def __init__(
         self,
         balance_proof: BalanceProof,
-        non_closing_signature: str = '',
+        non_closing_signature: str = None,
         reward_sender_address: Address = None,   # address
         reward_proof_signature: bytes = None,  # bytes
         reward_amount: int = None,             # uint192
