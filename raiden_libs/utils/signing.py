@@ -17,6 +17,8 @@ from eth_utils import (
     is_0x_prefixed
 )
 
+from raiden_libs.types import Address
+
 
 def pack(*args) -> bytes:
     """
@@ -83,7 +85,7 @@ def sign_data(privkey: str, msg: bytes, v=27):
     return sig[:-1] + chr(sig[-1] + v).encode()
 
 
-def public_key_to_address(public_key: Union[PublicKey, bytes]) -> str:
+def public_key_to_address(public_key: Union[PublicKey, bytes]) -> Address:
     """ Converts a public key to an Ethereum address. """
     if isinstance(public_key, PublicKey):
         public_key = public_key.format(compressed=False)
@@ -91,14 +93,14 @@ def public_key_to_address(public_key: Union[PublicKey, bytes]) -> str:
     return encode_hex(keccak(public_key[1:])[-20:])
 
 
-def private_key_to_address(private_key: str) -> str:
+def private_key_to_address(private_key: str) -> Address:
     """ Converts a private key to an Ethereum address. """
     return to_checksum_address(
         public_key_to_address(PrivateKey.from_hex(remove_0x_prefix(private_key)).public_key)
     )
 
 
-def address_from_signature(sig: bytes, msg: bytes):
+def address_from_signature(sig: bytes, msg: bytes) -> Address:
     """Convert an EC signature into an ethereum address"""
     assert len(sig) == 65
     # Support Ethereum's EC v value of 27 and EIP 155 values of > 35.
@@ -112,7 +114,7 @@ def address_from_signature(sig: bytes, msg: bytes):
     return public_key_to_address(receiver_pubkey)
 
 
-def eth_verify(sig: bytes, msg: str) -> str:
+def eth_verify(sig: bytes, msg: str) -> Address:
     return address_from_signature(sig, keccak256(msg))
 
 
