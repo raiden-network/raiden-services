@@ -37,20 +37,25 @@ def get_random_address(get_random_privkey) -> Callable:
 def get_random_bp(get_random_address) -> Callable:
     """Returns a balance proof filled in with a random value"""
     def f(
-        channel_id: ChannelIdentifier = None,
+        channel_identifier: ChannelIdentifier = None,
         contract_address: Address = None
     ):
-        contract_address = contract_address or Address(get_random_address())
-        channel_id = channel_id or ChannelIdentifier(random.randint(0, UINT64_MAX))
-        msg = BalanceProof(channel_id, contract_address)
-        msg.nonce = random.randint(0, UINT64_MAX)
-        msg.transferred_amount = random.randint(0, UINT64_MAX)  # actual maximum is uint256
-        # locksroot and extra_hash are 32bytes each
-        hash_data = '%d' % random.randint(0, UINT64_MAX)
-        msg.locksroot = keccak_256(hash_data.encode()).hexdigest()
-        hash_data = '%d' % random.randint(0, UINT64_MAX)
-        msg.extra_hash = keccak_256(hash_data.encode()).hexdigest()
-        return msg
+        contract_address = contract_address or get_random_address()
+        channel_identifier = channel_identifier or ChannelIdentifier(random.randint(0, UINT64_MAX))
+
+        balance_hash_data = '%d' % random.randint(0, UINT64_MAX)
+        additional_hash_data = '%d' % random.randint(0, UINT64_MAX)
+
+        balance_proof = BalanceProof(
+            channel_identifier,
+            contract_address,
+            balance_hash=keccak_256(balance_hash_data.encode()).hexdigest(),
+            nonce=random.randint(0, UINT64_MAX),
+            additional_hash=keccak_256(additional_hash_data.encode()).hexdigest(),
+            chain_id=1,
+        )
+        return balance_proof
+
     return f
 
 

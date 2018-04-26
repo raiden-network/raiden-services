@@ -5,6 +5,9 @@ from sha3 import keccak_256
 
 from coincurve import PrivateKey, PublicKey
 from ethereum.transactions import Transaction
+from web3.utils.abi import map_abi_data
+from web3.utils.normalizers import abi_ens_resolver
+from web3.utils.encoding import hex_encode_abi_type
 from eth_utils import (
     to_checksum_address,
     encode_hex,
@@ -13,6 +16,8 @@ from eth_utils import (
     remove_0x_prefix,
     is_0x_prefixed
 )
+
+from raiden_libs.types import Address
 
 
 def pack(*args) -> bytes:
@@ -80,7 +85,7 @@ def sign_data(privkey: str, msg: bytes, v=27):
     return sig[:-1] + chr(sig[-1] + v).encode()
 
 
-def public_key_to_address(public_key: Union[PublicKey, bytes]) -> str:
+def public_key_to_address(public_key: Union[PublicKey, bytes]) -> Address:
     """ Converts a public key to an Ethereum address. """
     if isinstance(public_key, PublicKey):
         public_key = public_key.format(compressed=False)
@@ -88,14 +93,14 @@ def public_key_to_address(public_key: Union[PublicKey, bytes]) -> str:
     return encode_hex(keccak(public_key[1:])[-20:])
 
 
-def private_key_to_address(private_key: str) -> str:
+def private_key_to_address(private_key: str) -> Address:
     """ Converts a private key to an Ethereum address. """
     return to_checksum_address(
         public_key_to_address(PrivateKey.from_hex(remove_0x_prefix(private_key)).public_key)
     )
 
 
-def address_from_signature(sig: bytes, msg: bytes):
+def address_from_signature(sig: bytes, msg: bytes) -> Address:
     """Convert an EC signature into an ethereum address"""
     assert len(sig) == 65
     # Support Ethereum's EC v value of 27 and EIP 155 values of > 35.
@@ -109,7 +114,7 @@ def address_from_signature(sig: bytes, msg: bytes):
     return public_key_to_address(receiver_pubkey)
 
 
-def eth_verify(sig: bytes, msg: str) -> str:
+def eth_verify(sig: bytes, msg: str) -> Address:
     return address_from_signature(sig, keccak256(msg))
 
 
@@ -121,3 +126,20 @@ def sign_transaction(tx: Transaction, privkey: str, network_id: int):
     tx.v = v
     tx.r = int.from_bytes(r, byteorder='big')
     tx.s = int.from_bytes(s, byteorder='big')
+
+
+def pack_data(abi_types, values) -> bytes:
+    """Normalize data and pack them into a byte array"""
+    if len(abi_types) != len(values):
+        raise ValueError(
+            "Length mismatch between provided abi types and values.  Got "
+            "{0} types and {1} values.".format(len(abi_types), len(values))
+        )
+
+    normalized_values = map_abi_data([abi_ens_resolver(None)], abi_types, values)
+
+    return decode_hex(''.join(
+        remove_0x_prefix(hex_encode_abi_type(abi_type, value))
+        for abi_type, value
+        in zip(abi_types, normalized_values)
+    ))

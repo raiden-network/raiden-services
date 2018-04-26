@@ -22,9 +22,8 @@ def generate_raiden_client(
     def f():
         pk = get_random_privkey()
         ethereum_tester.add_account(pk)
-        c = MockRaidenNode(pk, standard_token_network_contract)
+        c = MockRaidenNode(pk, standard_token_network_contract, standard_token_contract)
         c.client_registry = client_registry
-        c.token_contract = standard_token_contract
         client_registry[c.address] = c
         send_funds(c.address)
         return c
