@@ -14,4 +14,4 @@ pytest
 pytest-runner
 pdbpp
 
-git+https://github.com/loredanacirstea/raiden-contracts.git@update-privacy
+git+https://github.com/raiden-network/raiden-contracts.git
