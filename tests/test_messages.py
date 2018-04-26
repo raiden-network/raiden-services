@@ -75,7 +75,7 @@ def test_monitor_request(get_random_bp, get_random_privkey, get_random_address):
         reward_amount=1,
         monitor_address=get_random_address()
     )
-    import pudb;pudb.set_trace()
+
     serialized = monitor_request.serialize_data()
     monitor_request_verify = MonitorRequest.deserialize(serialized)
     balance_proof_verify = monitor_request_verify.balance_proof
