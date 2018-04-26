@@ -2,7 +2,7 @@ import logging
 from typing import Dict
 from functools import wraps
 
-from eth_utils import is_checksum_address, is_same_address, encode_hex
+from eth_utils import is_checksum_address, is_same_address, encode_hex, decode_hex
 from web3.utils.events import get_event_data
 from web3 import Web3
 from web3.contract import Contract
@@ -188,13 +188,28 @@ class MockRaidenNode:
         ).transact({'from': self.address})
 
     @assert_channel_existence
-    def settle_channel(self, partner_address: Address):
+    def settle_channel(
+        self,
+        partner_address: Address,
+        transferred=tuple(),
+        locked=tuple(),
+        locksroot=tuple()
+    ):
         """Settles a closed channel. Settling requires that the challenge period is over"""
+        assert len(transferred) == 2
+        assert len(locked) == 2
+        assert len(locksroot) == 2
         channel_id = self.partner_to_channel_id[partner_address]
         self.contract.functions.settleChannel(
             channel_id,
             self.address,
-            partner_address
+            transferred[0],
+            locked[0],
+            locksroot[0],
+            partner_address,
+            transferred[1],
+            locked[1],
+            locksroot[1]
         ).transact({'from': self.address})
 
     @assert_channel_existence
@@ -253,21 +268,22 @@ class MockRaidenNode:
         fi.signature = encode_hex(sign_data(self.privkey, fi.serialize_bin()))
         return fi
 
-    # TODO: has to be updated for the new smart contracts
-    # @assert_channel_existence
-    # def update_transfer(self, partner_address: Address, balance_proof: BalanceProof):
-    #     """Given a valid signed balance proof, this method calls `updateTransfer`
-    #     for an open channel
-    #     """
-    #     channel_id = self.partner_to_channel_id[partner_address]
-    #     self.contract.functions.updateTransfer(
-    #         channel_id,
-    #         balance_proof.nonce,
-    #         balance_proof.transferred_amount,
-    #         balance_proof.locksroot,
-    #         balance_proof.extra_hash,
-    #         balance_proof.signature
-    #     ).transact({'from': self.address})
+    @assert_channel_existence
+    def update_transfer(self, partner_address: Address, balance_proof: BalanceProof):
+        """Given a valid signed balance proof, this method calls `updateTransfer`
+        for an open channel
+        """
+        channel_id = self.partner_to_channel_id[partner_address]
+        non_closing_data = balance_proof.serialize_bin() + decode_hex(balance_proof.signature)
+        non_closing_signature = encode_hex(sign_data(self.privkey, non_closing_data))
+        self.contract.functions.updateNonClosingBalanceProof(
+            channel_id,
+            balance_proof.balance_hash,
+            balance_proof.nonce,
+            balance_proof.additional_hash,
+            balance_proof.signature,
+            non_closing_signature
+        ).transact({'from': self.address})
 
     @assert_channel_existence
     def get_partner_channel_info(self, partner_address: Address) -> Dict:
