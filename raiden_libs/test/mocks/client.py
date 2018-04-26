@@ -155,7 +155,7 @@ class MockRaidenNode:
         Return:
             transaction hash of the transaction calling `TokenNetwork::setDeposit()` method
         """
-        channel_info = self.get_our_channel_state(partner_address)
+        channel_info = self.get_own_channel_info(partner_address)
         channel_id = self.partner_to_channel_id[partner_address]
         self.token_contract.functions.approve(
             self.contract.address,
@@ -163,7 +163,7 @@ class MockRaidenNode:
         ).transact({'from': self.address})
         return self.contract.functions.setDeposit(
             channel_id,
-            partner_address,
+            self.address,
             amount + channel_info['deposit']
         ).transact({'from': self.address})
 
@@ -174,10 +174,9 @@ class MockRaidenNode:
         channel_id = self.partner_to_channel_id[partner_address]
         self.contract.functions.closeChannel(
             channel_id,
+            balance_proof.balance_hash,
             balance_proof.nonce,
-            balance_proof.transferred_amount,
-            balance_proof.locksroot,
-            balance_proof.extra_hash,
+            balance_proof.additional_hash,
             balance_proof.signature
         ).transact({'from': self.address})
 
@@ -204,7 +203,7 @@ class MockRaidenNode:
             self.contract.address,
             **kwargs
         )
-        bp.signature = encode_hex(self.sign_data(bp.serialize_bin(), self.privkey))
+        bp.signature = encode_hex(sign_data(self.privkey, bp.serialize_bin()))
         return bp
 
     @assert_channel_existence
@@ -220,22 +219,16 @@ class MockRaidenNode:
 
         monitor_request = MonitorRequest(
             channel_id,
-            balance_proof.nonce,
-            balance_proof.transferred_amount,
-            balance_proof.locksroot or '0x%064x' % 0,
-            balance_proof.additional_hash,
-            balance_proof.signature,
+            balance_proof,
             reward_sender_address=self.address,
             reward_proof_signature=None,
             reward_amount=reward_amount,
-            token_network_address=self.contract.address,
-            chain_id=int(self.web3.version.network),
             monitor_address=monitor_address
         )
         monitor_request.reward_proof_signature = encode_hex(
-            self.sign_data(
-                monitor_request.serialize_reward_proof(),
-                self.privkey
+            sign_data(
+                self.privkey,
+                monitor_request.serialize_reward_proof()
             )
         )
         return monitor_request
@@ -253,7 +246,7 @@ class MockRaidenNode:
             channel_id,
             **kwargs
         )
-        fi.signature = encode_hex(self.sign_data(fi.serialize_bin(), self.privkey))
+        fi.signature = encode_hex(sign_data(self.privkey, fi.serialize_bin()))
         return fi
 
     @assert_channel_existence
@@ -271,32 +264,35 @@ class MockRaidenNode:
             balance_proof.signature
         ).transact({'from': self.address})
 
-    @staticmethod
-    def sign_data(data: bytes, privkey: str):
-        return sign_data(privkey, data)
+    @assert_channel_existence
+    def get_partner_channel_info(self, partner_address: Address) -> Dict:
+        """Return a state of partner's side of the channel, serialized as a dict"""
+        channel_identifier = self.partner_to_channel_id[partner_address]
+        return self.get_channel_participant_info(channel_identifier, partner_address, self.address)
 
     @assert_channel_existence
-    def get_partner_channel_state(self, partner_address: Address) -> Dict:
-        """Return an info about channel participant, serialized as a dict"""
-        channel_id = self.partner_to_channel_id[partner_address]
-        return self.get_channel_info(channel_id, partner_address, self.address)
+    def get_own_channel_info(self, partner_address: Address) -> Dict:
+        """Return a state of our own side of the channel, serialized as a dict"""
+        channel_identifier = self.partner_to_channel_id[partner_address]
+        return self.get_channel_participant_info(channel_identifier, self.address, partner_address)
 
-    @assert_channel_existence
-    def get_our_channel_state(self, partner_address: Address) -> Dict:
-        """Return an info our channel state, serialized as a dict"""
-        channel_id = self.partner_to_channel_id[partner_address]
-        return self.get_channel_info(channel_id, partner_address, self.address)
-
-    def get_channel_info(self, channel_id, participant, partner) -> Dict:
+    def get_channel_participant_info(
+        self,
+        channel_identifier,
+        participant_address,
+        partner_address
+    ):
         channel_info = self.contract.functions.getChannelParticipantInfo(
-            channel_id,
-            participant,
-            partner
+            channel_identifier,
+            participant_address,
+            partner_address
         ).call()
-
         return_fields = [
-            'deposit', 'initialized', 'is_the_closer',
-            'balance_hash_or_locksroot', 'nonce_or_locked_amount'
+            'deposit',
+            'initialized',
+            'is_closer',
+            'balance_hash_or_locksroot',
+            'nonce_or_locked_amount'
         ]
         assert len(return_fields) == len(channel_info)
         return {

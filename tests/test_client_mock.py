@@ -1,4 +1,5 @@
 from math import isclose
+import pytest
 
 from eth_utils import decode_hex, is_same_address
 
@@ -11,7 +12,7 @@ def test_client_multiple_topups(generate_raiden_clients):
     channel_id = c1.open_channel(c2.address)
     assert channel_id > 0
     [c1.deposit_to_channel(c2.address, x) for x in deposits]
-    channel_info = c1.get_our_channel_state(c2.address)
+    channel_info = c1.get_own_channel_info(c2.address)
     assert sum(deposits) == channel_info['deposit']
 
 
@@ -30,13 +31,36 @@ def test_client_fee_info(generate_raiden_clients):
     assert fi.chain_id == 2
 
 
+@pytest.mark.skip(reason='MSC not yet merged to master')
 def test_message_signature(generate_raiden_clients):
     c1, c2 = generate_raiden_clients(2)
     c1.open_channel(c2.address)
 
-    balance_proof = c1.get_balance_proof(c2.address, nonce=1, transferred_amount=5)
+    balance_proof = c1.get_balance_proof(
+        c2.address,
+        nonce=1,
+        transferred_amount=5,
+        locksroot='0x%064x' % 0,
+        locked_amount=0
+    )
     assert is_same_address(balance_proof.signer, c1.address)
     monitor_request = c1.get_monitor_request(c2.address, balance_proof, 1, c2.address)
     assert is_same_address(monitor_request.reward_proof_signer, c1.address)
     fee_info = c1.get_fee_info(c2.address)
     assert is_same_address(fee_info.signer, c1.address)
+
+
+def test_close_settle(generate_raiden_clients, wait_for_blocks):
+    c1, c2 = generate_raiden_clients(2)
+    c1.open_channel(c2.address)
+
+    balance_proof = c2.get_balance_proof(
+        c1.address,
+        nonce=1,
+        transferred_amount=5,
+        locked_amount=0,
+        locksroot='0x%064x' % 0,
+        additional_hash='0x%064x' % 0
+    )
+
+    c1.close_channel(c2.address, balance_proof)

@@ -5,9 +5,8 @@ from raiden_libs.messages.balance_proof import BalanceProof
 from raiden_libs.properties import address_property
 from raiden_libs.messages.json_schema import MONITOR_REQUEST_SCHEMA
 from raiden_libs.types import Address
-from raiden_libs.utils import UINT192_MAX, eth_verify
+from raiden_libs.utils import UINT192_MAX, eth_verify, pack_data
 import jsonschema
-from web3 import Web3
 
 
 class MonitorRequest(Message):
@@ -52,7 +51,7 @@ class MonitorRequest(Message):
 
     def serialize_reward_proof(self):
         """Return reward proof data serialized to binary"""
-        return Web3.soliditySha3([
+        return pack_data([
             'uint256',
             'uint192',
             'address',

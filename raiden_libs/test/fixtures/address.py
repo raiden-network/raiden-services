@@ -41,7 +41,7 @@ def get_random_bp(get_random_address) -> Callable:
         contract_address: Address = None
     ):
         contract_address = contract_address or get_random_address()
-        channel_identifier = channel_identifier or random.randint(0, UINT64_MAX)
+        channel_identifier = channel_identifier or ChannelIdentifier(random.randint(0, UINT64_MAX))
 
         balance_hash_data = '%d' % random.randint(0, UINT64_MAX)
         additional_hash_data = '%d' % random.randint(0, UINT64_MAX)

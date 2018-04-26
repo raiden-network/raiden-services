@@ -1,12 +1,12 @@
 import jsonschema
 
 from web3 import Web3
-from eth_utils import is_address, decode_hex
+from eth_utils import is_address, decode_hex, encode_hex
 
 from raiden_libs.messages.message import Message
 from raiden_libs.properties import address_property
 from raiden_libs.messages.json_schema import BALANCE_PROOF_SCHEMA
-from raiden_libs.utils import eth_verify
+from raiden_libs.utils import eth_verify, pack_data
 from raiden_libs.types import Address, ChannelIdentifier
 
 
@@ -20,7 +20,7 @@ class BalanceProof(Message):
         channel_identifier: ChannelIdentifier,
         token_network_address: Address,
 
-        balance_hash: str = '',
+        balance_hash: str = None,
         nonce: int = 0,
         additional_hash: str = '',
         chain_id: int = 1,
@@ -39,18 +39,18 @@ class BalanceProof(Message):
         self.channel_identifier = channel_identifier
         self.token_network_address = token_network_address
 
-        self.balance_hash = balance_hash
+        self._balance_hash = balance_hash
         self.additional_hash = additional_hash
         self.nonce = nonce
         self.chain_id = chain_id
         self.signature = signature
 
-        if transferred_amount and locked_amount and locksroot:
+        if transferred_amount and locked_amount and locksroot and balance_hash:
             assert self.hash_balance_data(
                 transferred_amount,
                 locked_amount,
                 locksroot
-            ) == self.balance_hash
+            ) == balance_hash
 
         self.transferred_amount = transferred_amount
         self.locked_amount = locked_amount
@@ -77,7 +77,7 @@ class BalanceProof(Message):
         return result
 
     def serialize_bin(self):
-        return Web3.soliditySha3([
+        return pack_data([
             'bytes32',
             'uint256',
             'bytes32',
@@ -85,9 +85,9 @@ class BalanceProof(Message):
             'address',
             'uint256'
         ], [
-            self.balance_hash.encode(),
+            decode_hex(self.balance_hash),
             self.nonce,
-            self.additional_hash.encode(),
+            decode_hex(self.additional_hash),
             self.channel_identifier,
             self.token_network_address,
             self.chain_id
@@ -111,14 +111,28 @@ class BalanceProof(Message):
     json_schema = BALANCE_PROOF_SCHEMA
 
     @property
+    def balance_hash(self) -> str:
+        if self._balance_hash:
+            return self._balance_hash
+        if None not in (self.transferred_amount, self.locked_amount, self.locksroot):
+            return encode_hex(
+                self.hash_balance_data(
+                    self.transferred_amount,
+                    self.locked_amount,
+                    self.locksroot
+                )
+            )
+        raise ValueError("Can't compute balance hash")
+
+    @property
     def signer(self) -> str:
         return eth_verify(
             decode_hex(self.signature),
             self.serialize_bin()
         )
 
+    @staticmethod
     def hash_balance_data(
-        self,
         transferred_amount: int,
         locked_amount: int,
         locksroot: str
@@ -127,23 +141,3 @@ class BalanceProof(Message):
             ['uint256', 'uint256', 'bytes32'],
             [transferred_amount, locked_amount, locksroot]
         )
-
-    # def sign_balance_proof(
-    #         privatekey,
-    #         token_network_address,
-    #         chain_identifier,
-    #         channel_identifier,
-    #         balance_hash,
-    #         nonce,
-    #         additional_hash,
-    #         v=27):
-    #     message_hash = hash_balance_proof(
-    #         token_network_address,
-    #         chain_identifier,
-    #         channel_identifier,
-    #         balance_hash,
-    #         nonce,
-    #         additional_hash
-    #     )
-    #
-    #     return sign(privatekey, message_hash, v)
