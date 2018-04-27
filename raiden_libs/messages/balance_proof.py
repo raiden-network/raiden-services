@@ -22,9 +22,9 @@ class BalanceProof(Message):
 
         balance_hash: str = None,
         nonce: int = 0,
-        additional_hash: str = '',
+        additional_hash: str = None,
         chain_id: int = 1,
-        signature: str = '',
+        signature: str = None,
 
         transferred_amount: int = None,
         locked_amount: int = None,

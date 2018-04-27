@@ -9,8 +9,15 @@ from raiden_libs.exceptions import MessageTypeError
 from raiden_libs.types import Address, ChannelIdentifier
 
 
-def test_serialize_deserialize(get_random_bp):
+def test_serialize_deserialize(get_random_bp, get_random_privkey):
     bp = get_random_bp()
+    privkey = get_random_privkey()
+    bp.signature = encode_hex(
+        sign_data(
+            privkey,
+            bp.serialize_bin()
+        )
+    )
     serialized_message = bp.serialize_full()
 
     deserialized_message = Message.deserialize(serialized_message)
