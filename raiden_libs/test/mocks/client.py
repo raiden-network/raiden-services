@@ -10,7 +10,7 @@ from web3.contract import Contract
 from raiden_contracts.contract_manager import get_event_from_abi
 
 from raiden_libs.utils import private_key_to_address, make_filter, sign_data
-from raiden_libs.messages import BalanceProof, MonitorRequest, FeeInfo
+from raiden_libs.messages import BalanceProof, MonitorRequest, FeeInfo, PathsRequest
 from raiden_libs.types import Address, ChannelIdentifier
 
 
@@ -271,6 +271,22 @@ class MockRaidenNode:
         )
         fi.signature = encode_hex(sign_data(self.privkey, fi.serialize_bin()))
         return fi
+
+    def request_paths(self, target_address: Address, **kwargs) -> PathsRequest:
+        """Generate a PathsRequest for pathfinding-service .
+        Parameters:
+            target_address: address of the transaction target, this method is agnostic
+            that this is verified.
+            **kwargs: arguments to FeeInfo constructor
+        """
+        # FIXME implement a nonce is necessary for replay protection
+        request = PathsRequest(
+            self.contract.address,
+            target_address,
+            **kwargs
+        )
+        request.signature = encode_hex(sign_data(self.privkey, request.serialize_bin()))
+        return request
 
     @assert_channel_existence
     def update_transfer(self, partner_address: Address, balance_proof: BalanceProof):

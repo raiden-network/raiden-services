@@ -104,6 +104,46 @@ FEE_INFO_SCHEMA = {
     }
 }
 
+PATHS_REQUEST_SCHEMA = {
+    'type': 'object',
+    'required': [
+        'token_network_address',
+        'target_address',
+        'value',
+        'num_paths',
+        'chain_id',
+        'nonce',
+        'signature',
+    ],
+    'properties': {
+        'token_network_address': {
+            'type': 'string',
+        },
+        'target_address': {
+            'type': 'string',
+        },
+        'value': {
+            'type': 'integer',
+            'minimum': 1
+        },
+        'num_paths': {
+            'type': 'integer',
+            'minimum': 1
+        },
+        'chain_id': {
+            'type': 'integer',
+            'minimum': 1
+        },
+        'nonce': {
+            'type': 'integer',
+            'minimum': 0
+        },
+        'signature': {
+            'type': 'string'
+        },
+    }
+}
+
 ENVELOPE_SCHEMA = {
     'type': 'object',
     'required': ['message_type'],

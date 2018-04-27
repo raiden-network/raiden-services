@@ -6,7 +6,7 @@ from eth_utils import is_address, decode_hex, encode_hex
 from raiden_libs.messages.message import Message
 from raiden_libs.properties import address_property
 from raiden_libs.messages.json_schema import BALANCE_PROOF_SCHEMA
-from raiden_libs.utils import eth_verify, pack_data
+from raiden_libs.utils import eth_verify, pack_data, UINT256_MAX
 from raiden_libs.types import Address, ChannelIdentifier
 
 
@@ -46,6 +46,8 @@ class BalanceProof(Message):
         self.signature = signature
 
         if transferred_amount and locked_amount and locksroot and balance_hash:
+            assert 0 <= transferred_amount <= UINT256_MAX
+            assert 0 <= locked_amount <= UINT256_MAX
             assert self.hash_balance_data(
                 transferred_amount,
                 locked_amount,

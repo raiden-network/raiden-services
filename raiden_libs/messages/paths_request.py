@@ -6,71 +6,78 @@ from eth_utils import is_address, decode_hex
 
 from raiden_libs.messages.message import Message
 from raiden_libs.properties import address_property
-from raiden_libs.messages.json_schema import FEE_INFO_SCHEMA
-from raiden_libs.utils import eth_verify, pack_data
-from raiden_libs.types import Address, ChannelIdentifier
+from raiden_libs.messages.json_schema import PATHS_REQUEST_SCHEMA
+from raiden_libs.utils import eth_verify, UINT256_MAX, pack_data
+from raiden_libs.types import Address
 
 
-class FeeInfo(Message):
-    """ A message to update the fee. It is sent from a raiden node to the PFS. """
+class PathsRequest(Message):
+    """ A message to request a path from PFS. It is sent from a raiden node to the PFS. """
     def __init__(
         self,
         token_network_address: Address,
-        channel_identifier: ChannelIdentifier,
-        chain_id: int = 1,
-        nonce: int = 0,
-        # Fixme: convert precentage_fee to an appropriate type
-        percentage_fee: str = '0.0',
+        target_address: Address,
+        value: int,
+        chain_id: int,
+        num_paths: int,
+        nonce: int,
         signature: str = None,
     ) -> None:
         super().__init__()
-        assert channel_identifier >= 0
         assert is_address(token_network_address)
+        assert is_address(target_address)
+        assert 0 <= value <= UINT256_MAX
+        assert 0 <= num_paths <= UINT256_MAX
+        assert 0 <= nonce <= UINT256_MAX
 
-        self._type = 'FeeInfo'
-
+        self._type = 'PathsRequest'
         self.token_network_address = token_network_address
-        self.channel_identifier = channel_identifier
+        self.target_address = target_address
+        self.value = value
+        self.num_paths = num_paths
         self.chain_id = chain_id
         self.nonce = nonce
-        self.percentage_fee = percentage_fee
         self.signature = signature
 
     def serialize_data(self) -> Dict:
         return {
             'token_network_address': self.token_network_address,
-            'channel_identifier': self.channel_identifier,
+            'target_address': self.target_address,
+            'value': self.value,
+            'num_paths': self.num_paths,
             'chain_id': self.chain_id,
             'nonce': self.nonce,
-            'percentage_fee': str(self.percentage_fee),
             'signature': self.signature,
         }
 
     def serialize_bin(self):
-        """Return FeeInfo serialized to binary"""
+        """Returns PathsRequest serialized to binary"""
         return pack_data([
+            'address',
             'address',
             'uint256',
             'uint256',
             'uint256',
-            'string'
+            'uint256'
         ], [
             self.token_network_address,
-            self.channel_identifier,
+            self.target_address,
+            self.value,
+            self.num_paths,
             self.chain_id,
             self.nonce,
-            self.percentage_fee,
         ])
 
     @classmethod
     def deserialize(cls, data):
-        jsonschema.validate(data, FEE_INFO_SCHEMA)
+        jsonschema.validate(data, PATHS_REQUEST_SCHEMA)
         ret = cls(
             token_network_address=data['token_network_address'],
-            channel_identifier=data['channel_identifier'],
+            target_address=data['target_address'],
+            value=data['value'],
+            num_paths=data['num_paths'],
             chain_id=data['chain_id'],
             nonce=data['nonce'],
-            percentage_fee=data['percentage_fee'],
             signature=data['signature'],
         )
 
@@ -84,4 +91,4 @@ class FeeInfo(Message):
         )
 
     token_network_address = address_property('_contract')  # type: ignore
-    json_schema = FEE_INFO_SCHEMA
+    json_schema = PATHS_REQUEST_SCHEMA

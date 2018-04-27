@@ -21,13 +21,13 @@ def test_client_fee_info(generate_raiden_clients):
     channel_id = c1.open_channel(c2.address)
     assert channel_id > 0
 
-    fi = c1.get_fee_info(c2.address, nonce=5, percentage_fee=0.1, chain_id=2)
+    fi = c1.get_fee_info(c2.address, nonce=5, percentage_fee='0.1', chain_id=2)
     fee_info_signer = eth_verify(decode_hex(fi.signature), fi.serialize_bin())
 
     assert is_same_address(fee_info_signer, c1.address)
 
     assert fi.nonce == 5
-    assert isclose(fi.percentage_fee, 0.1)
+    assert isclose(float(fi.percentage_fee), 0.1)
     assert fi.chain_id == 2
 
 
