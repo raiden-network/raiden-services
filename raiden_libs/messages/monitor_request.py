@@ -14,7 +14,6 @@ class MonitorRequest(Message):
     call MSC
     """
     reward_sender_address = address_property('_reward_sender_address')  # type: ignore
-    token_network_address = address_property('_token_network_address')  # type: ignore
     monitor_address = address_property('_monitor_address')  # type: ignore
     _type = 'MonitorRequest'
 
@@ -59,12 +58,12 @@ class MonitorRequest(Message):
             'uint8',
             'address'
         ], [
-            self.balance_proof.channel_identifier.to_bytes(32, byteorder='big'),
-            self.reward_amount.to_bytes(24, byteorder='big'),
-            decode_hex(self.balance_proof.token_network_address),
-            self.balance_proof.chain_id.to_bytes(32, byteorder='big'),
-            self.balance_proof.nonce.to_bytes(8, byteorder='big'),
-            decode_hex(self.monitor_address)
+            self.balance_proof.channel_identifier,
+            self.reward_amount,
+            self.balance_proof.token_network_address,
+            self.balance_proof.chain_id,
+            self.balance_proof.nonce,
+            self.monitor_address
         ])
 
     @classmethod
