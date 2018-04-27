@@ -66,7 +66,6 @@ class BalanceProof(Message):
             'nonce': self.nonce,
             'chain_id': self.chain_id,
             'signature': self.signature,
-
         }
 
         if self.transferred_amount and self.locked_amount and self.locksroot:
@@ -103,7 +102,11 @@ class BalanceProof(Message):
             nonce=data['nonce'],
             additional_hash=data['additional_hash'],
             chain_id=data['chain_id'],
-            signature=data['signature']
+            signature=data['signature'],
+
+            transferred_amount=data.get('transferred_amount', None),
+            locked_amount=data.get('locked_amount', None),
+            locksroot=data.get('locksroot', None),
         )
         return result
 
