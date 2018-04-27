@@ -17,6 +17,7 @@ class Callable():
             args = ({},)
         # buildTransaction requires 'from' field to be set properly
         args[0]['from'] = private_key_to_address(private_key)
+        gas_limit = args[0].pop('gas_limit', GAS_LIMIT_CONTRACT)
         tx_data = self._call.buildTransaction(*args, **kwargs)
         signed_tx = create_signed_transaction(
             private_key,
@@ -24,7 +25,7 @@ class Callable():
             tx_data['to'],
             value=tx_data['value'],
             data=decode_hex(tx_data['data']),
-            gas_limit=GAS_LIMIT_CONTRACT
+            gas_limit=gas_limit
         )
         return self._call.web3.eth.sendRawTransaction(signed_tx)
 
