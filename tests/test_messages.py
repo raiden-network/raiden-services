@@ -6,6 +6,7 @@ from eth_utils import is_same_address
 from raiden_libs.utils import sign_data, private_key_to_address, encode_hex
 from raiden_libs.messages import BalanceProof, Message, FeeInfo, MonitorRequest
 from raiden_libs.exceptions import MessageTypeError
+from raiden_libs.types import Address, ChannelIdentifier
 
 
 def test_serialize_deserialize(get_random_bp):
@@ -16,7 +17,7 @@ def test_serialize_deserialize(get_random_bp):
     assert isinstance(deserialized_message, BalanceProof)
 
 
-def test_balance_proof(get_random_bp):
+def test_balance_proof_address_setter(get_random_bp):
     # test set of checksummed addrs
     bp = get_random_bp()
 
@@ -25,6 +26,58 @@ def test_balance_proof(get_random_bp):
         bp.token_network_address = 123456789
     with pytest.raises(ValueError):
         bp.token_network_address = '0x11e14d102DA61F1a5cA36cfa96C3B831332357b4'
+
+
+def test_balance_proof():
+    balance_proof = BalanceProof(
+        channel_identifier=ChannelIdentifier(123),
+        token_network_address=Address('0x82dd0e0eA3E84D00Cc119c46Ee22060939E5D1FC'),
+        nonce=1,
+        chain_id=321,
+        balance_hash='0x%064x' % 5,
+        transferred_amount=1,
+        locked_amount=0,
+        additional_hash='0x%064x' % 0,
+    )
+    serialized = balance_proof.serialize_data()
+
+    assert serialized['channel_identifier'] == balance_proof.channel_identifier
+    assert is_same_address(
+        serialized['token_network_address'],
+        balance_proof.token_network_address
+    )
+    assert serialized['nonce'] == balance_proof.nonce
+    assert serialized['chain_id'] == balance_proof.chain_id
+    assert serialized['additional_hash'] == balance_proof.additional_hash
+    assert serialized['balance_hash'] == balance_proof.balance_hash
+
+    with pytest.raises(KeyError):
+        serialized['transferred_amount']
+
+    balance_proof = BalanceProof(
+        channel_identifier=ChannelIdentifier(123),
+        token_network_address=Address('0x82dd0e0eA3E84D00Cc119c46Ee22060939E5D1FC'),
+        nonce=1,
+        chain_id=321,
+        locksroot='0x%064x' % 5,
+        transferred_amount=1,
+        locked_amount=0,
+        additional_hash='0x%064x' % 0,
+    )
+    serialized = balance_proof.serialize_data()
+
+    assert serialized['channel_identifier'] == balance_proof.channel_identifier
+    assert is_same_address(
+        serialized['token_network_address'],
+        balance_proof.token_network_address
+    )
+    assert serialized['nonce'] == balance_proof.nonce
+    assert serialized['chain_id'] == balance_proof.chain_id
+    assert serialized['additional_hash'] == balance_proof.additional_hash
+
+    assert serialized['locksroot'] == balance_proof.locksroot
+    assert serialized['transferred_amount'] == balance_proof.transferred_amount
+    assert serialized['locked_amount'] == balance_proof.locked_amount
 
 
 def test_fee_info():

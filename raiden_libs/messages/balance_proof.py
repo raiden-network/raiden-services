@@ -68,7 +68,7 @@ class BalanceProof(Message):
             'signature': self.signature,
         }
 
-        if self.transferred_amount and self.locked_amount and self.locksroot:
+        if None not in (self.transferred_amount, self.locked_amount, self.locksroot):
             result['transferred_amount'] = self.transferred_amount
             result['locked_amount'] = self.locked_amount
             result['locksroot'] = self.locksroot
