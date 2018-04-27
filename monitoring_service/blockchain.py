@@ -26,7 +26,11 @@ class BlockchainMonitor(BlockchainListener):
 
     def handle_event(self, event, callback: Callable):
         tx = self.web3.eth.getTransaction(event['transactionHash'])
+        log.info(str(event) + str(tx))
         abi = CONTRACT_MANAGER.get_contract_abi('TokenNetwork')
+        assert abi is not None
         method_params = decode_contract_call(abi, tx['data'])
-        assert method_params is not None
-        return callback(event, method_params)
+        if method_params is not None:
+            return callback(event, method_params)
+        else:
+            return None

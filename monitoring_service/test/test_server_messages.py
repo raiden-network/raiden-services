@@ -8,6 +8,6 @@ def test_bp_dispatch(monitoring_service, generate_raiden_client):
     monitoring_service.start()
     transport = monitoring_service.transport
 
-    transport.send_message(monitor_request)
+    transport.receive_fake_data(monitor_request.serialize_full())
     monitoring_service.wait_tasks()
     assert channel_id in monitoring_service.monitor_requests
