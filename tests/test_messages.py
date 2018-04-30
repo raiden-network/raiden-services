@@ -4,7 +4,14 @@ import pytest
 from eth_utils import is_same_address
 
 from raiden_libs.utils import sign_data, private_key_to_address, encode_hex
-from raiden_libs.messages import BalanceProof, Message, FeeInfo, MonitorRequest
+from raiden_libs.messages import (
+    BalanceProof,
+    Message,
+    FeeInfo,
+    MonitorRequest,
+    PathsRequest,
+    PathsReply
+)
 from raiden_libs.exceptions import MessageTypeError
 from raiden_libs.types import Address, ChannelIdentifier
 
@@ -103,7 +110,7 @@ def test_fee_info():
     assert isinstance(Message.deserialize(message), FeeInfo)
 
 
-def test_request_paths():
+def test_paths_request():
     message: Dict = dict(
         message_type='PathsRequest',
         token_network_address='0x82dd0e0eA3E84D00Cc119c46Ee22060939E5D1FC',
@@ -116,6 +123,29 @@ def test_request_paths():
     )
 
     assert message == Message.deserialize(message).serialize_data()
+    message['message_type'] = 'PathsRequest'
+    assert isinstance(Message.deserialize(message), PathsRequest)
+
+
+def test_paths_reply():
+    message: Dict = dict(
+        message_type='PathsReply',
+        token_network_address='0x82dd0e0eA3E84D00Cc119c46Ee22060939E5D1FC',
+        target_address='0x82dd0e0eA3E84D00Cc119c46Ee22060939E5D1FC',
+        value=1000,
+        num_paths=1,
+        chain_id=1,
+        nonce=1,
+        paths_and_fees=[{
+            'estimated_fee': 10000,
+            'paths': [['0x82dd0e0eA3E84D00Cc119c46Ee220609', '0xA3E84D00Cc119c46Ee22060939E5D1FC']]
+        }],
+        signature='signature'
+    )
+
+    assert message == Message.deserialize(message).serialize_data()
+    message['message_type'] = 'PathsReply'
+    assert isinstance(Message.deserialize(message), PathsReply)
 
 
 def test_deserialize_with_required_type():

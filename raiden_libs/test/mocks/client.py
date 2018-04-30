@@ -9,8 +9,16 @@ from web3.contract import Contract
 
 from raiden_contracts.contract_manager import get_event_from_abi
 
+from raiden_libs.transport import Transport
 from raiden_libs.utils import private_key_to_address, make_filter, sign_data
-from raiden_libs.messages import BalanceProof, MonitorRequest, FeeInfo, PathsRequest
+from raiden_libs.messages import (
+    BalanceProof,
+    MonitorRequest,
+    FeeInfo,
+    PathsRequest,
+    Message,
+    PathsReply
+)
 from raiden_libs.types import Address, ChannelIdentifier
 
 
@@ -57,7 +65,8 @@ class MockRaidenNode:
         self,
         privkey: str,
         token_network_contract: Contract,
-        token_contract: Contract
+        token_contract: Contract,
+        transport: Transport = None,
     ) -> None:
         self.privkey = privkey
         self.address = private_key_to_address(privkey)
@@ -67,6 +76,18 @@ class MockRaidenNode:
         self.token_network_abi = None
         self.client_registry: Dict[Address, 'MockRaidenNode'] = dict()
         self.web3 = self.contract.web3
+        self.transport = transport
+        if self.transport is not None:
+            self.transport.start()  # type: ignore
+            self.transport.add_message_callback(self.on_message_event)  # type: ignore
+
+    def on_message_event(self, message: Message):
+        """This handles messages received over the Transport"""
+        assert isinstance(message, Message)
+        if isinstance(message, PathsReply):
+            self.on_paths_reply_message(self, message)
+        else:
+            log.error("Ignoring unknown message of type '%s'", (type(message)))
 
     @sync_channels
     def open_channel(self, partner_address: Address) -> int:
@@ -287,6 +308,12 @@ class MockRaidenNode:
         )
         request.signature = encode_hex(sign_data(self.privkey, request.serialize_bin()))
         return request
+
+    @staticmethod
+    def on_paths_reply_message(self, pfs_reply: PathsReply):
+        """Orders paths_and_fees. Returns the result for testing.
+        """
+        return pfs_reply.paths_and_fees
 
     @assert_channel_existence
     def update_transfer(self, partner_address: Address, balance_proof: BalanceProof):
