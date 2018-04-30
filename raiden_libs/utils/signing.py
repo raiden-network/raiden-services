@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import rlp
-from typing import Union
+from typing import Union, Any
 from sha3 import keccak_256
 
 from coincurve import PrivateKey, PublicKey
@@ -114,7 +114,7 @@ def address_from_signature(sig: bytes, msg: bytes) -> Address:
     return public_key_to_address(receiver_pubkey)
 
 
-def eth_verify(sig: bytes, msg: str) -> Address:
+def eth_verify(sig: bytes, msg: Any) -> Address:
     return address_from_signature(sig, keccak256(msg))
 
 

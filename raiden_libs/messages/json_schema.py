@@ -96,7 +96,8 @@ FEE_INFO_SCHEMA = {
             'minimum': 0
         },
         'percentage_fee': {
-            'type': 'string',
+            'type': 'integer',
+            'minimum': 0
         },
         'signature': {
             'type': 'string'

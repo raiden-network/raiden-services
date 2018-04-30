@@ -19,10 +19,15 @@ class FeeInfo(Message):
         channel_identifier: ChannelIdentifier,
         chain_id: int = 1,
         nonce: int = 0,
-        # Fixme: convert precentage_fee to an appropriate type
-        percentage_fee: str = '0.0',
+        percentage_fee: int = 0,  # in parts per million
         signature: str = None,
     ) -> None:
+        """ Creates a new FeeInfo message
+
+        Args:
+            percentage_fee: The fee defined in parts per million, e.g. a value of 10000
+                corresponds to a relative fee of one percent.
+        """
         super().__init__()
         assert channel_identifier >= 0
         assert is_address(token_network_address)
@@ -42,18 +47,18 @@ class FeeInfo(Message):
             'channel_identifier': self.channel_identifier,
             'chain_id': self.chain_id,
             'nonce': self.nonce,
-            'percentage_fee': str(self.percentage_fee),
+            'percentage_fee': self.percentage_fee,
             'signature': self.signature,
         }
 
-    def serialize_bin(self):
+    def serialize_bin(self) -> bytes:
         """Return FeeInfo serialized to binary"""
         return pack_data([
             'address',
             'uint256',
             'uint256',
             'uint256',
-            'string'
+            'uint256'
         ], [
             self.token_network_address,
             self.channel_identifier,
