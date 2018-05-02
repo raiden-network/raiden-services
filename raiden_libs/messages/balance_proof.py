@@ -13,7 +13,11 @@ from raiden_libs.types import Address, ChannelIdentifier
 class BalanceProof(Message):
     """ A Balance Proof
 
-    This optionally includse the data for calculating the balance_hash.
+    If transferred_amount, locked_amount and locksroot are set, balance_proof hash is
+    computed using these values. Otherwise a value stored in _balance_hash is returned.
+
+    Serialization will also add these items only if each of transferred_amount, locked_amount
+    and locksroot is set.
     """
     def __init__(
         self,
@@ -22,13 +26,13 @@ class BalanceProof(Message):
 
         balance_hash: str = None,
         nonce: int = 0,
-        additional_hash: str = None,
+        additional_hash: str = '0x%064x' % 0,
         chain_id: int = 1,
         signature: str = None,
 
         transferred_amount: int = None,
-        locked_amount: int = None,
-        locksroot: str = None,
+        locked_amount: int = 0,
+        locksroot: str = '0x%064x' % 0
     ) -> None:
         super().__init__()
         assert channel_identifier > 0
@@ -120,6 +124,7 @@ class BalanceProof(Message):
         if self._balance_hash:
             return self._balance_hash
         if None not in (self.transferred_amount, self.locked_amount, self.locksroot):
+            assert isinstance(self.transferred_amount, int)
             return encode_hex(
                 self.hash_balance_data(
                     self.transferred_amount,
@@ -128,6 +133,10 @@ class BalanceProof(Message):
                 )
             )
         raise ValueError("Can't compute balance hash")
+
+    @balance_hash.setter
+    def balance_hash(self, value) -> None:
+        self._balance_hash = value
 
     @property
     def signer(self) -> str:

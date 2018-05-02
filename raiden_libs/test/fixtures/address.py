@@ -62,24 +62,25 @@ def get_random_bp(get_random_address) -> Callable:
 @pytest.fixture
 def get_random_monitor_request(get_random_bp, get_random_address, get_random_privkey):
     def f():
-        bp = get_random_bp()
+        balance_proof = get_random_bp()
         privkey = get_random_privkey()
-        bp.signature = encode_hex(sign_data(privkey, bp.serialize_bin()))
-        mr = MonitorRequest(
-            bp.channel_id,
-            bp.nonce,
-            bp.transferred_amount,
-            bp.locksroot,
-            bp.extra_hash,
-            bp.signature,
+        privkey_non_closing = get_random_privkey()
+        balance_proof.signature = encode_hex(sign_data(privkey, balance_proof.serialize_bin()))
+        non_closing_signature = encode_hex(
+            sign_data(privkey_non_closing, balance_proof.serialize_bin())
+        )
+
+        monitor_request = MonitorRequest(
+            balance_proof,
+            non_closing_signature,
             reward_sender_address=get_random_address(),
             reward_amount=random.randint(0, UINT192_MAX),
-            token_network_address=get_random_address(),
-            chain_id=random.randint(0, UINT256_MAX),
             monitor_address=get_random_address()
         )
-        mr.reward_proof_signature = encode_hex(sign_data(privkey, mr.serialize_reward_proof()))
-        return mr
+        monitor_request.reward_proof_signature = encode_hex(
+            sign_data(privkey, monitor_request.serialize_reward_proof())
+        )
+        return monitor_request
     return f
 
 

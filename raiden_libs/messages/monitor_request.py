@@ -27,7 +27,7 @@ class MonitorRequest(Message):
         monitor_address: Address = None
     ) -> None:
         assert non_closing_signature is None or len(decode_hex(non_closing_signature)) == 65
-        assert (reward_amount >= 0) and (reward_amount <= UINT192_MAX)
+        assert reward_amount is None or (reward_amount >= 0) and (reward_amount <= UINT192_MAX)
         # todo: validate reward proof signature
         assert is_address(reward_sender_address)
         assert is_address(monitor_address)

@@ -95,3 +95,40 @@ def test_close_settle(generate_raiden_clients, wait_for_blocks, standard_token_c
     final_balance_c2 = standard_token_contract.functions.balanceOf(c2.address).call()
     assert final_balance_c1 == initial_balance_c1 + (transfer_c1 - transfer_c2)
     assert final_balance_c2 == initial_balance_c2 - (transfer_c1 - transfer_c2)
+
+
+def test_client_one_side_settle(generate_raiden_clients, wait_for_blocks, standard_token_contract):
+    """Tests channel settle without updateTransfer"""
+    c1, c2 = generate_raiden_clients(2)
+    c1.open_channel(c2.address)
+
+    initial_balance_c1 = standard_token_contract.functions.balanceOf(c1.address).call()
+    initial_balance_c2 = standard_token_contract.functions.balanceOf(c2.address).call()
+    transfer_c1 = 5
+
+    c1.deposit_to_channel(c2.address, 100)
+    c2.deposit_to_channel(c1.address, 100)
+
+    balance_proof = c2.get_balance_proof(
+        c1.address,
+        nonce=1,
+        transferred_amount=transfer_c1,
+        locked_amount=0,
+        locksroot='0x%064x' % 0,
+        additional_hash='0x%064x' % 0
+    )
+
+    c1.close_channel(c2.address, balance_proof)
+
+    wait_for_blocks(40)
+    c1.settle_channel(
+        c2.address,
+        (0, balance_proof.transferred_amount),
+        (0, balance_proof.locked_amount),
+        ('0x%064x' % 0, balance_proof.locksroot)
+    )
+
+    final_balance_c1 = standard_token_contract.functions.balanceOf(c1.address).call()
+    final_balance_c2 = standard_token_contract.functions.balanceOf(c2.address).call()
+    assert final_balance_c1 == initial_balance_c1 + (transfer_c1)
+    assert final_balance_c2 == initial_balance_c2 - (transfer_c1)
