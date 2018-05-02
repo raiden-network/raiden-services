@@ -19,13 +19,13 @@ class FeeInfo(Message):
         channel_identifier: ChannelIdentifier,
         chain_id: int = 1,
         nonce: int = 0,
-        percentage_fee: int = 0,  # in parts per million
+        relative_fee: int = 0,  # in parts per million
         signature: str = None,
     ) -> None:
         """ Creates a new FeeInfo message
 
         Args:
-            percentage_fee: The fee defined in parts per million, e.g. a value of 10000
+            relative_fee: The fee defined in parts per million, e.g. a value of 10000
                 corresponds to a relative fee of one percent.
         """
         super().__init__()
@@ -38,7 +38,7 @@ class FeeInfo(Message):
         self.channel_identifier = channel_identifier
         self.chain_id = chain_id
         self.nonce = nonce
-        self.percentage_fee = percentage_fee
+        self.relative_fee = relative_fee
         self.signature = signature
 
     def serialize_data(self) -> Dict:
@@ -47,7 +47,7 @@ class FeeInfo(Message):
             'channel_identifier': self.channel_identifier,
             'chain_id': self.chain_id,
             'nonce': self.nonce,
-            'percentage_fee': self.percentage_fee,
+            'relative_fee': self.relative_fee,
             'signature': self.signature,
         }
 
@@ -64,7 +64,7 @@ class FeeInfo(Message):
             self.channel_identifier,
             self.chain_id,
             self.nonce,
-            self.percentage_fee,
+            self.relative_fee,
         ])
 
     @classmethod
@@ -75,7 +75,7 @@ class FeeInfo(Message):
             channel_identifier=data['channel_identifier'],
             chain_id=data['chain_id'],
             nonce=data['nonce'],
-            percentage_fee=data['percentage_fee'],
+            relative_fee=data['relative_fee'],
             signature=data['signature'],
         )
 

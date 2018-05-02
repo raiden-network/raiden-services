@@ -94,7 +94,7 @@ def test_fee_info():
         chain_id=1,
         channel_identifier=123,
         nonce=1,
-        percentage_fee=10000,
+        relative_fee=10000,
         signature='signature'
     )
     assert message == Message.deserialize(message).serialize_data()
@@ -124,7 +124,7 @@ def test_deserialize_with_required_type():
         chain_id=1,
         channel_identifier=123,
         nonce=1,
-        percentage_fee=1000,
+        relative_fee=1000,
         signature='signature'
     )
 
