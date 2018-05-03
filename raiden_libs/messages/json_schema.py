@@ -109,6 +109,7 @@ PATHS_REQUEST_SCHEMA = {
     'type': 'object',
     'required': [
         'token_network_address',
+        'source_address',
         'target_address',
         'value',
         'num_paths',
@@ -118,6 +119,9 @@ PATHS_REQUEST_SCHEMA = {
     ],
     'properties': {
         'token_network_address': {
+            'type': 'string',
+        },
+        'source_address': {
             'type': 'string',
         },
         'target_address': {
@@ -151,7 +155,6 @@ PATHS_REPLY_SCHEMA = {
         'token_network_address',
         'target_address',
         'value',
-        'num_paths',
         'chain_id',
         'nonce',
         'paths_and_fees',
@@ -165,10 +168,6 @@ PATHS_REPLY_SCHEMA = {
             'type': 'string',
         },
         'value': {
-            'type': 'integer',
-            'minimum': 1
-        },
-        'num_paths': {
             'type': 'integer',
             'minimum': 1
         },

@@ -114,6 +114,7 @@ def test_paths_request():
     message: Dict = dict(
         message_type='PathsRequest',
         token_network_address='0x82dd0e0eA3E84D00Cc119c46Ee22060939E5D1FC',
+        source_address='0x82dd0e0eA3E84D00Cc119c46Ee22060939E5D1FC',
         target_address='0x82dd0e0eA3E84D00Cc119c46Ee22060939E5D1FC',
         value=1000,
         num_paths=1,
@@ -133,7 +134,6 @@ def test_paths_reply():
         token_network_address='0x82dd0e0eA3E84D00Cc119c46Ee22060939E5D1FC',
         target_address='0x82dd0e0eA3E84D00Cc119c46Ee22060939E5D1FC',
         value=1000,
-        num_paths=1,
         chain_id=1,
         nonce=1,
         paths_and_fees=[{
