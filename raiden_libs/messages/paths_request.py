@@ -16,6 +16,7 @@ class PathsRequest(Message):
     def __init__(
         self,
         token_network_address: Address,
+        source_address: Address,
         target_address: Address,
         value: int,
         chain_id: int,
@@ -25,6 +26,7 @@ class PathsRequest(Message):
     ) -> None:
         super().__init__()
         assert is_address(token_network_address)
+        assert is_address(source_address)
         assert is_address(target_address)
         assert 0 <= value <= UINT256_MAX
         assert 0 <= num_paths <= UINT256_MAX
@@ -32,6 +34,7 @@ class PathsRequest(Message):
 
         self._type = 'PathsRequest'
         self.token_network_address = token_network_address
+        self.source_address = source_address
         self.target_address = target_address
         self.value = value
         self.num_paths = num_paths
@@ -42,6 +45,7 @@ class PathsRequest(Message):
     def serialize_data(self) -> Dict:
         return {
             'token_network_address': self.token_network_address,
+            'source_address': self.source_address,
             'target_address': self.target_address,
             'value': self.value,
             'num_paths': self.num_paths,
@@ -55,12 +59,14 @@ class PathsRequest(Message):
         return pack_data([
             'address',
             'address',
+            'address',
             'uint256',
             'uint256',
             'uint256',
             'uint256'
         ], [
             self.token_network_address,
+            self.source_address,
             self.target_address,
             self.value,
             self.num_paths,
@@ -73,6 +79,7 @@ class PathsRequest(Message):
         jsonschema.validate(data, PATHS_REQUEST_SCHEMA)
         ret = cls(
             token_network_address=data['token_network_address'],
+            source_address=data['source_address'],
             target_address=data['target_address'],
             value=data['value'],
             num_paths=data['num_paths'],

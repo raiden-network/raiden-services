@@ -12,14 +12,13 @@ from raiden_libs.types import Address
 
 
 class PathsReply(Message):
-    """ A message to request a path from PFS. It is sent from a raiden node to the PFS. """
+    """ A reply message from PFS to a client. It is sent from PFS to a raiden node . """
     def __init__(
         self,
         token_network_address: Address,
         target_address: Address,
         value: int,
         chain_id: int,
-        num_paths: int,
         nonce: int,
         paths_and_fees: list = None,
         signature: str = None
@@ -29,14 +28,12 @@ class PathsReply(Message):
         assert is_address(token_network_address)
         assert is_address(target_address)
         assert 0 <= value <= UINT256_MAX
-        assert 0 <= num_paths <= UINT256_MAX
         assert 0 <= nonce <= UINT256_MAX
 
         self._type = 'PathsReply'
         self.token_network_address = token_network_address
         self.target_address = target_address
         self.value = value
-        self.num_paths = num_paths
         self.chain_id = chain_id
         self.nonce = nonce
         self.paths_and_fees = paths_and_fees
@@ -47,7 +44,6 @@ class PathsReply(Message):
             'token_network_address': self.token_network_address,
             'target_address': self.target_address,
             'value': self.value,
-            'num_paths': self.num_paths,
             'chain_id': self.chain_id,
             'nonce': self.nonce,
             'paths_and_fees': self.paths_and_fees,
@@ -62,14 +58,12 @@ class PathsReply(Message):
             'uint256',
             'uint256',
             'uint256',
-            'uint256',
             'array',
             'signature',
         ], [
             self.token_network_address,
             self.target_address,
             self.value,
-            self.num_paths,
             self.chain_id,
             self.nonce,
             self.paths_and_fees,
@@ -83,7 +77,6 @@ class PathsReply(Message):
             token_network_address=data['token_network_address'],
             target_address=data['target_address'],
             value=data['value'],
-            num_paths=data['num_paths'],
             chain_id=data['chain_id'],
             nonce=data['nonce'],
             paths_and_fees=data['paths_and_fees'],

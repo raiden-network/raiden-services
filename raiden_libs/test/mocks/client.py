@@ -77,6 +77,7 @@ class MockRaidenNode:
         self.client_registry: Dict[Address, 'MockRaidenNode'] = dict()
         self.web3 = self.contract.web3
         self.transport = transport
+        self.paths_and_fees = None
         if self.transport is not None:
             self.transport.start()  # type: ignore
             self.transport.add_message_callback(self.on_message_event)  # type: ignore
@@ -300,7 +301,7 @@ class MockRaidenNode:
             that this is verified.
             **kwargs: arguments to FeeInfo constructor
         """
-        # FIXME implement a nonce is necessary for replay protection
+        # FIXME implement a nonce for replay protection
         request = PathsRequest(
             self.contract.address,
             target_address,
@@ -313,7 +314,7 @@ class MockRaidenNode:
     def on_paths_reply_message(self, pfs_reply: PathsReply):
         """Orders paths_and_fees. Returns the result for testing.
         """
-        return pfs_reply.paths_and_fees
+        self.paths_and_fees = pfs_reply.paths_and_fees
 
     @assert_channel_existence
     def update_transfer(self, partner_address: Address, balance_proof: BalanceProof):
