@@ -36,14 +36,14 @@ def test_balance_proof_address_setter(get_random_bp):
 
 
 def test_balance_proof():
+    # test balance proof with computed balance hash
     balance_proof = BalanceProof(
         channel_identifier=ChannelIdentifier(123),
         token_network_address=Address('0x82dd0e0eA3E84D00Cc119c46Ee22060939E5D1FC'),
         nonce=1,
         chain_id=321,
-        balance_hash='0x%064x' % 5,
-        transferred_amount=1,
-        locked_amount=0,
+        transferred_amount=5,
+        locksroot='0x%064x' % 5,
         additional_hash='0x%064x' % 0,
     )
     serialized = balance_proof.serialize_data()
@@ -58,20 +58,24 @@ def test_balance_proof():
     assert serialized['additional_hash'] == balance_proof.additional_hash
     assert serialized['balance_hash'] == balance_proof.balance_hash
 
-    with pytest.raises(KeyError):
-        serialized['transferred_amount']
+    assert serialized['locksroot'] == balance_proof.locksroot
+    assert serialized['transferred_amount'] == balance_proof.transferred_amount
+    assert serialized['locked_amount'] == balance_proof.locked_amount
 
+    # test balance proof with balance hash set from constructor
     balance_proof = BalanceProof(
         channel_identifier=ChannelIdentifier(123),
         token_network_address=Address('0x82dd0e0eA3E84D00Cc119c46Ee22060939E5D1FC'),
         nonce=1,
         chain_id=321,
-        locksroot='0x%064x' % 5,
-        transferred_amount=1,
+        balance_hash='0x%064x' % 5,
         locked_amount=0,
         additional_hash='0x%064x' % 0,
     )
     serialized = balance_proof.serialize_data()
+
+    with pytest.raises(KeyError):
+        serialized['transferred_amount']
 
     assert serialized['channel_identifier'] == balance_proof.channel_identifier
     assert is_same_address(
@@ -81,10 +85,7 @@ def test_balance_proof():
     assert serialized['nonce'] == balance_proof.nonce
     assert serialized['chain_id'] == balance_proof.chain_id
     assert serialized['additional_hash'] == balance_proof.additional_hash
-
-    assert serialized['locksroot'] == balance_proof.locksroot
-    assert serialized['transferred_amount'] == balance_proof.transferred_amount
-    assert serialized['locked_amount'] == balance_proof.locked_amount
+    assert serialized['balance_hash'] == balance_proof.balance_hash
 
 
 def test_fee_info():
