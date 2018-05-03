@@ -8,7 +8,9 @@ from setuptools import setup, find_packages
 with open('README.rst') as readme_file:
     readme = readme_file.read()
 
-requirements_replacements = {}
+requirements_replacements = {
+    'git+https://github.com/matrix-org/matrix-python-sdk.git': 'matrix-client',
+}
 
 requirements = list(set(
     requirements_replacements.get(requirement.strip(), requirement.strip())
