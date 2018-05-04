@@ -78,9 +78,6 @@ class MockRaidenNode:
         self.web3 = self.contract.web3
         self.transport = transport
         self.paths_and_fees = None
-        if self.transport is not None:
-            self.transport.start()  # type: ignore
-            self.transport.add_message_callback(self.on_message_event)  # type: ignore
 
     def on_message_event(self, message: Message):
         """This handles messages received over the Transport"""
@@ -304,6 +301,7 @@ class MockRaidenNode:
         # FIXME implement a nonce for replay protection
         request = PathsRequest(
             self.contract.address,
+            self.address,
             target_address,
             **kwargs
         )
@@ -368,3 +366,8 @@ class MockRaidenNode:
             field: channel_info[return_fields.index(field)]
             for field in return_fields
         }
+
+    def set_transport_callback(self):
+        """To be called if a transport is used."""
+        assert self.transport is not None
+        self.transport.add_message_callback(self.on_message_event)
