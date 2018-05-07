@@ -45,7 +45,9 @@ def test_balance_proof_address_setter(get_random_bp):
 def test_balance_proof():
     # test balance proof with computed balance hash
     balance_proof = BalanceProof(
-        channel_identifier=ChannelIdentifier(123),
+        channel_identifier=ChannelIdentifier(
+            '0x3131313131313131313131313131313131313131313131313131313131313131'
+        ),
         token_network_address=Address('0x82dd0e0eA3E84D00Cc119c46Ee22060939E5D1FC'),
         nonce=1,
         chain_id=321,
@@ -71,7 +73,9 @@ def test_balance_proof():
 
     # test balance proof with balance hash set from constructor
     balance_proof = BalanceProof(
-        channel_identifier=ChannelIdentifier(123),
+        channel_identifier=ChannelIdentifier(
+            '0x3131313131313131313131313131313131313131313131313131313131313131'
+        ),
         token_network_address=Address('0x82dd0e0eA3E84D00Cc119c46Ee22060939E5D1FC'),
         nonce=1,
         chain_id=321,
@@ -100,7 +104,7 @@ def test_fee_info():
         message_type='FeeInfo',
         token_network_address='0x82dd0e0eA3E84D00Cc119c46Ee22060939E5D1FC',
         chain_id=1,
-        channel_identifier=123,
+        channel_identifier='0x3131313131313131313131313131313131313131313131313131313131313131',
         nonce=1,
         relative_fee=10000,
         signature='signature'
@@ -153,7 +157,7 @@ def test_deserialize_with_required_type():
         message_type='FeeInfo',
         token_network_address='0x82dd0e0eA3E84D00Cc119c46Ee22060939E5D1FC',
         chain_id=1,
-        channel_identifier=123,
+        channel_identifier='0x3131313131313131313131313131313131313131313131313131313131313131',
         nonce=1,
         relative_fee=1000,
         signature='signature'

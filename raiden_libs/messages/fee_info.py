@@ -8,7 +8,7 @@ from raiden_libs.messages.message import Message
 from raiden_libs.properties import address_property
 from raiden_libs.messages.json_schema import FEE_INFO_SCHEMA
 from raiden_libs.utils import eth_verify, pack_data
-from raiden_libs.types import Address, ChannelIdentifier
+from raiden_libs.types import Address, ChannelIdentifier, T_ChannelIdentifier
 
 
 class FeeInfo(Message):
@@ -29,7 +29,7 @@ class FeeInfo(Message):
                 corresponds to a relative fee of one percent.
         """
         super().__init__()
-        assert channel_identifier >= 0
+        assert isinstance(channel_identifier, T_ChannelIdentifier)
         assert is_address(token_network_address)
 
         self._type = 'FeeInfo'
@@ -55,13 +55,13 @@ class FeeInfo(Message):
         """Return FeeInfo serialized to binary"""
         return pack_data([
             'address',
-            'uint256',
+            'bytes32',
             'uint256',
             'uint256',
             'uint256'
         ], [
             self.token_network_address,
-            self.channel_identifier,
+            decode_hex(self.channel_identifier),
             self.chain_id,
             self.nonce,
             self.relative_fee,

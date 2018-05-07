@@ -7,7 +7,7 @@ from raiden_libs.messages.message import Message
 from raiden_libs.properties import address_property
 from raiden_libs.messages.json_schema import BALANCE_PROOF_SCHEMA
 from raiden_libs.utils import eth_verify, pack_data, UINT256_MAX
-from raiden_libs.types import Address, ChannelIdentifier
+from raiden_libs.types import Address, ChannelIdentifier, T_ChannelIdentifier
 
 
 class BalanceProof(Message):
@@ -35,7 +35,7 @@ class BalanceProof(Message):
         locksroot: str = '0x%064x' % 0
     ) -> None:
         super().__init__()
-        assert channel_identifier > 0
+        assert isinstance(channel_identifier, T_ChannelIdentifier)
         assert is_address(token_network_address)
 
         self._type = 'BalanceProof'
@@ -86,14 +86,14 @@ class BalanceProof(Message):
             'bytes32',
             'uint256',
             'bytes32',
-            'uint256',
+            'bytes32',
             'address',
             'uint256'
         ], [
             decode_hex(self.balance_hash),
             self.nonce,
             decode_hex(self.additional_hash),
-            self.channel_identifier,
+            decode_hex(self.channel_identifier),
             self.token_network_address,
             self.chain_id
         ])
