@@ -30,7 +30,22 @@ def ethereum_tester():
 
 
 @pytest.fixture
-def deploy_contract(revert_chain):
+def deploy_contract_txhash(revert_chain):
+    """Returns a function that deploys a compiled contract, returning a txhash"""
+    def fn(
+            web3,
+            deployer_address,
+            abi,
+            bytecode,
+            args
+    ):
+        contract = web3.eth.contract(abi=abi, bytecode=bytecode)
+        return contract.constructor(*args).transact({'from': deployer_address})
+    return fn
+
+
+@pytest.fixture
+def deploy_contract(revert_chain, deploy_contract_txhash):
     """Returns a function that deploys a compiled contract"""
     def fn(
             web3,
@@ -40,7 +55,7 @@ def deploy_contract(revert_chain):
             args
     ):
         contract = web3.eth.contract(abi=abi, bytecode=bytecode)
-        txhash = contract.constructor(*args).transact({'from': deployer_address})
+        txhash = deploy_contract_txhash(web3, deployer_address, abi, bytecode, args)
         contract_address = web3.eth.getTransactionReceipt(txhash).contractAddress
         web3.testing.mine(1)
 
