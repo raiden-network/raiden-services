@@ -3,13 +3,20 @@ import pytest
 from eth_utils import decode_hex, is_same_address
 
 from raiden_libs.utils.signing import eth_verify
+from raiden_libs.types import ChannelIdentifier, T_ChannelIdentifier
+
+
+def is_channel_identifier(channel_identifier: ChannelIdentifier):
+    assert isinstance(channel_identifier, T_ChannelIdentifier)
+    return len(decode_hex(channel_identifier)) == 32
 
 
 def test_client_multiple_topups(generate_raiden_clients):
     deposits = [1, 1, 2, 3, 5, 8, 13]
     c1, c2 = generate_raiden_clients(2)
-    channel_id = c1.open_channel(c2.address)
-    assert channel_id > 0
+    channel_identifier = c1.open_channel(c2.address)
+    assert is_channel_identifier(channel_identifier)
+
     [c1.deposit_to_channel(c2.address, x) for x in deposits]
     channel_info = c1.get_own_channel_info(c2.address)
     assert sum(deposits) == channel_info['deposit']
@@ -17,8 +24,8 @@ def test_client_multiple_topups(generate_raiden_clients):
 
 def test_client_fee_info(generate_raiden_clients):
     c1, c2 = generate_raiden_clients(2)
-    channel_id = c1.open_channel(c2.address)
-    assert channel_id > 0
+    channel_identifier = c1.open_channel(c2.address)
+    assert is_channel_identifier(channel_identifier)
 
     fi = c1.get_fee_info(c2.address, nonce=5, relative_fee=1000, chain_id=2)
     fee_info_signer = eth_verify(decode_hex(fi.signature), fi.serialize_bin())
