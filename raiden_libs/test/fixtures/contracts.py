@@ -49,6 +49,30 @@ def deploy_tester_contract(
 
 
 @pytest.fixture
+def deploy_tester_contract_txhash(
+        web3,
+        contracts_manager,
+        deploy_contract_txhash,
+        contract_deployer_address,
+        wait_for_transaction,
+        get_random_address
+):
+    """Returns a function that can be used to deploy a named contract,
+    but returning txhash only"""
+    def f(contract_name, libs=None, args=list()):
+        json_contract = contracts_manager.compile_contract(contract_name, libs)
+        txhash = deploy_contract_txhash(
+            web3,
+            contract_deployer_address,
+            json_contract['abi'],
+            json_contract['bin'],
+            args
+        )
+        return txhash
+    return f
+
+
+@pytest.fixture
 def token_network_contract(
         deploy_tester_contract,
         secret_registry_contract,
