@@ -5,7 +5,9 @@ import requests
 
 from matrix_client.client import MatrixClient
 from matrix_client.errors import MatrixHttpLibError
+
 from raiden_libs.transport import Transport
+
 log = logging.getLogger(__name__)
 
 
@@ -71,7 +73,8 @@ class MatrixTransport(Transport):
                 self.run_message_callbacks(event['content']['body'])
                 log.debug("{0}: {1}".format(event['sender'], event['content']['body']))
 
-    def transmit_data(self, message):
+    def transmit_data(self, message: str, target_node: str = None):
+        # TODO: fix sending to certain receiver
         assert self.room is not None
         self.room.send_text(message)
 

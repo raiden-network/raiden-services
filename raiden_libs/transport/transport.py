@@ -1,9 +1,13 @@
-import gevent
 import json
-import jsonschema
 import logging
+from typing import Union
+
+import jsonschema
+import gevent
+from eth_utils import is_address
+
 from raiden_libs.messages import Message
-from raiden_libs.exceptions import MessageSignatureError, MessageFormatError
+from raiden_libs.exceptions import MessageFormatError
 
 log = logging.getLogger(__name__)
 
@@ -34,7 +38,6 @@ class Transport(gevent.Greenlet):
             deserialized_msg = Message.deserialize(json_msg)
         except (
             jsonschema.exceptions.ValidationError,
-            MessageSignatureError,
             MessageFormatError
         ) as ex:
             log.error('Error when deserializing message: %s', str(ex))
@@ -49,15 +52,20 @@ class Transport(gevent.Greenlet):
         Implement this - a simple gevent Event sync will do"""
         raise NotImplementedError
 
-    def send_message(self, message):
+    def send_message(self, message: Union[str, Message], target_node: str = None):
         """Wrapper that serializes Message type to a string, then sends it"""
+        assert self._validate_target(target_node)
         assert isinstance(message, (str, Message))
         if isinstance(message, Message):
-            message = message.serialize_full()
-        self.transmit_data(message)
+            message_str = message.serialize_full()
+        else:
+            message_str = message
 
-    def transmit_data(self, data):
-        """Send a single message over the transport
-        TODO: how to handle recipients?
-        """
+        self.transmit_data(message_str, target_node)
+
+    def transmit_data(self, data: str, target_node: str = None):
+        """Send a single message over the transport """
         raise NotImplementedError
+
+    def _validate_target(self, target: str = None):
+        return is_address(target)
