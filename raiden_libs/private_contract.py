@@ -1,8 +1,7 @@
-from raiden_libs.contract import create_signed_transaction, GAS_LIMIT_CONTRACT
+from raiden_libs.contract import sign_transaction_data, GAS_LIMIT_CONTRACT
 from raiden_libs.utils import private_key_to_address
 from web3.utils.abi import get_abi_output_types
 from eth_abi import decode_abi
-from eth_utils import decode_hex
 
 
 class Callable():
@@ -19,15 +18,8 @@ class Callable():
         args[0]['from'] = private_key_to_address(private_key)
         gas_limit = args[0].pop('gas_limit', GAS_LIMIT_CONTRACT)
         tx_data = self._call.buildTransaction(*args, **kwargs)
-        signed_tx = create_signed_transaction(
-            private_key,
-            self._call.web3,
-            tx_data['to'],
-            value=tx_data['value'],
-            data=decode_hex(tx_data['data']),
-            gas_limit=gas_limit
-        )
-        return self._call.web3.eth.sendRawTransaction(signed_tx)
+        data = sign_transaction_data(private_key, self._call.web3, tx_data, gas_limit=gas_limit)
+        return self._call.web3.eth.sendRawTransaction(data.rawTransaction)
 
     def call(self, *args, **kwargs):
         kwargs.pop('private_key', None)

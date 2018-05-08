@@ -2,17 +2,11 @@ import logging
 import pytest
 import gevent
 
-import rlp
-from eth_utils import decode_hex, denoms
-from ethereum.transactions import Transaction
+from eth_utils import denoms
 from eth_tester import EthereumTester, PyEVMBackend
 from web3 import Web3
 from web3.providers.eth_tester import EthereumTesterProvider
 
-from raiden_libs.utils import (
-    address_from_signature,
-    keccak256,
-)
 from raiden_libs.types import Address
 
 DEFAULT_TIMEOUT = 5
@@ -64,7 +58,14 @@ def deploy_contract(revert_chain, deploy_contract_txhash):
 
 
 @pytest.fixture(scope='session')
+def patch_genesis_gas_limit():
+    import eth_tester.backends.pyevm.main as pyevm_main
+    pyevm_main.GENESIS_GAS_LIMIT = 6 * 10 ** 6
+
+
+@pytest.fixture(scope='session')
 def web3(
+        patch_genesis_gas_limit,
         faucet_private_key: str,
         faucet_address: Address,
         ethereum_tester
@@ -72,34 +73,6 @@ def web3(
     """Returns an initialized Web3 instance"""
     provider = EthereumTesterProvider(ethereum_tester)
     web3 = Web3(provider)
-
-    # Tester chain uses Transaction to send and validate transactions but does not support
-    # EIP-155 yet. This patches the sender address recovery to handle EIP-155.
-    sender_property_original = Transaction.sender.fget
-
-    def sender_property_patched(self: Transaction):
-        if self._sender:
-            return self._sender
-
-        if self.v and self.v >= 35:
-            v = bytes([self.v])
-            r = self.r.to_bytes(32, byteorder='big')
-            s = self.s.to_bytes(32, byteorder='big')
-            raw_tx = Transaction(
-                self.nonce, self.gasprice, self.startgas, self.to, self.value, self.data,
-                (self.v - 35) // 2, 0, 0
-            )
-            msg = keccak256(rlp.encode(raw_tx))
-            self._sender = decode_hex(address_from_signature(r + s + v, msg))
-            return self._sender
-        else:
-            return sender_property_original(self)
-
-    Transaction.sender = property(
-        sender_property_patched,
-        Transaction.sender.fset,
-        Transaction.sender.fdel
-    )
 
     # add faucet account to tester
     ethereum_tester.add_account(faucet_private_key)

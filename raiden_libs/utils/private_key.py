@@ -6,7 +6,7 @@ import os
 import stat
 
 from eth_utils import is_hex, decode_hex, encode_hex
-from ethereum.tools import keys
+from eth_keyfile import decode_keyfile_json
 
 log = logging.getLogger(__name__)
 
@@ -55,7 +55,7 @@ def get_private_key(key_path, password_path=None):
                         password = password_file.readline().strip()
                 else:
                     password = getpass.getpass("Enter the private key password: ")
-                private_key = encode_hex(keys.decode_keystore_json(json_data, password))
+                private_key = encode_hex(decode_keyfile_json(json_data, password))
             except ValueError:
                 log.fatal("Invalid private key format or password!")
                 return None

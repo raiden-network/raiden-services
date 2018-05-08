@@ -5,7 +5,7 @@ bumpversion
 wheel
 watchdog
 flake8
-mypy>=0.580
+mypy
 coverage
 Sphinx
 sphinx_rtd_theme
@@ -14,4 +14,6 @@ pytest
 pytest-runner
 pdbpp
 
-git+https://github.com/raiden-network/raiden-contracts.git
+eth-tester[py-evm]==0.1.0b24
+
+git+https://github.com/palango/raiden-contracts.git@remove-ethereum-dep
