@@ -3,12 +3,7 @@ import pytest
 from eth_utils import decode_hex, is_same_address
 
 from raiden_libs.utils.signing import eth_verify
-from raiden_libs.types import ChannelIdentifier, T_ChannelIdentifier
-
-
-def is_channel_identifier(channel_identifier: ChannelIdentifier):
-    assert isinstance(channel_identifier, T_ChannelIdentifier)
-    return len(decode_hex(channel_identifier)) == 32
+from raiden_libs.utils import is_channel_identifier
 
 
 def test_client_multiple_topups(generate_raiden_clients):
