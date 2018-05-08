@@ -16,4 +16,4 @@ pdbpp
 
 eth-tester[py-evm]==0.1.0b24
 
-git+https://github.com/palango/raiden-contracts.git@remove-ethereum-dep
+git+https://github.com/raiden-network/raiden-contracts.git
