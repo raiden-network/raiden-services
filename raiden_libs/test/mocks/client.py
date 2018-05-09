@@ -255,7 +255,6 @@ class MockRaidenNode:
         """Get monitor request message for a given balance proof."""
         monitor_request = MonitorRequest(
             balance_proof,
-            reward_sender_address=self.address,
             reward_proof_signature=None,
             reward_amount=reward_amount,
             monitor_address=monitor_address

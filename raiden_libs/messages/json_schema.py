@@ -51,9 +51,6 @@ MONITOR_REQUEST_SCHEMA = {
     'type': 'object',
     'required': [],
     'properties': {
-        'reward_sender_address': {
-            'type': 'string'
-        },
         'reward_proof_signature': {
             'type': 'string',
         },

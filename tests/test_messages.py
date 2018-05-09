@@ -3,7 +3,7 @@ from typing import Dict
 import pytest
 from eth_utils import is_same_address
 
-from raiden_libs.utils import sign_data, private_key_to_address, encode_hex
+from raiden_libs.utils import sign_data, encode_hex, private_key_to_address
 from raiden_libs.messages import (
     BalanceProof,
     Message,
@@ -175,15 +175,20 @@ def test_deserialize_with_required_type():
 def test_monitor_request(get_random_bp, get_random_privkey, get_random_address):
     balance_proof = get_random_bp()
     client_privkey = get_random_privkey()
-    client_address = private_key_to_address(client_privkey)
+    reward_sender_privkey = get_random_privkey()
     balance_proof.signature = encode_hex(sign_data(client_privkey, balance_proof.serialize_bin()))
     monitor_request = MonitorRequest(
         balance_proof,
         non_closing_signature=balance_proof.signature,
-        reward_sender_address=client_address,
         reward_proof_signature='',
         reward_amount=1,
         monitor_address=get_random_address()
+    )
+    monitor_request.reward_proof_signature = encode_hex(
+        sign_data(
+            reward_sender_privkey,
+            monitor_request.serialize_reward_proof()
+        )
     )
 
     serialized = monitor_request.serialize_data()
@@ -191,8 +196,12 @@ def test_monitor_request(get_random_bp, get_random_privkey, get_random_address):
     balance_proof_verify = monitor_request_verify.balance_proof
     assert is_same_address(monitor_request_verify.monitor_address, monitor_request.monitor_address)
     assert is_same_address(
-        monitor_request_verify.reward_sender_address,
-        monitor_request.reward_sender_address
+        monitor_request_verify.reward_proof_signer,
+        monitor_request.reward_proof_signer
+    )
+    assert is_same_address(
+        monitor_request.reward_proof_signer,
+        private_key_to_address(reward_sender_privkey)
     )
     assert monitor_request_verify.non_closing_signature == monitor_request.non_closing_signature
     assert monitor_request_verify.reward_amount == monitor_request.reward_amount

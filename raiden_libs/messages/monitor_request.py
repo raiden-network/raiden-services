@@ -13,7 +13,6 @@ class MonitorRequest(Message):
     """Message sent by a Raiden node to the MS. It cointains all data required to
     call MSC
     """
-    reward_sender_address = address_property('_reward_sender_address')  # type: ignore
     monitor_address = address_property('_monitor_address')  # type: ignore
     _type = 'MonitorRequest'
 
@@ -21,7 +20,6 @@ class MonitorRequest(Message):
         self,
         balance_proof: BalanceProof,
         non_closing_signature: str = None,
-        reward_sender_address: Address = None,   # address
         reward_proof_signature: bytes = None,  # bytes
         reward_amount: int = None,             # uint192
         monitor_address: Address = None
@@ -29,13 +27,11 @@ class MonitorRequest(Message):
         assert non_closing_signature is None or len(decode_hex(non_closing_signature)) == 65
         assert reward_amount is None or (reward_amount >= 0) and (reward_amount <= UINT192_MAX)
         # todo: validate reward proof signature
-        assert is_address(reward_sender_address)
         assert is_address(monitor_address)
         assert isinstance(balance_proof, BalanceProof)
 
         self._balance_proof = balance_proof
         self.non_closing_signature = non_closing_signature
-        self.reward_sender_address = to_checksum_address(reward_sender_address)
         self.reward_proof_signature = reward_proof_signature
         self.reward_amount = reward_amount
         self.monitor_address = monitor_address
@@ -43,9 +39,9 @@ class MonitorRequest(Message):
     def serialize_data(self):
         msg = self.__dict__.copy()
         msg.pop('_balance_proof')
-        msg['reward_sender_address'] = msg.pop('_reward_sender_address')
         msg['monitor_address'] = msg.pop('_monitor_address')
         msg['balance_proof'] = self.balance_proof.serialize_data()
+        msg['reward_proof_signature'] = self.reward_proof_signature
         return msg
 
     def serialize_reward_proof(self):
@@ -73,7 +69,6 @@ class MonitorRequest(Message):
         result = cls(
             balance_proof,
             data['non_closing_signature'],
-            data['reward_sender_address'],
             data['reward_proof_signature'],
             data['reward_amount'],
             data['monitor_address']
