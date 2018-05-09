@@ -76,7 +76,7 @@ class MockRaidenNode:
         self.token_network_abi = None
         self.client_registry: Dict[Address, 'MockRaidenNode'] = dict()
         self.web3 = self.contract.web3
-        self.transport = transport
+        self._transport = transport
         self.paths_and_fees = None
 
     def on_message_event(self, message: Message):
@@ -358,7 +358,12 @@ class MockRaidenNode:
             for field in return_fields
         }
 
-    def set_transport_callback(self):
-        """To be called if a transport is used."""
-        assert self.transport is not None
-        self.transport.add_message_callback(self.on_message_event)
+    @property
+    def transport(self):
+        return self._transport
+
+    @transport.setter
+    def transport(self, value: Transport):
+        assert value is not None
+        self._transport = value
+        self._transport.add_message_callback(self.on_message_event)
