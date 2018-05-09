@@ -2,7 +2,7 @@
 from typing import Dict
 
 import jsonschema
-from eth_utils import is_address, decode_hex
+from eth_utils import is_address, decode_hex, to_checksum_address
 
 from raiden_libs.messages.message import Message
 from raiden_libs.properties import address_property
@@ -87,10 +87,11 @@ class PathsReply(Message):
 
     @property
     def signer(self) -> str:
-        return eth_verify(
+        signer = eth_verify(
             decode_hex(self.signature),
             self.serialize_bin()
         )
+        return to_checksum_address(signer)
 
     token_network_address = address_property('_contract')  # type: ignore
     json_schema = PATHS_REPLY_SCHEMA

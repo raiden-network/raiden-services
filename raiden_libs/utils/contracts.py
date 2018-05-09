@@ -4,11 +4,9 @@ from web3.utils.events import get_event_data
 from web3.utils.filters import construct_event_filter_params
 from eth_utils import (
     decode_hex,
-    to_int,
     function_abi_to_4byte_selector
 )
 from eth_abi import decode_abi
-from eth_abi.utils.padding import zpad
 
 
 def normalize_name(name):
@@ -44,6 +42,6 @@ def decode_contract_call(contract_abi: list, call_data: str):
         method_id = function_abi_to_4byte_selector(description)
         method_name = normalize_name(description['name'])
         arg_types = [item['type'] for item in description['inputs']]
-        if zpad(to_int(primitive=method_id), 4) == method_signature:
+        if method_id == method_signature:
             args = decode_abi(arg_types, call_data_bin[4:])
             return method_name, args
