@@ -51,11 +51,11 @@ class MonitorRequest(Message):
     def serialize_reward_proof(self):
         """Return reward proof data serialized to binary"""
         return pack_data([
-            'uint256',
+            'bytes32',
             'uint192',
             'address',
             'uint256',
-            'uint8',
+            'uint256',
             'address'
         ], [
             self.balance_proof.channel_identifier,
@@ -86,7 +86,16 @@ class MonitorRequest(Message):
 
     @property
     def reward_proof_signer(self) -> str:
-        return eth_verify(
+        signer = eth_verify(
             decode_hex(self.reward_proof_signature),
             self.serialize_reward_proof()
         )
+        return to_checksum_address(signer)
+
+    @property
+    def non_closing_signer(self) -> str:
+        signer = eth_verify(
+            decode_hex(self.non_closing_signature),
+            self.balance_proof.serialize_bin() + decode_hex(self.balance_proof.signature)
+        )
+        return to_checksum_address(signer)

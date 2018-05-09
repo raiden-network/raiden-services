@@ -1,7 +1,7 @@
 import jsonschema
 
 from web3 import Web3
-from eth_utils import is_address, decode_hex, encode_hex
+from eth_utils import is_address, decode_hex, encode_hex, to_checksum_address
 
 from raiden_libs.messages.message import Message
 from raiden_libs.properties import address_property
@@ -140,10 +140,11 @@ class BalanceProof(Message):
 
     @property
     def signer(self) -> str:
-        return eth_verify(
+        signer = eth_verify(
             decode_hex(self.signature),
             self.serialize_bin()
         )
+        return to_checksum_address(signer)
 
     @staticmethod
     def hash_balance_data(
