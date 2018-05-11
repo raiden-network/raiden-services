@@ -18,6 +18,7 @@ class DummyNetwork:
 
     def dispatch_message(self, data: str, target: str):
         self.nodes[target].run_message_callbacks(data)
+        self.nodes[target].received_messages.append(data)
 
 
 class DummyTransport(Transport):
