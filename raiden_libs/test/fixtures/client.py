@@ -1,5 +1,9 @@
+from typing import List
+
 import pytest
+
 from raiden_libs.test.mocks.client import MockRaidenNode
+from raiden_libs.test.mocks.dummy_transport import DummyTransport, DummyNetwork
 
 
 @pytest.fixture
@@ -35,4 +39,23 @@ def generate_raiden_clients(generate_raiden_client):
     """Factory function to generate a list of raiden clients."""
     def f(count=1):
         return [generate_raiden_client() for x in range(count)]
+    return f
+
+
+@pytest.fixture
+def generate_dummy_network(generate_raiden_clients):
+    """Factory function to generate a DummyNetwork full of Raiden clients with DummyTransports."""
+    def f(count=2):
+        clients: List[MockRaidenNode] = generate_raiden_clients(count)
+
+        network = DummyNetwork()
+
+        for client in clients:
+            transport = DummyTransport(network)
+            network.add_transport(client.address, transport)
+
+            client.transport = transport
+
+        return network, clients
+
     return f
