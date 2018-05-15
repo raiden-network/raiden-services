@@ -348,6 +348,7 @@ class MockRaidenNode:
         ).call()
         return_fields = [
             'deposit',
+            'withdrawn_amount',
             'is_the_closer',
             'balance_hash',
             'nonce'
