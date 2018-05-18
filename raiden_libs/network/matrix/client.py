@@ -110,6 +110,30 @@ class GMatrixClient(MatrixClient):
         except KeyError:
             return []
 
+    def search_room_directory(self, filter_term: str = None, limit: int = 10) -> List[Room]:
+        filter_options: dict = {}
+        if filter_term:
+            filter_options = {
+                'filter': {
+                    'generic_search_term': filter_term
+                }
+            }
+
+        response = self.api._send(
+            'POST',
+            '/publicRooms',
+            {
+                'limit': limit,
+                **filter_options
+            }
+        )
+        rooms = []
+        for room_info in response['chunk']:
+            room = self._mkroom(room_info['room_id'])
+            room.canonical_alias = room_info.get('canonical_alias')
+            rooms.append(room)
+        return rooms
+
     def modify_presence_list(
         self,
         add_user_ids: List[str] = None,
@@ -169,7 +193,9 @@ class GMatrixClient(MatrixClient):
     def add_ephemeral_listener(self, callback: Callable, event_type: str = None):
         return super().add_ephemeral_listener(geventify_callback(callback), event_type)
 
-    def _mkroom(self, room_id: str):
+    def _mkroom(self, room_id: str) -> Room:
         """ Uses a geventified Room subclass """
-        self.rooms[room_id] = Room(self, room_id)
-        return self.rooms[room_id]
+        room = self.rooms[room_id] = Room(self, room_id)
+        if not room.canonical_alias:
+            room.update_aliases()
+        return room
