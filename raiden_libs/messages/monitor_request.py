@@ -48,18 +48,16 @@ class MonitorRequest(Message):
         """Return reward proof data serialized to binary"""
         return pack_data([
             'bytes32',
-            'uint192',
+            'uint256',
             'address',
             'uint256',
-            'uint256',
-            'address'
+            'uint256'
         ], [
             self.balance_proof.channel_identifier,
             self.reward_amount,
             self.balance_proof.token_network_address,
             self.balance_proof.chain_id,
             self.balance_proof.nonce,
-            self.monitor_address
         ])
 
     @classmethod

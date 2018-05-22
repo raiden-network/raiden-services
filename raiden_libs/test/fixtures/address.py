@@ -73,7 +73,6 @@ def get_random_monitor_request(get_random_bp, get_random_address, get_random_pri
         monitor_request = MonitorRequest(
             balance_proof,
             non_closing_signature,
-            reward_sender_address=get_random_address(),
             reward_amount=random.randint(0, UINT192_MAX),
             monitor_address=get_random_address()
         )
@@ -99,7 +98,7 @@ def faucet_address(faucet_private_key):
 @pytest.fixture
 def send_funds(
     ethereum_tester,
-    standard_token_contract,
+    custom_token,
     faucet_address,
 ):
     """Send some tokens and eth to specified address."""
@@ -111,7 +110,7 @@ def send_funds(
             'gas': 21000,
             'value': 1 * denoms.ether
         })
-        standard_token_contract.functions.transfer(
+        custom_token.functions.transfer(
             target,
             10000
         ).transact({'from': faucet_address})
