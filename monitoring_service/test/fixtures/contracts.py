@@ -24,8 +24,5 @@ def contract_deployer_address(faucet_address):
 
 
 @pytest.fixture
-def monitoring_service_contract(deploy_tester_contract, standard_token_contract):
-    return deploy_tester_contract(
-        'MonitoringService',
-        args=[standard_token_contract.address, 100]
-    )
+def monitoring_service_contract(monitoring_service_external):
+    return monitoring_service_external

@@ -26,7 +26,7 @@ def monitor_registration(
             (ms_contract_address, monitoring_service_address)
         )
         return False
-    return register_service(web3, ms_contract_address, monitoring_service_address, private_key)
+    return register_service(web3, ms_contract_address, private_key)
 
 
 @click.command()

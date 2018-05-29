@@ -7,10 +7,15 @@ from monitoring_service.blockchain import BlockchainMonitor
 from monitoring_service.api.rest import ServiceApi
 from monitoring_service.utils import register_service
 
+import logging
+log = logging.getLogger(__name__)
+
 
 @pytest.fixture
-def server_private_key():
-    return '0x1'
+def server_private_key(get_random_privkey, ethereum_tester):
+    key = get_random_privkey()
+    ethereum_tester.add_account(key)
+    return key
 
 
 @pytest.fixture
@@ -22,7 +27,8 @@ def dummy_transport():
 def blockchain(web3):
     blockchain = BlockchainMonitor(web3)
     blockchain.poll_interval = 1
-    return blockchain
+    yield blockchain
+    blockchain.stop()
 
 
 @pytest.fixture
@@ -40,7 +46,6 @@ def monitoring_service(
     register_service(
         web3,
         monitoring_service_contract.address,
-        private_key_to_address(server_private_key),
         server_private_key
     )
 
@@ -49,10 +54,9 @@ def monitoring_service(
         transport=dummy_transport,
         blockchain=blockchain,
         state_db=state_db_mock,
-        ms_contract_address=monitoring_service_contract.address
+        monitor_contract_address=monitoring_service_contract.address
     )
     yield ms
-    ms.blockchain.stop()
     ms.stop()
 
 

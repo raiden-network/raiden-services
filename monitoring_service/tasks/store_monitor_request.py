@@ -2,8 +2,7 @@ import gevent
 import logging
 from hexbytes import HexBytes
 from raiden_libs.messages import MonitorRequest
-from raiden_libs.utils.signing import eth_verify
-from eth_utils import decode_hex, is_same_address
+from eth_utils import is_address
 
 log = logging.getLogger(__name__)
 
@@ -40,17 +39,17 @@ class StoreMonitorRequest(gevent.Greenlet):
 
     def verify_contract_code(self, monitor_request):
         """Verify if address set in token_network_address field contains code"""
-        return self.web3.eth.getCode(monitor_request.token_network_address) != HexBytes('0x')
+        balance_proof = monitor_request.balance_proof
+        return self.web3.eth.getCode(balance_proof.token_network_address) != HexBytes('0x')
 
     def check_signatures(self, monitor_request):
         """Check if signatures set in the message are correct"""
-        bp = monitor_request.get_balance_proof()
-        balance_proof_signer = eth_verify(decode_hex(bp.signature), bp.serialize_bin()) # flake8: noqa
-        reward_proof_signer = eth_verify(
-            decode_hex(monitor_request.reward_proof_signature),
-            monitor_request.serialize_reward_proof()
+        balance_proof = monitor_request.balance_proof
+        return (
+            is_address(monitor_request.reward_proof_signer) and
+            is_address(balance_proof.signer) and
+            is_address(monitor_request.non_closing_signer)
         )
-        return is_same_address(reward_proof_signer, monitor_request.reward_sender_address)
 
     def check_balance(self, monitor_request):
         """Check if there is enough tokens to pay out reward amount"""

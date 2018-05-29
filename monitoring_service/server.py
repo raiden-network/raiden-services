@@ -3,27 +3,25 @@ import gevent
 import sys
 import traceback
 from typing import List
-from eth_utils import is_address, is_same_address
+from eth_utils import is_address, is_same_address, encode_hex, is_checksum_address
 
 from monitoring_service.blockchain import BlockchainMonitor
 from monitoring_service.state_db import StateDB
-from monitoring_service.tasks import StoreMonitorRequest
+from monitoring_service.tasks import StoreMonitorRequest, OnChannelClose, OnChannelSettle
 from raiden_libs.transport import Transport
 from monitoring_service.constants import (
     EVENT_CHANNEL_CLOSE,
     EVENT_CHANNEL_SETTLED,
-    EVENT_TRANSFER_UPDATED
 )
 from raiden_libs.messages import Message, BalanceProof, MonitorRequest
 from raiden_libs.gevent_error_handler import register_error_handler
-from raiden_libs.utils import private_key_to_address
+from raiden_libs.utils import private_key_to_address, is_channel_identifier
 
 from monitoring_service.exceptions import ServiceNotRegistered, StateDBInvalid
 from monitoring_service.utils import is_service_registered
 
-from eth_utils import (
-    is_checksum_address
-)
+from raiden_contracts.contract_manager import CONTRACT_MANAGER
+from raiden_libs.private_contract import PrivateContract
 
 log = logging.getLogger(__name__)
 
@@ -49,7 +47,7 @@ class MonitoringService(gevent.Greenlet):
         state_db: StateDB = None,
         transport: Transport = None,
         blockchain: BlockchainMonitor = None,
-        ms_contract_address: str = None
+        monitor_contract_address: str = None
     ) -> None:
         super().__init__()
         assert isinstance(private_key, str)
@@ -65,20 +63,28 @@ class MonitoringService(gevent.Greenlet):
         self.transport.add_message_callback(lambda message: self.on_message_event(message))
         self.transport.privkey = lambda: self.private_key
         self.address = private_key_to_address(self.private_key)
+        self.monitor_contract = PrivateContract(
+            blockchain.web3.eth.contract(
+                abi=CONTRACT_MANAGER.get_contract_abi('MonitoringService'),
+                address=monitor_contract_address
+            )
+        )
+
+        # some sanity checks
         chain_id = int(self.blockchain.web3.version.network)
         if state_db.is_initialized() is False:
-            state_db.setup_db(chain_id, ms_contract_address, self.address)
+            state_db.setup_db(chain_id, monitor_contract_address, self.address)
         if state_db.chain_id() != chain_id:
             raise StateDBInvalid("Chain id doesn't match!")
         if not is_same_address(state_db.server_address(), self.address):
             raise StateDBInvalid("Monitor service address doesn't match!")
-        if not is_same_address(state_db.monitoring_contract_address(), ms_contract_address):
+        if not is_same_address(state_db.monitoring_contract_address(), monitor_contract_address):
             raise StateDBInvalid("Monitoring contract address doesn't match!")
         self.task_list: List[gevent.Greenlet] = []
-        if is_service_registered(self.blockchain.web3, ms_contract_address, self.address) is False:
+        if not is_service_registered(self.blockchain.web3, monitor_contract_address, self.address):
             raise ServiceNotRegistered(
                 "Monitoring service %s is not registered in the Monitoring smart contract (%s)" %
-                (self.address, ms_contract_address)
+                (self.address, monitor_contract_address)
             )
 
     def _run(self):
@@ -93,44 +99,55 @@ class MonitoringService(gevent.Greenlet):
             EVENT_CHANNEL_SETTLED,
             lambda event, tx: self.on_channel_settled(event, tx)
         )
-        self.blockchain.add_confirmed_listener(
-            EVENT_TRANSFER_UPDATED,
-            lambda event, tx: self.on_transfer_updated(event, tx)
-        )
 
         # this loop will wait until spawned greenlets complete
         while self.stop_event.is_set() is False:
             tasks = gevent.wait(self.task_list, timeout=5, count=1)
             if len(tasks) == 0:
-                gevent.sleep(5)
+                gevent.sleep(1)
                 continue
             task = tasks[0]
+            log.info('%s completed (%s)' % (task, task.value))
             self.task_list.remove(task)
 
     def stop(self):
+        self.blockchain.stop()
         self.stop_event.set()
 
     def on_channel_close(self, event, tx):
         log.info('on channel close: event=%s tx=%s' % (event, tx))
         # check if we have balance proof for the closing
         closing_participant = event['args']['closing_participant']
-        channel_id = event['args']['channel_identifier']
+        channel_id = encode_hex(event['args']['channel_identifier'])
+        tx_data = tx[1]
+        tx_balance_proof = BalanceProof(
+            tx_data[0],
+            event['address'],
+            encode_hex(tx_data[1]),
+            nonce=tx_data[2],
+            additional_hash=tx_data[3],
+            signature=encode_hex(tx_data[4]),
+        )
+        assert tx_balance_proof is not None
         assert is_address(closing_participant)
-        assert channel_id > 0
+        assert is_channel_identifier(channel_id)
         if channel_id not in self.state_db.monitor_requests:
             return
         monitor_request = self.state_db.monitor_requests[channel_id]
-
-        # check if we should challenge closeChannel
-        if self.check_event(event, monitor_request) is False:
-            log.warning('Invalid balance proof submitted! Challenging! event=%s' % event)
-            self.challenge_proof(channel_id)
+        # submit monitor request
+        self.start_task(
+            OnChannelClose(self.monitor_contract, monitor_request, self.private_key)
+        )
 
     def on_channel_settled(self, event, tx):
+        channel_id = encode_hex(event['args']['channel_identifier'])
+        monitor_request = self.state_db.monitor_requests.get(channel_id, None)
+        if monitor_request is None:
+            return
+        self.start_task(
+            OnChannelSettle(monitor_request, self.monitor_contract, self.private_key)
+        )
         self.state_db.delete_monitor_request(event['args']['channel_identifier'])
-
-    def on_transfer_updated(self, event, tx):
-        log.warning('transferUpdated event! event=%s' % event)
 
     def check_event(self, event, balance_proof: BalanceProof):
         return False
@@ -154,7 +171,11 @@ class MonitoringService(gevent.Greenlet):
         This will spawn a greenlet and store its reference in an internal list.
         Return value of the greenlet is then checked in the main loop."""
         assert isinstance(monitor_request, MonitorRequest)
-        task = StoreMonitorRequest(self.blockchain.web3, self.state_db, monitor_request)
+        self.start_task(
+            StoreMonitorRequest(self.blockchain.web3, self.state_db, monitor_request)
+        )
+
+    def start_task(self, task):
         task.start()
         self.task_list.append(task)
 

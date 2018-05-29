@@ -5,6 +5,9 @@ import os
 from .queries import DB_CREATION_SQL, ADD_MONITOR_REQUEST_SQL, UPDATE_METADATA_SQL
 from .db import StateDB
 
+from raiden_libs.types import ChannelIdentifier
+from raiden_libs.utils import is_channel_identifier
+
 
 def dict_factory(cursor, row):
     """make sqlite result a dict with keys being column names"""
@@ -37,8 +40,6 @@ class StateDBSqlite(StateDB):
         c.execute('SELECT * FROM `monitor_requests`')
         ret = []
         for x in c.fetchall():
-            x['channel_identifier'] = int(x['channel_identifier'], 16)
-            x['transferred_amount'] = int(x['transferred_amount'], 16)
             x['reward_amount'] = int(x['reward_amount'], 16)
             x['nonce'] = int(x['nonce'], 16)
             ret.append(x)
@@ -50,35 +51,35 @@ class StateDBSqlite(StateDB):
 
     def store_monitor_request(self, monitor_request) -> None:
         StateDBSqlite.check_monitor_request(monitor_request)
+        balance_proof = monitor_request['balance_proof']
         params = [
-            hex(monitor_request['channel_identifier']),
-            hex(monitor_request['nonce']),
-            hex(monitor_request['transferred_amount']),
-            monitor_request['locksroot'],
-            monitor_request['extra_hash'],
-            monitor_request['balance_proof_signature'],
-            monitor_request['reward_sender_address'],
+            balance_proof['channel_identifier'],
+            balance_proof['balance_hash'],
+            hex(balance_proof['nonce']),
+            balance_proof['additional_hash'],
+            balance_proof['signature'],
+            monitor_request['non_closing_signature'],
             monitor_request['reward_proof_signature'],
             hex(monitor_request['reward_amount']),
-            monitor_request['token_network_address']
+            balance_proof['token_network_address']
         ]
         self.conn.execute(ADD_MONITOR_REQUEST_SQL, params)
 
-    def get_monitor_request(self, channel_id: int) -> dict:
-        assert channel_id > 0
+    def get_monitor_request(self, channel_id: ChannelIdentifier) -> dict:
+        assert is_channel_identifier(channel_id)
         # TODO unconfirmed topups
         c = self.conn.cursor()
         sql = 'SELECT rowid,* FROM `monitor_requests` WHERE `channel_id` = ?'
-        c.execute(sql, [hex(channel_id)])
+        c.execute(sql, [channel_id])
         result = c.fetchone()
         assert c.fetchone() is None
         return result
 
-    def delete_monitor_request(self, channel_id: int) -> None:
-        assert channel_id > 0
+    def delete_monitor_request(self, channel_id: ChannelIdentifier) -> None:
+        assert is_channel_identifier(channel_id)
         c = self.conn.cursor()
         sql = 'DELETE FROM `monitor_requests` WHERE `channel_id` = ?'
-        c.execute(sql, [hex(channel_id)])
+        c.execute(sql, [channel_id])
         assert c.fetchone() is None
 
     def is_initialized(self) -> bool:
@@ -87,11 +88,11 @@ class StateDBSqlite(StateDB):
         return c.fetchone() is not None
 
     @staticmethod
-    def check_monitor_request(bp):
-        assert bp['channel_identifier'] > 0
-        assert is_checksum_address(bp['token_network_address'])
-        assert is_checksum_address(bp['reward_sender_address'])
-        assert is_checksum_address(bp['monitor_address'])
+    def check_monitor_request(monitor_request):
+        balance_proof = monitor_request['balance_proof']
+        assert is_channel_identifier(balance_proof['channel_identifier'])
+        assert is_checksum_address(balance_proof['token_network_address'])
+        assert is_checksum_address(monitor_request['monitor_address'])
 
     def chain_id(self):
         c = self.conn.cursor()

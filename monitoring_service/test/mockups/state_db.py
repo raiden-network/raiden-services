@@ -1,4 +1,5 @@
 from monitoring_service.state_db.db import StateDB
+from raiden_libs.messages import MonitorRequest
 
 
 class StateDBMock(StateDB):
@@ -12,7 +13,10 @@ class StateDBMock(StateDB):
 
     @property
     def monitor_requests(self) -> dict:
-        return self._monitor_requests
+        return {
+            x['balance_proof']['channel_identifier']: MonitorRequest.deserialize(x)
+            for x in self._monitor_requests.values()
+        }
 
     def setup_db(self, network_id: int, contract_address: str, server_address: str):
         self._is_initialized = True
@@ -33,7 +37,9 @@ class StateDBMock(StateDB):
         return self._is_initialized
 
     def store_monitor_request(self, monitor_request) -> None:
-        self._monitor_requests[monitor_request['channel_identifier']] = monitor_request
+        self._monitor_requests[
+            monitor_request['balance_proof']['channel_identifier']
+        ] = monitor_request
 
     def chain_id(self) -> int:
         return self._chain_id

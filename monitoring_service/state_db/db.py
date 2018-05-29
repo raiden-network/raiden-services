@@ -1,3 +1,4 @@
+from raiden_libs.types import ChannelIdentifier
 
 
 class StateDB:
@@ -12,11 +13,11 @@ class StateDB:
         """Initialize an empty database. Call this if `is_initialized()` returns False"""
         raise NotImplementedError
 
-    def get_monitor_request(self, channel_id: int) -> dict:
+    def get_monitor_request(self, channel_id: ChannelIdentifier) -> dict:
         """Given channel_id, returns a monitor request if it exists. Otherwise returns None."""
         raise NotImplementedError
 
-    def delete_monitor_request(self, channel_id: int) -> None:
+    def delete_monitor_request(self, channel_id: ChannelIdentifier) -> None:
         """Delete monitor request from the DB"""
         raise NotImplementedError
 

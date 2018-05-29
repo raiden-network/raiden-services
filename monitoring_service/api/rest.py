@@ -15,7 +15,10 @@ class MonitorRequestsResource(Resource):
         self.monitor = monitor
 
     def get(self):
-        return list(self.monitor.monitor_requests.values())
+        return [
+            x.serialize_data()
+            for x in self.monitor.monitor_requests.values()
+        ]
 
 
 class BlockchainEvents(Resource):
