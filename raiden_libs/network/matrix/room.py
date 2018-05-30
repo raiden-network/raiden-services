@@ -2,13 +2,13 @@ from cachetools.func import ttl_cache
 from matrix_client.errors import MatrixRequestError
 from matrix_client.room import Room as MatrixRoom
 from typing import List
+import logging
 
 from matrix_client.user import User
 
 from .utils import geventify_callback
-from ethereum.slogging import getLogger
 
-log = getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 class Room(MatrixRoom):
