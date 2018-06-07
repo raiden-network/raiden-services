@@ -20,7 +20,9 @@ log = logging.getLogger(__name__)
 @pytest.fixture(scope='session')
 def ethereum_tester():
     """Returns an instance of an Ethereum tester"""
-    return EthereumTester(PyEVMBackend())
+    tester = EthereumTester(PyEVMBackend())
+    tester.set_fork_block('FORK_BYZANTIUM', 0)
+    return tester
 
 
 @pytest.fixture
