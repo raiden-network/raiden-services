@@ -5,9 +5,7 @@ from functools import wraps
 from eth_utils import is_checksum_address, is_same_address, encode_hex, decode_hex, is_bytes
 from web3.utils.events import get_event_data
 from web3 import Web3
-from web3.contract import Contract
-
-from raiden_contracts.contract_manager import get_event_from_abi
+from web3.contract import Contract, find_matching_event_abi
 
 from raiden_libs.transport import Transport
 from raiden_libs.utils import private_key_to_address, make_filter, sign_data
@@ -34,7 +32,7 @@ def get_event_logs(
         toBlock=None
 ):
     """Helper function to get all event logs in a given range"""
-    abi = get_event_from_abi(contract_abi, event_name)
+    abi = find_matching_event_abi(contract_abi, event_name)
     tmp_filter = make_filter(web3, abi, fromBlock=0, toBlock=toBlock)
     entries = tmp_filter.get_all_entries()
     web3.eth.uninstallFilter(tmp_filter.filter_id)
@@ -111,7 +109,7 @@ class MockRaidenNode:
         assert tx is not None
         assert len(tx['logs']) == 1
         event = get_event_data(
-            get_event_from_abi(self.contract.abi, 'ChannelOpened'),
+            find_matching_event_abi(self.contract.abi, 'ChannelOpened'),
             tx['logs'][0]
         )
 
@@ -187,7 +185,7 @@ class MockRaidenNode:
             self.contract.address,
             amount
         ).transact({'from': self.address})
-        return self.contract.functions.setDeposit(
+        return self.contract.functions.setTotalDeposit(
             self.address,
             amount + channel_info['deposit'],
             partner_address
