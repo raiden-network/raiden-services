@@ -17,7 +17,7 @@ before_install:
   - ./.travis/download_solc.sh
 
 install:
-  - pip install -r requirements_dev.txt
+  - pip install -r requirements-dev.txt
 
 script:
   - make lint
