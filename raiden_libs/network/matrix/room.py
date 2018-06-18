@@ -6,8 +6,6 @@ import logging
 
 from matrix_client.user import User
 
-from .utils import geventify_callback
-
 log = logging.getLogger(__name__)
 
 
@@ -19,13 +17,13 @@ class Room(MatrixRoom):
         self._members = {}
 
     def add_listener(self, callback, event_type=None):
-        return super().add_listener(geventify_callback(callback), event_type)
+        return super().add_listener(self.client.geventify(callback), event_type)
 
     def add_ephemeral_listener(self, callback, event_type=None):
-        return super().add_ephemeral_listener(geventify_callback(callback), event_type)
+        return super().add_ephemeral_listener(self.client.geventify(callback), event_type)
 
     def add_state_listener(self, callback, event_type=None):
-        super().add_state_listener(geventify_callback(callback), event_type)
+        super().add_state_listener(self.client.geventify(callback), event_type)
 
     @ttl_cache(ttl=10)
     def get_joined_members(self) -> List[User]:
