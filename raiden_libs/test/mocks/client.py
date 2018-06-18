@@ -215,16 +215,32 @@ class MockRaidenNode:
         assert len(transferred) == 2
         assert len(locked) == 2
         assert len(locksroot) == 2
-        self.contract.functions.settleChannel(
-            self.address,
-            transferred[0],
-            locked[0],
-            locksroot[0],
-            partner_address,
-            transferred[1],
-            locked[1],
-            locksroot[1]
-        ).transact({'from': self.address})
+
+        # locked + transferred amount of p2 have to be bigger than p1 for the settle call
+        # fix order if necessary
+        if transferred[0] + locked[0] > transferred[1] + locked[1]:
+            print('reorder')
+            self.contract.functions.settleChannel(
+                partner_address,
+                transferred[1],
+                locked[1],
+                locksroot[1],
+                self.address,
+                transferred[0],
+                locked[0],
+                locksroot[0],
+            ).transact({'from': self.address})
+        else:
+            self.contract.functions.settleChannel(
+                self.address,
+                transferred[0],
+                locked[0],
+                locksroot[0],
+                partner_address,
+                transferred[1],
+                locked[1],
+                locksroot[1],
+            ).transact({'from': self.address})
 
     @assert_channel_existence
     def get_balance_proof(self, partner_address: Address, **kwargs) -> BalanceProof:
