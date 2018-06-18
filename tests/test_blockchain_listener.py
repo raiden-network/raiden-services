@@ -21,11 +21,11 @@ def test_blockchain_listener(
 
     blockchain_listener.add_unconfirmed_listener(
         'ChannelOpened',
-        lambda e: unconfirmed_channel_open_events.append(e)
+        lambda e: unconfirmed_channel_open_events.append(e),
     )
     blockchain_listener.add_confirmed_listener(
         'ChannelOpened',
-        lambda e: confirmed_channel_open_events.append(e)
+        lambda e: confirmed_channel_open_events.append(e),
     )
 
     # create unconfirmed channel
@@ -61,7 +61,7 @@ def test_reorg(
     unconfirmed_channel_open_events = []
     blockchain_listener.add_unconfirmed_listener(
         'ChannelOpened',
-        lambda e: unconfirmed_channel_open_events.append(e)
+        lambda e: unconfirmed_channel_open_events.append(e),
     )
 
     c1, c2 = generate_raiden_clients(2)
@@ -105,7 +105,7 @@ def test_reorg(
     confirmed_channel_open_events = []
     blockchain_listener.add_confirmed_listener(
         'ChannelOpened',
-        lambda e: confirmed_channel_open_events.append(e)
+        lambda e: confirmed_channel_open_events.append(e),
     )
     c1.open_channel(c2.address)
 

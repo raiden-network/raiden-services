@@ -10,7 +10,7 @@ from raiden_libs.messages import (
     FeeInfo,
     MonitorRequest,
     PathsRequest,
-    PathsReply
+    PathsReply,
 )
 from raiden_libs.exceptions import MessageTypeError
 from raiden_libs.types import Address, ChannelIdentifier
@@ -22,8 +22,8 @@ def test_serialize_deserialize(get_random_bp, get_random_privkey):
     bp.signature = encode_hex(
         sign_data(
             privkey,
-            bp.serialize_bin()
-        )
+            bp.serialize_bin(),
+        ),
     )
     serialized_message = bp.serialize_full()
 
@@ -46,7 +46,7 @@ def test_balance_proof():
     # test balance proof with computed balance hash
     balance_proof = BalanceProof(
         channel_identifier=ChannelIdentifier(
-            '0x3131313131313131313131313131313131313131313131313131313131313131'
+            '0x3131313131313131313131313131313131313131313131313131313131313131',
         ),
         token_network_address=Address('0x82dd0e0eA3E84D00Cc119c46Ee22060939E5D1FC'),
         nonce=1,
@@ -60,7 +60,7 @@ def test_balance_proof():
     assert serialized['channel_identifier'] == balance_proof.channel_identifier
     assert is_same_address(
         serialized['token_network_address'],
-        balance_proof.token_network_address
+        balance_proof.token_network_address,
     )
     assert serialized['nonce'] == balance_proof.nonce
     assert serialized['chain_id'] == balance_proof.chain_id
@@ -74,7 +74,7 @@ def test_balance_proof():
     # test balance proof with balance hash set from constructor
     balance_proof = BalanceProof(
         channel_identifier=ChannelIdentifier(
-            '0x3131313131313131313131313131313131313131313131313131313131313131'
+            '0x3131313131313131313131313131313131313131313131313131313131313131',
         ),
         token_network_address=Address('0x82dd0e0eA3E84D00Cc119c46Ee22060939E5D1FC'),
         nonce=1,
@@ -91,7 +91,7 @@ def test_balance_proof():
     assert serialized['channel_identifier'] == balance_proof.channel_identifier
     assert is_same_address(
         serialized['token_network_address'],
-        balance_proof.token_network_address
+        balance_proof.token_network_address,
     )
     assert serialized['nonce'] == balance_proof.nonce
     assert serialized['chain_id'] == balance_proof.chain_id
@@ -107,7 +107,7 @@ def test_fee_info():
         channel_identifier='0x3131313131313131313131313131313131313131313131313131313131313131',
         nonce=1,
         relative_fee=10000,
-        signature='signature'
+        signature='signature',
     )
     assert message == Message.deserialize(message).serialize_data()
     message['message_type'] = 'FeeInfo'
@@ -124,7 +124,7 @@ def test_paths_request():
         num_paths=1,
         chain_id=1,
         nonce=1,
-        signature='signature'
+        signature='signature',
     )
 
     assert message == Message.deserialize(message).serialize_data()
@@ -142,9 +142,12 @@ def test_paths_reply():
         nonce=1,
         paths_and_fees=[{
             'estimated_fee': 10000,
-            'paths': [['0x82dd0e0eA3E84D00Cc119c46Ee220609', '0xA3E84D00Cc119c46Ee22060939E5D1FC']]
+            'paths': [[
+                '0x82dd0e0eA3E84D00Cc119c46Ee220609',
+                '0xA3E84D00Cc119c46Ee22060939E5D1FC',
+            ]],
         }],
-        signature='signature'
+        signature='signature',
     )
 
     assert message == Message.deserialize(message).serialize_data()
@@ -160,7 +163,7 @@ def test_deserialize_with_required_type():
         channel_identifier='0x3131313131313131313131313131313131313131313131313131313131313131',
         nonce=1,
         relative_fee=1000,
-        signature='signature'
+        signature='signature',
     )
 
     deserialized_message = Message.deserialize(message, FeeInfo)
@@ -182,13 +185,13 @@ def test_monitor_request(get_random_bp, get_random_privkey, get_random_address):
         non_closing_signature=balance_proof.signature,
         reward_proof_signature='',
         reward_amount=1,
-        monitor_address=get_random_address()
+        monitor_address=get_random_address(),
     )
     monitor_request.reward_proof_signature = encode_hex(
         sign_data(
             reward_sender_privkey,
-            monitor_request.serialize_reward_proof()
-        )
+            monitor_request.serialize_reward_proof(),
+        ),
     )
 
     serialized = monitor_request.serialize_data()
@@ -197,17 +200,17 @@ def test_monitor_request(get_random_bp, get_random_privkey, get_random_address):
     assert is_same_address(monitor_request_verify.monitor_address, monitor_request.monitor_address)
     assert is_same_address(
         monitor_request_verify.reward_proof_signer,
-        monitor_request.reward_proof_signer
+        monitor_request.reward_proof_signer,
     )
     assert is_same_address(
         monitor_request.reward_proof_signer,
-        private_key_to_address(reward_sender_privkey)
+        private_key_to_address(reward_sender_privkey),
     )
     assert monitor_request_verify.non_closing_signature == monitor_request.non_closing_signature
     assert monitor_request_verify.reward_amount == monitor_request.reward_amount
     assert is_same_address(
         balance_proof_verify.token_network_address,
-        balance_proof.token_network_address
+        balance_proof.token_network_address,
     )
     assert balance_proof_verify.chain_id == balance_proof.chain_id
     assert balance_proof_verify.channel_identifier == balance_proof.channel_identifier

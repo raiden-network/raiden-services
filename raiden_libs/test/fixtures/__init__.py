@@ -8,7 +8,7 @@ def patched_validate_signature_v(value):
     if value not in {0, 1, 27, 28, 37, 38}:
         raise ValidationError(
             "The `v` portion of the signature must be 0, 1, 27, 28, 37 or 38, not %d"
-            % value
+            % value,
         )
 
 

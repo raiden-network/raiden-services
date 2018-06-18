@@ -3,5 +3,5 @@ from .matrix import MatrixTransport
 
 __all__ = [
     'Transport',
-    'MatrixTransport'
+    'MatrixTransport',
 ]

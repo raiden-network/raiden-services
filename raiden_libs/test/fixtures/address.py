@@ -9,7 +9,7 @@ from raiden_libs.utils import (
     private_key_to_address,
     UINT64_MAX,
     UINT192_MAX,
-    UINT256_MAX
+    UINT256_MAX,
 )
 from raiden_libs.messages import BalanceProof, MonitorRequest
 from raiden_libs.utils.signing import sign_data
@@ -21,7 +21,7 @@ def get_random_privkey() -> Callable:
     """Returns a random private key"""
     return lambda: "0x%064x" % random.randint(
         1,
-        UINT256_MAX
+        UINT256_MAX,
     )
 
 
@@ -38,7 +38,7 @@ def get_random_bp(get_random_address, get_random_privkey) -> Callable:
     """Returns a balance proof filled in with a random value"""
     def f(
         channel_identifier: ChannelIdentifier = None,
-        contract_address: Address = None
+        contract_address: Address = None,
     ):
         contract_address = contract_address or get_random_address()
         channel_identifier = channel_identifier or ChannelIdentifier(get_random_privkey())
@@ -67,17 +67,17 @@ def get_random_monitor_request(get_random_bp, get_random_address, get_random_pri
         privkey_non_closing = get_random_privkey()
         balance_proof.signature = encode_hex(sign_data(privkey, balance_proof.serialize_bin()))
         non_closing_signature = encode_hex(
-            sign_data(privkey_non_closing, balance_proof.serialize_bin())
+            sign_data(privkey_non_closing, balance_proof.serialize_bin()),
         )
 
         monitor_request = MonitorRequest(
             balance_proof,
             non_closing_signature,
             reward_amount=random.randint(0, UINT192_MAX),
-            monitor_address=get_random_address()
+            monitor_address=get_random_address(),
         )
         monitor_request.reward_proof_signature = encode_hex(
-            sign_data(privkey, monitor_request.serialize_reward_proof())
+            sign_data(privkey, monitor_request.serialize_reward_proof()),
         )
         return monitor_request
     return f
@@ -108,10 +108,10 @@ def send_funds(
             'from': faucet_address,
             'to': target,
             'gas': 21000,
-            'value': 1 * denoms.ether
+            'value': 1 * denoms.ether,
         })
         custom_token.functions.transfer(
             target,
-            10000
+            10000,
         ).transact({'from': faucet_address})
     return f

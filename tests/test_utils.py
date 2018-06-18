@@ -7,7 +7,7 @@ from raiden_libs.utils import (
     get_merkle_root,
     is_empty_merkle_root,
     compute_merkle_proof,
-    validate_merkle_proof
+    validate_merkle_proof,
 )
 
 

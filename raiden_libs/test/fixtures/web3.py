@@ -33,8 +33,10 @@ def deploy_contract_txhash(revert_chain):
             deployer_address,
             abi,
             bytecode,
-            args
+            args,
     ):
+        if args is None:
+            args = []
         contract = web3.eth.contract(abi=abi, bytecode=bytecode)
         return contract.constructor(*args).transact({'from': deployer_address})
     return fn
@@ -48,7 +50,7 @@ def deploy_contract(revert_chain, deploy_contract_txhash):
             deployer_address,
             abi,
             bytecode,
-            args
+            args,
     ):
         contract = web3.eth.contract(abi=abi, bytecode=bytecode)
         txhash = deploy_contract_txhash(web3, deployer_address, abi, bytecode, args)
@@ -70,7 +72,7 @@ def web3(
         patch_genesis_gas_limit,
         faucet_private_key: str,
         faucet_address: Address,
-        ethereum_tester
+        ethereum_tester,
 ):
     """Returns an initialized Web3 instance"""
     provider = EthereumTesterProvider(ethereum_tester)
@@ -84,7 +86,7 @@ def web3(
         'from': ethereum_tester.get_accounts()[0],
         'to': faucet_address,
         'gas': 21000,
-        'value': FAUCET_ALLOWANCE
+        'value': FAUCET_ALLOWANCE,
     })
 
     yield web3

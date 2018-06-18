@@ -44,7 +44,7 @@ class MatrixTransport(Transport):
         self.client.login_with_password(self.username, self.password)
         self.room = self.client.join_room(self.room_name)
         self.client.start_listener_thread(
-            exception_handler=lambda e: self.matrix_exception_handler(e)
+            exception_handler=lambda e: self.matrix_exception_handler(e),
         )
 
     def get_room_events(self, limit=100):
@@ -95,7 +95,7 @@ class MatrixTransport(Transport):
                     (
                         self.homeserver,
                         self.retry_timeout,
-                        str(e)
-                    )
+                        str(e),
+                    ),
                 )
                 gevent.sleep(self.retry_timeout)
