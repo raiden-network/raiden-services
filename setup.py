@@ -9,7 +9,10 @@ with open('README.rst') as readme_file:
     readme = readme_file.read()
 
 requirements_replacements = {
-    'git+https://github.com/matrix-org/matrix-python-sdk.git': 'matrix-client',
+    (
+        'git+https://github.com/matrix-org/'
+        'matrix-python-sdk.git@9ccbaa1#egg=matrix_client'
+    ): 'matrix-client',
 }
 
 requirements = list(set(
