@@ -32,7 +32,7 @@ class BalanceProof(Message):
 
         transferred_amount: int = None,
         locked_amount: int = 0,
-        locksroot: str = '0x%064x' % 0
+        locksroot: str = '0x%064x' % 0,
     ) -> None:
         super().__init__()
         assert isinstance(channel_identifier, T_ChannelIdentifier)
@@ -55,7 +55,7 @@ class BalanceProof(Message):
             assert self.hash_balance_data(
                 transferred_amount,
                 locked_amount,
-                locksroot
+                locksroot,
             ) == balance_hash
 
         self.transferred_amount = transferred_amount
@@ -88,14 +88,14 @@ class BalanceProof(Message):
             'bytes32',
             'bytes32',
             'address',
-            'uint256'
+            'uint256',
         ], [
             decode_hex(self.balance_hash),
             self.nonce,
             decode_hex(self.additional_hash),
             decode_hex(self.channel_identifier),
             self.token_network_address,
-            self.chain_id
+            self.chain_id,
         ])
 
     @classmethod
@@ -129,8 +129,8 @@ class BalanceProof(Message):
                 self.hash_balance_data(
                     self.transferred_amount,
                     self.locked_amount,
-                    self.locksroot
-                )
+                    self.locksroot,
+                ),
             )
         raise ValueError("Can't compute balance hash")
 
@@ -142,7 +142,7 @@ class BalanceProof(Message):
     def signer(self) -> str:
         signer = eth_verify(
             decode_hex(self.signature),
-            self.serialize_bin()
+            self.serialize_bin(),
         )
         return to_checksum_address(signer)
 
@@ -150,9 +150,9 @@ class BalanceProof(Message):
     def hash_balance_data(
         transferred_amount: int,
         locked_amount: int,
-        locksroot: str
+        locksroot: str,
     ) -> str:
         return Web3.soliditySha3(
             ['uint256', 'uint256', 'bytes32'],
-            [transferred_amount, locked_amount, locksroot]
+            [transferred_amount, locked_amount, locksroot],
         )

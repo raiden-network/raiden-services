@@ -19,7 +19,7 @@ def generate_raiden_client(
         get_random_privkey,
         client_registry,
         send_funds,
-        ethereum_tester
+        ethereum_tester,
 ):
     """Factory function to create a new Raiden client. The client has some funds
     allocated by default and has no open channels."""

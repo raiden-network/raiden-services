@@ -18,7 +18,7 @@ def sign_transaction_data(
     transaction: Dict,
     nonce_offset: int = 0,
     gas_price: int = GAS_PRICE,
-    gas_limit: int = GAS_LIMIT_POT
+    gas_limit: int = GAS_LIMIT_POT,
 ):
     from_ = private_key_to_address(private_key)
     transaction['gasPrice'] = gas_price

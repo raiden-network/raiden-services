@@ -10,7 +10,7 @@ def test_deploy_multiple_tokens(add_and_register_token):
             random.randint(100, 1000000),
             random.randint(1, 25),
             'TK' + chr(i + 0x41),
-            'TT' + chr(i + 0x41)
+            'TT' + chr(i + 0x41),
         )
         for i in range(DEPLOY_TOKENS)
     ]

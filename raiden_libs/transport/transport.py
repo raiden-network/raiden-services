@@ -38,7 +38,7 @@ class Transport(gevent.Greenlet):
             deserialized_msg = Message.deserialize(json_msg)
         except (
             jsonschema.exceptions.ValidationError,
-            MessageFormatError
+            MessageFormatError,
         ) as ex:
             log.error('Error when deserializing message: %s', str(ex))
             return

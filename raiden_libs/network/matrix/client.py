@@ -24,7 +24,7 @@ class GMatrixClient(MatrixClient):
             user_id: str = None,
             valid_cert_check: bool = True,
             sync_filter_limit: int = 20,
-            cache_level: CACHE = CACHE.ALL
+            cache_level: CACHE = CACHE.ALL,
     ) -> None:
         super().__init__(
             base_url,
@@ -32,7 +32,7 @@ class GMatrixClient(MatrixClient):
             user_id,
             valid_cert_check,
             sync_filter_limit,
-            cache_level
+            cache_level,
         )
         self.should_listen = False
         self.sync_thread = None
@@ -48,7 +48,7 @@ class GMatrixClient(MatrixClient):
         self,
         timeout_ms: int = 30000,
         exception_handler: Callable = None,
-        bad_sync_timeout: int = 5
+        bad_sync_timeout: int = 5,
     ):
         """
         Keep listening for events forever.
@@ -70,7 +70,7 @@ class GMatrixClient(MatrixClient):
                 if e.code >= 500:
                     logger.warning(
                         'Problem occured serverside. Waiting %i seconds',
-                        _bad_sync_timeout
+                        _bad_sync_timeout,
                     )
                     gevent.sleep(_bad_sync_timeout)
                     _bad_sync_timeout = min(_bad_sync_timeout * 2, self.bad_sync_timeout_limit)
@@ -106,8 +106,8 @@ class GMatrixClient(MatrixClient):
             'POST',
             '/user_directory/search',
             {
-                'search_term': term
-            }
+                'search_term': term,
+            },
         )
         try:
             return [
@@ -122,8 +122,8 @@ class GMatrixClient(MatrixClient):
         if filter_term:
             filter_options = {
                 'filter': {
-                    'generic_search_term': filter_term
-                }
+                    'generic_search_term': filter_term,
+                },
             }
 
         response = self.api._send(
@@ -131,8 +131,8 @@ class GMatrixClient(MatrixClient):
             '/publicRooms',
             {
                 'limit': limit,
-                **filter_options
-            }
+                **filter_options,
+            },
         )
         rooms = []
         for room_info in response['chunk']:
@@ -144,7 +144,7 @@ class GMatrixClient(MatrixClient):
     def modify_presence_list(
         self,
         add_user_ids: List[str] = None,
-        remove_user_ids: List[str] = None
+        remove_user_ids: List[str] = None,
     ):
         if add_user_ids is None:
             add_user_ids = []
@@ -155,8 +155,8 @@ class GMatrixClient(MatrixClient):
             f'/presence/list/{quote(self.user_id)}',
             {
                 'invite': add_user_ids,
-                'drop': remove_user_ids
-            }
+                'drop': remove_user_ids,
+            },
         )
 
     def get_presence_list(self) -> List[dict]:
@@ -170,8 +170,8 @@ class GMatrixClient(MatrixClient):
             'PUT',
             f'/presence/{quote(self.user_id)}/status',
             {
-                'presence': state
-            }
+                'presence': state,
+            },
         )
 
     def typing(self, room: Room, timeout: int=5000):

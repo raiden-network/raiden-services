@@ -58,7 +58,7 @@ class FeeInfo(Message):
             'bytes32',
             'uint256',
             'uint256',
-            'uint256'
+            'uint256',
         ], [
             self.token_network_address,
             decode_hex(self.channel_identifier),
@@ -85,7 +85,7 @@ class FeeInfo(Message):
     def signer(self) -> str:
         signer = eth_verify(
             decode_hex(self.signature),
-            self.serialize_bin()
+            self.serialize_bin(),
         )
         return to_checksum_address(signer)
 

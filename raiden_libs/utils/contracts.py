@@ -4,7 +4,7 @@ from web3.utils.events import get_event_data
 from web3.utils.filters import construct_event_filter_params
 from eth_utils import (
     decode_hex,
-    function_abi_to_4byte_selector
+    function_abi_to_4byte_selector,
 )
 from eth_abi import decode_abi
 
@@ -17,13 +17,13 @@ def normalize_name(name):
     return name
 
 
-def make_filter(web3, event_abi, filters={}, **filter_kwargs):
+def make_filter(web3, event_abi, filters=None, **filter_kwargs):
     assert event_abi != []
     log_data_extract_fn = functools.partial(get_event_data, event_abi)
     data_filter_set, filter_params = construct_event_filter_params(
         event_abi,
         argument_filters=filters,
-        **filter_kwargs
+        **filter_kwargs,
     )
 
     event_filter = web3.eth.filter(filter_params)

@@ -21,7 +21,7 @@ class PathsReply(Message):
         chain_id: int,
         nonce: int,
         paths_and_fees: list = None,
-        signature: str = None
+        signature: str = None,
 
     ) -> None:
         super().__init__()
@@ -89,7 +89,7 @@ class PathsReply(Message):
     def signer(self) -> str:
         signer = eth_verify(
             decode_hex(self.signature),
-            self.serialize_bin()
+            self.serialize_bin(),
         )
         return to_checksum_address(signer)
 

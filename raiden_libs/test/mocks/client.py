@@ -15,7 +15,7 @@ from raiden_libs.messages import (
     FeeInfo,
     PathsRequest,
     Message,
-    PathsReply
+    PathsReply,
 )
 from raiden_libs.types import Address, ChannelIdentifier
 
@@ -29,7 +29,7 @@ def get_event_logs(
         contract_abi: dict,
         event_name: str,
         fromBlock=0,
-        toBlock=None
+        toBlock=None,
 ):
     """Helper function to get all event logs in a given range"""
     abi = find_matching_event_abi(contract_abi, event_name)
@@ -102,7 +102,7 @@ class MockRaidenNode:
         txid = self.contract.functions.openChannel(
             self.address,
             partner_address,
-            15
+            15,
         ).transact({'from': self.address})
         assert txid is not None
         tx = self.web3.eth.getTransactionReceipt(txid)
@@ -110,7 +110,7 @@ class MockRaidenNode:
         assert len(tx['logs']) == 1
         event = get_event_data(
             find_matching_event_abi(self.contract.abi, 'ChannelOpened'),
-            tx['logs'][0]
+            tx['logs'][0],
         )
 
         channel_id = event['args']['channel_identifier']
@@ -150,12 +150,12 @@ class MockRaidenNode:
         open_channels = {
             self.get_other_address(
                 x['args']['participant1'],
-                x['args']['participant2']
+                x['args']['participant2'],
             ): x['args']['channel_identifier']
             for x in entries
             if self.address in (
                 x['args']['participant1'],
-                x['args']['participant2']
+                x['args']['participant2'],
             )
         }
         # remove already closed channels from the list
@@ -183,12 +183,12 @@ class MockRaidenNode:
         channel_info = self.get_own_channel_info(partner_address)
         self.token_contract.functions.approve(
             self.contract.address,
-            amount
+            amount,
         ).transact({'from': self.address})
         return self.contract.functions.setTotalDeposit(
             self.address,
             amount + channel_info['deposit'],
-            partner_address
+            partner_address,
         ).transact({'from': self.address})
 
     @assert_channel_existence
@@ -200,16 +200,16 @@ class MockRaidenNode:
             balance_proof.balance_hash,
             balance_proof.nonce,
             balance_proof.additional_hash,
-            balance_proof.signature
+            balance_proof.signature,
         ).transact({'from': self.address})
 
     @assert_channel_existence
     def settle_channel(
         self,
         partner_address: Address,
-        transferred=tuple(),
-        locked=tuple(),
-        locksroot=tuple()
+        transferred=tuple(),  # noqa: B008
+        locked=tuple(),  # noqa: B008
+        locksroot=tuple(),  # noqa: B008
     ):
         """Settles a closed channel. Settling requires that the challenge period is over"""
         assert len(transferred) == 2
@@ -253,7 +253,7 @@ class MockRaidenNode:
         bp = BalanceProof(
             channel_id,
             self.contract.address,
-            **kwargs
+            **kwargs,
         )
         bp.signature = encode_hex(sign_data(self.privkey, bp.serialize_bin()))
         return bp
@@ -264,24 +264,24 @@ class MockRaidenNode:
         partner_address: Address,
         balance_proof: BalanceProof,
         reward_amount: int,
-        monitor_address: Address
+        monitor_address: Address,
     ) -> MonitorRequest:
         """Get monitor request message for a given balance proof."""
         monitor_request = MonitorRequest(
             balance_proof,
             reward_proof_signature=None,
             reward_amount=reward_amount,
-            monitor_address=monitor_address
+            monitor_address=monitor_address,
         )
         monitor_request.reward_proof_signature = encode_hex(
             sign_data(
                 self.privkey,
-                monitor_request.serialize_reward_proof()
-            )
+                monitor_request.serialize_reward_proof(),
+            ),
         )
         non_closing_data = balance_proof.serialize_bin() + decode_hex(balance_proof.signature)
         monitor_request.non_closing_signature = encode_hex(
-            sign_data(self.privkey, non_closing_data)
+            sign_data(self.privkey, non_closing_data),
         )
         return monitor_request
 
@@ -296,7 +296,7 @@ class MockRaidenNode:
         fee_info = FeeInfo(
             self.contract.address,
             channel_id,
-            **kwargs
+            **kwargs,
         )
         fee_info.signature = encode_hex(sign_data(self.privkey, fee_info.serialize_bin()))
         return fee_info
@@ -313,7 +313,7 @@ class MockRaidenNode:
             self.contract.address,
             self.address,
             target_address,
-            **kwargs
+            **kwargs,
         )
         request.signature = encode_hex(sign_data(self.privkey, request.serialize_bin()))
         return request
@@ -338,7 +338,7 @@ class MockRaidenNode:
             balance_proof.nonce,
             balance_proof.additional_hash,
             balance_proof.signature,
-            non_closing_signature
+            non_closing_signature,
         ).transact({'from': self.address})
 
     @assert_channel_existence
@@ -354,18 +354,18 @@ class MockRaidenNode:
     def get_channel_participant_info(
         self,
         participant_address: Address,
-        partner_address: Address
+        partner_address: Address,
     ):
         channel_info = self.contract.functions.getChannelParticipantInfo(
             participant_address,
-            partner_address
+            partner_address,
         ).call()
         return_fields = [
             'deposit',
             'withdrawn_amount',
             'is_the_closer',
             'balance_hash',
-            'nonce'
+            'nonce',
         ]
         assert len(return_fields) == len(channel_info)
         return {

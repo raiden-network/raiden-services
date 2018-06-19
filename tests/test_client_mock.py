@@ -42,7 +42,7 @@ def test_message_signature(generate_raiden_clients):
         nonce=1,
         transferred_amount=5,
         locksroot='0x%064x' % 0,
-        locked_amount=0
+        locked_amount=0,
     )
     assert is_same_address(balance_proof.signer, c1.address)
     monitor_request = c1.get_monitor_request(c2.address, balance_proof, 1, c2.address)
@@ -70,7 +70,7 @@ def test_close_settle(generate_raiden_clients, wait_for_blocks, custom_token):
         transferred_amount=transfer_c1,
         locked_amount=0,
         locksroot='0x%064x' % 0,
-        additional_hash='0x%064x' % 0
+        additional_hash='0x%064x' % 0,
     )
     balance_proof_c2 = c1.get_balance_proof(
         c2.address,
@@ -78,7 +78,7 @@ def test_close_settle(generate_raiden_clients, wait_for_blocks, custom_token):
         transferred_amount=transfer_c2,
         locked_amount=0,
         locksroot='0x%064x' % 0,
-        additional_hash='0x%064x' % 0
+        additional_hash='0x%064x' % 0,
     )
 
     c1.close_channel(c2.address, balance_proof)
@@ -90,7 +90,7 @@ def test_close_settle(generate_raiden_clients, wait_for_blocks, custom_token):
         c2.address,
         (balance_proof_c2.transferred_amount, balance_proof.transferred_amount),
         (balance_proof_c2.locked_amount, balance_proof.locked_amount),
-        (balance_proof_c2.locksroot, balance_proof.locksroot)
+        (balance_proof_c2.locksroot, balance_proof.locksroot),
     )
 
     final_balance_c1 = custom_token.functions.balanceOf(c1.address).call()
@@ -117,7 +117,7 @@ def test_client_one_side_settle(generate_raiden_clients, wait_for_blocks, custom
         transferred_amount=transfer_c1,
         locked_amount=0,
         locksroot='0x%064x' % 0,
-        additional_hash='0x%064x' % 0
+        additional_hash='0x%064x' % 0,
     )
 
     c1.close_channel(c2.address, balance_proof)
@@ -127,7 +127,7 @@ def test_client_one_side_settle(generate_raiden_clients, wait_for_blocks, custom
         c2.address,
         (0, balance_proof.transferred_amount),
         (0, balance_proof.locked_amount),
-        ('0x%064x' % 0, balance_proof.locksroot)
+        ('0x%064x' % 0, balance_proof.locksroot),
     )
 
     final_balance_c1 = custom_token.functions.balanceOf(c1.address).call()

@@ -63,7 +63,7 @@ class PathsRequest(Message):
             'uint256',
             'uint256',
             'uint256',
-            'uint256'
+            'uint256',
         ], [
             self.token_network_address,
             self.source_address,
@@ -94,7 +94,7 @@ class PathsRequest(Message):
     def signer(self) -> str:
         signer = eth_verify(
             decode_hex(self.signature),
-            self.serialize_bin()
+            self.serialize_bin(),
         )
         return to_checksum_address(signer)
 

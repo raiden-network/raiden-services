@@ -37,8 +37,8 @@ class Room(MatrixRoom):
                         User(
                             self.client.api,
                             user_id,
-                            event['content'].get('displayname')
-                        )
+                            event['content'].get('displayname'),
+                        ),
                     )
         return list(self._members.values())
 

@@ -24,16 +24,16 @@ BALANCE_PROOF_SCHEMA = {
             'type': 'integer',
         },
         'token_network_address': {
-            'type': 'string'
+            'type': 'string',
         },
         'balance_hash': {
-            'type': 'string'
+            'type': 'string',
         },
         'additional_hash': {
-            'type': 'string'
+            'type': 'string',
         },
         'signature': {
-            'type': 'string'
+            'type': 'string',
         },
         'transferred_amount': {
             'type': 'integer',
@@ -42,9 +42,9 @@ BALANCE_PROOF_SCHEMA = {
             'type': 'integer',
         },
         'locksroot': {
-            'type': 'string'
+            'type': 'string',
         },
-    }
+    },
 }
 
 MONITOR_REQUEST_SCHEMA = {
@@ -62,8 +62,8 @@ MONITOR_REQUEST_SCHEMA = {
         },
         'balance_proof': {
             'type': 'object',
-        }
-    }
+        },
+    },
 }
 make_properties_required(MONITOR_REQUEST_SCHEMA)
 
@@ -89,16 +89,16 @@ FEE_INFO_SCHEMA = {
         },
         'nonce': {
             'type': 'integer',
-            'minimum': 0
+            'minimum': 0,
         },
         'relative_fee': {
             'type': 'integer',
-            'minimum': 0
+            'minimum': 0,
         },
         'signature': {
-            'type': 'string'
+            'type': 'string',
         },
-    }
+    },
 }
 
 PATHS_REQUEST_SCHEMA = {
@@ -125,24 +125,24 @@ PATHS_REQUEST_SCHEMA = {
         },
         'value': {
             'type': 'integer',
-            'minimum': 1
+            'minimum': 1,
         },
         'num_paths': {
             'type': 'integer',
-            'minimum': 1
+            'minimum': 1,
         },
         'chain_id': {
             'type': 'integer',
-            'minimum': 1
+            'minimum': 1,
         },
         'nonce': {
             'type': 'integer',
-            'minimum': 0
+            'minimum': 0,
         },
         'signature': {
-            'type': 'string'
+            'type': 'string',
         },
-    }
+    },
 }
 
 PATHS_REPLY_SCHEMA = {
@@ -165,23 +165,23 @@ PATHS_REPLY_SCHEMA = {
         },
         'value': {
             'type': 'integer',
-            'minimum': 1
+            'minimum': 1,
         },
         'chain_id': {
             'type': 'integer',
-            'minimum': 1
+            'minimum': 1,
         },
         'nonce': {
             'type': 'integer',
-            'minimum': 0
+            'minimum': 0,
         },
         'paths_and_fees': {
             'type': 'array',
         },
         'signature': {
-            'type': 'string'
+            'type': 'string',
         },
-    }
+    },
 }
 
 ENVELOPE_SCHEMA = {
@@ -189,7 +189,7 @@ ENVELOPE_SCHEMA = {
     'required': ['message_type'],
     'properties': {
         'message_type': {
-            'type': 'string'
-        }
-    }
+            'type': 'string',
+        },
+    },
 }

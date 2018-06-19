@@ -22,7 +22,7 @@ class MonitorRequest(Message):
         non_closing_signature: str = None,
         reward_proof_signature: bytes = None,  # bytes
         reward_amount: int = None,             # uint192
-        monitor_address: Address = None
+        monitor_address: Address = None,
     ) -> None:
         assert non_closing_signature is None or len(decode_hex(non_closing_signature)) == 65
         assert reward_amount is None or (reward_amount >= 0) and (reward_amount <= UINT192_MAX)
@@ -51,7 +51,7 @@ class MonitorRequest(Message):
             'uint256',
             'address',
             'uint256',
-            'uint256'
+            'uint256',
         ], [
             self.balance_proof.channel_identifier,
             self.reward_amount,
@@ -69,7 +69,7 @@ class MonitorRequest(Message):
             data['non_closing_signature'],
             data['reward_proof_signature'],
             data['reward_amount'],
-            data['monitor_address']
+            data['monitor_address'],
         )
         return result
 
@@ -81,7 +81,7 @@ class MonitorRequest(Message):
     def reward_proof_signer(self) -> str:
         signer = eth_verify(
             decode_hex(self.reward_proof_signature),
-            self.serialize_reward_proof()
+            self.serialize_reward_proof(),
         )
         return to_checksum_address(signer)
 
@@ -89,6 +89,6 @@ class MonitorRequest(Message):
     def non_closing_signer(self) -> str:
         signer = eth_verify(
             decode_hex(self.non_closing_signature),
-            self.balance_proof.serialize_bin() + decode_hex(self.balance_proof.signature)
+            self.balance_proof.serialize_bin() + decode_hex(self.balance_proof.signature),
         )
         return to_checksum_address(signer)

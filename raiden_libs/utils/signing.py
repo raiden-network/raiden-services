@@ -12,7 +12,7 @@ from eth_utils import (
     decode_hex,
     keccak,
     remove_0x_prefix,
-    is_0x_prefixed
+    is_0x_prefixed,
 )
 
 from raiden_libs.types import Address
@@ -94,7 +94,7 @@ def public_key_to_address(public_key: Union[PublicKey, bytes]) -> Address:
 def private_key_to_address(private_key: str) -> Address:
     """ Converts a private key to an Ethereum address. """
     return to_checksum_address(
-        public_key_to_address(PrivateKey.from_hex(remove_0x_prefix(private_key)).public_key)
+        public_key_to_address(PrivateKey.from_hex(remove_0x_prefix(private_key)).public_key),
     )
 
 
@@ -121,7 +121,7 @@ def pack_data(abi_types, values) -> bytes:
     if len(abi_types) != len(values):
         raise ValueError(
             "Length mismatch between provided abi types and values.  Got "
-            "{0} types and {1} values.".format(len(abi_types), len(values))
+            "{0} types and {1} values.".format(len(abi_types), len(values)),
         )
 
     normalized_values = map_abi_data([abi_ens_resolver(None)], abi_types, values)

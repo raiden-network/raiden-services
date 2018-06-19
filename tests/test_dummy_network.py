@@ -15,7 +15,7 @@ def test_dummy_network(web3, generate_dummy_network):
 
     c1.transport.send_message(
         c1.get_balance_proof(c2.address, transferred_amount=1),
-        c2.address
+        c2.address,
     )
 
     assert len(messages_received) == 1

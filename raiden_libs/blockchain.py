@@ -20,7 +20,7 @@ def create_event_filter(
         web3: Web3,
         event_name: str,
         event_abi: Dict,
-        filter_params: Dict = {}
+        filter_params: Dict = None,
 ) -> LogFilter:
     """Create filter object that tracks events emitted.
 
@@ -32,11 +32,13 @@ def create_event_filter(
 
     Returns:
         A LogFilter instance"""
+    if filter_params is None:
+        filter_params = {}
     filter_meta_params = dict(filter_params)
 
     data_filter_set, event_filter_params = construct_event_filter_params(
         event_abi,
-        **filter_meta_params
+        **filter_meta_params,
     )
 
     log_data_extract_fn = functools.partial(get_event_data, event_abi)
@@ -77,7 +79,7 @@ def get_events(
         filter_params={
             'fromBlock': from_block,
             'toBlock': to_block,
-        }
+        },
     )
     events = filter.get_all_entries()
 
@@ -96,7 +98,7 @@ class BlockchainListener(gevent.Greenlet):
             required_confirmations: int = 4,
             sync_chunk_size: int = 100_000,
             poll_interval: int = 2,
-            sync_start_block: int = 0
+            sync_start_block: int = 0,
     ) -> None:
         """Creates a new BlockchainListener
 
@@ -151,7 +153,7 @@ class BlockchainListener(gevent.Greenlet):
                 endpoint = self.web3.currentProvider.endpoint_uri
                 log.warning(
                     'Ethereum node (%s) refused connection. Retrying in %d seconds.' %
-                    (endpoint, self.poll_interval)
+                    (endpoint, self.poll_interval),
                 )
                 gevent.sleep(self.poll_interval)
                 self.is_connected.clear()
@@ -175,7 +177,7 @@ class BlockchainListener(gevent.Greenlet):
         new_unconfirmed_head_number = min(new_unconfirmed_head_number, current_block)
         new_confirmed_head_number = max(
             new_unconfirmed_head_number - self.required_confirmations,
-            self.confirmed_head_number
+            self.confirmed_head_number,
         )
 
         # return if blocks have already been processed
@@ -187,13 +189,13 @@ class BlockchainListener(gevent.Greenlet):
             # create filters depending on current head number
             filters_confirmed = self.get_filter_params(
                 self.confirmed_head_number,
-                new_confirmed_head_number
+                new_confirmed_head_number,
             )
             log.debug(
                 'Filtering for confirmed events: %s-%s @%d',
                 filters_confirmed['from_block'],
                 filters_confirmed['to_block'],
-                current_block
+                current_block,
             )
             # filter the events and run callbacks
             self.filter_events(filters_confirmed, self.confirmed_callbacks)
@@ -202,13 +204,13 @@ class BlockchainListener(gevent.Greenlet):
             # create filters depending on current head number
             filters_unconfirmed = self.get_filter_params(
                 self.unconfirmed_head_number,
-                new_unconfirmed_head_number
+                new_unconfirmed_head_number,
             )
             log.debug(
                 'Filtering for unconfirmed events: %s-%s @%d',
                 filters_unconfirmed['from_block'],
                 filters_unconfirmed['to_block'],
-                current_block
+                current_block,
             )
             # filter the events and run callbacks
             self.filter_events(filters_unconfirmed, self.unconfirmed_callbacks)
@@ -244,7 +246,7 @@ class BlockchainListener(gevent.Greenlet):
                 self.contract_manager,
                 self.contract_name,
                 event_name,
-                **filter_params
+                **filter_params,
             )
             for event in events:
                 log.debug('Received confirmed %s event', event_name)
@@ -254,7 +256,7 @@ class BlockchainListener(gevent.Greenlet):
         log.info(
             'Chain reorganization detected. '
             'Resyncing unconfirmed events (unconfirmed_head=%d) [@%d]' %
-            (self.unconfirmed_head_number, current_block)
+            (self.unconfirmed_head_number, current_block),
         )
         # here we should probably have a callback or a user-overriden method
         self.unconfirmed_head_number = self.confirmed_head_number
@@ -269,7 +271,7 @@ class BlockchainListener(gevent.Greenlet):
             if current_block >= self.unconfirmed_head_number:
                 # if the hash of our head changed, there was a chain reorg
                 current_unconfirmed_hash = self.web3.eth.getBlock(
-                    self.unconfirmed_head_number
+                    self.unconfirmed_head_number,
                 ).hash
                 if current_unconfirmed_hash != self.unconfirmed_head_hash:
                     self._detected_chain_reorg(current_block)
@@ -289,7 +291,7 @@ class BlockchainListener(gevent.Greenlet):
                         self.confirmed_head_hash,
                         self.confirmed_head_number,
                         current_head_hash,
-                        self.required_confirmations
+                        self.required_confirmations,
                     )
                     sys.exit(1)  # unreachable as long as confirmation level is set high enough
             except AttributeError:
@@ -297,7 +299,7 @@ class BlockchainListener(gevent.Greenlet):
                     'Events considered confirmed have been reorganized. '
                     'The block %d with hash %s does not exist any more.',
                     self.confirmed_head_number,
-                    self.confirmed_head_hash
+                    self.confirmed_head_hash,
                 )
                 sys.exit(1)  # unreachable as long as confirmation level is set high enough
 
