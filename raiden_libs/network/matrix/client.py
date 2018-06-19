@@ -36,6 +36,13 @@ class GMatrixClient(MatrixClient):
         )
         self.should_listen = False
         self.sync_thread = None
+        self.greenlets = list()  # type: List[gevent.Greenlet]
+
+    def geventify(self, callback):
+        return geventify_callback(
+            callback,
+            on_spawn=lambda spawned: self.greenlets.append(spawned),
+        )
 
     def listen_forever(
         self,
@@ -179,19 +186,19 @@ class GMatrixClient(MatrixClient):
         return self.api._send('PUT', path, {'typing': True, 'timeout': timeout})
 
     def add_invite_listener(self, callback: Callable):
-        super().add_invite_listener(geventify_callback(callback))
+        super().add_invite_listener(self.geventify(callback))
 
     def add_leave_listener(self, callback: Callable):
-        super().add_leave_listener(geventify_callback(callback))
+        super().add_leave_listener(self.geventify(callback))
 
     def add_presence_listener(self, callback: Callable):
-        return super().add_presence_listener(geventify_callback(callback))
+        return super().add_presence_listener(self.geventify(callback))
 
     def add_listener(self, callback: Callable, event_type: str = None):
-        return super().add_listener(geventify_callback(callback), event_type)
+        return super().add_listener(self.geventify(callback), event_type)
 
     def add_ephemeral_listener(self, callback: Callable, event_type: str = None):
-        return super().add_ephemeral_listener(geventify_callback(callback), event_type)
+        return super().add_ephemeral_listener(self.geventify(callback), event_type)
 
     def _mkroom(self, room_id: str) -> Room:
         """ Uses a geventified Room subclass """
@@ -199,3 +206,13 @@ class GMatrixClient(MatrixClient):
         if not room.canonical_alias:
             room.update_aliases()
         return room
+
+    def join_and_logout(self, greenlets=None, timeout=None):
+        all_greenlets = self.greenlets + (greenlets or list())
+        finished = gevent.wait(all_greenlets, timeout)
+        self.logout()
+
+        if len(finished) < len(all_greenlets):
+            raise RuntimeError(
+                f'Timeout ({timeout} seconds). Logged out despite unjoined greenlets.',
+            )
