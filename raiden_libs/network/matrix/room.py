@@ -51,7 +51,7 @@ class Room(MatrixRoom):
 
     def __repr__(self):
         if self.canonical_alias:
-            return f'<Room alias="{self.canonical_alias}">'
+            return f'<Room id="{self.room_id}" alias="{self.canonical_alias}">'
         return f'<Room id="{self.room_id}" aliases={self.aliases!r}>'
 
     def update_aliases(self):

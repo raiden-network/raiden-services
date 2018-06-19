@@ -136,7 +136,7 @@ class GMatrixClient(MatrixClient):
         )
         rooms = []
         for room_info in response['chunk']:
-            room = self._mkroom(room_info['room_id'])
+            room = Room(self, room_info['room_id'])
             room.canonical_alias = room_info.get('canonical_alias')
             rooms.append(room)
         return rooms
@@ -202,7 +202,9 @@ class GMatrixClient(MatrixClient):
 
     def _mkroom(self, room_id: str) -> Room:
         """ Uses a geventified Room subclass """
-        room = self.rooms[room_id] = Room(self, room_id)
+        if room_id not in self.rooms:
+            self.rooms[room_id] = Room(self, room_id)
+        room = self.rooms[room_id]
         if not room.canonical_alias:
             room.update_aliases()
         return room
