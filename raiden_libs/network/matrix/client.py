@@ -218,3 +218,6 @@ class GMatrixClient(MatrixClient):
             raise RuntimeError(
                 f'Timeout ({timeout} seconds). Logged out despite unjoined greenlets.',
             )
+
+    def get_user_presence(self, user_id: str) -> str:
+        return self.api._send('GET', f'/presence/{quote(user_id)}/status').get('presence')
