@@ -17,6 +17,6 @@ pytest
 pytest-runner
 pdbpp
 
-eth-tester[py-evm]==0.1.0b24
+eth-tester[py-evm]==0.1.0b28
 
 git+https://github.com/raiden-network/raiden-contracts.git
