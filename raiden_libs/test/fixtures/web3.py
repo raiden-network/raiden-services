@@ -64,7 +64,12 @@ def deploy_contract(revert_chain, deploy_contract_txhash):
 @pytest.fixture(scope='session')
 def patch_genesis_gas_limit():
     import eth_tester.backends.pyevm.main as pyevm_main
+    original_gas_limit = pyevm_main.GENESIS_GAS_LIMIT
     pyevm_main.GENESIS_GAS_LIMIT = 6 * 10 ** 6
+
+    yield
+
+    pyevm_main.GENESIS_GAS_LIMIT = original_gas_limit
 
 
 @pytest.fixture(scope='session')
