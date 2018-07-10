@@ -24,3 +24,15 @@ script:
   - make typecheck
   - make test
   - python setup.py develop
+
+deploy:
+    provider: pypi
+    user: raiden_pypi_automated
+    password:
+      secure: "P/xOplB2cvWDUanEHpVM8LkmDa/pG/bl6tjYwiMdBbgafxrQlqG73e5tTRdOzHWsSJZ3gwthgRKD6x6KpMJQLum2ggTnqlXavj7LZAK8ttF+Q6/S31TfP/z+nLalpQqeFn46VW57FykQ4ix7166wNfRrgcK3pFeL8CVLxEqXJvRtZBBhpF3BWgeAEUoH/7JIlZNVxAtTXUMP6E9tIurD6KqGwSE8YL/FrfaogxC8Wm+7PoLMQsc9O/Ne+I1vuOwuh5cqiNueITs78hIXa7OWHMAqnqV/0Wu8dAgEgcbIqq12UQPs8bEdlzq4GLIqu6NUSedAcF9N6GXNQxmi1RAAYAtcBAjwzL3xxjxlDez9JVn35Pvb+cHLIGpjvsVFlyr0COpraXVCxwDKBeM5mdGxr1ZwBFeDBkeMvuWHyo0kYTsd3VSGA9UR5UycqNLTk+oNah96C4Kv4xd3yfm2HDFLR6K+1AdFH9TMotLQM7CEVAjOEM4QSX6KrnkSsAMHJaLauoY+kYg7L8ixv6XGXy1J5IFrv2lmcr6l74aDCk926pNc66L7bNLfuMYRGlxzMkp8otbDYTU3zr801WsJiGiqxAxGtnD2GfYMMIk/4ysTMNo+hzRPcK19QTo9/5P1Q1L2jGzqsCi3gB3OzzLoz/0TggepbRl8ZYjH/shDBL0YtOk="
+    python: 3.6
+    on:
+      tags: true
+      distributions: sdist bdist_wheel
+      repo: raiden-network/raiden-libs
+      branch: master
