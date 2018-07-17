@@ -37,6 +37,7 @@ class GMatrixClient(MatrixClient):
         self.should_listen = False
         self.sync_thread = None
         self.greenlets = list()  # type: List[gevent.Greenlet]
+        self.api.session.headers.update({'Connection': 'close'})
 
     def geventify(self, callback):
         return geventify_callback(
