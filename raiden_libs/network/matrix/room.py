@@ -1,8 +1,9 @@
 from cachetools.func import ttl_cache
 from matrix_client.errors import MatrixRequestError
 from matrix_client.room import Room as MatrixRoom
-from typing import List
+from typing import List, Dict, Any
 import logging
+from urllib.parse import quote
 
 from matrix_client.user import User
 
@@ -15,6 +16,9 @@ class Room(MatrixRoom):
     def __init__(self, client, room_id):
         super().__init__(client, room_id)
         self._members = {}
+
+        # dict of 'type': 'content' key/value pairs
+        self.account_data: Dict[str, Dict[str, Any]] = dict()
 
     def add_listener(self, callback, event_type=None):
         return super().add_listener(self.client.geventify(callback), event_type)
@@ -81,3 +85,12 @@ class Room(MatrixRoom):
         if changed and self.aliases and not self.canonical_alias:
             self.canonical_alias = self.aliases[0]
         return changed
+
+    def set_account_data(self, type_: str, content: Dict[str, Any]) -> dict:
+        self.account_data[type_] = content
+        return self.client.api.set_room_account_data(
+            quote(self.client.user_id),
+            quote(self.room_id),
+            quote(type_),
+            content,
+        )
