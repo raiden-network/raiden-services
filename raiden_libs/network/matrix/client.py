@@ -1,10 +1,8 @@
 import logging
 from typing import List, Callable, Dict, Any
 from urllib.parse import quote
-from collections import defaultdict
 
 import gevent
-from gevent.lock import Semaphore
 from matrix_client.client import CACHE, MatrixClient
 from matrix_client.errors import MatrixRequestError
 from matrix_client.user import User
@@ -43,9 +41,6 @@ class GMatrixClient(MatrixClient):
         self.sync_thread = None
         self.greenlets: List[gevent.Greenlet] = list()
         self.api.session.headers.update({'Connection': 'close'})
-
-        # locks each account_data's 'type_' key until it's _sync'ed
-        self.account_data_locks: Dict[str, Semaphore] = defaultdict(Semaphore)
 
     def geventify(self, callback):
         return geventify_callback(
@@ -288,27 +283,12 @@ class GMatrixClient(MatrixClient):
                         listener['callback'](event)
 
             for event in sync_room['account_data']['events']:
-                lock = room.account_data_locks.get(event['type'])
-                if lock and lock.locked():
-                    # this is our own echo, we already updated the local data
-                    lock.release()
-                else:
-                    room.account_data[event['type']] = event['content']
+                room.account_data[event['type']] = event['content']
 
         for event in response['account_data']['events']:
-            lock = self.account_data_locks.get(event['type'])
-            if lock and lock.locked():
-                # this is our own echo, we already updated the local data
-                lock.release()
-            else:
-                self.account_data[event['type']] = event['content']
+            self.account_data[event['type']] = event['content']
 
     def set_account_data(self, type_: str, content: Dict[str, Any]) -> dict:
-        """ Use this to set a key: value pair in account_data to keep it synced on server
-
-        PS: take care of setting only an updated data, or you may replace data that
-        just came from the server
-        """
+        """ Use this to set a key: value pair in account_data to keep it synced on server """
         self.account_data[type_] = content
-        self.account_data_locks[type_].acquire()
         return self.api.set_account_data(quote(self.user_id), quote(type_), content)

@@ -2,10 +2,8 @@ from cachetools.func import ttl_cache
 from matrix_client.errors import MatrixRequestError
 from matrix_client.room import Room as MatrixRoom
 from typing import List, Dict, Any
-from urllib.parse import quote
-from collections import defaultdict
-from gevent.lock import Semaphore
 import logging
+from urllib.parse import quote
 
 from matrix_client.user import User
 
@@ -21,8 +19,6 @@ class Room(MatrixRoom):
 
         # dict of 'type': 'content' key/value pairs
         self.account_data: Dict[str, Dict[str, Any]] = dict()
-        # locks each account_data's key until it's _sync'ed
-        self.account_data_locks: Dict[str, Semaphore] = defaultdict(Semaphore)
 
     def add_listener(self, callback, event_type=None):
         return super().add_listener(self.client.geventify(callback), event_type)
@@ -92,7 +88,6 @@ class Room(MatrixRoom):
 
     def set_account_data(self, type_: str, content: Dict[str, Any]) -> dict:
         self.account_data[type_] = content
-        self.account_data_locks[type_].acquire()
         return self.client.api.set_room_account_data(
             quote(self.client.user_id),
             quote(self.room_id),
