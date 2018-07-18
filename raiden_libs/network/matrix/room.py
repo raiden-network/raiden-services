@@ -20,15 +20,6 @@ class Room(MatrixRoom):
         # dict of 'type': 'content' key/value pairs
         self.account_data: Dict[str, Dict[str, Any]] = dict()
 
-    def add_listener(self, callback, event_type=None):
-        return super().add_listener(self.client.geventify(callback), event_type)
-
-    def add_ephemeral_listener(self, callback, event_type=None):
-        return super().add_ephemeral_listener(self.client.geventify(callback), event_type)
-
-    def add_state_listener(self, callback, event_type=None):
-        super().add_state_listener(self.client.geventify(callback), event_type)
-
     @ttl_cache(ttl=10)
     def get_joined_members(self) -> List[User]:
         """ Return a list of members of this room. """

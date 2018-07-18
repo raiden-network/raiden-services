@@ -8,7 +8,6 @@ from matrix_client.errors import MatrixRequestError
 from matrix_client.user import User
 
 from .room import Room
-from .utils import geventify_callback
 
 
 logger = logging.getLogger(__name__)
@@ -41,12 +40,6 @@ class GMatrixClient(MatrixClient):
         self.sync_thread = None
         self.greenlets: List[gevent.Greenlet] = list()
         self.api.session.headers.update({'Connection': 'close'})
-
-    def geventify(self, callback):
-        return geventify_callback(
-            callback,
-            on_spawn=lambda spawned: self.greenlets.append(spawned),
-        )
 
     def listen_forever(
         self,
@@ -189,21 +182,6 @@ class GMatrixClient(MatrixClient):
         path = f'/rooms/{quote(room.room_id)}/typing/{quote(self.user_id)}'
         return self.api._send('PUT', path, {'typing': True, 'timeout': timeout})
 
-    def add_invite_listener(self, callback: Callable):
-        super().add_invite_listener(self.geventify(callback))
-
-    def add_leave_listener(self, callback: Callable):
-        super().add_leave_listener(self.geventify(callback))
-
-    def add_presence_listener(self, callback: Callable):
-        return super().add_presence_listener(self.geventify(callback))
-
-    def add_listener(self, callback: Callable, event_type: str = None):
-        return super().add_listener(self.geventify(callback), event_type)
-
-    def add_ephemeral_listener(self, callback: Callable, event_type: str = None):
-        return super().add_ephemeral_listener(self.geventify(callback), event_type)
-
     def _mkroom(self, room_id: str) -> Room:
         """ Uses a geventified Room subclass """
         if room_id not in self.rooms:
@@ -233,15 +211,15 @@ class GMatrixClient(MatrixClient):
 
         for presence_update in response['presence']['events']:
             for callback in self.presence_listeners.values():
-                callback(presence_update)
+                self.greenlets.append(gevent.spawn(callback, presence_update))
 
         for room_id, invite_room in response['rooms']['invite'].items():
             for listener in self.invite_listeners:
-                listener(room_id, invite_room['invite_state'])
+                self.greenlets.append(gevent.spawn(listener, room_id, invite_room['invite_state']))
 
         for room_id, left_room in response['rooms']['leave'].items():
             for listener in self.left_listeners:
-                listener(room_id, left_room)
+                self.greenlets.append(gevent.spawn(listener, room_id, left_room))
             if room_id in self.rooms:
                 del self.rooms[room_id]
 
@@ -254,11 +232,11 @@ class GMatrixClient(MatrixClient):
 
             for event in sync_room["state"]["events"]:
                 event['room_id'] = room_id
-                room._process_state_event(event)
+                self.greenlets.append(gevent.spawn(room._process_state_event, event))
 
             for event in sync_room["timeline"]["events"]:
                 event['room_id'] = room_id
-                room._put_event(event)
+                self.greenlets.append(gevent.spawn(room._put_event, event))
 
                 # TODO: global listeners can still exist but work by each
                 # room.listeners[uuid] having reference to global listener
@@ -269,24 +247,27 @@ class GMatrixClient(MatrixClient):
                         listener['event_type'] is None or
                         listener['event_type'] == event['type']
                     ):
-                        listener['callback'](event)
+                        self.greenlets.append(gevent.spawn(listener['callback'], event))
 
             for event in sync_room['ephemeral']['events']:
                 event['room_id'] = room_id
                 room._put_ephemeral_event(event)
+                self.greenlets.append(gevent.spawn(room._put_ephemeral_event, event))
 
                 for listener in self.ephemeral_listeners:
                     if (
                         listener['event_type'] is None or
                         listener['event_type'] == event['type']
                     ):
-                        listener['callback'](event)
+                        self.greenlets.append(gevent.spawn(listener['callback'], event))
 
             for event in sync_room['account_data']['events']:
                 room.account_data[event['type']] = event['content']
 
         for event in response['account_data']['events']:
             self.account_data[event['type']] = event['content']
+
+        self.greenlets[:] = [greenlet for greenlet in self.greenlets if greenlet]
 
     def set_account_data(self, type_: str, content: Dict[str, Any]) -> dict:
         """ Use this to set a key: value pair in account_data to keep it synced on server """
