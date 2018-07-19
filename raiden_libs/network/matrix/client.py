@@ -166,9 +166,7 @@ class GMatrixClient(MatrixClient):
         return self.api._send(
             'PUT',
             f'/presence/{quote(self.user_id)}/status',
-            {
-                'presence': state,
-            },
+            {'presence': state},
         )
 
     def typing(self, room: Room, timeout: int=5000):
@@ -204,6 +202,12 @@ class GMatrixClient(MatrixClient):
     def get_user_presence(self, user_id: str) -> str:
         return self.api._send('GET', f'/presence/{quote(user_id)}/status').get('presence')
 
+    def call(self, callback, *args, **kwargs):
+        self.greenlets = [g for g in self.greenlets if g]
+        g = gevent.spawn(callback, *args, **kwargs)
+        self.greenlets.append(g)
+        return g
+
     def _sync(self, timeout_ms=30000):
         """ Copy-pasta from MatrixClient, but add 'account_data' support to /sync """
         response = self.api.sync(self.sync_token, timeout_ms, filter=self.sync_filter)
@@ -211,15 +215,15 @@ class GMatrixClient(MatrixClient):
 
         for presence_update in response['presence']['events']:
             for callback in self.presence_listeners.values():
-                self.greenlets.append(gevent.spawn(callback, presence_update))
+                self.call(callback, presence_update)
 
         for room_id, invite_room in response['rooms']['invite'].items():
             for listener in self.invite_listeners:
-                self.greenlets.append(gevent.spawn(listener, room_id, invite_room['invite_state']))
+                self.call(listener, room_id, invite_room['invite_state'])
 
         for room_id, left_room in response['rooms']['leave'].items():
             for listener in self.left_listeners:
-                self.greenlets.append(gevent.spawn(listener, room_id, left_room))
+                self.call(listener, room_id, left_room)
             if room_id in self.rooms:
                 del self.rooms[room_id]
 
@@ -232,11 +236,11 @@ class GMatrixClient(MatrixClient):
 
             for event in sync_room["state"]["events"]:
                 event['room_id'] = room_id
-                self.greenlets.append(gevent.spawn(room._process_state_event, event))
+                self.call(room._process_state_event, event)
 
             for event in sync_room["timeline"]["events"]:
                 event['room_id'] = room_id
-                self.greenlets.append(gevent.spawn(room._put_event, event))
+                self.call(room._put_event, event)
 
                 # TODO: global listeners can still exist but work by each
                 # room.listeners[uuid] having reference to global listener
@@ -247,27 +251,24 @@ class GMatrixClient(MatrixClient):
                         listener['event_type'] is None or
                         listener['event_type'] == event['type']
                     ):
-                        self.greenlets.append(gevent.spawn(listener['callback'], event))
+                        self.call(listener['callback'], event)
 
             for event in sync_room['ephemeral']['events']:
                 event['room_id'] = room_id
-                room._put_ephemeral_event(event)
-                self.greenlets.append(gevent.spawn(room._put_ephemeral_event, event))
+                self.call(room._put_ephemeral_event, event)
 
                 for listener in self.ephemeral_listeners:
                     if (
                         listener['event_type'] is None or
                         listener['event_type'] == event['type']
                     ):
-                        self.greenlets.append(gevent.spawn(listener['callback'], event))
+                        self.call(listener['callback'], event)
 
             for event in sync_room['account_data']['events']:
                 room.account_data[event['type']] = event['content']
 
         for event in response['account_data']['events']:
             self.account_data[event['type']] = event['content']
-
-        self.greenlets[:] = [greenlet for greenlet in self.greenlets if greenlet]
 
     def set_account_data(self, type_: str, content: Dict[str, Any]) -> dict:
         """ Use this to set a key: value pair in account_data to keep it synced on server """
