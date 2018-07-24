@@ -1,16 +1,34 @@
 import logging
 from typing import List, Callable, Dict, Any
 from urllib.parse import quote
+from threading import Semaphore
 
 import gevent
+from matrix_client.api import MatrixHttpApi
 from matrix_client.client import CACHE, MatrixClient
 from matrix_client.errors import MatrixRequestError
 from matrix_client.user import User
+from requests.adapters import DEFAULT_POOLSIZE
 
 from .room import Room
 
 
 logger = logging.getLogger(__name__)
+
+
+class GMatrixHttpApi(MatrixHttpApi):
+    """
+    A wrapper around MatrixHttpApi to limit the number
+    of concurrent requests we make to the number of connections
+    available to us in requests.Session connection pool size.
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.lock = Semaphore(DEFAULT_POOLSIZE)
+
+    def _send(self, *args, **kwargs):
+        with self.lock:
+            return super()._send(*args, **kwargs)
 
 
 class GMatrixClient(MatrixClient):
@@ -36,6 +54,7 @@ class GMatrixClient(MatrixClient):
             sync_filter_limit,
             cache_level,
         )
+        self.api = GMatrixHttpApi(base_url, token)
         self.should_listen = False
         self.sync_thread = None
         self.greenlets: List[gevent.Greenlet] = list()
