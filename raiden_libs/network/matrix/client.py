@@ -1,9 +1,9 @@
 import logging
 from typing import List, Callable, Dict, Any
 from urllib.parse import quote
-from threading import Semaphore
 
 import gevent
+from gevent.lock import Semaphore
 from matrix_client.api import MatrixHttpApi
 from matrix_client.client import CACHE, MatrixClient
 from matrix_client.errors import MatrixRequestError
@@ -58,7 +58,6 @@ class GMatrixClient(MatrixClient):
         self.should_listen = False
         self.sync_thread = None
         self.greenlets: List[gevent.Greenlet] = list()
-        self.api.session.headers.update({'Connection': 'close'})
 
     def listen_forever(
         self,
