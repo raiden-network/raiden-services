@@ -24,19 +24,12 @@ class GMatrixHttpApi(MatrixHttpApi):
     """
     def __init__(
             self,
-            base_url,
-            token=None,
-            identity=None,
-            default_429_wait_ms=5000,
+            *args,
             max_retries=3,
             pool_maxsize=256,
+            **kwargs,
     ):
-        super().__init__(
-            base_url=base_url,
-            token=token,
-            identity=identity,
-            default_429_wait_ms=default_429_wait_ms,
-        )
+        super().__init__(*args, **kwargs)
 
         http_adapter = HTTPAdapter(
             max_retries=max_retries,
