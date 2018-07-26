@@ -9,7 +9,6 @@ from matrix_client.client import CACHE, MatrixClient
 from matrix_client.errors import MatrixRequestError
 from matrix_client.user import User
 from requests.adapters import HTTPAdapter
-from requests import Session
 
 from .room import Room
 
@@ -39,7 +38,6 @@ class GMatrixHttpApi(MatrixHttpApi):
             default_429_wait_ms=default_429_wait_ms,
         )
 
-        session = Session()
         http_adapter = HTTPAdapter(
             max_retries=max_retries,
             pool_maxsize=pool_maxsize,
@@ -48,13 +46,9 @@ class GMatrixHttpApi(MatrixHttpApi):
             max_retries=max_retries,
             pool_maxsize=pool_maxsize,
         )
-        session.mount('http://', http_adapter)
-        session.mount('https://', https_adapter)
-
-        lock = Semaphore(pool_maxsize)
-
-        self.session = session
-        self.lock = lock
+        self.session.mount('http://', http_adapter)
+        self.session.mount('https://', https_adapter)
+        self.lock = Semaphore(pool_maxsize)
 
     def _send(self, *args, **kwargs):
         with self.lock:
