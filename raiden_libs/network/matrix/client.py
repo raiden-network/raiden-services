@@ -8,7 +8,7 @@ from matrix_client.api import MatrixHttpApi
 from matrix_client.client import CACHE, MatrixClient
 from matrix_client.errors import MatrixRequestError
 from matrix_client.user import User
-from requests.adapters import DEFAULT_POOLSIZE
+from requests.adapters import HTTPAdapter
 
 from .room import Room
 
@@ -22,9 +22,26 @@ class GMatrixHttpApi(MatrixHttpApi):
     of concurrent requests we make to the number of connections
     available to us in requests.Session connection pool size.
     """
-    def __init__(self, *args, **kwargs):
+    def __init__(
+            self,
+            *args,
+            max_retries=3,
+            pool_maxsize=256,
+            **kwargs,
+    ):
         super().__init__(*args, **kwargs)
-        self.lock = Semaphore(DEFAULT_POOLSIZE)
+
+        http_adapter = HTTPAdapter(
+            max_retries=max_retries,
+            pool_maxsize=pool_maxsize,
+        )
+        https_adapter = HTTPAdapter(
+            max_retries=max_retries,
+            pool_maxsize=pool_maxsize,
+        )
+        self.session.mount('http://', http_adapter)
+        self.session.mount('https://', https_adapter)
+        self.lock = Semaphore(pool_maxsize)
 
     def _send(self, *args, **kwargs):
         with self.lock:
