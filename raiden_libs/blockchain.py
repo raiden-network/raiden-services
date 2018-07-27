@@ -31,7 +31,8 @@ def create_event_filter(
         filter_params: Other parameters to limit the events
 
     Returns:
-        A LogFilter instance"""
+        A LogFilter instance
+    """
     if filter_params is None:
         filter_params = {}
     filter_meta_params = dict(filter_params)
@@ -53,37 +54,44 @@ def create_event_filter(
 
 
 def get_events(
-        w3: Web3,
+        web3: Web3,
         contract_manager: ContractManager,
         contract_name: str,
         event_name: str,
+        contract_address: str = None,
         from_block: Union[int, str] = 0,
         to_block: Union[int, str] = 'latest',
 ) -> List:
     """Returns events emmitted by a contract for a given event name, within a certain range.
 
     Args:
-        w3: A Web3 instance
+        web3: A Web3 instance
         contract_manager: A contract manager
         contract_name: The name of the contract
         event_name: The name of the event
+        contract_address: The address of the contract to be filtered, can be `None`
         from_block: The block to start search events
         to_block: The block to stop searching for events
 
     Returns:
-        All matching events"""
+        All matching events
+    """
+    filter_params = {
+        'fromBlock': from_block,
+        'toBlock': to_block,
+    }
+    if contract_address is not None:
+        filter_params['contract_address'] = contract_address
+
     filter = create_event_filter(
-        web3=w3,
+        web3=web3,
         event_name=event_name,
         event_abi=contract_manager.get_event_abi(contract_name, event_name),
-        filter_params={
-            'fromBlock': from_block,
-            'toBlock': to_block,
-        },
+        filter_params=filter_params,
     )
     events = filter.get_all_entries()
 
-    w3.eth.uninstallFilter(filter.filter_id)
+    web3.eth.uninstallFilter(filter.filter_id)
     return events
 
 
@@ -95,6 +103,8 @@ class BlockchainListener(gevent.Greenlet):
             web3: Web3,
             contract_manager: ContractManager,
             contract_name: str,
+            *,  # require all following arguments to be keyword arguments
+            contract_address: str = None,
             required_confirmations: int = 4,
             sync_chunk_size: int = 100_000,
             poll_interval: int = 2,
@@ -109,11 +119,13 @@ class BlockchainListener(gevent.Greenlet):
             required_confirmations: The number of confirmations required to call a block confirmed
             sync_chunk_size: The size of the chunks used during syncing
             poll_interval: The interval used between polls
-            sync_start_block: The block number syncing is started at"""
+            sync_start_block: The block number syncing is started at
+        """
         super().__init__()
 
         self.contract_manager = contract_manager
         self.contract_name = contract_name
+        self.contract_address = contract_address
 
         self.required_confirmations = required_confirmations
         self.web3 = web3
@@ -236,16 +248,20 @@ class BlockchainListener(gevent.Greenlet):
             self.wait_sync_event.set()
 
     def filter_events(self, filter_params: Dict, name_to_callback: Dict):
-        """Params:
+        """ Filter events for given event names
+
+        Params:
             filter_params: arguments for the filter call
             name_to_callback: dict that maps event name to callbacks executed
-                if the event is emmited"""
+                if the event is emmited
+        """
         for event_name, callback in name_to_callback.items():
             events = get_events(
-                self.web3,
-                self.contract_manager,
-                self.contract_name,
-                event_name,
+                web3=self.web3,
+                contract_manager=self.contract_manager,
+                contract_name=self.contract_name,
+                event_name=event_name,
+                contract_address=self.contract_address,
                 **filter_params,
             )
             for event in events:

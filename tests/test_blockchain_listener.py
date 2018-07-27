@@ -47,6 +47,45 @@ def test_blockchain_listener(
     blockchain_listener.stop()
 
 
+def test_blockchain_listener_nonexistant_contract(
+    web3: Web3,
+    wait_for_blocks,
+    generate_raiden_clients,
+    blockchain_listener: BlockchainListener,
+    ethereum_tester,
+):
+    blockchain_listener.required_confirmations = 4
+    blockchain_listener.contract_address = '0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa'
+    blockchain_listener.start()
+    blockchain_listener.wait_sync()
+
+    unconfirmed_channel_open_events = []
+    confirmed_channel_open_events = []
+
+    blockchain_listener.add_unconfirmed_listener(
+        'ChannelOpened',
+        lambda e: unconfirmed_channel_open_events.append(e),
+    )
+    blockchain_listener.add_confirmed_listener(
+        'ChannelOpened',
+        lambda e: confirmed_channel_open_events.append(e),
+    )
+
+    # create unconfirmed channel
+    c1, c2 = generate_raiden_clients(2)
+    c1.open_channel(c2.address)
+
+    # the unconfirmed event should be available directly
+    wait_for_blocks(0)
+    assert len(unconfirmed_channel_open_events) == 0
+
+    # the confirmed event should be available after 4 more blocks as set above
+    wait_for_blocks(4)
+    assert len(confirmed_channel_open_events) == 0
+
+    blockchain_listener.stop()
+
+
 def test_reorg(
     web3: Web3,
     wait_for_blocks,
