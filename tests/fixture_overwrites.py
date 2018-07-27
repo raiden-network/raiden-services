@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import pytest
 from raiden_contracts.contract_manager import ContractManager, CONTRACTS_SOURCE_DIRS
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK

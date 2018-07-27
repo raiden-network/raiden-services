@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import pytest
 from web3 import Web3
 

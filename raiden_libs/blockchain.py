@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import functools
 import logging
 import sys
@@ -8,6 +7,7 @@ from typing import Callable, Dict, Union, List
 from web3 import Web3
 from web3.contract import get_event_data
 from web3.utils.filters import construct_event_filter_params, LogFilter
+from eth_utils import is_checksum_address
 import gevent
 import gevent.event
 from raiden_contracts.contract_manager import ContractManager
@@ -81,6 +81,7 @@ def get_events(
         'toBlock': to_block,
     }
     if contract_address is not None:
+        assert is_checksum_address(contract_address)
         filter_params['contract_address'] = contract_address
 
     filter = create_event_filter(

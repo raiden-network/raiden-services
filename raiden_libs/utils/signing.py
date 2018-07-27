@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from typing import Union, Any
 from sha3 import keccak_256
 
