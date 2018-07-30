@@ -25,10 +25,10 @@ class GMatrixHttpApi(MatrixHttpApi):
     def __init__(
             self,
             *args,
-            max_retries=3,
-            pool_maxsize=256,
+            max_retries: int = 3,
+            pool_maxsize: int = 10,
             **kwargs,
-    ):
+    ) -> None:
         super().__init__(*args, **kwargs)
 
         http_adapter = HTTPAdapter(
@@ -59,6 +59,8 @@ class GMatrixClient(MatrixClient):
             valid_cert_check: bool = True,
             sync_filter_limit: int = 20,
             cache_level: CACHE = CACHE.ALL,
+            max_retries: int = 3,
+            pool_maxsize: int = 10,
     ) -> None:
         # dict of 'type': 'content' key/value pairs
         self.account_data: Dict[str, Dict[str, Any]] = dict()
@@ -71,7 +73,12 @@ class GMatrixClient(MatrixClient):
             sync_filter_limit,
             cache_level,
         )
-        self.api = GMatrixHttpApi(base_url, token)
+        self.api = GMatrixHttpApi(
+            base_url,
+            token,
+            max_retries=max_retries,
+            pool_maxsize=pool_maxsize,
+        )
         self.should_listen = False
         self.sync_thread = None
         self.greenlets: List[gevent.Greenlet] = list()
