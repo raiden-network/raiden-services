@@ -231,10 +231,17 @@ class GMatrixClient(MatrixClient):
             room.update_aliases()
         return room
 
+    def stop_listener_thread(self):
+        """ Kills sync_thread greenlet before joining it """
+        if self.sync_thread:
+            self.sync_thread.kill()
+        super().stop_listener_thread()
+
     def join_and_logout(self, greenlets=None, timeout=None):
         all_greenlets = self.greenlets + (greenlets or list())
         finished = gevent.wait(all_greenlets, timeout)
         self.logout()
+        self.api.session.close()
 
         if len(finished) < len(all_greenlets):
             raise RuntimeError(
