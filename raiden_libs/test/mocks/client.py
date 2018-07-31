@@ -2,13 +2,13 @@ import logging
 from typing import Dict
 from functools import wraps
 
-from eth_utils import is_checksum_address, is_same_address, encode_hex, decode_hex, is_bytes
+from eth_utils import is_checksum_address, is_same_address, encode_hex, decode_hex
 from web3.utils.events import get_event_data
 from web3 import Web3
 from web3.contract import Contract, find_matching_event_abi
 
 from raiden_libs.transport import Transport
-from raiden_libs.utils import private_key_to_address, make_filter, sign_data
+from raiden_libs.utils import private_key_to_address, make_filter, sign_data, UINT256_MAX
 from raiden_libs.messages import (
     BalanceProof,
     MonitorRequest,
@@ -17,7 +17,7 @@ from raiden_libs.messages import (
     Message,
     PathsReply,
 )
-from raiden_libs.types import Address, ChannelIdentifier
+from raiden_libs.types import Address, ChannelIdentifier, T_ChannelIdentifier
 
 
 log = logging.getLogger(__name__)
@@ -114,17 +114,17 @@ class MockRaidenNode:
         )
 
         channel_id = event['args']['channel_identifier']
-        assert is_bytes(channel_id)
-        assert len(channel_id) == 32
+        assert isinstance(channel_id, T_ChannelIdentifier)
+        assert channel_id > 0 and channel_id <= UINT256_MAX
         assert (is_same_address(event['args']['participant1'], self.address) or
                 is_same_address(event['args']['participant2'], self.address))
         assert (is_same_address(event['args']['participant1'], partner_address) or
                 is_same_address(event['args']['participant2'], partner_address))
 
-        self.partner_to_channel_id[partner_address] = encode_hex(channel_id)
+        self.partner_to_channel_id[partner_address] = ChannelIdentifier(channel_id)
         self.client_registry[partner_address].open_channel(self.address)
 
-        return encode_hex(channel_id)
+        return ChannelIdentifier(channel_id)
 
     # TODO: maybe change this to a single function that orders the pair
     #   so this node address is first and partner address second
@@ -166,7 +166,7 @@ class MockRaidenNode:
             if x['args']['channel_identifier'] in open_channels.keys()
         ]
         return {
-            k: encode_hex(v)
+            k: v
             for k, v in open_channels.items()
             if k not in closed_channels
         }

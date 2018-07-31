@@ -54,13 +54,13 @@ class FeeInfo(Message):
         """Return FeeInfo serialized to binary"""
         return pack_data([
             'address',
-            'bytes32',
+            'uint256',
             'uint256',
             'uint256',
             'uint256',
         ], [
             self.token_network_address,
-            decode_hex(self.channel_identifier),
+            self.channel_identifier,
             self.chain_id,
             self.nonce,
             self.relative_fee,

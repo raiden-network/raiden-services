@@ -1,6 +1,7 @@
 from typing import Dict
 
 import pytest
+import random
 from eth_utils import is_same_address
 
 from raiden_libs.utils import sign_data, encode_hex, private_key_to_address
@@ -14,6 +15,11 @@ from raiden_libs.messages import (
 )
 from raiden_libs.exceptions import MessageTypeError
 from raiden_libs.types import Address, ChannelIdentifier
+from raiden_libs.utils import UINT256_MAX
+
+
+def get_random_channel_id() -> ChannelIdentifier:
+    return random.randrange(0, UINT256_MAX)
 
 
 def test_serialize_deserialize(get_random_bp, get_random_privkey):
@@ -45,9 +51,7 @@ def test_balance_proof_address_setter(get_random_bp):
 def test_balance_proof():
     # test balance proof with computed balance hash
     balance_proof = BalanceProof(
-        channel_identifier=ChannelIdentifier(
-            '0x3131313131313131313131313131313131313131313131313131313131313131',
-        ),
+        channel_identifier=get_random_channel_id(),
         token_network_address=Address('0x82dd0e0eA3E84D00Cc119c46Ee22060939E5D1FC'),
         nonce=1,
         chain_id=321,
@@ -73,9 +77,7 @@ def test_balance_proof():
 
     # test balance proof with balance hash set from constructor
     balance_proof = BalanceProof(
-        channel_identifier=ChannelIdentifier(
-            '0x3131313131313131313131313131313131313131313131313131313131313131',
-        ),
+        channel_identifier=get_random_channel_id(),
         token_network_address=Address('0x82dd0e0eA3E84D00Cc119c46Ee22060939E5D1FC'),
         nonce=1,
         chain_id=321,
@@ -104,7 +106,7 @@ def test_fee_info():
         message_type='FeeInfo',
         token_network_address='0x82dd0e0eA3E84D00Cc119c46Ee22060939E5D1FC',
         chain_id=1,
-        channel_identifier='0x3131313131313131313131313131313131313131313131313131313131313131',
+        channel_identifier=get_random_channel_id(),
         nonce=1,
         relative_fee=10000,
         signature='signature',
@@ -160,7 +162,7 @@ def test_deserialize_with_required_type():
         message_type='FeeInfo',
         token_network_address='0x82dd0e0eA3E84D00Cc119c46Ee22060939E5D1FC',
         chain_id=1,
-        channel_identifier='0x3131313131313131313131313131313131313131313131313131313131313131',
+        channel_identifier=get_random_channel_id(),
         nonce=1,
         relative_fee=1000,
         signature='signature',
