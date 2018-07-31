@@ -86,14 +86,14 @@ class BalanceProof(Message):
             'bytes32',
             'uint256',
             'bytes32',
-            'bytes32',
+            'uint256',
             'address',
             'uint256',
         ], [
             decode_hex(self.balance_hash),
             self.nonce,
             decode_hex(self.additional_hash),
-            decode_hex(self.channel_identifier),
+            self.channel_identifier,
             self.token_network_address,
             self.chain_id,
         ])

@@ -47,7 +47,7 @@ class MonitorRequest(Message):
     def serialize_reward_proof(self):
         """Return reward proof data serialized to binary"""
         return pack_data([
-            'bytes32',
+            'uint256',
             'uint256',
             'address',
             'uint256',

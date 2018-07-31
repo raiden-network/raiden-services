@@ -15,7 +15,8 @@ BALANCE_PROOF_SCHEMA = {
     ],
     'properties': {
         'channel_identifier': {
-            'type': 'string',
+            'type': 'integer',
+            'minimum': 0,
         },
         'nonce': {
             'type': 'integer',
@@ -85,7 +86,8 @@ FEE_INFO_SCHEMA = {
             'type': 'integer',
         },
         'channel_identifier': {
-            'type': 'string',
+            'type': 'integer',
+            'minimum': 0,
         },
         'nonce': {
             'type': 'integer',
