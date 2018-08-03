@@ -1,12 +1,14 @@
+import time
 import logging
-from typing import List, Callable, Dict, Any
+from typing import List, Callable, Dict, Any, Union
 from urllib.parse import quote
+from itertools import count
 
 import gevent
 from gevent.lock import Semaphore
 from matrix_client.api import MatrixHttpApi
 from matrix_client.client import CACHE, MatrixClient
-from matrix_client.errors import MatrixRequestError
+from matrix_client.errors import MatrixRequestError, MatrixHttpLibError
 from matrix_client.user import User
 from requests.adapters import HTTPAdapter
 
@@ -21,31 +23,59 @@ class GMatrixHttpApi(MatrixHttpApi):
     A wrapper around MatrixHttpApi to limit the number
     of concurrent requests we make to the number of connections
     available to us in requests.Session connection pool size.
+
+    Args:
+        pool_maxsize: max size of underlying/session connection pool
+        retry_timeout: for how long should a single request be retried if it errors
+        retry_delay: delay to way between a retries inside a request. If a callable,
+            receives the previous delay and iteration number
+            and should return the new delay
     """
     def __init__(
             self,
             *args,
-            max_retries: int = 3,
             pool_maxsize: int = 10,
+            retry_timeout: int = 60,
+            retry_delay: Union[float, Callable[[float, int], float]] = 1,
             **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs)
 
-        http_adapter = HTTPAdapter(
-            max_retries=max_retries,
-            pool_maxsize=pool_maxsize,
-        )
-        https_adapter = HTTPAdapter(
-            max_retries=max_retries,
-            pool_maxsize=pool_maxsize,
-        )
+        http_adapter = HTTPAdapter(pool_maxsize=pool_maxsize)
+        https_adapter = HTTPAdapter(pool_maxsize=pool_maxsize)
         self.session.mount('http://', http_adapter)
         self.session.mount('https://', https_adapter)
+
         self.lock = Semaphore(pool_maxsize)
+        self.retry_timeout = retry_timeout
+        self.retry_delay = retry_delay
 
     def _send(self, *args, **kwargs):
-        with self.lock:
-            return super()._send(*args, **kwargs)
+        # we use an infinite loop + time + sleep instead of gevent.Timeout
+        # to be able to re-raise the last exception instead of declaring one beforehand
+        started = time.time()
+        delay = 0
+        for i in count():
+            try:
+                with self.lock:
+                    return super()._send(*args, **kwargs)
+            except (MatrixRequestError, MatrixHttpLibError) as ex:
+                # from MatrixRequestError, retry only 5xx http errors
+                if isinstance(ex, MatrixRequestError) and ex.code < 500:
+                    raise
+                if time.time() > started + self.retry_timeout:
+                    raise
+
+                if callable(self.retry_delay):
+                    delay = self.retry_delay(delay, i)
+                else:
+                    delay = self.retry_delay
+                logger.debug(
+                    'Got http _send exception, waiting for %s then retrying: %s',
+                    delay,
+                    ex,
+                )
+                gevent.sleep(delay)
 
 
 class GMatrixClient(MatrixClient):
@@ -59,8 +89,9 @@ class GMatrixClient(MatrixClient):
             valid_cert_check: bool = True,
             sync_filter_limit: int = 20,
             cache_level: CACHE = CACHE.ALL,
-            max_retries: int = 3,
-            pool_maxsize: int = 10,
+            http_pool_maxsize: int = 10,
+            http_retry_timeout: int = 60,
+            http_retry_delay: Union[float, Callable[[float, int], float]] = 1,
     ) -> None:
         # dict of 'type': 'content' key/value pairs
         self.account_data: Dict[str, Dict[str, Any]] = dict()
@@ -76,8 +107,9 @@ class GMatrixClient(MatrixClient):
         self.api = GMatrixHttpApi(
             base_url,
             token,
-            max_retries=max_retries,
-            pool_maxsize=pool_maxsize,
+            pool_maxsize=http_pool_maxsize,
+            retry_timeout=http_retry_timeout,
+            retry_delay=http_retry_delay,
         )
         self.should_listen = False
         self.sync_thread = None
