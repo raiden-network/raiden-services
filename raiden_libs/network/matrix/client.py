@@ -1,8 +1,8 @@
 import time
 import logging
-from typing import List, Callable, Dict, Any, Union
+from typing import List, Callable, Dict, Any, Union, Iterable
 from urllib.parse import quote
-from itertools import count
+from itertools import repeat
 
 import gevent
 from gevent.lock import Semaphore
@@ -27,16 +27,15 @@ class GMatrixHttpApi(MatrixHttpApi):
     Args:
         pool_maxsize: max size of underlying/session connection pool
         retry_timeout: for how long should a single request be retried if it errors
-        retry_delay: delay to way between a retries inside a request. If a callable,
-            receives the previous delay and iteration number
-            and should return the new delay
+        retry_delay: delay to way between a retries inside a request.
+            If a callable, should return a float or an iterator of floats with each delay
     """
     def __init__(
             self,
             *args,
             pool_maxsize: int = 10,
             retry_timeout: int = 60,
-            retry_delay: Union[float, Callable[[float, int], float]] = 1,
+            retry_delay: Union[float, Callable[[], Union[float, Iterable[float]]]] = 1,
             **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs)
@@ -54,8 +53,13 @@ class GMatrixHttpApi(MatrixHttpApi):
         # we use an infinite loop + time + sleep instead of gevent.Timeout
         # to be able to re-raise the last exception instead of declaring one beforehand
         started = time.time()
-        delay = 0
-        for i in count():
+        if callable(self.retry_delay):
+            retry_delay = self.retry_delay()  # should return a float or an iterable
+        else:
+            retry_delay = self.retry_delay  # is a float
+        if not hasattr(retry_delay, '__iter__'):
+            retry_delay = repeat(retry_delay)  # a float is repeated
+        for delay in retry_delay:
             try:
                 with self.lock:
                     return super()._send(*args, **kwargs)
@@ -65,17 +69,14 @@ class GMatrixHttpApi(MatrixHttpApi):
                     raise
                 if time.time() > started + self.retry_timeout:
                     raise
-
-                if callable(self.retry_delay):
-                    delay = self.retry_delay(delay, i)
-                else:
-                    delay = self.retry_delay
                 logger.debug(
                     'Got http _send exception, waiting for %s then retrying: %s',
                     delay,
                     ex,
                 )
                 gevent.sleep(delay)
+        else:
+            raise
 
 
 class GMatrixClient(MatrixClient):
@@ -91,7 +92,7 @@ class GMatrixClient(MatrixClient):
             cache_level: CACHE = CACHE.ALL,
             http_pool_maxsize: int = 10,
             http_retry_timeout: int = 60,
-            http_retry_delay: Union[float, Callable[[float, int], float]] = 1,
+            http_retry_delay: Union[float, Callable[[], Union[float, Iterable[float]]]] = 1,
     ) -> None:
         # dict of 'type': 'content' key/value pairs
         self.account_data: Dict[str, Dict[str, Any]] = dict()
