@@ -3,6 +3,7 @@ import logging
 from typing import List, Callable, Dict, Any, Iterable, Container
 from urllib.parse import quote
 from itertools import repeat
+from functools import wraps
 
 import gevent
 from gevent.lock import Semaphore
@@ -363,3 +364,12 @@ class GMatrixClient(MatrixClient):
         """ Use this to set a key: value pair in account_data to keep it synced on server """
         self.account_data[type_] = content
         return self.api.set_account_data(quote(self.user_id), quote(type_), content)
+
+
+# Monkey patch matrix User class to provide nicer repr
+@wraps(User.__repr__)
+def user__repr__(self):
+    return f'<User id="{self.user_id}">'
+
+
+User.__repr__ = user__repr__
