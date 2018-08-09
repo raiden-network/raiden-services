@@ -274,6 +274,7 @@ class GMatrixClient(MatrixClient):
 
     def stop_listener_thread(self):
         """ Kills sync_thread greenlet before joining it """
+        self.should_listen = False
         if self.sync_thread:
             self.sync_thread.kill()
         super().stop_listener_thread()
@@ -300,7 +301,13 @@ class GMatrixClient(MatrixClient):
 
     def _sync(self, timeout_ms=30000):
         """ Copy-pasta from MatrixClient, but add 'account_data' support to /sync """
-        response = self.api.sync(self.sync_token, timeout_ms, filter=self.sync_filter)
+        try:
+            response = self.api.sync(self.sync_token, timeout_ms, filter=self.sync_filter)
+        except MatrixHttpLibError:
+            if self.should_listen:
+                raise
+            else:
+                return
         self.sync_token = response["next_batch"]
 
         for presence_update in response['presence']['events']:
