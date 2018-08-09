@@ -186,6 +186,7 @@ class MockRaidenNode:
             amount,
         ).transact({'from': self.address})
         return self.contract.functions.setTotalDeposit(
+            self.partner_to_channel_id[partner_address],
             self.address,
             amount + channel_info['deposit'],
             partner_address,
@@ -196,6 +197,7 @@ class MockRaidenNode:
         """Closes an open channel"""
         assert balance_proof is not None
         self.contract.functions.closeChannel(
+            self.partner_to_channel_id[partner_address],
             partner_address,
             balance_proof.balance_hash,
             balance_proof.nonce,
@@ -221,6 +223,7 @@ class MockRaidenNode:
         if transferred[0] + locked[0] > transferred[1] + locked[1]:
             print('reorder')
             self.contract.functions.settleChannel(
+                self.partner_to_channel_id[partner_address],
                 partner_address,
                 transferred[1],
                 locked[1],
@@ -232,6 +235,7 @@ class MockRaidenNode:
             ).transact({'from': self.address})
         else:
             self.contract.functions.settleChannel(
+                self.partner_to_channel_id[partner_address],
                 self.address,
                 transferred[0],
                 locked[0],
@@ -332,6 +336,7 @@ class MockRaidenNode:
         non_closing_data = balance_proof.serialize_bin() + decode_hex(balance_proof.signature)
         non_closing_signature = encode_hex(sign_data(self.privkey, non_closing_data))
         self.contract.functions.updateNonClosingBalanceProof(
+            self.partner_to_channel_id[partner_address],
             partner_address,
             self.address,
             balance_proof.balance_hash,
@@ -344,19 +349,29 @@ class MockRaidenNode:
     @assert_channel_existence
     def get_partner_channel_info(self, partner_address: Address) -> Dict:
         """Return a state of partner's side of the channel, serialized as a dict"""
-        return self.get_channel_participant_info(partner_address, self.address)
+        return self.get_channel_participant_info(
+            self.partner_to_channel_id[partner_address],
+            partner_address,
+            self.address,
+        )
 
     @assert_channel_existence
     def get_own_channel_info(self, partner_address: Address) -> Dict:
         """Return a state of our own side of the channel, serialized as a dict"""
-        return self.get_channel_participant_info(self.address, partner_address)
+        return self.get_channel_participant_info(
+            self.partner_to_channel_id[partner_address],
+            self.address,
+            partner_address,
+        )
 
     def get_channel_participant_info(
         self,
+        channel_identifier: ChannelIdentifier,
         participant_address: Address,
         partner_address: Address,
     ):
         channel_info = self.contract.functions.getChannelParticipantInfo(
+            channel_identifier,
             participant_address,
             partner_address,
         ).call()
@@ -366,6 +381,8 @@ class MockRaidenNode:
             'is_the_closer',
             'balance_hash',
             'nonce',
+            'locksroot',
+            'locked_amount',
         ]
         assert len(return_fields) == len(channel_info)
         return {

@@ -20,4 +20,4 @@ pdbpp
 
 eth-tester[py-evm]==0.1.0b28
 
-git+https://github.com/raiden-network/raiden-contracts.git@30540b05f9d3295a4d2344a539498368e964d3fb
+git+https://github.com/raiden-network/raiden-contracts.git@05b8e2819e80a8b3d7ef1e264ab0d5c3c81e8225
