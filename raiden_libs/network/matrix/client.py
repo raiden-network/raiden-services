@@ -1,6 +1,6 @@
 import time
 import logging
-from typing import List, Callable, Dict, Any, Iterable
+from typing import List, Callable, Dict, Any, Iterable, Container
 from urllib.parse import quote
 from itertools import repeat
 
@@ -35,6 +35,7 @@ class GMatrixHttpApi(MatrixHttpApi):
             pool_maxsize: int = 10,
             retry_timeout: int = 60,
             retry_delay: Callable[[], Iterable[float]] = lambda: repeat(1),
+            long_paths: Container[str] = tuple(),
             **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs)
@@ -44,18 +45,30 @@ class GMatrixHttpApi(MatrixHttpApi):
         self.session.mount('http://', http_adapter)
         self.session.mount('https://', https_adapter)
 
-        self.semaphore = Semaphore(pool_maxsize)
+        self._long_paths = long_paths
+        if long_paths:
+            self._semaphore = Semaphore(pool_maxsize - 1)
+            self._priority_lock = Semaphore()
+        else:
+            self._semaphore = Semaphore(pool_maxsize)
         self.retry_timeout = retry_timeout
         self.retry_delay = retry_delay
 
-    def _send(self, *args, **kwargs):
+    def _send(self, method, path, *args, **kwargs):
         # we use an infinite loop + time + sleep instead of gevent.Timeout
         # to be able to re-raise the last exception instead of declaring one beforehand
         started = time.time()
+
+        # paths in long_paths have a reserved slot in the pool, and aren't error-handled
+        # to avoid them getting stuck when listener greenlet is killed
+        if path in self._long_paths:
+            with self._priority_lock:
+                return super()._send(method, path, *args, **kwargs)
+
         for delay in self.retry_delay():
             try:
-                with self.semaphore:
-                    return super()._send(*args, **kwargs)
+                with self._semaphore:
+                    return super()._send(method, path, *args, **kwargs)
             except (MatrixRequestError, MatrixHttpLibError) as ex:
                 # from MatrixRequestError, retry only 5xx http errors
                 if isinstance(ex, MatrixRequestError) and ex.code < 500:
@@ -104,6 +117,7 @@ class GMatrixClient(MatrixClient):
             pool_maxsize=http_pool_maxsize,
             retry_timeout=http_retry_timeout,
             retry_delay=http_retry_delay,
+            long_paths=('/sync',),
         )
         self.should_listen = False
         self.sync_thread = None
