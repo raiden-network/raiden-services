@@ -171,6 +171,7 @@ class GMatrixClient(MatrixClient):
             exception_handler: Optional exception handler function which can
                 be used to handle exceptions in the caller thread.
         """
+        assert not self.should_listen and self.sync_thread is None, 'Already running'
         self.should_listen = True
         self.sync_thread = gevent.spawn(self.listen_forever, timeout_ms, exception_handler)
 
@@ -274,6 +275,8 @@ class GMatrixClient(MatrixClient):
 
     def stop_listener_thread(self):
         """ Kills sync_thread greenlet before joining it """
+        # when stopping, `kill` will cause the `self.api.sync` call in _sync
+        # to raise a connection error. This flag will ensure it exits gracefully then
         self.should_listen = False
         if self.sync_thread:
             self.sync_thread.kill()
@@ -306,7 +309,7 @@ class GMatrixClient(MatrixClient):
         except MatrixHttpLibError:
             if self.should_listen:
                 raise
-            else:
+            else:  # we're stopping, suppress the connection error here
                 return
         self.sync_token = response["next_batch"]
 
