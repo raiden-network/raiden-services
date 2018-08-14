@@ -156,6 +156,10 @@ class GMatrixClient(MatrixClient):
                     _bad_sync_timeout = min(_bad_sync_timeout * 2, self.bad_sync_timeout_limit)
                 else:
                     raise
+            except MatrixHttpLibError:
+                logger.warning('A MatrixHttpLibError occured during sync.')
+                gevent.sleep(_bad_sync_timeout)
+                _bad_sync_timeout = min(_bad_sync_timeout * 2, self.bad_sync_timeout_limit)
             except Exception as e:
                 logger.exception('Exception thrown during sync')
                 if exception_handler is not None:
@@ -174,6 +178,22 @@ class GMatrixClient(MatrixClient):
         assert not self.should_listen and self.sync_thread is None, 'Already running'
         self.should_listen = True
         self.sync_thread = gevent.spawn(self.listen_forever, timeout_ms, exception_handler)
+
+    def stop_listener_thread(self):
+        """ Kills sync_thread greenlet before joining it """
+        # when stopping, `kill` will cause the `self.api.sync` call in _sync
+        # to raise a connection error. This flag will ensure it exits gracefully then
+        self.should_listen = False
+        if self.sync_thread:
+            self.sync_thread.kill()
+            self.sync_thread.join()
+        self.sync_thread = None
+        gevent.wait(self.greenlets)
+        self.greenlets.clear()
+
+    def logout(self):
+        super().logout()
+        self.api.session.close()
 
     def search_user_directory(self, term: str) -> List[User]:
         """
@@ -273,26 +293,6 @@ class GMatrixClient(MatrixClient):
             room.update_aliases()
         return room
 
-    def stop_listener_thread(self):
-        """ Kills sync_thread greenlet before joining it """
-        # when stopping, `kill` will cause the `self.api.sync` call in _sync
-        # to raise a connection error. This flag will ensure it exits gracefully then
-        self.should_listen = False
-        if self.sync_thread:
-            self.sync_thread.kill()
-        super().stop_listener_thread()
-
-    def join_and_logout(self, greenlets=None, timeout=None):
-        all_greenlets = self.greenlets + (greenlets or list())
-        finished = gevent.wait(all_greenlets, timeout)
-        self.logout()
-        self.api.session.close()
-
-        if len(finished) < len(all_greenlets):
-            raise RuntimeError(
-                f'Timeout ({timeout} seconds). Logged out despite unjoined greenlets.',
-            )
-
     def get_user_presence(self, user_id: str) -> str:
         return self.api._send('GET', f'/presence/{quote(user_id)}/status').get('presence')
 
@@ -304,13 +304,7 @@ class GMatrixClient(MatrixClient):
 
     def _sync(self, timeout_ms=30000):
         """ Copy-pasta from MatrixClient, but add 'account_data' support to /sync """
-        try:
-            response = self.api.sync(self.sync_token, timeout_ms, filter=self.sync_filter)
-        except MatrixHttpLibError:
-            if self.should_listen:
-                raise
-            else:  # we're stopping, suppress the connection error here
-                return
+        response = self.api.sync(self.sync_token, timeout_ms, filter=self.sync_filter)
         self.sync_token = response["next_batch"]
 
         for presence_update in response['presence']['events']:
