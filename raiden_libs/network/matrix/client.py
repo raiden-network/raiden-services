@@ -30,13 +30,14 @@ class GMatrixHttpApi(MatrixHttpApi):
         retry_timeout: for how long should a single request be retried if it errors
         retry_delay: callable which returns an iterable of delays
     """
+
     def __init__(
             self,
             *args,
             pool_maxsize: int = 10,
             retry_timeout: int = 60,
-            retry_delay: Callable[[], Iterable[float]] = lambda: repeat(1),
-            long_paths: Container[str] = tuple(),
+            retry_delay: Callable[[], Iterable[float]] = None,
+            long_paths: Container[str] = (),
             **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs)
@@ -54,6 +55,8 @@ class GMatrixHttpApi(MatrixHttpApi):
             self._semaphore = Semaphore(pool_maxsize)
         self.retry_timeout = retry_timeout
         self.retry_delay = retry_delay
+        if self.retry_delay is None:
+            self.retry_delay = lambda: repeat(1)
 
     def _send(self, method, path, *args, **kwargs):
         # we use an infinite loop + time + sleep instead of gevent.Timeout
