@@ -65,7 +65,7 @@ class GMatrixHttpApi(MatrixHttpApi):
         if path in self._long_paths:
             with self._priority_lock:
                 return super()._send(method, path, *args, **kwargs)
-
+        last_ex = None
         for delay in self.retry_delay():
             try:
                 with self._semaphore:
@@ -76,6 +76,7 @@ class GMatrixHttpApi(MatrixHttpApi):
                     raise
                 if time.time() > started + self.retry_timeout:
                     raise
+                last_ex = ex
                 logger.debug(
                     'Got http _send exception, waiting for %s then retrying: %s',
                     delay,
@@ -83,7 +84,7 @@ class GMatrixHttpApi(MatrixHttpApi):
                 )
                 gevent.sleep(delay)
         else:
-            raise
+            raise last_ex
 
 
 class GMatrixClient(MatrixClient):
