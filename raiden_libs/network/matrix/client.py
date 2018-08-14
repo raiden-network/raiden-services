@@ -162,8 +162,9 @@ class GMatrixClient(MatrixClient):
                     raise
             except MatrixHttpLibError:
                 logger.warning('A MatrixHttpLibError occured during sync.')
-                gevent.sleep(_bad_sync_timeout)
-                _bad_sync_timeout = min(_bad_sync_timeout * 2, self.bad_sync_timeout_limit)
+                if self.should_listen:
+                    gevent.sleep(_bad_sync_timeout)
+                    _bad_sync_timeout = min(_bad_sync_timeout * 2, self.bad_sync_timeout_limit)
             except Exception as e:
                 logger.exception('Exception thrown during sync')
                 if exception_handler is not None:
