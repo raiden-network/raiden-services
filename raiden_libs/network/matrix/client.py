@@ -126,7 +126,7 @@ class GMatrixClient(MatrixClient):
         )
         self.should_listen = False
         self.sync_thread = None
-        self.greenlets: List[gevent.Greenlet] = list()
+        self._handle_thread = None
 
     def listen_forever(
         self,
@@ -147,7 +147,13 @@ class GMatrixClient(MatrixClient):
         self.should_listen = True
         while self.should_listen:
             try:
-                self._sync(timeout_ms)
+                try:
+                    self._sync(timeout_ms)
+                finally:
+                    # _sync may have been killed because of _handle_thread exception
+                    # in this case, suppress _sync error, and re-raise _handle_thread one
+                    if self._handle_thread is not None and not self._handle_thread:
+                        self._handle_thread.get()
                 _bad_sync_timeout = bad_sync_timeout
             except MatrixRequestError as e:
                 logger.warning('A MatrixRequestError occured during sync.')
@@ -191,10 +197,11 @@ class GMatrixClient(MatrixClient):
         self.should_listen = False
         if self.sync_thread:
             self.sync_thread.kill()
-            self.sync_thread.join()
+            self.sync_thread.get()
+        if self._handle_thread is not None:
+            self._handle_thread.get()
         self.sync_thread = None
-        gevent.wait(self.greenlets)
-        self.greenlets.clear()
+        self._handle_thread = None
 
     def logout(self):
         super().logout()
@@ -302,16 +309,22 @@ class GMatrixClient(MatrixClient):
         return self.api._send('GET', f'/presence/{quote(user_id)}/status').get('presence')
 
     def call(self, callback, *args, **kwargs):
-        self.greenlets = [g for g in self.greenlets if g]
-        g = gevent.spawn(callback, *args, **kwargs)
-        self.greenlets.append(g)
-        return g
+        return callback(*args, **kwargs)
 
     def _sync(self, timeout_ms=30000):
-        """ Copy-pasta from MatrixClient, but add 'account_data' support to /sync """
+        """ Reimplements MatrixClient._sync, add 'account_data' support to /sync """
+        prev_token = self.sync_token
         response = self.api.sync(self.sync_token, timeout_ms, filter=self.sync_filter)
         self.sync_token = response["next_batch"]
 
+        if self._handle_thread is not None:
+            # if previous _handle_thread is still running, wait for it and re-raise if needed
+            self._handle_thread.get()
+
+        self._handle_thread = gevent.spawn(self._handle_response, response, prev_token)
+        self._handle_thread.link_exception(lambda _: self.sync_thread.kill())
+
+    def _handle_response(self, response, prev_token):
         for presence_update in response['presence']['events']:
             for callback in self.presence_listeners.values():
                 self.call(callback, presence_update)
