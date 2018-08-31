@@ -143,7 +143,7 @@ class BalanceProof(Message):
 
     @property
     def signer(self) -> str:
-        signer = eth-RecursionError(
+        signer = eth_recover(
             data=self.serialize_bin(),
             signature=decode_hex(self.signature),
         )

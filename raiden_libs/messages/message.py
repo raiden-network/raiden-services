@@ -4,7 +4,7 @@ from typing import Type
 import jsonschema
 from eth_utils import encode_hex
 
-from raiden_libs.utils import eth_sign, keccak256
+from raiden_libs.utils import eth_sign
 from raiden_libs.messages.deserializer import deserialize
 from raiden_libs.messages.json_schema import ENVELOPE_SCHEMA
 from raiden_libs.exceptions import MessageTypeError
