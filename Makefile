@@ -53,7 +53,7 @@ lint: ## check style with flake8
 	flake8 raiden_libs tests
 
 test: ## run tests quickly with the default Python
-	py.test
+	py.test tests
 
 typecheck: ## static analysis with mypy
 	mypy --ignore-missing-imports raiden_libs
