@@ -4,7 +4,7 @@ import pytest
 import random
 from eth_utils import is_same_address
 
-from raiden_libs.utils import sign_data, encode_hex, private_key_to_address
+from raiden_libs.utils import eth_sign, encode_hex, private_key_to_address
 from raiden_libs.messages import (
     BalanceProof,
     Message,
@@ -26,7 +26,7 @@ def test_serialize_deserialize(get_random_bp, get_random_privkey):
     bp = get_random_bp()
     privkey = get_random_privkey()
     bp.signature = encode_hex(
-        sign_data(
+        eth_sign(
             privkey,
             bp.serialize_bin(),
         ),
@@ -181,7 +181,7 @@ def test_monitor_request(get_random_bp, get_random_privkey, get_random_address):
     balance_proof = get_random_bp()
     client_privkey = get_random_privkey()
     reward_sender_privkey = get_random_privkey()
-    balance_proof.signature = encode_hex(sign_data(client_privkey, balance_proof.serialize_bin()))
+    balance_proof.signature = encode_hex(eth_sign(client_privkey, balance_proof.serialize_bin()))
     monitor_request = MonitorRequest(
         balance_proof,
         non_closing_signature=balance_proof.signature,
@@ -190,7 +190,7 @@ def test_monitor_request(get_random_bp, get_random_privkey, get_random_address):
         monitor_address=get_random_address(),
     )
     monitor_request.reward_proof_signature = encode_hex(
-        sign_data(
+        eth_sign(
             reward_sender_privkey,
             monitor_request.serialize_reward_proof(),
         ),

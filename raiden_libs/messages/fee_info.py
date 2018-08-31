@@ -6,7 +6,7 @@ from eth_utils import is_address, decode_hex, to_checksum_address
 from raiden_libs.messages.message import Message
 from raiden_libs.properties import address_property
 from raiden_libs.messages.json_schema import FEE_INFO_SCHEMA
-from raiden_libs.utils import eth_verify, pack_data
+from raiden_libs.utils import eth_recover, pack_data
 from raiden_libs.types import Address, ChannelIdentifier, T_ChannelIdentifier
 
 
@@ -82,9 +82,9 @@ class FeeInfo(Message):
 
     @property
     def signer(self) -> str:
-        signer = eth_verify(
-            decode_hex(self.signature),
-            self.serialize_bin(),
+        signer = eth_recover(
+            data=self.serialize_bin(),
+            signature=decode_hex(self.signature),
         )
         return to_checksum_address(signer)
 

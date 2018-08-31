@@ -6,8 +6,9 @@ from eth_utils import is_address, decode_hex, encode_hex, to_checksum_address
 from raiden_libs.messages.message import Message
 from raiden_libs.properties import address_property
 from raiden_libs.messages.json_schema import BALANCE_PROOF_SCHEMA
-from raiden_libs.utils import eth_verify, pack_data, UINT256_MAX
+from raiden_libs.utils import eth_recover, pack_data, UINT256_MAX
 from raiden_libs.types import Address, ChannelIdentifier, T_ChannelIdentifier
+from raiden_contracts.constants import MessageTypeId
 
 
 class BalanceProof(Message):
@@ -81,21 +82,23 @@ class BalanceProof(Message):
 
         return result
 
-    def serialize_bin(self):
+    def serialize_bin(self, msg_type: MessageTypeId=MessageTypeId.BALANCE_PROOF):
         return pack_data([
-            'bytes32',
-            'uint256',
-            'bytes32',
-            'uint256',
             'address',
             'uint256',
+            'uint256',
+            'uint256',
+            'bytes32',
+            'uint256',
+            'bytes32',
         ], [
+            self.token_network_address,
+            self.chain_id,
+            msg_type.value,
+            self.channel_identifier,
             decode_hex(self.balance_hash),
             self.nonce,
             decode_hex(self.additional_hash),
-            self.channel_identifier,
-            self.token_network_address,
-            self.chain_id,
         ])
 
     @classmethod
@@ -140,9 +143,9 @@ class BalanceProof(Message):
 
     @property
     def signer(self) -> str:
-        signer = eth_verify(
-            decode_hex(self.signature),
-            self.serialize_bin(),
+        signer = eth-RecursionError(
+            data=self.serialize_bin(),
+            signature=decode_hex(self.signature),
         )
         return to_checksum_address(signer)
 

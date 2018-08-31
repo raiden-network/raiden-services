@@ -5,7 +5,8 @@ from raiden_libs.messages.balance_proof import BalanceProof
 from raiden_libs.properties import address_property
 from raiden_libs.messages.json_schema import MONITOR_REQUEST_SCHEMA
 from raiden_libs.types import Address
-from raiden_libs.utils import UINT192_MAX, eth_verify, pack_data
+from raiden_libs.utils import UINT192_MAX, eth_recover, pack_data
+from raiden_contracts.constants import MessageTypeId
 import jsonschema
 
 
@@ -79,16 +80,17 @@ class MonitorRequest(Message):
 
     @property
     def reward_proof_signer(self) -> str:
-        signer = eth_verify(
-            decode_hex(self.reward_proof_signature),
-            self.serialize_reward_proof(),
+        signer = eth_recover(
+            data=self.serialize_reward_proof(),
+            signature=decode_hex(self.reward_proof_signature),
         )
         return to_checksum_address(signer)
 
     @property
     def non_closing_signer(self) -> str:
-        signer = eth_verify(
-            decode_hex(self.non_closing_signature),
-            self.balance_proof.serialize_bin() + decode_hex(self.balance_proof.signature),
+        serialized = self.balance_proof.serialize_bin(msg_type=MessageTypeId.BALANCE_PROOF_UPDATE)
+        signer = eth_recover(
+            data=serialized + decode_hex(self.balance_proof.signature),
+            signature=decode_hex(self.non_closing_signature),
         )
         return to_checksum_address(signer)

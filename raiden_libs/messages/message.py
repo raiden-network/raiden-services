@@ -4,7 +4,7 @@ from typing import Type
 import jsonschema
 from eth_utils import encode_hex
 
-from raiden_libs.utils import sign, keccak256
+from raiden_libs.utils import eth_sign, keccak256
 from raiden_libs.messages.deserializer import deserialize
 from raiden_libs.messages.json_schema import ENVELOPE_SCHEMA
 from raiden_libs.exceptions import MessageTypeError
@@ -42,8 +42,7 @@ class Message:
         return json.dumps(msg)
 
     def sign_data(self, private_key, data: str):
-        data_hash = keccak256(data)
-        return encode_hex(sign(private_key, data_hash))
+        return encode_hex(eth_sign(private_key, data.encode()))
 
     @staticmethod
     def deserialize(data, type: Type = None) -> 'Message':

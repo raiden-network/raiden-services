@@ -8,7 +8,7 @@ from web3 import Web3
 from web3.contract import Contract, find_matching_event_abi
 
 from raiden_libs.transport import Transport
-from raiden_libs.utils import private_key_to_address, make_filter, sign_data, UINT256_MAX
+from raiden_libs.utils import private_key_to_address, make_filter, eth_sign, UINT256_MAX
 from raiden_libs.messages import (
     BalanceProof,
     MonitorRequest,
@@ -18,6 +18,7 @@ from raiden_libs.messages import (
     PathsReply,
 )
 from raiden_libs.types import Address, ChannelIdentifier, T_ChannelIdentifier
+from raiden_contracts.constants import MessageTypeId
 
 
 log = logging.getLogger(__name__)
@@ -259,7 +260,7 @@ class MockRaidenNode:
             self.contract.address,
             **kwargs,
         )
-        bp.signature = encode_hex(sign_data(self.privkey, bp.serialize_bin()))
+        bp.signature = encode_hex(eth_sign(self.privkey, bp.serialize_bin()))
         return bp
 
     @assert_channel_existence
@@ -278,14 +279,14 @@ class MockRaidenNode:
             monitor_address=monitor_address,
         )
         monitor_request.reward_proof_signature = encode_hex(
-            sign_data(
+            eth_sign(
                 self.privkey,
                 monitor_request.serialize_reward_proof(),
             ),
         )
         non_closing_data = balance_proof.serialize_bin() + decode_hex(balance_proof.signature)
         monitor_request.non_closing_signature = encode_hex(
-            sign_data(self.privkey, non_closing_data),
+            eth_sign(self.privkey, non_closing_data),
         )
         return monitor_request
 
@@ -302,7 +303,7 @@ class MockRaidenNode:
             channel_id,
             **kwargs,
         )
-        fee_info.signature = encode_hex(sign_data(self.privkey, fee_info.serialize_bin()))
+        fee_info.signature = encode_hex(eth_sign(self.privkey, fee_info.serialize_bin()))
         return fee_info
 
     def request_paths(self, target_address: Address, **kwargs) -> PathsRequest:
@@ -319,7 +320,7 @@ class MockRaidenNode:
             target_address,
             **kwargs,
         )
-        request.signature = encode_hex(sign_data(self.privkey, request.serialize_bin()))
+        request.signature = encode_hex(eth_sign(self.privkey, request.serialize_bin()))
         return request
 
     @staticmethod
@@ -333,8 +334,9 @@ class MockRaidenNode:
         """Given a valid signed balance proof, this method calls `updateNonClosingBalanceProof`
         for an open channel
         """
-        non_closing_data = balance_proof.serialize_bin() + decode_hex(balance_proof.signature)
-        non_closing_signature = encode_hex(sign_data(self.privkey, non_closing_data))
+        serialized = balance_proof.serialize_bin(msg_type=MessageTypeId.BALANCE_PROOF_UPDATE)
+        non_closing_data = serialized + decode_hex(balance_proof.signature)
+        non_closing_signature = encode_hex(eth_sign(self.privkey, non_closing_data))
         self.contract.functions.updateNonClosingBalanceProof(
             self.partner_to_channel_id[partner_address],
             partner_address,

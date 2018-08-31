@@ -2,7 +2,7 @@ import pytest
 
 from eth_utils import decode_hex, is_same_address
 
-from raiden_libs.utils.signing import eth_verify
+from raiden_libs.utils.signing import eth_recover
 from raiden_libs.utils import is_channel_identifier
 
 
@@ -23,7 +23,10 @@ def test_client_fee_info(generate_raiden_clients):
     assert is_channel_identifier(channel_identifier)
 
     fi = c1.get_fee_info(c2.address, nonce=5, relative_fee=1000, chain_id=2)
-    fee_info_signer = eth_verify(decode_hex(fi.signature), fi.serialize_bin())
+    fee_info_signer = eth_recover(
+        data=fi.serialize_bin(),
+        signature=decode_hex(fi.signature),
+    )
 
     assert is_same_address(fee_info_signer, c1.address)
 

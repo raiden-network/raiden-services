@@ -2,17 +2,17 @@ import random
 from typing import Callable
 
 import pytest
-from sha3 import keccak_256
 from eth_utils import denoms, is_address, encode_hex
 
 from raiden_libs.utils import (
+    sha3,
     private_key_to_address,
     UINT64_MAX,
     UINT192_MAX,
     UINT256_MAX,
 )
 from raiden_libs.messages import BalanceProof, MonitorRequest
-from raiden_libs.utils.signing import sign_data
+from raiden_libs.utils.signing import eth_sign
 from raiden_libs.types import Address, ChannelIdentifier
 
 
@@ -51,9 +51,9 @@ def get_random_bp(get_random_address, get_random_privkey) -> Callable:
         balance_proof = BalanceProof(
             channel_identifier,
             contract_address,
-            balance_hash=keccak_256(balance_hash_data.encode()).hexdigest(),
+            balance_hash=encode_hex(sha3(balance_hash_data.encode())),
             nonce=random.randint(0, UINT64_MAX),
-            additional_hash=keccak_256(additional_hash_data.encode()).hexdigest(),
+            additional_hash=encode_hex(sha3(additional_hash_data.encode())),
             chain_id=1,
         )
         return balance_proof
@@ -67,9 +67,9 @@ def get_random_monitor_request(get_random_bp, get_random_address, get_random_pri
         balance_proof = get_random_bp()
         privkey = get_random_privkey()
         privkey_non_closing = get_random_privkey()
-        balance_proof.signature = encode_hex(sign_data(privkey, balance_proof.serialize_bin()))
+        balance_proof.signature = encode_hex(eth_sign(privkey, balance_proof.serialize_bin()))
         non_closing_signature = encode_hex(
-            sign_data(privkey_non_closing, balance_proof.serialize_bin()),
+            eth_sign(privkey_non_closing, balance_proof.serialize_bin()),
         )
 
         monitor_request = MonitorRequest(
@@ -79,7 +79,7 @@ def get_random_monitor_request(get_random_bp, get_random_address, get_random_pri
             monitor_address=get_random_address(),
         )
         monitor_request.reward_proof_signature = encode_hex(
-            sign_data(privkey, monitor_request.serialize_reward_proof()),
+            eth_sign(privkey, monitor_request.serialize_reward_proof()),
         )
         return monitor_request
     return f
