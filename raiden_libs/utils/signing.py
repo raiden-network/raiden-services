@@ -1,5 +1,4 @@
 from typing import Union, Any
-from sha3 import keccak_256
 
 from coincurve import PrivateKey, PublicKey
 from web3.utils.abi import map_abi_data
@@ -7,25 +6,31 @@ from web3.utils.normalizers import abi_ens_resolver
 from web3.utils.encoding import hex_encode_abi_type
 from eth_utils import (
     to_checksum_address,
-    encode_hex,
     decode_hex,
     keccak,
     remove_0x_prefix,
     is_0x_prefixed,
+    to_bytes,
 )
 
 from raiden_libs.types import Address
 
 
+sha3 = keccak
+
+
+def eth_sign_sha3(data: bytes) -> bytes:
+    """
+    eth_sign/recover compatible hasher
+    Prefixes data with "\x19Ethereum Signed Message:\n<len(data)>"
+    """
+    prefix = b'\x19Ethereum Signed Message:\n'
+    if not data.startswith(prefix):
+        data = prefix + b'%d%s' % (len(data), data)
+    return sha3(data)
+
+
 def pack(*args) -> bytes:
-    """
-    Simulates Solidity's keccak256 packing. Integers can be passed as tuples where the second tuple
-    element specifies the variable's size in bits, e.g.:
-    keccak256((5, 32))
-    would be equivalent to Solidity's
-    keccak256(uint32(5))
-    Default size is 256.
-    """
     def format_int(value, size):
         assert isinstance(value, int)
         assert isinstance(size, int)
@@ -56,30 +61,16 @@ def pack(*args) -> bytes:
     return msg
 
 
-def keccak256(*args) -> bytes:
-    return keccak(pack(*args))
-
-
-def sign(privkey: str, msg: bytes, v=0) -> bytes:
-    assert isinstance(msg, bytes)
-    assert isinstance(privkey, str)
-
-    pk = PrivateKey.from_hex(remove_0x_prefix(privkey))
-    assert len(msg) == 32
-
-    sig = pk.sign_recoverable(msg, hasher=None)
-    assert len(sig) == 65
-
-    sig = sig[:-1] + bytes([sig[-1] + v])
-
-    return sig
-
-
-def sign_data(privkey: str, msg: bytes, v=27):
-    pk = PrivateKey.from_hex(remove_0x_prefix(privkey))
-    sha3 = lambda x: keccak_256(x).digest()
-    sig = pk.sign_recoverable(msg, hasher=sha3)
-    return sig[:-1] + chr(sig[-1] + v).encode()
+def keccak256(*args, hasher=sha3) -> bytes:
+    """
+    Simulates Solidity's keccak256 packing. Integers can be passed as tuples where the second tuple
+    element specifies the variable's size in bits, e.g.:
+    keccak256((5, 32))
+    would be equivalent to Solidity's
+    keccak256(uint32(5))
+    Default size is 256.
+    """
+    return hasher(pack(*args))
 
 
 def public_key_to_address(public_key: Union[PublicKey, bytes]) -> Address:
@@ -87,32 +78,51 @@ def public_key_to_address(public_key: Union[PublicKey, bytes]) -> Address:
     if isinstance(public_key, PublicKey):
         public_key = public_key.format(compressed=False)
     assert isinstance(public_key, bytes)
-    return encode_hex(keccak(public_key[1:])[-20:])
+    return to_checksum_address(sha3(public_key[1:])[-20:])
 
 
-def private_key_to_address(private_key: str) -> Address:
+def private_key_to_address(private_key: Union[str, bytes]) -> Address:
     """ Converts a private key to an Ethereum address. """
-    return to_checksum_address(
-        public_key_to_address(PrivateKey.from_hex(remove_0x_prefix(private_key)).public_key),
-    )
+    if isinstance(private_key, str):
+        private_key = to_bytes(hexstr=private_key)
+    pk = PrivateKey(private_key)
+    return public_key_to_address(pk.public_key)
 
 
-def address_from_signature(sig: bytes, msg: bytes) -> Address:
+def address_from_signature(data: bytes, signature: bytes, hasher=sha3) -> Address:
     """Convert an EC signature into an ethereum address"""
-    assert len(sig) == 65
+    assert len(signature) == 65
     # Support Ethereum's EC v value of 27 and EIP 155 values of > 35.
-    if sig[-1] >= 35:
-        network_id = (sig[-1] - 35) // 2
-        sig = sig[:-1] + bytes([sig[-1] - 35 - 2 * network_id])
-    elif sig[-1] >= 27:
-        sig = sig[:-1] + bytes([sig[-1] - 27])
+    if signature[-1] >= 35:
+        network_id = (signature[-1] - 35) // 2
+        signature = signature[:-1] + bytes([signature[-1] - 35 - 2 * network_id])
+    elif signature[-1] >= 27:
+        signature = signature[:-1] + bytes([signature[-1] - 27])
 
-    receiver_pubkey = PublicKey.from_signature_and_message(sig, msg, hasher=None)
-    return public_key_to_address(receiver_pubkey)
+    signer_pubkey = PublicKey.from_signature_and_message(signature, data, hasher=hasher)
+    return public_key_to_address(signer_pubkey)
 
 
-def eth_verify(sig: bytes, msg: Any) -> Address:
-    return address_from_signature(sig, keccak256(msg))
+def sign(privkey: Union[str, bytes], msg: bytes, v=27, hasher=sha3) -> bytes:
+    if isinstance(privkey, str):
+        privkey = to_bytes(hexstr=privkey)
+    pk = PrivateKey(privkey)
+    sig = pk.sign_recoverable(msg, hasher=hasher)
+    return sig[:-1] + bytes([sig[-1] + v])
+
+
+def eth_sign(privkey: Union[str, bytes], msg: bytes, v=27) -> bytes:
+    return sign(privkey, msg, hasher=eth_sign_sha3, v=v)
+
+
+def eth_recover(data: bytes, signature: bytes, hasher=eth_sign_sha3) -> Address:
+    """ Recover an address (hex encoded) from a eth_sign data and signature """
+    return address_from_signature(data=data, signature=signature, hasher=hasher)
+
+
+def eth_verify(data: Any, signature: bytes, hasher=eth_sign_sha3) -> Address:
+    """ Recover signature from data, which can be a list of values to be packed """
+    return eth_recover(data=keccak256(data, hasher=hasher), signature=signature, hasher=None)
 
 
 def pack_data(abi_types, values) -> bytes:
