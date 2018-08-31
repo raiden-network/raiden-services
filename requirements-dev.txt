@@ -18,6 +18,6 @@ pytest
 pytest-runner
 pdbpp
 
-eth-tester[py-evm]==0.1.0b28
+eth-tester[py-evm]>=0.1.0b31
 
-git+https://github.com/raiden-network/raiden-contracts.git@05b8e2819e80a8b3d7ef1e264ab0d5c3c81e8225
+git+https://github.com/raiden-network/raiden-contracts.git@d77e2a7f1f83afd302caabf1179374879bc7725c
