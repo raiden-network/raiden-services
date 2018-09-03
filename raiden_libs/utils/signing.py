@@ -2,7 +2,7 @@ from typing import Union, Any
 
 from coincurve import PrivateKey, PublicKey
 from web3.utils.abi import map_abi_data
-from web3.utils.normalizers import abi_ens_resolver
+from web3.utils.normalizers import abi_address_to_hex
 from web3.utils.encoding import hex_encode_abi_type
 from eth_utils import (
     to_checksum_address,
@@ -144,7 +144,7 @@ def pack_data(abi_types, values) -> bytes:
             "{0} types and {1} values.".format(len(abi_types), len(values)),
         )
 
-    normalized_values = map_abi_data([abi_ens_resolver(None)], abi_types, values)
+    normalized_values = map_abi_data([abi_address_to_hex], abi_types, values)
 
     return decode_hex(''.join(
         remove_0x_prefix(hex_encode_abi_type(abi_type, value))
