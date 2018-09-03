@@ -91,7 +91,8 @@ def private_key_to_address(private_key: Union[str, bytes]) -> Address:
 
 def address_from_signature(data: bytes, signature: bytes, hasher=sha3) -> Address:
     """Convert an EC signature into an ethereum address"""
-    assert len(signature) == 65
+    if not isinstance(signature, bytes) or len(signature) != 65:
+        raise ValueError('Invalid signature, must be 65 bytes')
     # Support Ethereum's EC v value of 27 and EIP 155 values of > 35.
     if signature[-1] >= 35:
         network_id = (signature[-1] - 35) // 2
@@ -99,8 +100,12 @@ def address_from_signature(data: bytes, signature: bytes, hasher=sha3) -> Addres
     elif signature[-1] >= 27:
         signature = signature[:-1] + bytes([signature[-1] - 27])
 
-    signer_pubkey = PublicKey.from_signature_and_message(signature, data, hasher=hasher)
-    return public_key_to_address(signer_pubkey)
+    try:
+        signer_pubkey = PublicKey.from_signature_and_message(signature, data, hasher=hasher)
+        return public_key_to_address(signer_pubkey)
+    except Exception as e:  # pylint: disable=broad-except
+        # coincurve raises bare exception on verify error
+        raise ValueError('Invalid signature') from e
 
 
 def sign(privkey: Union[str, bytes], msg: bytes, v=27, hasher=sha3) -> bytes:
