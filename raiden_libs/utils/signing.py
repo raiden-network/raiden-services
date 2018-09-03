@@ -108,16 +108,16 @@ def address_from_signature(data: bytes, signature: bytes, hasher=sha3) -> Addres
         raise ValueError('Invalid signature') from e
 
 
-def sign(privkey: Union[str, bytes], msg: bytes, v=27, hasher=sha3) -> bytes:
+def sign(privkey: Union[str, bytes], data: bytes, v=27, hasher=sha3) -> bytes:
     if isinstance(privkey, str):
         privkey = to_bytes(hexstr=privkey)
     pk = PrivateKey(privkey)
-    sig = pk.sign_recoverable(msg, hasher=hasher)
+    sig = pk.sign_recoverable(data, hasher=hasher)
     return sig[:-1] + bytes([sig[-1] + v])
 
 
-def eth_sign(privkey: Union[str, bytes], msg: bytes, v=27) -> bytes:
-    return sign(privkey, msg, hasher=eth_sign_sha3, v=v)
+def eth_sign(privkey: Union[str, bytes], data: bytes, v=27, hasher=eth_sign_sha3) -> bytes:
+    return sign(privkey, data, v=v, hasher=hasher)
 
 
 def eth_recover(data: bytes, signature: bytes, hasher=eth_sign_sha3) -> Address:
