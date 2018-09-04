@@ -10,3 +10,8 @@ class MessageFormatError(RaidenException):
 class MessageTypeError(RaidenException):
     """Raised on an unexpected message type"""
     pass
+
+
+class InvalidSignature(RaidenException):
+    """Raised on invalid signature recover/verify"""
+    pass

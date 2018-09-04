@@ -1,4 +1,4 @@
-from typing import Union, Any
+from typing import Union, Any, Callable, Optional
 
 from coincurve import PrivateKey, PublicKey
 from web3.utils.abi import map_abi_data
@@ -14,9 +14,11 @@ from eth_utils import (
 )
 
 from raiden_libs.types import Address
+from raiden_libs.exceptions import InvalidSignature
 
 
 sha3 = keccak
+Hasher = Optional[Callable[[bytes], bytes]]
 
 
 def eth_sign_sha3(data: bytes) -> bytes:
@@ -61,7 +63,7 @@ def pack(*args) -> bytes:
     return msg
 
 
-def keccak256(*args, hasher=sha3) -> bytes:
+def keccak256(*args, hasher: Hasher=sha3) -> bytes:
     """
     Simulates Solidity's keccak256 packing. Integers can be passed as tuples where the second tuple
     element specifies the variable's size in bits, e.g.:
@@ -70,7 +72,10 @@ def keccak256(*args, hasher=sha3) -> bytes:
     keccak256(uint32(5))
     Default size is 256.
     """
-    return hasher(pack(*args))
+    if hasher:
+        return hasher(pack(*args))
+    else:
+        return pack(*args)
 
 
 def public_key_to_address(public_key: Union[PublicKey, bytes]) -> Address:
@@ -89,10 +94,10 @@ def private_key_to_address(private_key: Union[str, bytes]) -> Address:
     return public_key_to_address(pk.public_key)
 
 
-def address_from_signature(data: bytes, signature: bytes, hasher=sha3) -> Address:
+def address_from_signature(data: bytes, signature: bytes, hasher: Hasher=sha3) -> Address:
     """Convert an EC signature into an ethereum address"""
     if not isinstance(signature, bytes) or len(signature) != 65:
-        raise ValueError('Invalid signature, must be 65 bytes')
+        raise InvalidSignature('Invalid signature, must be 65 bytes')
     # Support Ethereum's EC v value of 27 and EIP 155 values of > 35.
     if signature[-1] >= 35:
         network_id = (signature[-1] - 35) // 2
@@ -105,10 +110,15 @@ def address_from_signature(data: bytes, signature: bytes, hasher=sha3) -> Addres
         return public_key_to_address(signer_pubkey)
     except Exception as e:  # pylint: disable=broad-except
         # coincurve raises bare exception on verify error
-        raise ValueError('Invalid signature') from e
+        raise InvalidSignature('Invalid signature') from e
 
 
-def sign(privkey: Union[str, bytes, PrivateKey], data: bytes, v=27, hasher=sha3) -> bytes:
+def sign(
+        privkey: Union[str, bytes, PrivateKey],
+        data: bytes,
+        v: int=27,
+        hasher: Hasher=sha3,
+) -> bytes:
     if isinstance(privkey, str):
         privkey = to_bytes(hexstr=privkey)
     if isinstance(privkey, bytes):
@@ -118,20 +128,20 @@ def sign(privkey: Union[str, bytes, PrivateKey], data: bytes, v=27, hasher=sha3)
 
 
 def eth_sign(
-    privkey: Union[str, bytes, PrivateKey],
-    data: bytes,
-    v=27,
-    hasher=eth_sign_sha3,
+        privkey: Union[str, bytes, PrivateKey],
+        data: bytes,
+        v: int=27,
+        hasher: Hasher=eth_sign_sha3,
 ) -> bytes:
     return sign(privkey, data, v=v, hasher=hasher)
 
 
-def eth_recover(data: bytes, signature: bytes, hasher=eth_sign_sha3) -> Address:
+def eth_recover(data: bytes, signature: bytes, hasher: Hasher=eth_sign_sha3) -> Address:
     """ Recover an address (hex encoded) from a eth_sign data and signature """
     return address_from_signature(data=data, signature=signature, hasher=hasher)
 
 
-def eth_verify(data: Any, signature: bytes, hasher=eth_sign_sha3) -> Address:
+def eth_verify(data: Any, signature: bytes, hasher: Hasher=eth_sign_sha3) -> Address:
     """ Recover signature from data, which can be a list of values to be packed """
     return eth_recover(data=keccak256(data, hasher=hasher), signature=signature, hasher=None)
 
