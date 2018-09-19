@@ -1,7 +1,11 @@
-from raiden_libs.contract import sign_transaction_data, GAS_LIMIT_CONTRACT
-from raiden_libs.utils import private_key_to_address
-from web3.utils.abi import get_abi_output_types
+from copy import deepcopy
+
 from eth_abi import decode_abi
+
+from raiden_libs.contract import GAS_LIMIT_CONTRACT, sign_transaction_data
+from raiden_libs.utils import private_key_to_address
+from web3.contract import Contract
+from web3.utils.abi import get_abi_output_types
 
 
 class Callable():
@@ -11,6 +15,7 @@ class Callable():
 
     def transact(self, *args, **kwargs) -> bytes:
         """Creates a transaction, signs it with a provided private key and sends it. """
+        args = deepcopy(args)
         private_key = kwargs.pop('private_key', None)
         if len(args) == 0:
             args = ({},)
@@ -59,8 +64,12 @@ class PrivateContract:
         self.contract = contract
         self.functions = FunctionsMap(self.contract.abi, contract)
 
+    def constructor(self, *args, **kwargs) -> Callable:
+        call = self.contract.constructor(*args, **kwargs)
+        return Callable(call)
+
     def __getattr__(self, attr):
         if attr == 'functions':
             return self.functions
         else:
-            return self.contract.__getattribute__(attr)
+            return Contract.__getattribute__(self.contract, attr)
