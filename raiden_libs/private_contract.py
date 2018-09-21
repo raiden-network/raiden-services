@@ -1,11 +1,11 @@
 from copy import deepcopy
 
 from eth_abi import decode_abi
-
-from raiden_libs.contract import GAS_LIMIT_CONTRACT, sign_transaction_data
-from raiden_libs.utils import private_key_to_address
 from web3.contract import Contract
 from web3.utils.abi import get_abi_output_types
+
+from raiden_libs.contract import GAS_LIMIT_CONTRACT, GAS_PRICE, sign_transaction_data
+from raiden_libs.utils import private_key_to_address
 
 
 class Callable():
@@ -22,8 +22,15 @@ class Callable():
         # buildTransaction requires 'from' field to be set properly
         args[0]['from'] = private_key_to_address(private_key)
         gas_limit = args[0].pop('gas_limit', GAS_LIMIT_CONTRACT)
+        gas_price = args[0].pop('gasPrice', GAS_PRICE)
         tx_data = self._call.buildTransaction(*args, **kwargs)
-        data = sign_transaction_data(private_key, self._call.web3, tx_data, gas_limit=gas_limit)
+        data = sign_transaction_data(
+            private_key,
+            self._call.web3,
+            tx_data,
+            gas_limit=gas_limit,
+            gas_price=gas_price,
+        )
         return self._call.web3.eth.sendRawTransaction(data.rawTransaction)
 
     def call(self, *args, **kwargs):
