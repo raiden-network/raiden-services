@@ -26,13 +26,14 @@ script:
   - python setup.py develop
 
 deploy:
-    provider: pypi
-    user: raiden_pypi_automated
-    password:
-      secure: "P/xOplB2cvWDUanEHpVM8LkmDa/pG/bl6tjYwiMdBbgafxrQlqG73e5tTRdOzHWsSJZ3gwthgRKD6x6KpMJQLum2ggTnqlXavj7LZAK8ttF+Q6/S31TfP/z+nLalpQqeFn46VW57FykQ4ix7166wNfRrgcK3pFeL8CVLxEqXJvRtZBBhpF3BWgeAEUoH/7JIlZNVxAtTXUMP6E9tIurD6KqGwSE8YL/FrfaogxC8Wm+7PoLMQsc9O/Ne+I1vuOwuh5cqiNueITs78hIXa7OWHMAqnqV/0Wu8dAgEgcbIqq12UQPs8bEdlzq4GLIqu6NUSedAcF9N6GXNQxmi1RAAYAtcBAjwzL3xxjxlDez9JVn35Pvb+cHLIGpjvsVFlyr0COpraXVCxwDKBeM5mdGxr1ZwBFeDBkeMvuWHyo0kYTsd3VSGA9UR5UycqNLTk+oNah96C4Kv4xd3yfm2HDFLR6K+1AdFH9TMotLQM7CEVAjOEM4QSX6KrnkSsAMHJaLauoY+kYg7L8ixv6XGXy1J5IFrv2lmcr6l74aDCk926pNc66L7bNLfuMYRGlxzMkp8otbDYTU3zr801WsJiGiqxAxGtnD2GfYMMIk/4ysTMNo+hzRPcK19QTo9/5P1Q1L2jGzqsCi3gB3OzzLoz/0TggepbRl8ZYjH/shDBL0YtOk="
-    python: 3.6
-    on:
-      tags: true
-      distributions: sdist bdist_wheel
-      repo: raiden-network/raiden-libs
-      branch: master
+  provider: pypi
+  skip_cleanup: true
+  user: raiden_pypi_automated
+  password:
+    secure: "tk1s9XFXDNsphxrBJ0SYna+RIwjqnjZd/6wrCZ/hy232o0B6ja8bedOMYW9pQQUeVgBC5PCH2/MN5MKVzse+u5f3fxC48as9H46vuIA8Y5LaGva0AjduiWOGfUXl3ndgnpdwUoXCydRRIDf32RtL/HGOPVv8hHdHwewyqg4FczF8CISWKZaKy4D8ParmuumLQ8qvlexJL/AMIVLBZ9dTbYfwsmouVJ3scNQ4zhgyCEG+u+VmECREzBmIcgI39YoA3UF+CVRtZM9V5Y7WrE0+W4nsjm1ON7HZlFmjlPAo1yivKrToxcTVfOdccEghCJYV6bTgC546sZOnJ65yiTuaW69coBeKGPQA61r7JEYNjj6BKxbJIRnX0AIuov8Ny2visK1PBY/rYJNVPPQn4Ov4DI/8T2RqNV+MXKLv8bcgtSR//5aTBVtP6kQfuTwn6zzEMvS9cqZSybU7BTmuuK/0h1yE0hm5S52eP7FOwRxaaQR49SbArCW2CR545KjMm0EcivVGq1D+Yzeqw3jXANytWspZqfjZK6IWTm8JkZFpxV161ojcZKe/6av1M4YmFn3eS4eoMb86yak1BfqwH1laQZipa4KvlVTQvdW0uY4hIhk3oQAtD+E3L8oBhFbsIXr6WrcZEKMPdI3hgWLIv5XELqKBZwPUqw6AlCtNjUosVkc="
+  python: 3.6
+  distributions: sdist bdist_wheel
+  on:
+    tags: true
+    repo: raiden-network/raiden-libs
+    branch: master
