@@ -1,8 +1,8 @@
 import json
-import gevent
 import logging
-import requests
 
+import gevent
+import requests
 from matrix_client.client import MatrixClient
 from matrix_client.errors import MatrixHttpLibError
 
@@ -49,14 +49,14 @@ class MatrixTransport(Transport):
 
     def get_room_events(self, limit=100):
         """Get past messages in the broadcast room, up to the @limit"""
-        f = {"room": {"timeline": {"limit": 100}}}
-        result = self.client.api.sync(filter=json.dumps(f))
+        sync_filter = {"room": {"timeline": {"limit": limit}}}
+        result = self.client.api.sync(filter=json.dumps(sync_filter))
         room_id = self.room.room_id
         room = result['rooms']['join'][room_id]
         return room['timeline']['events']
 
     def sync_history(self):
-        """Calls event callback for all events retrived from the broadcast room history"""
+        """Calls event callback for all events retrieved from the broadcast room history"""
         events = self.get_room_events()
         for event in events:
             self.push_event(event)
