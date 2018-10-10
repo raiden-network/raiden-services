@@ -55,6 +55,8 @@ def get_private_key(key_path, password_path=None):
                         password = password_file.readline().strip()
                 else:
                     password = getpass.getpass("Enter the private key password: ")
+                if json_data["crypto"]["kdf"] == "pbkdf2":
+                    password = password.encode()
                 private_key = encode_hex(decode_keyfile_json(json_data, password))
             except ValueError:
                 log.fatal("Invalid private key format or password!")
