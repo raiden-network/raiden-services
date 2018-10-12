@@ -1,12 +1,12 @@
 import pytest
-from raiden_contracts.contract_manager import ContractManager, CONTRACTS_SOURCE_DIRS
+from raiden_contracts.contract_manager import ContractManager, contracts_precompiled_path
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK
 from raiden_libs.blockchain import BlockchainListener
 
 
 @pytest.fixture(scope='session')
 def contracts_manager():
-    return ContractManager(CONTRACTS_SOURCE_DIRS)
+    return ContractManager(contracts_precompiled_path())
 
 
 @pytest.fixture(scope='session')
