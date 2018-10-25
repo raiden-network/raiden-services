@@ -280,7 +280,7 @@ class GMatrixClient(MatrixClient):
             {'presence': state},
         )
 
-    def typing(self, room: Room, timeout: int=5000):
+    def typing(self, room: Room, timeout: int = 5000):
         """
         Send typing event directly to api
 
