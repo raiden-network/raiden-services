@@ -162,7 +162,7 @@ class BlockchainListener(gevent.Greenlet):
                 self.is_connected.set()
                 if self.wait_sync_event.is_set():
                     gevent.sleep(self.poll_interval)
-            except requests.exceptions.ConnectionError as e:
+            except requests.exceptions.ConnectionError:
                 endpoint = self.web3.currentProvider.endpoint_uri
                 log.warning(
                     'Ethereum node (%s) refused connection. Retrying in %d seconds.' %

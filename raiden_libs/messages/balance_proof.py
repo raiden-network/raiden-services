@@ -82,7 +82,7 @@ class BalanceProof(Message):
 
         return result
 
-    def serialize_bin(self, msg_type: MessageTypeId=MessageTypeId.BALANCE_PROOF):
+    def serialize_bin(self, msg_type: MessageTypeId = MessageTypeId.BALANCE_PROOF):
         return pack_data([
             'address',
             'uint256',
