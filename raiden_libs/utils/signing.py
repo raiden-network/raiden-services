@@ -1,21 +1,21 @@
-from typing import Union, Any, Callable, Optional
+import warnings
+from typing import Any, Callable, Optional, Union
 
 from coincurve import PrivateKey, PublicKey
-from web3.utils.abi import map_abi_data
-from web3.utils.normalizers import abi_address_to_hex
-from web3.utils.encoding import hex_encode_abi_type
 from eth_utils import (
-    to_checksum_address,
     decode_hex,
+    is_0x_prefixed,
     keccak,
     remove_0x_prefix,
-    is_0x_prefixed,
     to_bytes,
+    to_checksum_address,
 )
+from web3.utils.abi import map_abi_data
+from web3.utils.encoding import hex_encode_abi_type
+from web3.utils.normalizers import abi_address_to_hex
 
-from raiden_libs.types import Address
 from raiden_libs.exceptions import InvalidSignature
-
+from raiden_libs.types import Address
 
 sha3 = keccak
 Hasher = Optional[Callable[[bytes], bytes]]
@@ -133,11 +133,21 @@ def eth_sign(
         v: int = 27,
         hasher: Hasher = eth_sign_sha3,
 ) -> bytes:
+    warnings.warn(
+        'eth_sign from raiden-libs is deprecated. '
+        'Function is now moved in the raiden client',
+        DeprecationWarning,
+    )
     return sign(privkey, data, v=v, hasher=hasher)
 
 
 def eth_recover(data: bytes, signature: bytes, hasher: Hasher = eth_sign_sha3) -> Address:
     """ Recover an address (hex encoded) from a eth_sign data and signature """
+    warnings.warn(
+        'eth_recover from raiden-libs is deprecated. '
+        'Function is now moved in the raiden client',
+        DeprecationWarning,
+    )
     return address_from_signature(data=data, signature=signature, hasher=hasher)
 
 
@@ -148,6 +158,11 @@ def eth_verify(data: Any, signature: bytes, hasher: Hasher = eth_sign_sha3) -> A
 
 def pack_data(abi_types, values) -> bytes:
     """Normalize data and pack them into a byte array"""
+    warnings.warn(
+        'eth_recover from raiden-libs is deprecated. '
+        'Function is now moved in the raiden client',
+        DeprecationWarning,
+    )
     if len(abi_types) != len(values):
         raise ValueError(
             "Length mismatch between provided abi types and values.  Got "
