@@ -1,20 +1,19 @@
-import time
 import logging
-from typing import List, Callable, Dict, Any, Iterable, Container
-from urllib.parse import quote
-from itertools import repeat
+import time
 from functools import wraps
+from itertools import repeat
+from typing import Any, Callable, Container, Dict, Iterable, List, Optional
+from urllib.parse import quote
 
 import gevent
 from gevent.lock import Semaphore
 from matrix_client.api import MatrixHttpApi
 from matrix_client.client import CACHE, MatrixClient
-from matrix_client.errors import MatrixRequestError, MatrixHttpLibError
+from matrix_client.errors import MatrixHttpLibError, MatrixRequestError
 from matrix_client.user import User
 from requests.adapters import HTTPAdapter
 
 from .room import Room
-
 
 logger = logging.getLogger(__name__)
 
@@ -125,8 +124,10 @@ class GMatrixClient(MatrixClient):
             long_paths=('/sync',),
         )
         self.should_listen = False
+        self.sync_filter = None
         self.sync_thread = None
         self._handle_thread = None
+        self._post_hook_func: Optional[Callable[[str], None]] = None
 
     def listen_forever(
         self,
@@ -308,7 +309,7 @@ class GMatrixClient(MatrixClient):
 
     def _sync(self, timeout_ms=30000):
         """ Reimplements MatrixClient._sync, add 'account_data' support to /sync """
-        response = self.api.sync(self.sync_token, timeout_ms, filter=self.sync_filter)
+        response = self.api.sync(self.sync_token, timeout_ms)
         self.sync_token = response["next_batch"]
 
         if self._handle_thread is not None:
@@ -317,6 +318,9 @@ class GMatrixClient(MatrixClient):
 
         self._handle_thread = gevent.spawn(self._handle_response, response)
         self._handle_thread.link_exception(lambda g: self.sync_thread.kill(g.exception))
+
+        if self._post_hook_func is not None:
+            self._post_hook_func(self.sync_token)
 
     def _handle_response(self, response):
         for presence_update in response['presence']['events']:
@@ -380,6 +384,9 @@ class GMatrixClient(MatrixClient):
         """ Use this to set a key: value pair in account_data to keep it synced on server """
         self.account_data[type_] = content
         return self.api.set_account_data(quote(self.user_id), quote(type_), content)
+
+    def set_post_sync_hook(self, hook: Callable[[str], None]):
+        self._post_hook_func = hook
 
 
 # Monkey patch matrix User class to provide nicer repr
