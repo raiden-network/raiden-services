@@ -16,17 +16,20 @@ def validate_address(ctx, param, value):
 
 def monitor_registration(
         web3: Web3,
+        contract_manager,
         ms_contract_address,
         monitoring_service_address,
         private_key
 ):
-    if is_service_registered(web3, ms_contract_address, monitoring_service_address) is True:
+    if is_service_registered(
+        web3, contract_manager, ms_contract_address, monitoring_service_address
+    ):
         log.error(
             'MS service %s is already registered in the contract %s' %
             (ms_contract_address, monitoring_service_address)
         )
         return False
-    return register_service(web3, ms_contract_address, private_key)
+    return register_service(web3, contract_manager, ms_contract_address, private_key)
 
 
 @click.command()

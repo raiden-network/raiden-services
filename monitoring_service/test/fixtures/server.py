@@ -39,12 +39,14 @@ def monitoring_service(
         state_db_mock,
         web3,
         monitoring_service_contract,
-        send_funds
+        send_funds,
+        contracts_manager
 ):
     # send some eth & tokens to MS
     send_funds(private_key_to_address(server_private_key))
     register_service(
         web3,
+        contracts_manager,
         monitoring_service_contract.address,
         server_private_key
     )
@@ -54,7 +56,8 @@ def monitoring_service(
         transport=dummy_transport,
         blockchain=blockchain,
         state_db=state_db_mock,
-        monitor_contract_address=monitoring_service_contract.address
+        monitor_contract_address=monitoring_service_contract.address,
+        contract_manager=contracts_manager,
     )
     yield ms
     ms.stop()

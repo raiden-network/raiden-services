@@ -3,7 +3,6 @@ from monitoring_service.constants import (
     EVENT_CHANNEL_CLOSE,
     EVENT_CHANNEL_SETTLED
 )
-from raiden_contracts.contract_manager import CONTRACT_MANAGER
 from raiden_libs.utils import make_filter
 from eth_utils import encode_hex
 
@@ -58,7 +57,7 @@ def test_blockchain(generate_raiden_client, blockchain, wait_for_blocks):
     assert t.trigger_count == 2
 
 
-def test_filter(generate_raiden_client, web3):
+def test_filter(generate_raiden_client, web3, contracts_manager):
     """test if filter returns past events"""
     c1 = generate_raiden_client()
     c2 = generate_raiden_client()
@@ -69,7 +68,7 @@ def test_filter(generate_raiden_client, web3):
     c1.close_channel(c2.address, bp)
     gevent.sleep(0)
 
-    abi = CONTRACT_MANAGER.get_event_abi('TokenNetwork', 'ChannelClosed')
+    abi = contracts_manager.get_event_abi('TokenNetwork', 'ChannelClosed')
     assert abi is not None
     f = make_filter(web3, abi, fromBlock=0)
     entries = f.get_new_entries()

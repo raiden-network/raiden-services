@@ -16,12 +16,12 @@ from monitoring_service.constants import (
 from raiden_libs.messages import Message, BalanceProof, MonitorRequest
 from raiden_libs.gevent_error_handler import register_error_handler
 from raiden_libs.utils import private_key_to_address, is_channel_identifier
+from raiden_libs.private_contract import PrivateContract
+from raiden_contracts.contract_manager import ContractManager
 
 from monitoring_service.exceptions import ServiceNotRegistered, StateDBInvalid
 from monitoring_service.utils import is_service_registered
 
-from raiden_contracts.contract_manager import CONTRACT_MANAGER
-from raiden_libs.private_contract import PrivateContract
 
 log = logging.getLogger(__name__)
 
@@ -47,7 +47,8 @@ class MonitoringService(gevent.Greenlet):
         state_db: StateDB = None,
         transport: Transport = None,
         blockchain: BlockchainMonitor = None,
-        monitor_contract_address: str = None
+        monitor_contract_address: str = None,
+        contract_manager: ContractManager = None,
     ) -> None:
         super().__init__()
         assert isinstance(private_key, str)
@@ -65,7 +66,7 @@ class MonitoringService(gevent.Greenlet):
         self.address = private_key_to_address(self.private_key)
         self.monitor_contract = PrivateContract(
             blockchain.web3.eth.contract(
-                abi=CONTRACT_MANAGER.get_contract_abi('MonitoringService'),
+                abi=contract_manager.get_contract_abi('MonitoringService'),
                 address=monitor_contract_address
             )
         )
@@ -81,7 +82,9 @@ class MonitoringService(gevent.Greenlet):
         if not is_same_address(state_db.monitoring_contract_address(), monitor_contract_address):
             raise StateDBInvalid("Monitoring contract address doesn't match!")
         self.task_list: List[gevent.Greenlet] = []
-        if not is_service_registered(self.blockchain.web3, monitor_contract_address, self.address):
+        if not is_service_registered(
+            self.blockchain.web3, contract_manager, monitor_contract_address, self.address
+        ):
             raise ServiceNotRegistered(
                 "Monitoring service %s is not registered in the Monitoring smart contract (%s)" %
                 (self.address, monitor_contract_address)

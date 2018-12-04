@@ -9,6 +9,7 @@ from monitoring_service.state_db import StateDB
 from monitoring_service.api.rest import ServiceApi
 from monitoring_service.blockchain import BlockchainMonitor
 from raiden_libs.no_ssl_patch import no_ssl_verification
+from raiden_contracts.contract_manager import ContractManager, contracts_source_path
 
 
 @click.command()
@@ -87,8 +88,10 @@ def main(
     web3 = Web3(HTTPProvider(eth_rpc))
     blockchain = BlockchainMonitor(web3)
     db = StateDB(state_db)
+    contract_manager = ContractManager(contracts_source_path())
 
     monitor = MonitoringService(
+        contract_manager,
         private_key,
         state_db=db,
         transport=transport,

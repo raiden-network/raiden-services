@@ -1,15 +1,14 @@
 import gevent
 import pytest
 from raiden_libs.blockchain import BlockchainListener
-from raiden_contracts.contract_manager import CONTRACT_MANAGER
 import logging
 
 
 class Validator(BlockchainListener):
-    def __init__(self, web3):
+    def __init__(self, web3, contracts_manager):
         super().__init__(
             web3,
-            CONTRACT_MANAGER,
+            contracts_manager,
             'MonitoringService',
             poll_interval=1
         )
@@ -23,8 +22,8 @@ class Validator(BlockchainListener):
 
 
 @pytest.fixture
-def blockchain_validator(web3):
-    validator = Validator(web3)
+def blockchain_validator(web3, contracts_manager):
+    validator = Validator(web3, contracts_manager)
     validator.start()
     yield validator
     validator.stop()
