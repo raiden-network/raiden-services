@@ -310,23 +310,23 @@ class GMatrixClient(MatrixClient):
     def _sync(self, timeout_ms=30000):
         """ Reimplements MatrixClient._sync, add 'account_data' support to /sync """
         response = self.api.sync(self.sync_token, timeout_ms)
+        prev_sync_token = self.sync_token
         self.sync_token = response["next_batch"]
 
         if self._handle_thread is not None:
             # if previous _handle_thread is still running, wait for it and re-raise if needed
             self._handle_thread.get()
 
-        self._handle_thread = gevent.spawn(self._handle_response, response)
+        is_first_sync = (prev_sync_token is None)
+        self._handle_thread = gevent.Greenlet(self._handle_response, response, is_first_sync)
+        self._handle_thread.name = f'sync_handle_response-{prev_sync_token}'
         self._handle_thread.link_exception(lambda g: self.sync_thread.kill(g.exception))
+        self._handle_thread.start()
 
         if self._post_hook_func is not None:
             self._post_hook_func(self.sync_token)
 
-    def _handle_response(self, response):
-        for presence_update in response['presence']['events']:
-            for callback in self.presence_listeners.values():
-                self.call(callback, presence_update)
-
+    def _handle_response(self, response, first_sync=False):
         for room_id, invite_room in response['rooms']['invite'].items():
             for listener in self.invite_listeners:
                 self.call(listener, room_id, invite_room['invite_state'])
@@ -377,8 +377,18 @@ class GMatrixClient(MatrixClient):
             for event in sync_room['account_data']['events']:
                 room.account_data[event['type']] = event['content']
 
-        for event in response['account_data']['events']:
-            self.account_data[event['type']] = event['content']
+        # Handle presence after rooms
+        for presence_update in response['presence']['events']:
+            for callback in self.presence_listeners.values():
+                self.call(callback, presence_update)
+
+        if first_sync:
+            # Only update the local account data on first sync to avoid races.
+            # We don't support running multiple raiden nodes for the same eth account,
+            # therefore no situation where we would need to be updated from the server
+            # can happen.
+            for event in response['account_data']['events']:
+                self.account_data[event['type']] = event['content']
 
     def set_account_data(self, type_: str, content: Dict[str, Any]) -> dict:
         """ Use this to set a key: value pair in account_data to keep it synced on server """
@@ -387,6 +397,9 @@ class GMatrixClient(MatrixClient):
 
     def set_post_sync_hook(self, hook: Callable[[str], None]):
         self._post_hook_func = hook
+
+    def set_sync_token(self, sync_token: str) -> None:
+        self.sync_token = sync_token
 
 
 # Monkey patch matrix User class to provide nicer repr
