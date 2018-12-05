@@ -46,6 +46,6 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/raiden-network/raiden_libs',
-    version='0.1.14',
+    version='0.1.15',
     zip_safe=False,
 )
