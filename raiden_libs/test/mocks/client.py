@@ -284,9 +284,8 @@ class MockRaidenNode:
                 monitor_request.serialize_reward_proof(),
             ),
         )
-        non_closing_data = balance_proof.serialize_bin() + decode_hex(balance_proof.signature)
         monitor_request.non_closing_signature = encode_hex(
-            eth_sign(self.privkey, non_closing_data),
+            eth_sign(self.privkey, monitor_request.non_closing_data),
         )
         return monitor_request
 

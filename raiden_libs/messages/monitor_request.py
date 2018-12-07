@@ -87,10 +87,14 @@ class MonitorRequest(Message):
         return to_checksum_address(signer)
 
     @property
-    def non_closing_signer(self) -> str:
+    def non_closing_data(self) -> bytes:
         serialized = self.balance_proof.serialize_bin(msg_type=MessageTypeId.BALANCE_PROOF_UPDATE)
+        return serialized + decode_hex(self.balance_proof.signature)
+
+    @property
+    def non_closing_signer(self) -> str:
         signer = eth_recover(
-            data=serialized + decode_hex(self.balance_proof.signature),
+            data=self.non_closing_data,
             signature=decode_hex(self.non_closing_signature),
         )
         return to_checksum_address(signer)
