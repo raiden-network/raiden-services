@@ -121,12 +121,12 @@ class MonitoringService(gevent.Greenlet):
         log.info('on channel close: event=%s tx=%s' % (event, tx))
         # check if we have balance proof for the closing
         closing_participant = event['args']['closing_participant']
-        channel_id = encode_hex(event['args']['channel_identifier'])
+        channel_id = event['args']['channel_identifier']
         tx_data = tx[1]
         tx_balance_proof = BalanceProof(
-            tx_data[0],
-            event['address'],
-            encode_hex(tx_data[1]),
+            channel_identifier=tx_data[0],
+            token_network_address=event['address'],
+            balance_hash=tx_data[1],
             nonce=tx_data[2],
             additional_hash=tx_data[3],
             signature=encode_hex(tx_data[4]),
@@ -143,7 +143,7 @@ class MonitoringService(gevent.Greenlet):
         )
 
     def on_channel_settled(self, event, tx):
-        channel_id = encode_hex(event['args']['channel_identifier'])
+        channel_id = event['args']['channel_identifier']
         monitor_request = self.state_db.monitor_requests.get(channel_id, None)
         if monitor_request is None:
             return

@@ -74,7 +74,7 @@ def test_filter(generate_raiden_client, web3, contracts_manager):
     entries = f.get_new_entries()
     assert len([
         x for x in entries
-        if (encode_hex(x['args']['channel_identifier']) == channel_id) and
+        if (x['args']['channel_identifier'] == channel_id) and
         (x['address'] == c1.contract.address)
     ]) == 1
 
@@ -84,7 +84,7 @@ def test_filter(generate_raiden_client, web3, contracts_manager):
     entries = f.get_new_entries()
     assert len([
         x for x in entries
-        if (encode_hex(x['args']['channel_identifier']) == channel_id) and
+        if (x['args']['channel_identifier'] == channel_id) and
         (x['address'] == c1.contract.address)
     ]) == 1
     assert len(f.get_all_entries()) > 0
