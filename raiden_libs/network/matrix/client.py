@@ -1,3 +1,4 @@
+import json
 import logging
 import time
 from functools import wraps
@@ -106,6 +107,8 @@ class GMatrixClient(MatrixClient):
     ) -> None:
         # dict of 'type': 'content' key/value pairs
         self.account_data: Dict[str, Dict[str, Any]] = dict()
+        self._handle_thread = None
+        self._post_hook_func: Optional[Callable[[str], None]] = None
 
         super().__init__(
             base_url,
@@ -123,11 +126,6 @@ class GMatrixClient(MatrixClient):
             retry_delay=http_retry_delay,
             long_paths=('/sync',),
         )
-        self.should_listen = False
-        self.sync_filter = None
-        self.sync_thread = None
-        self._handle_thread = None
-        self._post_hook_func: Optional[Callable[[str], None]] = None
 
     def listen_forever(
         self,
@@ -400,6 +398,19 @@ class GMatrixClient(MatrixClient):
 
     def set_sync_token(self, sync_token: str) -> None:
         self.sync_token = sync_token
+
+    def set_access_token(self, user_id: str, token: str) -> None:
+        self.user_id = user_id
+        self.token = self.api.token = token
+
+    def set_sync_limit(self, limit: int) -> Optional[int]:
+        """ Sets the events limit per room for sync and return previous limit """
+        try:
+            prev_limit = json.loads(self.sync_filter)['room']['timeline']['limit']
+        except (json.JSONDecodeError, KeyError):
+            prev_limit = None
+        self.sync_filter = json.dumps({'room': {'timeline': {'limit': limit}}})
+        return prev_limit
 
 
 # Monkey patch matrix User class to provide nicer repr
