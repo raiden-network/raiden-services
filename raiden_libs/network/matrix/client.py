@@ -92,6 +92,9 @@ class GMatrixHttpApi(MatrixHttpApi):
 
 class GMatrixClient(MatrixClient):
     """ Gevent-compliant MatrixClient subclass """
+    sync_filter: str
+    sync_thread: gevent.Greenlet = None
+    _handle_thread: gevent.Greenlet = None
 
     def __init__(
             self,
@@ -107,7 +110,6 @@ class GMatrixClient(MatrixClient):
     ) -> None:
         # dict of 'type': 'content' key/value pairs
         self.account_data: Dict[str, Dict[str, Any]] = dict()
-        self._handle_thread = None
         self._post_hook_func: Optional[Callable[[str], None]] = None
 
         super().__init__(
