@@ -4,7 +4,6 @@ from monitoring_service.constants import (
     EVENT_CHANNEL_SETTLED
 )
 from raiden_libs.utils import make_filter
-from eth_utils import encode_hex
 
 
 # test if ChannelClosed event triggers an callback of the blockchain wrapper
@@ -74,8 +73,10 @@ def test_filter(generate_raiden_client, web3, contracts_manager):
     entries = f.get_new_entries()
     assert len([
         x for x in entries
-        if (x['args']['channel_identifier'] == channel_id) and
-        (x['address'] == c1.contract.address)
+        if (
+            x['args']['channel_identifier'] == channel_id and
+            x['address'] == c1.contract.address
+        )
     ]) == 1
 
     channel_id = c1.open_channel(c3.address)
@@ -84,7 +85,9 @@ def test_filter(generate_raiden_client, web3, contracts_manager):
     entries = f.get_new_entries()
     assert len([
         x for x in entries
-        if (x['args']['channel_identifier'] == channel_id) and
-        (x['address'] == c1.contract.address)
+        if (
+            x['args']['channel_identifier'] == channel_id and
+            x['address'] == c1.contract.address
+        )
     ]) == 1
     assert len(f.get_all_entries()) > 0
