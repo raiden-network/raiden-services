@@ -1,30 +1,40 @@
+import logging
+from typing import Dict, List
+
 import gevent
 import pytest
+
+from raiden_contracts.contract_manager import ContractManager
 from raiden_libs.blockchain import BlockchainListener
-from raiden_contracts.contract_manager import CONTRACT_MANAGER
-import logging
 
 
 class Validator(BlockchainListener):
-    def __init__(self, web3):
+    def __init__(
+            self,
+            web3,
+            contracts_manager: ContractManager,
+    ):
         super().__init__(
             web3,
-            CONTRACT_MANAGER,
+            contracts_manager,
             'MonitoringService',
             poll_interval=1
         )
-        self.events = list()
+        self.events: List[Dict] = list()
         self.add_unconfirmed_listener(
-            'NewBalanceProofReceived', lambda event: self.append_message(event)
+            'NewBalanceProofReceived', self.events.append
         )
-
-    def append_message(self, event):
-        self.events.append(event)
+        self.add_unconfirmed_listener(
+            'RewardClaimed', self.events.append
+        )
 
 
 @pytest.fixture
-def blockchain_validator(web3):
-    validator = Validator(web3)
+def blockchain_validator(
+        web3,
+        contracts_manager: ContractManager,
+):
+    validator = Validator(web3, contracts_manager)
     validator.start()
     yield validator
     validator.stop()
@@ -50,21 +60,23 @@ def test_e2e(
     """
     monitoring_service.start()
 
-    reward_amount = 1
     initial_balance = monitoring_service_contract.functions.balances(
         monitoring_service.address
     ).call()
     c1, c2 = generate_raiden_clients(2)
+
+    # add deposit for c1
+    # TODO: this should be done via RSB at some point
     node_deposit = 10
     custom_token.functions.approve(
-        raiden_service_bundle.address,
+        monitoring_service_contract.address,
         node_deposit
-    ).transact(
-        {'from': c1.address}
-    )
-    raiden_service_bundle.functions.deposit(node_deposit).transact(
-        {'from': c1.address}
-    )
+    ).transact({'from': c1.address})
+    monitoring_service_contract.functions.deposit(
+        c1.address, node_deposit
+    ).transact({'from': c1.address})
+
+    # each client does a transfer
     channel_id = c1.open_channel(c2.address)
     balance_proof_c1 = c1.get_balance_proof(
         c2.address,
@@ -84,6 +96,8 @@ def test_e2e(
     )
     logging.getLogger('raiden_libs.blockchain').setLevel(logging.DEBUG)
 
+    # c1 asks MS to monitor the channel
+    reward_amount = 1
     monitor_request = c1.get_monitor_request(
         c2.address,
         balance_proof_c2,
@@ -102,7 +116,7 @@ def test_e2e(
     # wait till validator confirms NewBalanceProofReceived event...
     wait_for_blocks(10)
     gevent.sleep(1)
-    assert len(blockchain_validator.events) == 1
+    assert [e.event for e in blockchain_validator.events] == ['NewBalanceProofReceived']
 
     c2.settle_channel(
         c1.address,
@@ -115,6 +129,10 @@ def test_e2e(
     # channel is settled
     wait_for_blocks(1)
     gevent.sleep(1)
+    assert [e.event for e in blockchain_validator.events] == [
+        'NewBalanceProofReceived', 'RewardClaimed'
+    ]
+
     final_balance = monitoring_service_contract.functions.balances(
         monitoring_service.address
     ).call()

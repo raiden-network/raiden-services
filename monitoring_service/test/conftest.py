@@ -1,11 +1,17 @@
-from gevent import monkey
-monkey.patch_all()
+"""
+For some reason isort changes the behaviour of this file. Might have something
+to do with monkey.patch_all.
+
+isort:skip_file
+"""
+from gevent import monkey  # isort:skip
+monkey.patch_all()         # isort:skip
 from raiden_libs.test.fixtures import *        # noqa
 from raiden_libs.test.fixtures.web3 import *        # noqa
 from raiden_libs.test.fixtures.address import *     # noqa
 from raiden_libs.test.fixtures.client import *      # noqa
 from raiden_contracts.tests.fixtures import *   # noqa
-from monitoring_service.test.fixtures import * # flake8: noqa
+from monitoring_service.test.fixtures import *  # noqa
 import logging
 
 logging.basicConfig(level=logging.DEBUG)

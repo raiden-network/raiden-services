@@ -13,7 +13,7 @@ def check_monitor_request(data_sqlite, request_json):
     fields_to_check.remove('chain_id')
     fields_to_check.remove('signature')
     for x in fields_to_check:
-        assert balance_proof[x] == to_check[x]
+        assert balance_proof[x] == to_check[x], f'Field "{x}" does not match'
     assert balance_proof['signature'] == to_check['closing_signature']
 
 

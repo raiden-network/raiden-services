@@ -1,12 +1,13 @@
-import sqlite3
-from eth_utils import is_checksum_address
 import os
+import sqlite3
 
-from .queries import DB_CREATION_SQL, ADD_MONITOR_REQUEST_SQL, UPDATE_METADATA_SQL
-from .db import StateDB
+from eth_utils import is_checksum_address
 
 from raiden_libs.types import ChannelIdentifier
 from raiden_libs.utils import is_channel_identifier
+
+from .db import StateDB
+from .queries import ADD_MONITOR_REQUEST_SQL, DB_CREATION_SQL, UPDATE_METADATA_SQL
 
 
 def dict_factory(cursor, row):
@@ -40,8 +41,8 @@ class StateDBSqlite(StateDB):
         c.execute('SELECT * FROM `monitor_requests`')
         ret = []
         for x in c.fetchall():
-            x['reward_amount'] = int(x['reward_amount'], 16)
-            x['nonce'] = int(x['nonce'], 16)
+            for hex_key in ['reward_amount', 'nonce', 'channel_identifier']:
+                x[hex_key] = int(x[hex_key], 16)
             ret.append(x)
 
         return {
@@ -53,7 +54,7 @@ class StateDBSqlite(StateDB):
         StateDBSqlite.check_monitor_request(monitor_request)
         balance_proof = monitor_request['balance_proof']
         params = [
-            balance_proof['channel_identifier'],
+            hex(balance_proof['channel_identifier']),
             balance_proof['balance_hash'],
             hex(balance_proof['nonce']),
             balance_proof['additional_hash'],

@@ -1,14 +1,16 @@
-import click
-import os
 import logging
-from web3 import Web3, HTTPProvider
+import os
+
+import click
+from web3 import HTTPProvider, Web3
 
 from monitoring_service import MonitoringService
-from raiden_libs.transport import MatrixTransport
-from monitoring_service.state_db import StateDB
 from monitoring_service.api.rest import ServiceApi
 from monitoring_service.blockchain import BlockchainMonitor
+from monitoring_service.state_db import StateDB
+from raiden_contracts.contract_manager import ContractManager, contracts_precompiled_path
 from raiden_libs.no_ssl_patch import no_ssl_verification
+from raiden_libs.transport import MatrixTransport
 
 
 @click.command()
@@ -85,10 +87,12 @@ def main(
         monitoring_channel
     )
     web3 = Web3(HTTPProvider(eth_rpc))
-    blockchain = BlockchainMonitor(web3)
+    contract_manager = ContractManager(contracts_precompiled_path())
+    blockchain = BlockchainMonitor(web3, contract_manager)
     db = StateDB(state_db)
 
     monitor = MonitoringService(
+        contract_manager,
         private_key,
         state_db=db,
         transport=transport,

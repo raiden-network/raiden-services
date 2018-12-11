@@ -1,8 +1,10 @@
-import gevent
 import logging
-from hexbytes import HexBytes
-from raiden_libs.messages import MonitorRequest
+
+import gevent
 from eth_utils import is_address
+from hexbytes import HexBytes
+
+from raiden_libs.messages import MonitorRequest
 
 log = logging.getLogger(__name__)
 

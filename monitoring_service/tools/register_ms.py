@@ -1,10 +1,14 @@
-import click
-from monitoring_service.utils import register_service, is_service_registered
-from raiden_libs.utils import get_private_key
-from web3 import Web3, HTTPProvider
-from eth_utils import is_address
-
 import logging
+
+import click
+from eth_utils import is_address
+from web3 import HTTPProvider, Web3
+
+from monitoring_service.utils import is_service_registered, register_service
+from raiden_contracts.contract_manager import ContractManager
+from raiden_libs.types import Address
+from raiden_libs.utils import get_private_key
+
 log = logging.getLogger(__name__)
 
 
@@ -16,17 +20,20 @@ def validate_address(ctx, param, value):
 
 def monitor_registration(
         web3: Web3,
-        ms_contract_address,
-        monitoring_service_address,
+        contract_manager: ContractManager,
+        ms_contract_address: Address,
+        monitoring_service_address: Address,
         private_key
 ):
-    if is_service_registered(web3, ms_contract_address, monitoring_service_address) is True:
+    if is_service_registered(
+        web3, contract_manager, ms_contract_address, monitoring_service_address
+    ):
         log.error(
             'MS service %s is already registered in the contract %s' %
             (ms_contract_address, monitoring_service_address)
         )
         return False
-    return register_service(web3, ms_contract_address, private_key)
+    return register_service(web3, contract_manager, ms_contract_address, private_key)
 
 
 @click.command()

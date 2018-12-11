@@ -1,14 +1,13 @@
-import click
 import logging
 import random
+
+import click
 import gevent
-from monitoring_service.transport import MatrixTransport
+
 from monitoring_service.messages import BalanceProof
-from monitoring_service.tools.random_channel import (
-    SeededRandomizer,
-    use_random_state
-)
 from monitoring_service.tools.eventgen import EventGenerator
+from monitoring_service.tools.random_channel import SeededRandomizer, use_random_state
+from monitoring_service.transport import MatrixTransport
 
 log = logging.getLogger(__name__)
 

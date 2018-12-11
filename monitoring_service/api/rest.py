@@ -1,9 +1,10 @@
+import gevent
 from flask import Flask, request
 from flask_restful import Api, Resource
 from gevent.pywsgi import WSGIServer
-import gevent
-from monitoring_service.blockchain import BlockchainMonitor
+
 from monitoring_service import MonitoringService
+from monitoring_service.blockchain import BlockchainMonitor
 
 API_PATH = '/api/1'
 

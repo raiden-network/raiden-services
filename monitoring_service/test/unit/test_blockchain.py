@@ -1,11 +1,8 @@
 import gevent
-from monitoring_service.constants import (
-    EVENT_CHANNEL_CLOSE,
-    EVENT_CHANNEL_SETTLED
-)
-from raiden_contracts.contract_manager import CONTRACT_MANAGER
+
+from monitoring_service.constants import EVENT_CHANNEL_CLOSE, EVENT_CHANNEL_SETTLED
+from raiden_contracts.contract_manager import ContractManager
 from raiden_libs.utils import make_filter
-from eth_utils import encode_hex
 
 
 # test if ChannelClosed event triggers an callback of the blockchain wrapper
@@ -58,7 +55,11 @@ def test_blockchain(generate_raiden_client, blockchain, wait_for_blocks):
     assert t.trigger_count == 2
 
 
-def test_filter(generate_raiden_client, web3):
+def test_filter(
+        generate_raiden_client,
+        web3,
+        contracts_manager: ContractManager,
+):
     """test if filter returns past events"""
     c1 = generate_raiden_client()
     c2 = generate_raiden_client()
@@ -69,14 +70,16 @@ def test_filter(generate_raiden_client, web3):
     c1.close_channel(c2.address, bp)
     gevent.sleep(0)
 
-    abi = CONTRACT_MANAGER.get_event_abi('TokenNetwork', 'ChannelClosed')
+    abi = contracts_manager.get_event_abi('TokenNetwork', 'ChannelClosed')
     assert abi is not None
     f = make_filter(web3, abi, fromBlock=0)
     entries = f.get_new_entries()
     assert len([
         x for x in entries
-        if (encode_hex(x['args']['channel_identifier']) == channel_id) and
-        (x['address'] == c1.contract.address)
+        if (
+            x['args']['channel_identifier'] == channel_id and
+            x['address'] == c1.contract.address
+        )
     ]) == 1
 
     channel_id = c1.open_channel(c3.address)
@@ -85,7 +88,9 @@ def test_filter(generate_raiden_client, web3):
     entries = f.get_new_entries()
     assert len([
         x for x in entries
-        if (encode_hex(x['args']['channel_identifier']) == channel_id) and
-        (x['address'] == c1.contract.address)
+        if (
+            x['args']['channel_identifier'] == channel_id and
+            x['address'] == c1.contract.address
+        )
     ]) == 1
     assert len(f.get_all_entries()) > 0
