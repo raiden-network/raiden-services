@@ -18,6 +18,7 @@ from raiden_libs.gevent_error_handler import register_error_handler
 from raiden_libs.utils import private_key_to_address, is_channel_identifier
 from raiden_libs.private_contract import PrivateContract
 from raiden_contracts.contract_manager import ContractManager
+from raiden_libs.types import Address
 
 from monitoring_service.exceptions import ServiceNotRegistered, StateDBInvalid
 from monitoring_service.utils import is_service_registered
@@ -47,7 +48,7 @@ class MonitoringService(gevent.Greenlet):
         state_db: StateDB,
         transport: Transport,
         blockchain: BlockchainMonitor,
-        monitor_contract_address: str,
+        monitor_contract_address: Address,
         contract_manager: ContractManager,
     ) -> None:
         super().__init__()
@@ -173,7 +174,10 @@ class MonitoringService(gevent.Greenlet):
         else:
             log.warn('Ignoring unknown message type %s' % type(message))
 
-    def on_monitor_request(self, monitor_request):
+    def on_monitor_request(
+        self,
+        monitor_request: MonitorRequest
+    ):
         """Called whenever a monitor proof message is received.
         This will spawn a greenlet and store its reference in an internal list.
         Return value of the greenlet is then checked in the main loop."""
