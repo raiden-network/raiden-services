@@ -38,12 +38,18 @@ def test_server_registration(
     send_funds(server_address)
     # register MS
     register_service(
-        web3, contracts_manager, monitoring_service_contract.address, server_private_key
+        web3,
+        contracts_manager,
+        monitoring_service_contract.address,
+        server_private_key,
     )
 
     # check if registration succeeded
     assert is_service_registered(
-        web3, contracts_manager, monitoring_service_contract.address, server_address
+        web3,
+        contracts_manager,
+        monitoring_service_contract.address,
+        server_address
     )
     # now instantiation will proceed
     ms = MonitoringService(
@@ -70,7 +76,10 @@ def test_server_wrong_db(
     server_address = private_key_to_address(server_private_key)
     send_funds(server_address)
     register_service(
-        web3, contracts_manager, monitoring_service_contract.address, server_private_key
+        web3,
+        contracts_manager,
+        monitoring_service_contract.address,
+        server_private_key
     )
 
     def create_server(setup_database):

@@ -83,7 +83,10 @@ class MonitoringService(gevent.Greenlet):
             raise StateDBInvalid("Monitoring contract address doesn't match!")
         self.task_list: List[gevent.Greenlet] = []
         if not is_service_registered(
-            self.blockchain.web3, contract_manager, monitor_contract_address, self.address
+            self.blockchain.web3,
+            contract_manager,
+            monitor_contract_address,
+            self.address
         ):
             raise ServiceNotRegistered(
                 "Monitoring service %s is not registered in the Monitoring smart contract (%s)" %
