@@ -86,9 +86,9 @@ def main(
         monitoring_channel
     )
     web3 = Web3(HTTPProvider(eth_rpc))
-    blockchain = BlockchainMonitor(web3)
-    db = StateDB(state_db)
     contract_manager = ContractManager(contracts_precompiled_path())
+    blockchain = BlockchainMonitor(web3, contract_manager)
+    db = StateDB(state_db)
 
     monitor = MonitoringService(
         contract_manager,

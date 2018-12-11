@@ -24,8 +24,8 @@ def dummy_transport():
 
 
 @pytest.fixture
-def blockchain(web3):
-    blockchain = BlockchainMonitor(web3)
+def blockchain(web3, contracts_manager):
+    blockchain = BlockchainMonitor(web3, contracts_manager)
     blockchain.poll_interval = 1
     yield blockchain
     blockchain.stop()
