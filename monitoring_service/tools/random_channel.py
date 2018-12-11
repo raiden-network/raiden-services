@@ -1,7 +1,7 @@
-import random
 import logging
-from raiden_libs.utils import private_key_to_address
+import random
 
+from raiden_libs.utils import private_key_to_address
 
 log = logging.getLogger(__name__)
 

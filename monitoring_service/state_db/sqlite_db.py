@@ -1,12 +1,13 @@
-import sqlite3
-from eth_utils import is_checksum_address
 import os
+import sqlite3
 
-from .queries import DB_CREATION_SQL, ADD_MONITOR_REQUEST_SQL, UPDATE_METADATA_SQL
-from .db import StateDB
+from eth_utils import is_checksum_address
 
 from raiden_libs.types import ChannelIdentifier
 from raiden_libs.utils import is_channel_identifier
+
+from .db import StateDB
+from .queries import ADD_MONITOR_REQUEST_SQL, DB_CREATION_SQL, UPDATE_METADATA_SQL
 
 
 def dict_factory(cursor, row):

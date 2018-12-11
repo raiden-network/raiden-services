@@ -1,11 +1,10 @@
-from monitoring_service import MonitoringService
-from monitoring_service.exceptions import ServiceNotRegistered
-from monitoring_service.utils import register_service, is_service_registered
-from raiden_libs.utils import private_key_to_address
 import pytest
 
+from monitoring_service import MonitoringService
+from monitoring_service.exceptions import ServiceNotRegistered, StateDBInvalid
 from monitoring_service.test.mockups import StateDBMock
-from monitoring_service.exceptions import StateDBInvalid
+from monitoring_service.utils import is_service_registered, register_service
+from raiden_libs.utils import private_key_to_address
 
 
 def test_server_registration(

@@ -1,8 +1,6 @@
 import gevent
-from monitoring_service.constants import (
-    EVENT_CHANNEL_CLOSE,
-    EVENT_CHANNEL_SETTLED
-)
+
+from monitoring_service.constants import EVENT_CHANNEL_CLOSE, EVENT_CHANNEL_SETTLED
 from raiden_libs.utils import make_filter
 
 

@@ -1,10 +1,12 @@
-import click
-from monitoring_service.utils import register_service, is_service_registered
-from raiden_libs.utils import get_private_key
-from web3 import Web3, HTTPProvider
-from eth_utils import is_address
-
 import logging
+
+import click
+from eth_utils import is_address
+from web3 import HTTPProvider, Web3
+
+from monitoring_service.utils import is_service_registered, register_service
+from raiden_libs.utils import get_private_key
+
 log = logging.getLogger(__name__)
 
 

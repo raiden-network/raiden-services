@@ -1,13 +1,14 @@
+import logging
+
 import pytest
+
+from monitoring_service import MonitoringService
+from monitoring_service.api.rest import ServiceApi
+from monitoring_service.blockchain import BlockchainMonitor
+from monitoring_service.utils import register_service
 from raiden_libs.test.mocks.dummy_transport import DummyTransport
 from raiden_libs.utils import private_key_to_address
 
-from monitoring_service import MonitoringService
-from monitoring_service.blockchain import BlockchainMonitor
-from monitoring_service.api.rest import ServiceApi
-from monitoring_service.utils import register_service
-
-import logging
 log = logging.getLogger(__name__)
 
 

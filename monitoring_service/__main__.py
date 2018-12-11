@@ -1,15 +1,16 @@
-import click
-import os
 import logging
-from web3 import Web3, HTTPProvider
+import os
+
+import click
+from web3 import HTTPProvider, Web3
 
 from monitoring_service import MonitoringService
-from raiden_libs.transport import MatrixTransport
-from monitoring_service.state_db import StateDB
 from monitoring_service.api.rest import ServiceApi
 from monitoring_service.blockchain import BlockchainMonitor
-from raiden_libs.no_ssl_patch import no_ssl_verification
+from monitoring_service.state_db import StateDB
 from raiden_contracts.contract_manager import ContractManager, contracts_precompiled_path
+from raiden_libs.no_ssl_patch import no_ssl_verification
+from raiden_libs.transport import MatrixTransport
 
 
 @click.command()

@@ -1,5 +1,6 @@
-from monitoring_service.tasks import StoreMonitorRequest
 import copy
+
+from monitoring_service.tasks import StoreMonitorRequest
 
 
 def test_validate_bp(web3, generate_raiden_client, get_random_address, state_db_sqlite):

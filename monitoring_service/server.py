@@ -1,28 +1,24 @@
 import logging
-import gevent
 import sys
 import traceback
 from typing import List
-from eth_utils import is_address, is_same_address, encode_hex, is_checksum_address
+
+import gevent
+from eth_utils import encode_hex, is_address, is_checksum_address, is_same_address
 
 from monitoring_service.blockchain import BlockchainMonitor
-from monitoring_service.state_db import StateDB
-from monitoring_service.tasks import StoreMonitorRequest, OnChannelClose, OnChannelSettle
-from raiden_libs.transport import Transport
-from monitoring_service.constants import (
-    EVENT_CHANNEL_CLOSE,
-    EVENT_CHANNEL_SETTLED,
-)
-from raiden_libs.messages import Message, BalanceProof, MonitorRequest
-from raiden_libs.gevent_error_handler import register_error_handler
-from raiden_libs.utils import private_key_to_address, is_channel_identifier
-from raiden_libs.private_contract import PrivateContract
-from raiden_contracts.contract_manager import ContractManager
-from raiden_libs.types import Address
-
+from monitoring_service.constants import EVENT_CHANNEL_CLOSE, EVENT_CHANNEL_SETTLED
 from monitoring_service.exceptions import ServiceNotRegistered, StateDBInvalid
+from monitoring_service.state_db import StateDB
+from monitoring_service.tasks import OnChannelClose, OnChannelSettle, StoreMonitorRequest
 from monitoring_service.utils import is_service_registered
-
+from raiden_contracts.contract_manager import ContractManager
+from raiden_libs.gevent_error_handler import register_error_handler
+from raiden_libs.messages import BalanceProof, Message, MonitorRequest
+from raiden_libs.private_contract import PrivateContract
+from raiden_libs.transport import Transport
+from raiden_libs.types import Address
+from raiden_libs.utils import is_channel_identifier, private_key_to_address
 
 log = logging.getLogger(__name__)
 

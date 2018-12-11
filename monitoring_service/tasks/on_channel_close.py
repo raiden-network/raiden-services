@@ -1,5 +1,6 @@
-import gevent
 import logging
+
+import gevent
 
 log = logging.getLogger(__name__)
 

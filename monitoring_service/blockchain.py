@@ -1,7 +1,8 @@
 import logging
-from raiden_libs.utils import decode_contract_call
-from raiden_libs.blockchain import BlockchainListener
 from typing import Callable
+
+from raiden_libs.blockchain import BlockchainListener
+from raiden_libs.utils import decode_contract_call
 
 log = logging.getLogger(__name__)
 

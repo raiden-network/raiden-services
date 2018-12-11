@@ -1,5 +1,7 @@
-import pytest
 import logging
+
+import pytest
+
 from raiden_contracts.contract_manager import ContractManager, contracts_precompiled_path
 
 log = logging.getLogger(__name__)

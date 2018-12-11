@@ -1,4 +1,5 @@
 import pytest
+
 from monitoring_service.state_db import StateDBSqlite
 from monitoring_service.test.mockups import StateDBMock
 

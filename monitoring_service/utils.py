@@ -1,8 +1,9 @@
 from eth_utils import is_checksum_address, to_checksum_address
 from web3 import Web3
+from web3.utils.transactions import wait_for_transaction_receipt
+
 from raiden_libs.private_contract import PrivateContract
 from raiden_libs.utils import private_key_to_address
-from web3.utils.transactions import wait_for_transaction_receipt
 
 
 def is_service_registered(

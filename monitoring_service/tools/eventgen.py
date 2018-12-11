@@ -1,8 +1,10 @@
-import random
-import gevent
-import logging
-import requests
 import json
+import logging
+import random
+
+import gevent
+import requests
+
 from monitoring_service.constants import EVENT_CHANNEL_CLOSE, EVENT_CHANNEL_CREATE
 from monitoring_service.tools.random_channel import RandomChannelDB
 

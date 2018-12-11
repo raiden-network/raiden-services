@@ -1,7 +1,9 @@
+import logging
+
 import gevent
 import pytest
+
 from raiden_libs.blockchain import BlockchainListener
-import logging
 
 
 class Validator(BlockchainListener):
