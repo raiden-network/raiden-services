@@ -40,8 +40,8 @@ class StateDBSqlite(StateDB):
         c.execute('SELECT * FROM `monitor_requests`')
         ret = []
         for x in c.fetchall():
-            x['reward_amount'] = int(x['reward_amount'], 16)
-            x['nonce'] = int(x['nonce'], 16)
+            for hex_key in ['reward_amount', 'nonce', 'channel_identifier']:
+                x[hex_key] = int(x[hex_key], 16)
             ret.append(x)
 
         return {
@@ -53,7 +53,7 @@ class StateDBSqlite(StateDB):
         StateDBSqlite.check_monitor_request(monitor_request)
         balance_proof = monitor_request['balance_proof']
         params = [
-            balance_proof['channel_identifier'],
+            hex(balance_proof['channel_identifier']),
             balance_proof['balance_hash'],
             hex(balance_proof['nonce']),
             balance_proof['additional_hash'],
