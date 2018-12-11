@@ -44,11 +44,11 @@ class MonitoringService(gevent.Greenlet):
     def __init__(
         self,
         private_key: str,
-        state_db: StateDB = None,
-        transport: Transport = None,
-        blockchain: BlockchainMonitor = None,
-        monitor_contract_address: str = None,
-        contract_manager: ContractManager = None,
+        state_db: StateDB,
+        transport: Transport,
+        blockchain: BlockchainMonitor,
+        monitor_contract_address: str,
+        contract_manager: ContractManager,
     ) -> None:
         super().__init__()
         assert isinstance(private_key, str)
