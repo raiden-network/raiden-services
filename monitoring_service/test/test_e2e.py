@@ -14,11 +14,11 @@ class Validator(BlockchainListener):
         )
         self.events = list()
         self.add_unconfirmed_listener(
-            'NewBalanceProofReceived', lambda event: self.append_message(event)
+            'NewBalanceProofReceived', self.events.append
         )
-
-    def append_message(self, event):
-        self.events.append(event)
+        self.add_unconfirmed_listener(
+            'RewardClaimed', self.events.append
+        )
 
 
 @pytest.fixture
@@ -49,21 +49,23 @@ def test_e2e(
     """
     monitoring_service.start()
 
-    reward_amount = 1
     initial_balance = monitoring_service_contract.functions.balances(
         monitoring_service.address
     ).call()
     c1, c2 = generate_raiden_clients(2)
+
+    # add deposit for c1
+    # TODO: this should be done via RSB at some point
     node_deposit = 10
     custom_token.functions.approve(
-        raiden_service_bundle.address,
+        monitoring_service_contract.address,
         node_deposit
-    ).transact(
-        {'from': c1.address}
-    )
-    raiden_service_bundle.functions.deposit(node_deposit).transact(
-        {'from': c1.address}
-    )
+    ).transact({'from': c1.address})
+    monitoring_service_contract.functions.deposit(
+        c1.address, node_deposit
+    ).transact({'from': c1.address})
+
+    # each client does a transfer
     channel_id = c1.open_channel(c2.address)
     balance_proof_c1 = c1.get_balance_proof(
         c2.address,
@@ -83,6 +85,8 @@ def test_e2e(
     )
     logging.getLogger('raiden_libs.blockchain').setLevel(logging.DEBUG)
 
+    # c1 asks MS to monitor the channel
+    reward_amount = 1
     monitor_request = c1.get_monitor_request(
         c2.address,
         balance_proof_c2,
@@ -101,7 +105,7 @@ def test_e2e(
     # wait till validator confirms NewBalanceProofReceived event...
     wait_for_blocks(10)
     gevent.sleep(1)
-    assert len(blockchain_validator.events) == 1
+    assert [e.event for e in blockchain_validator.events] == ['NewBalanceProofReceived']
 
     c2.settle_channel(
         c1.address,
@@ -114,6 +118,10 @@ def test_e2e(
     # channel is settled
     wait_for_blocks(1)
     gevent.sleep(1)
+    assert [e.event for e in blockchain_validator.events] == [
+        'NewBalanceProofReceived', 'RewardClaimed'
+    ]
+
     final_balance = monitoring_service_contract.functions.balances(
         monitoring_service.address
     ).call()

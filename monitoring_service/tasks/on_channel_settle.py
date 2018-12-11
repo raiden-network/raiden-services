@@ -24,6 +24,7 @@ class OnChannelSettle(gevent.Greenlet):
         web3 = contract.web3
 
         tx_hash = contract.functions.claimReward(
+            monitor_request.balance_proof.channel_identifier,
             monitor_request.balance_proof.token_network_address,
             monitor_request.balance_proof.signer,
             monitor_request.non_closing_signer

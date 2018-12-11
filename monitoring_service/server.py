@@ -129,6 +129,7 @@ class MonitoringService(gevent.Greenlet):
             balance_hash=tx_data[1],
             nonce=tx_data[2],
             additional_hash=tx_data[3],
+            chain_id=int(self.blockchain.web3.version.network),
             signature=encode_hex(tx_data[4]),
         )
         assert tx_balance_proof is not None
