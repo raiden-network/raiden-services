@@ -5,6 +5,8 @@ from eth_utils import is_address
 from web3 import HTTPProvider, Web3
 
 from monitoring_service.utils import is_service_registered, register_service
+from raiden_contracts.contract_manager import ContractManager
+from raiden_libs.types import Address
 from raiden_libs.utils import get_private_key
 
 log = logging.getLogger(__name__)
@@ -18,9 +20,9 @@ def validate_address(ctx, param, value):
 
 def monitor_registration(
         web3: Web3,
-        contract_manager,
-        ms_contract_address,
-        monitoring_service_address,
+        contract_manager: ContractManager,
+        ms_contract_address: Address,
+        monitoring_service_address: Address,
         private_key
 ):
     if is_service_registered(

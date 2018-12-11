@@ -1,20 +1,26 @@
 import logging
+from typing import Dict, List
 
 import gevent
 import pytest
 
+from raiden_contracts.contract_manager import ContractManager
 from raiden_libs.blockchain import BlockchainListener
 
 
 class Validator(BlockchainListener):
-    def __init__(self, web3, contracts_manager):
+    def __init__(
+            self,
+            web3,
+            contracts_manager: ContractManager,
+    ):
         super().__init__(
             web3,
             contracts_manager,
             'MonitoringService',
             poll_interval=1
         )
-        self.events = list()
+        self.events: List[Dict] = list()
         self.add_unconfirmed_listener(
             'NewBalanceProofReceived', self.events.append
         )
@@ -24,7 +30,10 @@ class Validator(BlockchainListener):
 
 
 @pytest.fixture
-def blockchain_validator(web3, contracts_manager):
+def blockchain_validator(
+        web3,
+        contracts_manager: ContractManager,
+):
     validator = Validator(web3, contracts_manager)
     validator.start()
     yield validator

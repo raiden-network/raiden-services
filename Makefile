@@ -2,7 +2,7 @@ ISORT_PARAMS = --ignore-whitespace --settings-path . --recursive monitoring_serv
 
 all: lint mypy
 
-lint:
+lint: mypy
 	flake8 monitoring_service/
 	isort $(ISORT_PARAMS) --diff --check-only
 

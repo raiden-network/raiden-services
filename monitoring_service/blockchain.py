@@ -1,6 +1,7 @@
 import logging
 from typing import Callable
 
+from raiden_contracts.contract_manager import ContractManager
 from raiden_libs.blockchain import BlockchainListener
 from raiden_libs.utils import decode_contract_call
 
@@ -8,7 +9,12 @@ log = logging.getLogger(__name__)
 
 
 class BlockchainMonitor(BlockchainListener):
-    def __init__(self, web3, contract_manager, **kwargs) -> None:
+    def __init__(
+        self,
+        web3,
+        contract_manager: ContractManager,
+        **kwargs
+    ) -> None:
         super().__init__(
             web3,
             contract_manager,

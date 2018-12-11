@@ -6,6 +6,7 @@ from monitoring_service import MonitoringService
 from monitoring_service.api.rest import ServiceApi
 from monitoring_service.blockchain import BlockchainMonitor
 from monitoring_service.utils import register_service
+from raiden_contracts.contract_manager import ContractManager
 from raiden_libs.test.mocks.dummy_transport import DummyTransport
 from raiden_libs.utils import private_key_to_address
 
@@ -25,7 +26,10 @@ def dummy_transport():
 
 
 @pytest.fixture
-def blockchain(web3, contracts_manager):
+def blockchain(
+        web3,
+        contracts_manager: ContractManager,
+):
     blockchain = BlockchainMonitor(web3, contracts_manager)
     blockchain.poll_interval = 1
     yield blockchain
@@ -41,7 +45,7 @@ def monitoring_service(
         web3,
         monitoring_service_contract,
         send_funds,
-        contracts_manager
+        contracts_manager: ContractManager,
 ):
     # send some eth & tokens to MS
     send_funds(private_key_to_address(server_private_key))

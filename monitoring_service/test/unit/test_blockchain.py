@@ -1,6 +1,7 @@
 import gevent
 
 from monitoring_service.constants import EVENT_CHANNEL_CLOSE, EVENT_CHANNEL_SETTLED
+from raiden_contracts.contract_manager import ContractManager
 from raiden_libs.utils import make_filter
 
 
@@ -54,7 +55,11 @@ def test_blockchain(generate_raiden_client, blockchain, wait_for_blocks):
     assert t.trigger_count == 2
 
 
-def test_filter(generate_raiden_client, web3, contracts_manager):
+def test_filter(
+        generate_raiden_client,
+        web3,
+        contracts_manager: ContractManager,
+):
     """test if filter returns past events"""
     c1 = generate_raiden_client()
     c2 = generate_raiden_client()
