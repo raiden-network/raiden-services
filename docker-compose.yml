@@ -1,0 +1,36 @@
+version: '3'
+
+services:
+  backend:
+    builder: ../raiden-pathfinding-service
+    restart: always
+    environment:
+      - PFS_ETH_RPC=http://geth.ropsten.ethnodes.brainbot.com:8545
+    labels:
+      - "traefik.enable=true"
+      - "traefik.frontend.rule=Host: pfs.services-dev.raiden.network"
+
+  builder:
+    build: builder
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /data:/data
+      - /root/.ssh:/root/.ssh:ro
+    env_file:
+      - cf_api_cred.env
+    labels:
+      - "traefik.enable=true"
+      - "traefik.frontend.rule=Host: builder.services-dev.raiden.network"
+
+  traefik:
+    image: traefik:1.7
+    restart: always
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./config/traefik:/etc/traefik
+      - ./data/traefik:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - backend
