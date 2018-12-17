@@ -15,7 +15,7 @@ from monitoring_service.test.fixtures import *  # noqa
 import logging
 
 logging.basicConfig(level=logging.DEBUG)
-logging.getLogger('evm.vm_state.SpuriousDragonVMState').setLevel(logging.WARN)
-logging.getLogger('evm.vm.computation.Computation').setLevel(logging.WARN)
-logging.getLogger('evm.vm.state.ByzantiumState').setLevel(logging.WARN)
-logging.getLogger('evm.gas.GasMeter').setLevel(logging.WARN)
+logging.getLogger('eth.vm_state.SpuriousDragonVMState').setLevel(logging.WARN)
+logging.getLogger('eth.vm.computation.Computation').setLevel(logging.WARN)
+logging.getLogger('eth.vm.state.ByzantiumState').setLevel(logging.WARN)
+logging.getLogger('eth.gas.GasMeter').setLevel(logging.WARN)
