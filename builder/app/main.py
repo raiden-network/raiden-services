@@ -1,10 +1,8 @@
-import hashlib
 import os
 import subprocess
 import sys
 from pprint import pprint
 
-import requests
 from flask import Flask, request
 
 
@@ -22,7 +20,7 @@ app = Flask(__name__)
 
 @app.route("/", methods=['get', 'post'])
 def main():
-    data = request.json
+    data = request.json or {}
     repo = data.get('repository', {}).get('full_name', '')
     branch = data.get('ref', '').replace('refs/heads/', '')
     branch_config = REPOS.get(repo)
@@ -37,9 +35,9 @@ def main():
                     'branch': branch,
                     'head_commit': data['head_commit'],
                     'pusher': data['pusher'],
-                    'build_result': res.split(b'\n')
+                    'build_result': res,
                 },
-                stream=sys.stderr
+                stream=sys.stderr,
             )
 
         else:
@@ -56,7 +54,7 @@ def build(branch, source, deployment, **kw):
         os.chdir(deployment)
         subprocess.check_output(["docker-compose", "build"])
         subprocess.check_output(["docker-compose", "stop"])
-        subprocess.check_output(["docker-compose", "up", "-d")
+        subprocess.check_output(["docker-compose", "up", "-d"])
     except:
         return False
     return True
