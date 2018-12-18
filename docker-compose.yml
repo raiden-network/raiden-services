@@ -8,7 +8,7 @@ services:
       - PFS_ETH_RPC=http://geth.ropsten.ethnodes.brainbot.com:8545
     labels:
       - "traefik.enable=true"
-      - "traefik.frontend.rule=Host: pfs.services-dev.raiden.network"
+      - "traefik.frontend.rule=Host: services-dev.raiden.network; PathPrefixStrip: /pfs"
 
   builder:
     build: ./builder
@@ -18,7 +18,7 @@ services:
       - /root/.ssh:/root/.ssh:ro
     labels:
       - "traefik.enable=true"
-      - "traefik.frontend.rule=Host: builder.services-dev.raiden.network"
+      - "traefik.frontend.rule=Host: services-dev.raiden.network"
 
   traefik:
     image: traefik:1.7
