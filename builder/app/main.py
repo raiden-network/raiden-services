@@ -24,8 +24,6 @@ def main():
     repo = data.get('repository', {}).get('full_name', '')
     branch = data.get('ref', '').replace('refs/heads/', '')
     branch_config = REPOS.get(repo)
-    pprint(repo)
-    pprint(branch)
     if branch_config and branch in branch_config:
         res = build(branch, **branch_config[branch])
         if res:
@@ -39,22 +37,31 @@ def main():
                 },
                 stream=sys.stderr,
             )
-
         else:
             print("Error building", file=sys.stderr)
     return "OK"
 
+def _print(s):
+    print(s, file=sys.stderr)
 
 def build(branch, source, deployment, **kw):
     try:
+        _print(f'Switching to {source}')
         os.chdir(source)
+        _print(f'git fetch')
         subprocess.check_output(["git", "fetch", "--all"])
+        _print(f'git reset')
         subprocess.check_output(["git", "reset", "--hard", f"origin/{branch}"])
 
+        _print(f'Switching to {deployment}')
         os.chdir(deployment)
+        _print(f'docker build')
         subprocess.check_output(["docker-compose", "build"])
+        _print(f'docker down')
         subprocess.check_output(["docker-compose", "down"])
+        _print(f'docker up')
         subprocess.check_output(["docker-compose", "up", "-d"])
-    except:
+    except e:
+        _print(str(e))
         return False
     return True
