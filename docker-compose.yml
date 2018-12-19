@@ -6,6 +6,7 @@ services:
     restart: always
     environment:
       - PFS_ETH_RPC=http://geth.ropsten.ethnodes.brainbot.com:8545
+      - PFS_HOST=0.0.0.0
     labels:
       - "traefik.enable=true"
       - "traefik.frontend.rule=Host: services-dev.raiden.network; PathPrefixStrip: /pfs"
