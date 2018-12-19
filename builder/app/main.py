@@ -53,7 +53,7 @@ def build(branch, source, deployment, **kw):
 
         os.chdir(deployment)
         subprocess.check_output(["docker-compose", "build"])
-        subprocess.check_output(["docker-compose", "stop"])
+        subprocess.check_output(["docker-compose", "down"])
         subprocess.check_output(["docker-compose", "up", "-d"])
     except:
         return False
