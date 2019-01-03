@@ -9,7 +9,6 @@ from monitoring_service.api.rest import ServiceApi
 from monitoring_service.blockchain import BlockchainMonitor
 from monitoring_service.state_db import StateDB
 from raiden_contracts.contract_manager import ContractManager, contracts_precompiled_path
-from raiden_libs.no_ssl_patch import no_ssl_verification
 from raiden_libs.transport import MatrixTransport
 
 
@@ -108,5 +107,4 @@ def main(
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     logging.getLogger('urllib3.connectionpool').setLevel(logging.WARN)
-    with no_ssl_verification():
-        main()
+    main()
