@@ -104,6 +104,9 @@ def test_e2e(
         reward_amount,
         monitoring_service.address
     )
+    # wait for channel open event to be processed by the MS
+    wait_for_blocks(10)
+    gevent.sleep(0)
 
     monitoring_service.transport.receive_fake_data(monitor_request.serialize_full())
     gevent.sleep(0)

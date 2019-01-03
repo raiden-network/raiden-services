@@ -1,3 +1,4 @@
+EVENT_CHANNEL_OPEN = 'ChannelOpened'
 EVENT_CHANNEL_CLOSE = 'ChannelClosed'
 EVENT_CHANNEL_CREATE = 'CreateChannel'
 EVENT_CHANNEL_SETTLED = 'ChannelSettled'

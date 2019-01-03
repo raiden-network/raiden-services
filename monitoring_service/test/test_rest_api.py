@@ -13,6 +13,7 @@ def test_rest_api(monitoring_service, rest_api, generate_raiden_client):
 
     ret = requests.get('http://localhost:5001/api/1/monitor_requests')
     assert ret.json() == []
+    monitoring_service.open_channels.add(channel_id)
     monitoring_service.transport.receive_fake_data(msg.serialize_full())
     ret = requests.get('http://localhost:5001/api/1/monitor_requests')
     assert len(

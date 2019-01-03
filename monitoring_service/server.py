@@ -7,7 +7,11 @@ import gevent
 from eth_utils import encode_hex, is_address, is_checksum_address, is_same_address
 
 from monitoring_service.blockchain import BlockchainMonitor
-from monitoring_service.constants import EVENT_CHANNEL_CLOSE, EVENT_CHANNEL_SETTLED
+from monitoring_service.constants import (
+    EVENT_CHANNEL_CLOSE,
+    EVENT_CHANNEL_OPEN,
+    EVENT_CHANNEL_SETTLED,
+)
 from monitoring_service.exceptions import ServiceNotRegistered, StateDBInvalid
 from monitoring_service.state_db import StateDB
 from monitoring_service.tasks import OnChannelClose, OnChannelSettle, StoreMonitorRequest
@@ -67,6 +71,7 @@ class MonitoringService(gevent.Greenlet):
                 address=monitor_contract_address
             )
         )
+        self.open_channels = set()
 
         # some sanity checks
         chain_id = int(self.blockchain.web3.version.network)
@@ -95,6 +100,10 @@ class MonitoringService(gevent.Greenlet):
         self.transport.start()
         self.blockchain.start()
         self.blockchain.add_confirmed_listener(
+            EVENT_CHANNEL_OPEN,
+            lambda event, tx: self.on_channel_open(event, tx)
+        )
+        self.blockchain.add_confirmed_listener(
             EVENT_CHANNEL_CLOSE,
             lambda event, tx: self.on_channel_close(event, tx)
         )
@@ -116,6 +125,11 @@ class MonitoringService(gevent.Greenlet):
     def stop(self):
         self.blockchain.stop()
         self.stop_event.set()
+
+    def on_channel_open(self, event, tx):
+        log.info('on channel open: event=%s tx=%s' % (event, tx))
+        channel_id = event['args']['channel_identifier']
+        self.open_channels.add(channel_id)
 
     def on_channel_close(self, event, tx):
         log.info('on channel close: event=%s tx=%s' % (event, tx))
@@ -142,6 +156,7 @@ class MonitoringService(gevent.Greenlet):
         self.start_task(
             OnChannelClose(self.monitor_contract, monitor_request, self.private_key)
         )
+        self.open_channels.discard(channel_id)
 
     def on_channel_settled(self, event, tx):
         channel_id = event['args']['channel_identifier']
@@ -178,6 +193,9 @@ class MonitoringService(gevent.Greenlet):
         This will spawn a greenlet and store its reference in an internal list.
         Return value of the greenlet is then checked in the main loop."""
         assert isinstance(monitor_request, MonitorRequest)
+        channel_id = monitor_request.balance_proof.channel_identifier
+        if channel_id not in self.open_channels:
+            return
         self.start_task(
             StoreMonitorRequest(self.blockchain.web3, self.state_db, monitor_request)
         )
