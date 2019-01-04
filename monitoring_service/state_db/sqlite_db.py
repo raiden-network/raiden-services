@@ -52,17 +52,17 @@ class StateDBSqlite(StateDB):
 
     def store_monitor_request(self, monitor_request) -> None:
         StateDBSqlite.check_monitor_request(monitor_request)
-        balance_proof = monitor_request['balance_proof']
+        balance_proof = monitor_request.balance_proof
         params = [
-            hex(balance_proof['channel_identifier']),
-            balance_proof['balance_hash'],
-            hex(balance_proof['nonce']),
-            balance_proof['additional_hash'],
-            balance_proof['signature'],
-            monitor_request['non_closing_signature'],
-            monitor_request['reward_proof_signature'],
-            hex(monitor_request['reward_amount']),
-            balance_proof['token_network_address']
+            hex(balance_proof.channel_identifier),
+            balance_proof.balance_hash,
+            hex(balance_proof.nonce),
+            balance_proof.additional_hash,
+            balance_proof.signature,
+            monitor_request.non_closing_signature,
+            monitor_request.reward_proof_signature,
+            hex(monitor_request.reward_amount),
+            balance_proof.token_network_address,
         ]
         self.conn.execute(ADD_MONITOR_REQUEST_SQL, params)
 
@@ -90,10 +90,10 @@ class StateDBSqlite(StateDB):
 
     @staticmethod
     def check_monitor_request(monitor_request):
-        balance_proof = monitor_request['balance_proof']
-        assert is_channel_identifier(balance_proof['channel_identifier'])
-        assert is_checksum_address(balance_proof['token_network_address'])
-        assert is_checksum_address(monitor_request['monitor_address'])
+        balance_proof = monitor_request.balance_proof
+        assert is_channel_identifier(balance_proof.channel_identifier)
+        assert is_checksum_address(balance_proof.token_network_address)
+        assert is_checksum_address(monitor_request.monitor_address)
 
     def chain_id(self):
         c = self.conn.cursor()

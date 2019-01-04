@@ -35,8 +35,7 @@ class StoreMonitorRequest(gevent.Greenlet):
             for check in checks
         ]
         if not (False in results):
-            serialized_bp = self.msg.serialize_data()
-            self.state_db.store_monitor_request(serialized_bp)
+            self.state_db.store_monitor_request(self.msg)
         return not (False in results)
 
     def verify_contract_code(self, monitor_request):
