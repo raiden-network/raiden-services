@@ -5,6 +5,7 @@ from eth_utils import is_address
 from hexbytes import HexBytes
 
 from raiden_libs.messages import MonitorRequest
+from raiden_libs.exceptions import InvalidSignature
 
 log = logging.getLogger(__name__)
 
@@ -46,11 +47,14 @@ class StoreMonitorRequest(gevent.Greenlet):
     def check_signatures(self, monitor_request):
         """Check if signatures set in the message are correct"""
         balance_proof = monitor_request.balance_proof
-        return (
-            is_address(monitor_request.reward_proof_signer) and
-            is_address(balance_proof.signer) and
-            is_address(monitor_request.non_closing_signer)
-        )
+        try:
+            return (
+                is_address(monitor_request.reward_proof_signer) and
+                is_address(balance_proof.signer) and
+                is_address(monitor_request.non_closing_signer)
+            )
+        except InvalidSignature:
+            return False
 
     def check_balance(self, monitor_request):
         """Check if there is enough tokens to pay out reward amount"""
