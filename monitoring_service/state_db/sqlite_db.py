@@ -46,7 +46,7 @@ class StateDBSqlite(StateDB):
             ret.append(x)
 
         return {
-            x['channel_identifier']: x
+            (x['channel_identifier'], x['non_closing_signer']): x
             for x in ret
         }
 
@@ -55,6 +55,7 @@ class StateDBSqlite(StateDB):
         balance_proof = monitor_request.balance_proof
         params = [
             hex(balance_proof.channel_identifier),
+            monitor_request.non_closing_signer,
             balance_proof.balance_hash,
             hex(balance_proof.nonce),
             balance_proof.additional_hash,

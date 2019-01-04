@@ -15,7 +15,8 @@ CREATE TABLE `syncstate` (
 -- reward_amount is uint192
 -- nonce is uint64
 CREATE TABLE `monitor_requests` (
-    `channel_identifier` CHAR(34)    NOT NULL PRIMARY KEY,
+    `channel_identifier` CHAR(34)    NOT NULL,
+    `non_closing_signer` CHAR(42)    NOT NULL,
     `balance_hash`       CHAR(34)    NOT NULL,
     `nonce`              CHAR(34)    NOT NULL,
     `additional_hash`    CHAR(32)    NOT NULL,
@@ -23,7 +24,8 @@ CREATE TABLE `monitor_requests` (
     `non_closing_signature`    CHAR(160)   NOT NULL,
     `reward_proof_signature`   CHAR(42)    NOT NULL,
     `reward_amount`            CHAR(34)    NOT NULL,
-    `token_network_address`    CHAR(42)    NOT NULL
+    `token_network_address`    CHAR(42)    NOT NULL,
+    PRIMARY KEY (channel_identifier, non_closing_signer)
 );
 INSERT INTO `metadata` VALUES (
     NULL,
@@ -41,7 +43,7 @@ INSERT INTO `syncstate` VALUES (
 
 ADD_MONITOR_REQUEST_SQL = """
 INSERT OR REPLACE INTO `monitor_requests` VALUES (
-    ?, ?, ?, ?, ?, ?, ?, ?, ?
+    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
 );"""
 
 UPDATE_METADATA_SQL = """
