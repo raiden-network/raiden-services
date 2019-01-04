@@ -18,7 +18,6 @@ def check_monitor_request(data_sqlite, request_json):
 
 
 def test_state_db_sqlite(state_db_sqlite, get_random_monitor_request, get_random_address):
-    state_db_sqlite.setup_db(1, get_random_address(), get_random_address())
     request = get_random_monitor_request()
     state_db_sqlite.store_monitor_request(request)
     ret = state_db_sqlite.monitor_requests
@@ -34,7 +33,6 @@ def test_requests_by_both_participants(
 
     Regression test for https://github.com/raiden-network/raiden-monitoring-service/issues/34.
     """
-    state_db_sqlite.setup_db(1, get_random_address(), get_random_address())
     mr1 = get_monitor_request_for_same_channel(user=0)
     mr2 = get_monitor_request_for_same_channel(user=1)
     for mr in (mr1, mr2):

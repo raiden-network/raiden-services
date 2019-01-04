@@ -11,4 +11,6 @@ def state_db_mock(get_random_address):
 
 @pytest.fixture
 def state_db_sqlite(get_random_address):
-    return StateDBSqlite(':memory:')
+    state_db_sqlite = StateDBSqlite(':memory:')
+    state_db_sqlite.setup_db(1, get_random_address(), get_random_address())
+    return state_db_sqlite

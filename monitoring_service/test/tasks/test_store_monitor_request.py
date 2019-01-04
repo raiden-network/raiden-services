@@ -9,8 +9,6 @@ def test_request_validation(
         state_db_sqlite,
         get_random_address
 ):
-    state_db_sqlite.setup_db(1, get_random_address(), get_random_address())
-
     def store_successful(mr):
         task = StoreMonitorRequest(web3, state_db_sqlite, mr)
         task.run()

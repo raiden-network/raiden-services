@@ -1,6 +1,6 @@
+import pytest
 from eth_utils import encode_hex
 
-import pytest
 from raiden_libs.messages import BalanceProof, MonitorRequest
 from raiden_libs.utils import sha3
 from raiden_libs.utils.signing import eth_sign
