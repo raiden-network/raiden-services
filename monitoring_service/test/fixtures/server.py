@@ -31,7 +31,8 @@ def blockchain(
         contracts_manager: ContractManager,
 ):
     blockchain = BlockchainMonitor(web3, contracts_manager)
-    blockchain.poll_interval = 1
+    blockchain.poll_interval = 0.001
+    blockchain.required_confirmations = 1
     yield blockchain
     blockchain.stop()
 
