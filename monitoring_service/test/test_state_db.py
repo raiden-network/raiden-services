@@ -1,11 +1,3 @@
-from eth_utils import encode_hex
-
-import pytest
-from raiden_libs.messages import BalanceProof, MonitorRequest
-from raiden_libs.utils import sha3
-from raiden_libs.utils.signing import eth_sign
-
-
 def check_monitor_request(data_sqlite, request_json):
     # check monitor request fields
     fields_to_check = list(request_json.keys())
@@ -50,41 +42,3 @@ def test_requests_by_both_participants(
 
     all_monitor_requests = state_db_sqlite.monitor_requests
     assert len(all_monitor_requests) == 2
-
-
-@pytest.fixture
-def get_monitor_request_for_same_channel(get_random_address, get_random_privkey):
-    keys = [get_random_privkey() for i in range(2)]
-    token_network_address = get_random_address()
-
-    channel_id = 1
-    balance_hash_data = '0'
-
-    def f(user=None):
-        if user == 0:
-            privkey = keys[0]
-            privkey_non_closing = keys[1]
-        else:
-            privkey = keys[1]
-            privkey_non_closing = keys[0]
-        balance_proof = BalanceProof(
-            channel_id,
-            token_network_address,
-            balance_hash=encode_hex(sha3(balance_hash_data.encode()))
-        )
-        balance_proof.signature = encode_hex(eth_sign(privkey, balance_proof.serialize_bin()))
-        non_closing_signature = encode_hex(
-            eth_sign(privkey_non_closing, balance_proof.serialize_bin()),
-        )
-
-        monitor_request = MonitorRequest(
-            balance_proof,
-            non_closing_signature,
-            reward_amount=0,
-            monitor_address=get_random_address(),
-        )
-        monitor_request.reward_proof_signature = encode_hex(
-            eth_sign(privkey, monitor_request.serialize_reward_proof()),
-        )
-        return monitor_request
-    return f
