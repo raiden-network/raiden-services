@@ -7,11 +7,7 @@ import gevent
 from eth_utils import encode_hex, is_address, is_checksum_address, is_same_address
 
 from monitoring_service.blockchain import BlockchainMonitor
-from monitoring_service.constants import (
-    EVENT_CHANNEL_CLOSE,
-    EVENT_CHANNEL_OPEN,
-    EVENT_CHANNEL_SETTLED,
-)
+from raiden_contracts.constants import ChannelEvent
 from monitoring_service.exceptions import ServiceNotRegistered, StateDBInvalid
 from monitoring_service.state_db import StateDB
 from monitoring_service.tasks import OnChannelClose, OnChannelSettle, StoreMonitorRequest
@@ -100,15 +96,15 @@ class MonitoringService(gevent.Greenlet):
         self.transport.start()
         self.blockchain.start()
         self.blockchain.add_confirmed_listener(
-            EVENT_CHANNEL_OPEN,
+            ChannelEvent.OPENED,
             lambda event, tx: self.on_channel_open(event, tx)
         )
         self.blockchain.add_confirmed_listener(
-            EVENT_CHANNEL_CLOSE,
+            ChannelEvent.CLOSED,
             lambda event, tx: self.on_channel_close(event, tx)
         )
         self.blockchain.add_confirmed_listener(
-            EVENT_CHANNEL_SETTLED,
+            ChannelEvent.SETTLED,
             lambda event, tx: self.on_channel_settled(event, tx)
         )
 

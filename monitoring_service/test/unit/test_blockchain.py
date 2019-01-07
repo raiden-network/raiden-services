@@ -1,6 +1,6 @@
 import gevent
 
-from monitoring_service.constants import EVENT_CHANNEL_CLOSE, EVENT_CHANNEL_SETTLED
+from raiden_contracts.constants import ChannelEvent
 from raiden_contracts.contract_manager import ContractManager
 from raiden_libs.utils import make_filter
 
@@ -19,11 +19,11 @@ def test_blockchain(generate_raiden_client, blockchain, wait_for_blocks):
     t = Trigger()
 
     blockchain.add_confirmed_listener(
-        EVENT_CHANNEL_CLOSE,
+        ChannelEvent.CLOSED,
         lambda ev, tx: t.trigger()
     )
     blockchain.add_confirmed_listener(
-        EVENT_CHANNEL_SETTLED,
+        ChannelEvent.SETTLED,
         lambda ev, tx: t.trigger()
     )
     blockchain.poll_interval = 0

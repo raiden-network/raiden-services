@@ -5,7 +5,7 @@ import random
 import gevent
 import requests
 
-from monitoring_service.constants import EVENT_CHANNEL_CLOSE, EVENT_CHANNEL_CREATE
+from raiden_contracts.constants import ChannelEvent
 from monitoring_service.tools.random_channel import RandomChannelDB
 
 log = logging.getLogger(__name__)
@@ -25,7 +25,7 @@ class EventGenerator(gevent.Greenlet):
         channel_data = self.db.new_channel()
         self.put_event(
             {
-                'name': EVENT_CHANNEL_CREATE,
+                'name': ChannelEvent.OPENED,
                 'data': channel_data
             }
         )
@@ -47,7 +47,7 @@ class EventGenerator(gevent.Greenlet):
         self.db.channel_db.remove(channel)
         self.put_event(
             {
-                'name': EVENT_CHANNEL_CLOSE,
+                'name': ChannelEvent.CLOSED,
                 'data': channel
             }
         )
