@@ -12,6 +12,8 @@ from raiden_libs.utils import private_key_to_address
 
 log = logging.getLogger(__name__)
 
+TEST_POLL_INTERVAL = 0.001
+
 
 @pytest.fixture
 def server_private_key(get_random_privkey, ethereum_tester):
@@ -31,7 +33,7 @@ def blockchain(
         contracts_manager: ContractManager,
 ):
     blockchain = BlockchainMonitor(web3, contracts_manager)
-    blockchain.poll_interval = 0.001
+    blockchain.poll_interval = TEST_POLL_INTERVAL
     blockchain.required_confirmations = 1
     yield blockchain
     blockchain.stop()

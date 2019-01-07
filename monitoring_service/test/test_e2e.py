@@ -6,6 +6,7 @@ import pytest
 
 from raiden_contracts.contract_manager import ContractManager
 from raiden_libs.blockchain import BlockchainListener
+from monitoring_service.test.fixtures.server import TEST_POLL_INTERVAL
 
 
 class Validator(BlockchainListener):
@@ -18,7 +19,7 @@ class Validator(BlockchainListener):
             web3,
             contracts_manager,
             'MonitoringService',
-            poll_interval=0.001
+            poll_interval=TEST_POLL_INTERVAL
         )
         self.events: List[Dict] = list()
         self.add_unconfirmed_listener(
@@ -109,7 +110,7 @@ def test_e2e(
     gevent.sleep(0)
 
     monitoring_service.transport.receive_fake_data(monitor_request.serialize_full())
-    gevent.sleep(0.01)
+    gevent.sleep(TEST_POLL_INTERVAL)
     assert channel_id in monitoring_service.monitor_requests
 
     c2.close_channel(c1.address, balance_proof_c1)
@@ -117,7 +118,8 @@ def test_e2e(
     # by the MS
     wait_for_blocks(1)
     # Now give the monitoring service a chance to submit the missing BP
-    gevent.sleep(0.01)
+    # (why does it take longer than TEST_POLL_INTERVAL in some cases?)
+    gevent.sleep(0.1)
     assert [e.event for e in blockchain_validator.events] == ['NewBalanceProofReceived']
 
     # wait for settle timeout
@@ -130,7 +132,7 @@ def test_e2e(
     )
     # Wait until the ChannelSettled is confirmed
     wait_for_blocks(1)
-    # Let the MS claim its reward
+    # Let the MS claim its reward (for some reason this takes longer than TEST_POLL_INTERVAL)
     gevent.sleep(0.1)
     assert [e.event for e in blockchain_validator.events] == [
         'NewBalanceProofReceived', 'RewardClaimed'
