@@ -1,34 +1,12 @@
-dist: trusty
-sudo: true
-language: generic
+language: python
+python: '3.6'
+cache: pip
 
-jobs:
-  include:
-    - language: python
-      python: '3.6'
-      env:
-        - TEST_TYPE=monitoring_service
-        - SOLC_URL='https://github.com/ethereum/solidity/releases/download/v0.4.23/solc-static-linux'
-        - SOLC_VERSION='v0.4.23'
+install:
+  - pip install -U codecov pytest-travis-fold
+  - pip install -r requirements-dev.txt
 
-      before_install:
-        - mkdir -p $HOME/.bin
-        - export PATH=$PATH:$HOME/.bin
-        - ./.travis/download_solc.sh
-
-      cache:
-        pip: true
-        directories:
-          - $HOME/.cache/pip
-
-      install:
-        - pip install -U pip wheel coveralls "coverage<4.4"
-        - pip install pytest-travis-fold
-        - pip install flake8
-        - pip install -r requirements-dev.txt
-
-      before_script:
-        - make lint
-
-      script:
-        - coverage run --source monitoring_service/ --omit 'monitoring_service/test/*' -m py.test --travis-fold=always -xvvvvvvvvs $TEST_TYPE
+script:
+  - make lint
+  - pytest -v --cov=./
+  - codecov
