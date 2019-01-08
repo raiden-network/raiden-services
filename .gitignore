@@ -1,5 +1,6 @@
 /env
 /.idea
+/.vscode
 credentials/
 *.egg-info
 __pycache__
@@ -92,3 +93,9 @@ smoketest_config.json
 
 # ignore tag files
 tags
+
+# mypy
+/.mypy_cache
+
+# venv
+/.venv
