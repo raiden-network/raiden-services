@@ -3,7 +3,7 @@ def check_monitor_request(data_sqlite, request_json):
     fields_to_check = list(request_json.keys())
     fields_to_check.remove('balance_proof')
     fields_to_check.remove('monitor_address')
-    to_check = list(data_sqlite.values())[0]
+    to_check = data_sqlite
     for x in fields_to_check:
         assert request_json[x] == to_check[x]
 
@@ -20,8 +20,12 @@ def check_monitor_request(data_sqlite, request_json):
 def test_state_db_sqlite(state_db_sqlite, get_random_monitor_request, get_random_address):
     request = get_random_monitor_request()
     state_db_sqlite.store_monitor_request(request)
-    ret = state_db_sqlite.monitor_requests
-    check_monitor_request(ret, request.serialize_data())
+    ret = list(state_db_sqlite.get_monitor_requests().values())
+    assert len(ret) == 1
+    # Don't really check monitor_address, since it's not used. Remove after solving
+    # https://github.com/raiden-network/raiden-monitoring-service/issues/42
+    ret[0].monitor_address = request.monitor_address
+    assert ret[0].serialize_data() == request.serialize_data()
 
 
 def test_requests_by_both_participants(
@@ -38,5 +42,5 @@ def test_requests_by_both_participants(
     for mr in (mr1, mr2):
         state_db_sqlite.store_monitor_request(mr)
 
-    all_monitor_requests = state_db_sqlite.monitor_requests
+    all_monitor_requests = state_db_sqlite.get_monitor_requests()
     assert len(all_monitor_requests) == 2

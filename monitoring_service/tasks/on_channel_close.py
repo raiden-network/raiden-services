@@ -38,5 +38,6 @@ class OnChannelClose(gevent.Greenlet):
             balance_proof.token_network_address,
             monitor_request.reward_proof_signature,
         ).transact({'gas_limit': 350000}, private_key=private_key)
+        log.info(f'Submit MR to SC, got tx_hash {tx_hash}')
         assert tx_hash is not None
         return 0

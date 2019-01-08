@@ -1,16 +1,19 @@
 import pytest
 
 from monitoring_service.state_db import StateDBSqlite
-from monitoring_service.test.mockups import StateDBMock
+from raiden_libs.utils import private_key_to_address
 
 
 @pytest.fixture
-def state_db_mock(get_random_address):
-    return StateDBMock()
-
-
-@pytest.fixture
-def state_db_sqlite(get_random_address):
+def state_db_sqlite(
+    get_random_address,
+    server_private_key,
+    monitoring_service_contract,
+):
     state_db_sqlite = StateDBSqlite(':memory:')
-    state_db_sqlite.setup_db(1, get_random_address(), get_random_address())
+    state_db_sqlite.setup_db(
+        1,
+        monitoring_service_contract.address,
+        private_key_to_address(server_private_key)
+    )
     return state_db_sqlite

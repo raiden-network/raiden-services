@@ -222,23 +222,26 @@ class MonitoringService(gevent.Greenlet):
         assert tx_balance_proof is not None
         assert is_address(closing_participant)
         assert is_channel_identifier(channel_id)
-        if channel_id not in self.state_db.monitor_requests:
-            return
-        monitor_request = self.state_db.monitor_requests[channel_id]
-        # submit monitor request
-        self.start_task(
-            OnChannelClose(self.monitor_contract, monitor_request, self.private_key),
-        )
+
+        pkey_to_mr = self.state_db.get_monitor_requests(channel_id)
+        for (_, non_closing_signer), monitor_request in pkey_to_mr.items():
+            if non_closing_signer == closing_participant:
+                # we don't have to act on behalf of the closing participant
+                continue
+            # submit monitor request
+            self.start_task(
+                OnChannelClose(self.monitor_contract, monitor_request, self.private_key),
+            )
         self.open_channels.discard(channel_id)
 
     def on_channel_settled(self, event: Dict, tx: Dict):
         channel_id = event['args']['channel_identifier']
-        monitor_request = self.state_db.monitor_requests.get(channel_id, None)
-        if monitor_request is None:
-            return
-        self.start_task(
-            OnChannelSettle(monitor_request, self.monitor_contract, self.private_key),
-        )
+        # TODO: only claim rewards if MS has submitted a BP.
+        # See https://github.com/raiden-network/raiden-monitoring-service/issues/43
+        for monitor_request in self.state_db.get_monitor_requests(channel_id).values():
+            self.start_task(
+                OnChannelSettle(monitor_request, self.monitor_contract, self.private_key),
+            )
         self.state_db.delete_monitor_request(event['args']['channel_identifier'])
 
     def on_message_event(self, message):
@@ -259,6 +262,7 @@ class MonitoringService(gevent.Greenlet):
         assert isinstance(monitor_request, MonitorRequest)
         channel_id = monitor_request.balance_proof.channel_identifier
         if channel_id not in self.open_channels:
+            log.debug(f'Discarding MR for channel {channel_id}')
             return
         self.start_task(
             StoreMonitorRequest(self.web3, self.state_db, monitor_request),
@@ -270,7 +274,7 @@ class MonitoringService(gevent.Greenlet):
 
     @property
     def monitor_requests(self):
-        return self.state_db.monitor_requests
+        return self.state_db.get_monitor_requests()
 
     def wait_tasks(self):
         """Wait until all internal tasks are finished"""

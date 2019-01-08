@@ -13,7 +13,7 @@ def test_request_validation(
         task = StoreMonitorRequest(web3, state_db_sqlite, mr)
         task.run()
         gevent.joinall([task])
-        return len(state_db_sqlite.monitor_requests) == 1
+        return len(state_db_sqlite.get_monitor_requests()) == 1
 
     # invalid signatures
     invalid_sig = '0x' + '0' * 130
@@ -43,7 +43,7 @@ def test_request_validation(
     # task = StoreMonitorRequest(web3, state_db_sqlite, mr)
     # task.run()
     # gevent.joinall([task])
-    # assert len(state_db_sqlite.monitor_requests) == 0
+    # assert len(state_db_sqlite.get_monitor_requests()) == 0
 
     # everything ok
     mr = get_monitor_request_for_same_channel(user=0)
