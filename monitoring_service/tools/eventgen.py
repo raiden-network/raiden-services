@@ -26,8 +26,8 @@ class EventGenerator(gevent.Greenlet):
         self.put_event(
             {
                 'name': ChannelEvent.OPENED,
-                'data': channel_data
-            }
+                'data': channel_data,
+            },
         )
 
     def put_event(self, event):
@@ -48,8 +48,8 @@ class EventGenerator(gevent.Greenlet):
         self.put_event(
             {
                 'name': ChannelEvent.CLOSED,
-                'data': channel
-            }
+                'data': channel,
+            },
         )
 
     def stop(self):

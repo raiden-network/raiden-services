@@ -19,14 +19,14 @@ class Validator(BlockchainListener):
             web3,
             contracts_manager,
             'MonitoringService',
-            poll_interval=TEST_POLL_INTERVAL
+            poll_interval=TEST_POLL_INTERVAL,
         )
         self.events: List[Dict] = list()
         self.add_unconfirmed_listener(
-            'NewBalanceProofReceived', self.events.append
+            'NewBalanceProofReceived', self.events.append,
         )
         self.add_unconfirmed_listener(
-            'RewardClaimed', self.events.append
+            'RewardClaimed', self.events.append,
         )
 
 
@@ -49,7 +49,7 @@ def test_e2e(
     wait_for_blocks,
     blockchain_validator,
     custom_token,
-    raiden_service_bundle
+    raiden_service_bundle,
 ):
     """Test complete message lifecycle
         1) client opens channel & submits monitoring request
@@ -62,7 +62,7 @@ def test_e2e(
     monitoring_service.start()
 
     initial_balance = monitoring_service_contract.functions.balances(
-        monitoring_service.address
+        monitoring_service.address,
     ).call()
     c1, c2 = generate_raiden_clients(2)
 
@@ -71,10 +71,10 @@ def test_e2e(
     node_deposit = 10
     custom_token.functions.approve(
         monitoring_service_contract.address,
-        node_deposit
+        node_deposit,
     ).transact({'from': c1.address})
     monitoring_service_contract.functions.deposit(
-        c1.address, node_deposit
+        c1.address, node_deposit,
     ).transact({'from': c1.address})
 
     # each client does a transfer
@@ -85,7 +85,7 @@ def test_e2e(
         transferred_amount=5,
         locked_amount=0,
         locksroot='0x%064x' % 0,
-        additional_hash='0x%064x' % 0
+        additional_hash='0x%064x' % 0,
     )
     balance_proof_c2 = c2.get_balance_proof(
         c1.address,
@@ -93,7 +93,7 @@ def test_e2e(
         transferred_amount=6,
         locked_amount=0,
         locksroot='0x%064x' % 0,
-        additional_hash='0x%064x' % 0
+        additional_hash='0x%064x' % 0,
     )
     logging.getLogger('raiden_libs.blockchain').setLevel(logging.DEBUG)
 
@@ -103,7 +103,7 @@ def test_e2e(
         c2.address,
         balance_proof_c2,
         reward_amount,
-        monitoring_service.address
+        monitoring_service.address,
     )
     # wait for channel open event to be processed by the MS
     wait_for_blocks(10)
@@ -128,17 +128,17 @@ def test_e2e(
         c1.address,
         (balance_proof_c2.transferred_amount, balance_proof_c1.transferred_amount),
         (balance_proof_c2.locked_amount, balance_proof_c1.locked_amount),
-        (balance_proof_c1.locksroot, balance_proof_c1.locksroot)
+        (balance_proof_c1.locksroot, balance_proof_c1.locksroot),
     )
     # Wait until the ChannelSettled is confirmed
     wait_for_blocks(1)
     # Let the MS claim its reward (for some reason this takes longer than TEST_POLL_INTERVAL)
     gevent.sleep(0.1)
     assert [e.event for e in blockchain_validator.events] == [
-        'NewBalanceProofReceived', 'RewardClaimed'
+        'NewBalanceProofReceived', 'RewardClaimed',
     ]
 
     final_balance = monitoring_service_contract.functions.balances(
-        monitoring_service.address
+        monitoring_service.address,
     ).call()
     assert final_balance == (initial_balance + reward_amount)

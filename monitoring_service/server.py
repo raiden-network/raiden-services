@@ -32,7 +32,7 @@ def error_handler(context, exc_info):
     traceback.print_exception(
         etype=exc_info[0],
         value=exc_info[1],
-        tb=exc_info[2]
+        tb=exc_info[2],
     )
     sys.exit()
 
@@ -64,8 +64,8 @@ class MonitoringService(gevent.Greenlet):
         self.monitor_contract = PrivateContract(
             blockchain.web3.eth.contract(
                 abi=contract_manager.get_contract_abi('MonitoringService'),
-                address=monitor_contract_address
-            )
+                address=monitor_contract_address,
+            ),
         )
         self.open_channels: Set[int] = set()
 
@@ -84,11 +84,11 @@ class MonitoringService(gevent.Greenlet):
             self.blockchain.web3,
             contract_manager,
             monitor_contract_address,
-            self.address
+            self.address,
         ):
             raise ServiceNotRegistered(
                 "Monitoring service %s is not registered in the Monitoring smart contract (%s)" %
-                (self.address, monitor_contract_address)
+                (self.address, monitor_contract_address),
             )
 
     def _run(self):
@@ -97,15 +97,15 @@ class MonitoringService(gevent.Greenlet):
         self.blockchain.start()
         self.blockchain.add_confirmed_listener(
             ChannelEvent.OPENED,
-            lambda event, tx: self.on_channel_open(event, tx)
+            lambda event, tx: self.on_channel_open(event, tx),
         )
         self.blockchain.add_confirmed_listener(
             ChannelEvent.CLOSED,
-            lambda event, tx: self.on_channel_close(event, tx)
+            lambda event, tx: self.on_channel_close(event, tx),
         )
         self.blockchain.add_confirmed_listener(
             ChannelEvent.SETTLED,
-            lambda event, tx: self.on_channel_settled(event, tx)
+            lambda event, tx: self.on_channel_settled(event, tx),
         )
 
         # this loop will wait until spawned greenlets complete
@@ -150,7 +150,7 @@ class MonitoringService(gevent.Greenlet):
         monitor_request = self.state_db.monitor_requests[channel_id]
         # submit monitor request
         self.start_task(
-            OnChannelClose(self.monitor_contract, monitor_request, self.private_key)
+            OnChannelClose(self.monitor_contract, monitor_request, self.private_key),
         )
         self.open_channels.discard(channel_id)
 
@@ -160,7 +160,7 @@ class MonitoringService(gevent.Greenlet):
         if monitor_request is None:
             return
         self.start_task(
-            OnChannelSettle(monitor_request, self.monitor_contract, self.private_key)
+            OnChannelSettle(monitor_request, self.monitor_contract, self.private_key),
         )
         self.state_db.delete_monitor_request(event['args']['channel_identifier'])
 
@@ -169,7 +169,7 @@ class MonitoringService(gevent.Greenlet):
 
     def challenge_proof(self, channel_id):
         balance_proof = self.state_db.balance_proofs.get(
-            channel_id, None
+            channel_id, None,
         )
         log.info('challenging proof channel=%s BP=%s' % (channel_id, balance_proof))
 
@@ -183,7 +183,7 @@ class MonitoringService(gevent.Greenlet):
 
     def on_monitor_request(
         self,
-        monitor_request: MonitorRequest
+        monitor_request: MonitorRequest,
     ):
         """Called whenever a monitor proof message is received.
         This will spawn a greenlet and store its reference in an internal list.
@@ -193,7 +193,7 @@ class MonitoringService(gevent.Greenlet):
         if channel_id not in self.open_channels:
             return
         self.start_task(
-            StoreMonitorRequest(self.blockchain.web3, self.state_db, monitor_request)
+            StoreMonitorRequest(self.blockchain.web3, self.state_db, monitor_request),
         )
 
     def start_task(self, task):

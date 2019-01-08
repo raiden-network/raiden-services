@@ -20,11 +20,11 @@ def test_blockchain(generate_raiden_client, blockchain, wait_for_blocks):
 
     blockchain.add_confirmed_listener(
         ChannelEvent.CLOSED,
-        lambda ev, tx: t.trigger()
+        lambda ev, tx: t.trigger(),
     )
     blockchain.add_confirmed_listener(
         ChannelEvent.SETTLED,
-        lambda ev, tx: t.trigger()
+        lambda ev, tx: t.trigger(),
     )
     blockchain.poll_interval = 0
     blockchain._update()
@@ -47,7 +47,7 @@ def test_blockchain(generate_raiden_client, blockchain, wait_for_blocks):
         c2.address,
         (0, bp.transferred_amount),
         (0, bp.locked_amount),
-        ('0x%064x' % 0, bp.locksroot)
+        ('0x%064x' % 0, bp.locksroot),
     )
     wait_for_blocks(4)
     blockchain._update()

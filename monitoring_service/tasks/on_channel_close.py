@@ -19,7 +19,7 @@ class OnChannelClose(gevent.Greenlet):
         return self.submit_monitor_request(
             self.monitor_contract,
             self.monitor_request,
-            self.private_key
+            self.private_key,
         )
 
     @staticmethod
@@ -36,7 +36,7 @@ class OnChannelClose(gevent.Greenlet):
             monitor_request.non_closing_signature,
             monitor_request.reward_amount,
             balance_proof.token_network_address,
-            monitor_request.reward_proof_signature
+            monitor_request.reward_proof_signature,
         ).transact({'gas_limit': 350000}, private_key=private_key)
         assert tx_hash is not None
         return 0

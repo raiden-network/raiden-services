@@ -10,7 +10,7 @@ def test_validate_bp(web3, generate_raiden_client, get_random_address, state_db_
     balance_proof = c1.get_balance_proof(
         c2.address,
         nonce=1,
-        balance_hash='0x%064x' % 0
+        balance_hash='0x%064x' % 0,
     )
     monitor_request = c1.get_monitor_request(c2.address, balance_proof, 1, get_random_address())
 

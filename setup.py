@@ -16,7 +16,9 @@ DESCRIPTION = 'Raiden Monitoring Service observes state of the channels'
 VERSION = open('monitoring_service/VERSION', 'r').read().strip()
 
 REQ_REPLACE = {
-    'git+https://github.com/matrix-org/matrix-python-sdk.git': 'matrix-client'
+    'git+https://github.com/matrix-org/matrix-python-sdk.git': 'matrix-client',
+    'git+https://github.com/raiden-network/raiden-contracts.git': 'raiden-contracts',
+    'git+https://github.com/raiden-network/raiden-libs.git': 'raiden-libs',
 }
 
 
@@ -26,7 +28,7 @@ def read_requirements(path: str):
     with open(path) as requirements:
         for line in requirements.readlines():
             line = line.strip()
-            if line[0] in ('#', '-'):
+            if line and line[0] in ('#', '-'):
                 continue
             if line in REQ_REPLACE.keys():
                 line = REQ_REPLACE[line]
@@ -41,7 +43,7 @@ def read_version_from_git():
         git_version, _ = subprocess.Popen(
             shlex.split('git describe --tags'),
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
+            stderr=subprocess.PIPE,
         ).communicate()
         git_version = git_version.decode()
         if git_version.startswith('v'):

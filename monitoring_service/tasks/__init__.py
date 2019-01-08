@@ -4,6 +4,6 @@ from .on_channel_settle import OnChannelSettle          # noqa
 
 __all__ = [
     'StoreMonitorRequest',
-    'OnChannelClose'
-    'OnChannelSettle'
+    'OnChannelClose',
+    'OnChannelSettle',
 ]

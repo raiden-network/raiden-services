@@ -17,7 +17,7 @@ def test_server_registration(
         standard_token_contract,
         monitoring_service_contract,
         send_funds,
-        contracts_manager
+        contracts_manager,
 ):
     """Test two scenarios - instantiating a non-registered server (this should fail),
     and registering it and instantiating again"""
@@ -48,7 +48,7 @@ def test_server_registration(
         web3,
         contracts_manager,
         monitoring_service_contract.address,
-        server_address
+        server_address,
     )
     # now instantiation will proceed
     ms = MonitoringService(
@@ -70,7 +70,7 @@ def test_server_wrong_db(
         monitoring_service_contract,
         get_random_address,
         send_funds,
-        contracts_manager
+        contracts_manager,
 ):
     server_address = private_key_to_address(server_private_key)
     send_funds(server_address)
@@ -78,7 +78,7 @@ def test_server_wrong_db(
         web3,
         contracts_manager,
         monitoring_service_contract.address,
-        server_private_key
+        server_private_key,
     )
 
     def create_server(setup_database):
@@ -94,16 +94,16 @@ def test_server_wrong_db(
         )
     with pytest.raises(StateDBInvalid):
         create_server(
-            lambda db: db.setup_db(0, monitoring_service_contract.address, server_address)
+            lambda db: db.setup_db(0, monitoring_service_contract.address, server_address),
         )
     with pytest.raises(StateDBInvalid):
         create_server(
-            lambda db: db.setup_db(0, get_random_address(), server_address)
+            lambda db: db.setup_db(0, get_random_address(), server_address),
         )
     with pytest.raises(StateDBInvalid):
         create_server(
-            lambda db: db.setup_db(0, monitoring_service_contract.address, get_random_address())
+            lambda db: db.setup_db(0, monitoring_service_contract.address, get_random_address()),
         )
     create_server(
-        lambda db: db.setup_db(1, monitoring_service_contract.address, server_address)
+        lambda db: db.setup_db(1, monitoring_service_contract.address, server_address),
     )

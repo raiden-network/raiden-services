@@ -33,15 +33,15 @@ def get_monitor_request_for_same_channel(
         balance_proof = BalanceProof(
             channel_id,
             token_network_address,
-            balance_hash=encode_hex(sha3(balance_hash_data.encode()))
+            balance_hash=encode_hex(sha3(balance_hash_data.encode())),
         )
         balance_proof.signature = encode_hex(eth_sign(
             privkey if not bad_key_for_bp else keys[2],
-            balance_proof.serialize_bin()
+            balance_proof.serialize_bin(),
         ))
         non_closing_signature = encode_hex(eth_sign(
             privkey_non_closing if not bad_key_for_non_closing else keys[2],
-            balance_proof.serialize_bin()
+            balance_proof.serialize_bin(),
         ))
 
         monitor_request = MonitorRequest(

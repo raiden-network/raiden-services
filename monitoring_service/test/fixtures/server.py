@@ -56,7 +56,7 @@ def monitoring_service(
         web3,
         contracts_manager,
         monitoring_service_contract.address,
-        server_private_key
+        server_private_key,
     )
 
     ms = MonitoringService(

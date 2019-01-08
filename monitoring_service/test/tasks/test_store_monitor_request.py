@@ -7,7 +7,7 @@ def test_request_validation(
         web3,
         get_monitor_request_for_same_channel,
         state_db_sqlite,
-        get_random_address
+        get_random_address,
 ):
     def store_successful(mr):
         task = StoreMonitorRequest(web3, state_db_sqlite, mr)

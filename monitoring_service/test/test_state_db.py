@@ -27,7 +27,7 @@ def test_state_db_sqlite(state_db_sqlite, get_random_monitor_request, get_random
 def test_requests_by_both_participants(
         get_monitor_request_for_same_channel,
         state_db_sqlite,
-        get_random_address
+        get_random_address,
 ):
     """ Make sure that we store MRs for both participants in the channel
 

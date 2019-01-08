@@ -58,7 +58,7 @@ class RandomChannelDB(SeededRandomizer):
             'channel_address': self.get_random_address(),
             'participant1': p1,
             'participant2': p2,
-            'nonce': self.random_nonce()
+            'nonce': self.random_nonce(),
         }
         self.channel_db.append(channel)
         return channel

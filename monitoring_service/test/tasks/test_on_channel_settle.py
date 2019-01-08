@@ -8,7 +8,7 @@ def test_on_channel_settle(
     generate_raiden_clients,
     get_random_privkey,
     monitoring_service_contract,
-    send_funds
+    send_funds,
 ):
     c1, c2 = generate_raiden_clients(2)
     ms_privkey = get_random_privkey()
@@ -20,13 +20,13 @@ def test_on_channel_settle(
         c1.address,
         balance_proof,
         1,
-        ms_address
+        ms_address,
     )
 
     task = OnChannelSettle(
         monitor_request,
         PrivateContract(monitoring_service_contract),
-        ms_privkey
+        ms_privkey,
     )
 
     assert task._run() is True

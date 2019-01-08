@@ -27,7 +27,7 @@ class MockClient(SeededRandomizer):
         return BalanceProof(
             channel['channel_address'],
             channel['participant1'],
-            channel['participant2']
+            channel['participant2'],
         )
 
     @use_random_state
@@ -51,39 +51,39 @@ class MockClient(SeededRandomizer):
 @click.option(
     '--monitoring-channel',
     default='#monitor_test:transport01.raiden.network',
-    help='Location of the monitoring channel to connect to'
+    help='Location of the monitoring channel to connect to',
 )
 @click.option(
     '--matrix-homeserver',
     default='https://transport01.raiden.network',
-    help='Matrix username'
+    help='Matrix username',
 )
 @click.option(
     '--matrix-username',
     default=None,
     required=True,
-    help='Matrix username'
+    help='Matrix username',
 )
 @click.option(
     '--matrix-password',
     default=None,
     required=True,
-    help='Matrix password'
+    help='Matrix password',
 )
 @click.option(
     '--seed',
     default=0,
-    help='initial seed'
+    help='initial seed',
 )
 @click.option(
     '--monitor-host',
     default='http://localhost:5001',
-    help='monitor RPC endpoint'
+    help='monitor RPC endpoint',
 )
 @click.option(
     '--private-key',
     required=True,
-    type=str
+    type=str,
 )
 def main(monitoring_channel,
          matrix_homeserver,
@@ -91,14 +91,14 @@ def main(monitoring_channel,
          matrix_password,
          seed,
          monitor_host,
-         private_key
+         private_key,
          ):
     event_generator = EventGenerator(monitor_host, seed)
     transport = MatrixTransport(
         matrix_homeserver,
         matrix_username,
         matrix_password,
-        monitoring_channel
+        monitoring_channel,
     )
     transport.privkey = private_key
     mock_client = MockClient(transport, seed, event_generator.db)

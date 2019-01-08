@@ -17,7 +17,7 @@ class OnChannelSettle(gevent.Greenlet):
         return self.claim_reward(
             self.monitor_contract,
             self.monitor_request,
-            self.private_key
+            self.private_key,
         )
 
     @staticmethod
@@ -28,7 +28,7 @@ class OnChannelSettle(gevent.Greenlet):
             monitor_request.balance_proof.channel_identifier,
             monitor_request.balance_proof.token_network_address,
             monitor_request.balance_proof.signer,
-            monitor_request.non_closing_signer
+            monitor_request.non_closing_signer,
         ).transact({'gas': 210000}, private_key=private_key)
         receipt = web3.eth.getTransactionReceipt(tx_hash)
         tx = web3.eth.getTransactionReceipt(tx_hash)

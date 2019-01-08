@@ -13,14 +13,14 @@ class BlockchainMonitor(BlockchainListener):
         self,
         web3,
         contract_manager: ContractManager,
-        **kwargs
+        **kwargs,
     ) -> None:
         super().__init__(
             web3,
             contract_manager,
             'TokenNetwork',
             poll_interval=1,
-            **kwargs
+            **kwargs,
         )
         self.contract_manager = contract_manager
 
@@ -28,7 +28,7 @@ class BlockchainMonitor(BlockchainListener):
         """ Add a callback to listen for confirmed events. """
         return super().add_confirmed_listener(
             event_name,
-            lambda event: self.handle_event(event, callback)
+            lambda event: self.handle_event(event, callback),
         )
 
     def handle_event(self, event, callback: Callable):

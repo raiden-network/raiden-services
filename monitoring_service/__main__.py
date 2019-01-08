@@ -17,53 +17,53 @@ from raiden_libs.transport import MatrixTransport
     '--private-key',
     default=None,
     required=True,
-    help='Private key to use (the address should have enough ETH balance to send transactions)'
+    help='Private key to use (the address should have enough ETH balance to send transactions)',
 )
 @click.option(
     '--monitoring-channel',
     default='#monitor_test:transport01.raiden.network',
-    help='Location of the monitoring channel to connect to'
+    help='Location of the monitoring channel to connect to',
 )
 @click.option(
     '--matrix-homeserver',
     default='https://transport01.raiden.network',
-    help='Matrix username'
+    help='Matrix username',
 )
 @click.option(
     '--matrix-username',
     default=None,
     required=True,
-    help='Matrix username'
+    help='Matrix username',
 )
 @click.option(
     '--matrix-password',
     default=None,
     required=True,
-    help='Matrix password'
+    help='Matrix password',
 )
 @click.option(
     '--rest-host',
     default='localhost',
     type=str,
-    help='REST service endpoint'
+    help='REST service endpoint',
 )
 @click.option(
     '--rest-port',
     default=5001,
     type=int,
-    help='REST service endpoint'
+    help='REST service endpoint',
 )
 @click.option(
     '--eth-rpc',
     default='http://localhost:8545',
     type=str,
-    help='Ethereum node RPC URI'
+    help='Ethereum node RPC URI',
 )
 @click.option(
     '--state-db',
     default=os.path.join(click.get_app_dir('raiden-monitoring-service'), 'state.db'),
     type=str,
-    help='state DB to save received balance proofs to'
+    help='state DB to save received balance proofs to',
 )
 def main(
     private_key,
@@ -74,7 +74,7 @@ def main(
     rest_host,
     rest_port,
     eth_rpc,
-    state_db
+    state_db,
 ):
     app_dir = click.get_app_dir('raiden-monitoring-service')
     if os.path.isdir(app_dir) is False:
@@ -83,7 +83,7 @@ def main(
         matrix_homeserver,
         matrix_username,
         matrix_password,
-        monitoring_channel
+        monitoring_channel,
     )
     web3 = Web3(HTTPProvider(eth_rpc))
     contract_manager = ContractManager(contracts_precompiled_path())
@@ -95,7 +95,7 @@ def main(
         private_key,
         state_db=db,
         transport=transport,
-        blockchain=blockchain
+        blockchain=blockchain,
     )
 
     api = ServiceApi(monitor, blockchain)

@@ -4,5 +4,5 @@ import requests # noqa
 from monitoring_service.server import MonitoringService
 
 __all__ = [
-    'MonitoringService'
+    'MonitoringService',
 ]

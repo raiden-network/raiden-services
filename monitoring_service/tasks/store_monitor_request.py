@@ -29,7 +29,7 @@ class StoreMonitorRequest(gevent.Greenlet):
         checks = [
             self.check_signatures,
             self.verify_contract_code,
-            self.check_balance
+            self.check_balance,
         ]
         results = [
             check(self.msg)

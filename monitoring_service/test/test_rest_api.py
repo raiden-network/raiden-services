@@ -7,7 +7,7 @@ def test_rest_api(monitoring_service, rest_api, generate_raiden_client):
     bp = c1.get_balance_proof(
         c2.address,
         transferred_amount=1,
-        nonce=1
+        nonce=1,
     )
     msg = c1.get_monitor_request(c2.address, bp, 1, monitoring_service.address)
 
@@ -20,5 +20,5 @@ def test_rest_api(monitoring_service, rest_api, generate_raiden_client):
         [
             x for x in ret.json()
             if x['balance_proof']['channel_identifier'] == channel_id
-        ]
+        ],
     ) == 1
