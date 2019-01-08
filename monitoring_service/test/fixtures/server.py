@@ -4,8 +4,8 @@ import pytest
 
 from monitoring_service import MonitoringService
 from monitoring_service.api.rest import ServiceApi
-from monitoring_service.blockchain import BlockchainMonitor
-from monitoring_service.utils import register_service
+from monitoring_service.utils import BlockchainMonitor, register_service
+from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK
 from raiden_contracts.contract_manager import ContractManager
 from raiden_libs.test.mocks.dummy_transport import DummyTransport
 from raiden_libs.utils import private_key_to_address
@@ -28,44 +28,50 @@ def dummy_transport():
 
 
 @pytest.fixture
-def blockchain(
-        web3,
-        contracts_manager: ContractManager,
-):
-    blockchain = BlockchainMonitor(web3, contracts_manager)
-    blockchain.poll_interval = TEST_POLL_INTERVAL
-    blockchain.required_confirmations = 1
+def blockchain(web3, contracts_manager, token_network):
+    blockchain = BlockchainMonitor(
+        web3=web3,
+        contract_manager=contracts_manager,
+        contract_name=CONTRACT_TOKEN_NETWORK,
+        contract_address=token_network.address,
+        required_confirmations=1,
+        poll_interval=TEST_POLL_INTERVAL,
+    )
     yield blockchain
     blockchain.stop()
 
 
 @pytest.fixture
 def monitoring_service(
-        server_private_key,
-        blockchain,
-        dummy_transport,
-        state_db_mock,
-        web3,
-        monitoring_service_contract,
-        send_funds,
-        contracts_manager: ContractManager,
+    server_private_key,
+    blockchain,
+    dummy_transport,
+    state_db_mock,
+    web3,
+    monitoring_service_contract,
+    token_network_registry_contract,
+    send_funds,
+    contracts_manager: ContractManager,
 ):
     # send some eth & tokens to MS
     send_funds(private_key_to_address(server_private_key))
     register_service(
-        web3,
-        contracts_manager,
-        monitoring_service_contract.address,
-        server_private_key,
+        web3=web3,
+        contract_manager=contracts_manager,
+        msc_contract_address=monitoring_service_contract.address,
+        private_key=server_private_key,
     )
 
     ms = MonitoringService(
-        server_private_key,
-        transport=dummy_transport,
-        blockchain=blockchain,
-        state_db=state_db_mock,
-        monitor_contract_address=monitoring_service_contract.address,
+        web3=web3,
         contract_manager=contracts_manager,
+        private_key=server_private_key,
+        state_db=state_db_mock,
+        transport=dummy_transport,
+        registry_address=token_network_registry_contract.address,
+        monitor_contract_address=monitoring_service_contract.address,
+        required_confirmations=1,  # for faster tests
+        poll_interval=0,  # for faster tests
     )
     yield ms
     ms.stop()

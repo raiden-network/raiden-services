@@ -1,5 +1,6 @@
 import gevent
 
+from monitoring_service.utils.blockchain_listener import create_channel_event_topics
 from raiden_contracts.constants import ChannelEvent
 from raiden_contracts.contract_manager import ContractManager
 from raiden_libs.utils import make_filter
@@ -15,16 +16,23 @@ class Trigger:
 
 
 def test_blockchain(generate_raiden_client, blockchain, wait_for_blocks):
-
     t = Trigger()
 
+    def trigger_closed(ev, tx):
+        if ev['event'] == ChannelEvent.CLOSED:
+            t.trigger()
+
+    def trigger_settled(ev, tx):
+        if ev['event'] == ChannelEvent.SETTLED:
+            t.trigger()
+
     blockchain.add_confirmed_listener(
-        ChannelEvent.CLOSED,
-        lambda ev, tx: t.trigger(),
+        create_channel_event_topics(),
+        trigger_closed,
     )
     blockchain.add_confirmed_listener(
-        ChannelEvent.SETTLED,
-        lambda ev, tx: t.trigger(),
+        create_channel_event_topics(),
+        trigger_settled,
     )
     blockchain.poll_interval = 0
     blockchain._update()

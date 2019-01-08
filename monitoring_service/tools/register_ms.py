@@ -13,7 +13,7 @@ log = logging.getLogger(__name__)
 
 
 def validate_address(ctx, param, value):
-    if is_address(value) is False:
+    if not is_address(value):
         raise click.BadParameter('Must be a valid ethereum address')
     return value
 
@@ -72,4 +72,4 @@ def main(
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
-    main()
+    main(auto_envvar_prefix='MS')

@@ -1,6 +1,8 @@
+import pytest
 import requests
 
 
+@pytest.mark.skip(reason='Not sure if this will be ever used')
 def test_rest_api(monitoring_service, rest_api, generate_raiden_client):
     c1, c2 = generate_raiden_client(), generate_raiden_client()
     channel_id = c1.open_channel(c2.address)

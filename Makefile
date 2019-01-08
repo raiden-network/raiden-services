@@ -11,3 +11,6 @@ mypy:
 
 isort:
 	isort $(ISORT_PARAMS)
+
+test:
+	py.test -v

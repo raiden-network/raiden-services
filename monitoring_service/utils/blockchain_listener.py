@@ -13,6 +13,7 @@ from web3.utils.abi import filter_by_type
 
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, EVENT_TOKEN_NETWORK_CREATED
 from raiden_contracts.contract_manager import ContractManager
+from raiden_libs.utils import decode_contract_call
 
 log = logging.getLogger(__name__)
 
@@ -98,7 +99,7 @@ class BlockchainListener(gevent.Greenlet):
             *,  # require all following arguments to be keyword arguments
             required_confirmations: int = 4,
             sync_chunk_size: int = 100_000,
-            poll_interval: int = 15,
+            poll_interval: float = 15.0,
             sync_start_block: int = 0,
     ) -> None:
         """Creates a new BlockchainListener
@@ -339,3 +340,42 @@ class BlockchainListener(gevent.Greenlet):
             'from_block': from_block + 1,
             'to_block': to_block + 1,
         }
+
+
+class BlockchainMonitor(BlockchainListener):
+    def __init__(
+        self,
+        web3: Web3,
+        contract_manager: ContractManager,
+        contract_name: str,
+        contract_address: str,
+        **kwargs,
+    ) -> None:
+        super().__init__(
+            web3=web3,
+            contract_manager=contract_manager,
+            contract_name=contract_name,
+            contract_address=contract_address,
+            **kwargs,
+        )
+        self.contract_manager = contract_manager
+        self.contract_name = contract_name
+
+    def add_confirmed_listener(self, topics: List, callback: Callable):
+        """ Add a callback to listen for confirmed events. """
+        return super().add_confirmed_listener(
+            topics=topics,
+            callback=lambda event: self.handle_event(event, callback),
+        )
+
+    def handle_event(self, event: Dict, callback: Callable):
+        tx = self.web3.eth.getTransaction(event['transactionHash'])
+
+        abi = self.contract_manager.get_contract_abi(self.contract_name)
+        assert abi is not None
+
+        method_params = decode_contract_call(abi, tx['data'])
+        if method_params is not None:
+            return callback(event, method_params)
+        else:
+            return None

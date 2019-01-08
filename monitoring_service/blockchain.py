@@ -1,6 +1,7 @@
 import logging
 from typing import Callable
 
+from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK
 from raiden_contracts.contract_manager import ContractManager
 from raiden_libs.blockchain import BlockchainListener
 from raiden_libs.utils import decode_contract_call
@@ -18,7 +19,7 @@ class BlockchainMonitor(BlockchainListener):
         super().__init__(
             web3,
             contract_manager,
-            'TokenNetwork',
+            CONTRACT_TOKEN_NETWORK,
             poll_interval=1,
             **kwargs,
         )
@@ -34,7 +35,7 @@ class BlockchainMonitor(BlockchainListener):
     def handle_event(self, event, callback: Callable):
         tx = self.web3.eth.getTransaction(event['transactionHash'])
         log.info(str(event) + str(tx))
-        abi = self.contract_manager.get_contract_abi('TokenNetwork')
+        abi = self.contract_manager.get_contract_abi(CONTRACT_TOKEN_NETWORK)
         assert abi is not None
         method_params = decode_contract_call(abi, tx['data'])
         if method_params is not None:

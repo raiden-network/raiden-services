@@ -19,7 +19,7 @@ def dict_factory(cursor, row):
 
 
 class StateDBSqlite(StateDB):
-    def __init__(self, filename):
+    def __init__(self, filename: str):
         self.filename = filename
         self.conn = sqlite3.connect(self.filename, isolation_level="EXCLUSIVE")
         self.conn.row_factory = dict_factory

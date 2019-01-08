@@ -5,6 +5,7 @@ import gevent
 import pytest
 
 from monitoring_service.test.fixtures.server import TEST_POLL_INTERVAL
+from raiden_contracts.constants import CONTRACT_MONITORING_SERVICE
 from raiden_contracts.contract_manager import ContractManager
 from raiden_libs.blockchain import BlockchainListener
 
@@ -18,7 +19,7 @@ class Validator(BlockchainListener):
         super().__init__(
             web3,
             contracts_manager,
-            'MonitoringService',
+            CONTRACT_MONITORING_SERVICE,
             poll_interval=TEST_POLL_INTERVAL,
         )
         self.events: List[Dict] = list()
@@ -106,11 +107,12 @@ def test_e2e(
         monitoring_service.address,
     )
     # wait for channel open event to be processed by the MS
-    wait_for_blocks(10)
-    gevent.sleep(0)
-
-    monitoring_service.transport.receive_fake_data(monitor_request.serialize_full())
+    wait_for_blocks(1)
     gevent.sleep(TEST_POLL_INTERVAL)
+
+    assert len(monitoring_service.open_channels) > 0
+    monitoring_service.transport.receive_fake_data(monitor_request.serialize_full())
+    gevent.sleep(1)
     assert channel_id in monitoring_service.monitor_requests
 
     c2.close_channel(c1.address, balance_proof_c1)
