@@ -28,7 +28,7 @@ jobs:
         - pip install -r requirements-dev.txt
 
       before_script:
-        - flake8 monitoring_service
+        - make lint
 
       script:
         - coverage run --source monitoring_service/ --omit 'monitoring_service/test/*' -m py.test --travis-fold=always -xvvvvvvvvs $TEST_TYPE

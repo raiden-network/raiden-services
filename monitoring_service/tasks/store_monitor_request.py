@@ -4,8 +4,8 @@ import gevent
 from eth_utils import is_address
 from hexbytes import HexBytes
 
-from raiden_libs.messages import MonitorRequest
 from raiden_libs.exceptions import InvalidSignature
+from raiden_libs.messages import MonitorRequest
 
 log = logging.getLogger(__name__)
 

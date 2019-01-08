@@ -4,9 +4,9 @@ from typing import Dict, List
 import gevent
 import pytest
 
+from monitoring_service.test.fixtures.server import TEST_POLL_INTERVAL
 from raiden_contracts.contract_manager import ContractManager
 from raiden_libs.blockchain import BlockchainListener
-from monitoring_service.test.fixtures.server import TEST_POLL_INTERVAL
 
 
 class Validator(BlockchainListener):

@@ -6,3 +6,6 @@ pudb
 pytest-pudb
 flask_restful
 py-solc
+
+isort==4.3.4
+mypy==0.650

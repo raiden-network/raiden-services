@@ -5,8 +5,8 @@ import random
 import gevent
 import requests
 
-from raiden_contracts.constants import ChannelEvent
 from monitoring_service.tools.random_channel import RandomChannelDB
+from raiden_contracts.constants import ChannelEvent
 
 log = logging.getLogger(__name__)
 

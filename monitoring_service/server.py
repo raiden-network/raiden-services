@@ -1,17 +1,17 @@
 import logging
 import sys
 import traceback
-from typing import List
+from typing import List, Set
 
 import gevent
 from eth_utils import encode_hex, is_address, is_checksum_address, is_same_address
 
 from monitoring_service.blockchain import BlockchainMonitor
-from raiden_contracts.constants import ChannelEvent
 from monitoring_service.exceptions import ServiceNotRegistered, StateDBInvalid
 from monitoring_service.state_db import StateDB
 from monitoring_service.tasks import OnChannelClose, OnChannelSettle, StoreMonitorRequest
 from monitoring_service.utils import is_service_registered
+from raiden_contracts.constants import ChannelEvent
 from raiden_contracts.contract_manager import ContractManager
 from raiden_libs.gevent_error_handler import register_error_handler
 from raiden_libs.messages import BalanceProof, Message, MonitorRequest
@@ -67,7 +67,7 @@ class MonitoringService(gevent.Greenlet):
                 address=monitor_contract_address
             )
         )
-        self.open_channels = set()
+        self.open_channels: Set[int] = set()
 
         # some sanity checks
         chain_id = int(self.blockchain.web3.version.network)
