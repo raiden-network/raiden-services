@@ -14,6 +14,6 @@ def state_db_sqlite(
     state_db_sqlite.setup_db(
         1,
         monitoring_service_contract.address,
-        private_key_to_address(server_private_key)
+        private_key_to_address(server_private_key),
     )
     return state_db_sqlite

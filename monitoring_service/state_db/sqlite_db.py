@@ -11,19 +11,12 @@ from raiden_libs.utils import is_channel_identifier
 from .queries import ADD_MONITOR_REQUEST_SQL, DB_CREATION_SQL, UPDATE_METADATA_SQL
 
 
-def dict_factory(cursor, row):
-    """make sqlite result a dict with keys being column names"""
-    d = {}
-    for idx, col in enumerate(cursor.description):
-        d[col[0]] = row[idx]
-    return d
-
-
 class StateDBSqlite:
     def __init__(self, filename: str):
         self.filename = filename
         self.conn = sqlite3.connect(self.filename, isolation_level="EXCLUSIVE")
-        self.conn.row_factory = dict_factory
+        self.conn.row_factory = sqlite3.Row
+        self.cursor = self.conn.cursor()
         if filename not in (None, ':memory:'):
             os.chmod(filename, 0o600)
 
@@ -35,6 +28,11 @@ class StateDBSqlite:
         self.conn.executescript(DB_CREATION_SQL)
         self.conn.execute(UPDATE_METADATA_SQL, [network_id, contract_address, receiver])
         self.conn.commit()
+
+    def is_initialized(self) -> bool:
+        c = self.conn.cursor()
+        c.execute("SELECT name FROM `sqlite_master` WHERE type='table' AND name='metadata'")
+        return c.fetchone() is not None
 
     def get_monitor_request_rows(
         self,
@@ -55,6 +53,7 @@ class StateDBSqlite:
         c.execute(query, query_args)
         ret = []
         for x in c.fetchall():
+            x = dict(x)
             for hex_key in ['reward_amount', 'nonce', 'channel_identifier']:
                 x[hex_key] = int(x[hex_key], 16)
             ret.append(x)
@@ -114,11 +113,6 @@ class StateDBSqlite:
         sql = 'DELETE FROM `monitor_requests` WHERE `channel_identifier` = ?'
         c.execute(sql, [channel_id])
         assert c.fetchone() is None
-
-    def is_initialized(self) -> bool:
-        c = self.conn.cursor()
-        c.execute("SELECT name FROM `sqlite_master` WHERE type='table' AND name='metadata'")
-        return c.fetchone() is not None
 
     @staticmethod
     def check_monitor_request(monitor_request):
