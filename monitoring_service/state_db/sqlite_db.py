@@ -8,7 +8,6 @@ from raiden_libs.messages import BalanceProof, MonitorRequest
 from raiden_libs.types import Address, ChannelIdentifier
 from raiden_libs.utils import is_channel_identifier
 
-from .db import StateDB
 from .queries import ADD_MONITOR_REQUEST_SQL, DB_CREATION_SQL, UPDATE_METADATA_SQL
 
 
@@ -20,7 +19,7 @@ def dict_factory(cursor, row):
     return d
 
 
-class StateDBSqlite(StateDB):
+class StateDBSqlite:
     def __init__(self, filename: str):
         self.filename = filename
         self.conn = sqlite3.connect(self.filename, isolation_level="EXCLUSIVE")
@@ -67,6 +66,7 @@ class StateDBSqlite(StateDB):
         channel_identifier: ChannelIdentifier = None,
         non_closing_signer: Address = None,
     ) -> Dict[tuple, MonitorRequest]:
+        """ Return MRs keyed by (channel_id, non_closing_signer), optionally filtered """
         mr_rows = self.get_monitor_request_rows(channel_identifier, non_closing_signer)
 
         return {
@@ -90,7 +90,7 @@ class StateDBSqlite(StateDB):
             for x in mr_rows
         }
 
-    def store_monitor_request(self, monitor_request) -> None:
+    def store_monitor_request(self, monitor_request: MonitorRequest) -> None:
         StateDBSqlite.check_monitor_request(monitor_request)
         balance_proof = monitor_request.balance_proof
         params = [
@@ -108,6 +108,7 @@ class StateDBSqlite(StateDB):
         self.conn.execute(ADD_MONITOR_REQUEST_SQL, params)
 
     def delete_monitor_request(self, channel_id: ChannelIdentifier) -> None:
+        """ Delete all MRs for the given channel """
         assert is_channel_identifier(channel_id)
         c = self.conn.cursor()
         sql = 'DELETE FROM `monitor_requests` WHERE `channel_identifier` = ?'
