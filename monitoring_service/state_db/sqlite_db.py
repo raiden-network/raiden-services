@@ -1,6 +1,6 @@
 import os
 import sqlite3
-from typing import Dict, List
+from typing import Dict, Iterable, List
 
 from eth_utils import is_checksum_address
 
@@ -30,9 +30,15 @@ class StateDBSqlite:
         self.conn.commit()
 
     def is_initialized(self) -> bool:
-        c = self.conn.cursor()
-        c.execute("SELECT name FROM `sqlite_master` WHERE type='table' AND name='metadata'")
-        return c.fetchone() is not None
+        self.cursor.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='metadata'",
+        )
+        return self.cursor.fetchone() is not None
+
+    def fetch_scalar(self, query: str, query_args: Iterable = ()):
+        """ Helper function to fetch a single field of a single row """
+        self.cursor.execute(query, query_args)
+        return self.cursor.fetchone()[0]
 
     def get_monitor_request_rows(
         self,
@@ -40,7 +46,6 @@ class StateDBSqlite:
         non_closing_signer: Address = None,
     ) -> List[dict]:
         """ Fetch MRs form the db, optionally filtered """
-        c = self.conn.cursor()
         query = 'SELECT * FROM monitor_requests WHERE 1=1'  # 1=1 for easier query building
         query_args = []
         if channel_identifier:
@@ -50,9 +55,9 @@ class StateDBSqlite:
             query += ' AND non_closing_signer = ?'
             query_args.append(non_closing_signer)
 
-        c.execute(query, query_args)
+        self.cursor.execute(query, query_args)
         ret = []
-        for x in c.fetchall():
+        for x in self.cursor:
             x = dict(x)
             for hex_key in ['reward_amount', 'nonce', 'channel_identifier']:
                 x[hex_key] = int(x[hex_key], 16)
@@ -109,10 +114,10 @@ class StateDBSqlite:
     def delete_monitor_request(self, channel_id: ChannelIdentifier) -> None:
         """ Delete all MRs for the given channel """
         assert is_channel_identifier(channel_id)
-        c = self.conn.cursor()
-        sql = 'DELETE FROM `monitor_requests` WHERE `channel_identifier` = ?'
-        c.execute(sql, [channel_id])
-        assert c.fetchone() is None
+        self.cursor.execute(
+            'DELETE FROM monitor_requests WHERE channel_identifier = ?',
+            [channel_id],
+        )
 
     @staticmethod
     def check_monitor_request(monitor_request):
@@ -122,22 +127,10 @@ class StateDBSqlite:
         assert is_checksum_address(monitor_request.monitor_address)
 
     def chain_id(self):
-        c = self.conn.cursor()
-        c.execute("SELECT chain_id FROM `metadata`")
-        result = c.fetchone()
-        assert c.fetchone() is None
-        return int(result['chain_id'])
+        return int(self.fetch_scalar("SELECT chain_id FROM metadata"))
 
     def server_address(self):
-        c = self.conn.cursor()
-        c.execute("SELECT receiver FROM `metadata`")
-        result = c.fetchone()
-        assert c.fetchone() is None
-        return result['receiver']
+        return self.fetch_scalar("SELECT receiver FROM metadata")
 
     def monitoring_contract_address(self):
-        c = self.conn.cursor()
-        c.execute("SELECT monitoring_contract_address FROM `metadata`")
-        result = c.fetchone()
-        assert c.fetchone() is None
-        return result['monitoring_contract_address']
+        return self.fetch_scalar("SELECT monitoring_contract_address FROM metadata")
