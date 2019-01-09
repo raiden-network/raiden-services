@@ -3,7 +3,6 @@ import logging
 import pytest
 
 from monitoring_service import MonitoringService
-from monitoring_service.api.rest import ServiceApi
 from monitoring_service.utils import BlockchainMonitor, register_service
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK
 from raiden_contracts.contract_manager import ContractManager
@@ -75,10 +74,3 @@ def monitoring_service(
     )
     yield ms
     ms.stop()
-
-
-@pytest.fixture
-def rest_api(monitoring_service, blockchain, rest_host, rest_port):
-    api = ServiceApi(monitoring_service, blockchain)
-    api.run(rest_host, rest_port)
-    return api

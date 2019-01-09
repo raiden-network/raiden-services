@@ -56,18 +56,6 @@ def validate_address(ctx, param, value):
     help='Matrix password',
 )
 @click.option(
-    '--rest-host',
-    default='localhost',
-    type=str,
-    help='REST service endpoint',
-)
-@click.option(
-    '--rest-port',
-    default=5001,
-    type=int,
-    help='REST service endpoint',
-)
-@click.option(
     '--eth-rpc',
     default='http://localhost:8545',
     type=str,
@@ -110,8 +98,6 @@ def main(
     matrix_homeserver,
     matrix_username,
     matrix_password,
-    rest_host,
-    rest_port,
     eth_rpc,
     registry_address: Address,
     start_block: int,
@@ -136,7 +122,6 @@ def main(
     )
 
     web3 = Web3(HTTPProvider(eth_rpc))
-    # blockchain = BlockchainMonitor(web3, contract_manager)
     database = StateDBSqlite(state_db)
 
     monitor = MonitoringService(
@@ -148,9 +133,6 @@ def main(
         registry_address=registry_address,
         monitor_contract_address=monitor_contract_address,
     )
-
-    # api = ServiceApi(monitor, blockchain)
-    # api.run(rest_host, rest_port)
 
     monitor.run()
 
