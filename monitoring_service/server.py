@@ -135,6 +135,37 @@ class MonitoringService(gevent.Greenlet):
             callback=self.handle_token_network_created,
         )
 
+    def handle_token_network_created(self, event):
+        token_network_address = event['args']['token_network_address']
+        token_address = event['args']['token_address']
+        event_block_number = event['blockNumber']
+
+        assert is_checksum_address(token_network_address)
+        assert is_checksum_address(token_address)
+
+        if token_network_address not in self.token_networks:
+            log.info(f'Found token network for token {token_address} @ {token_network_address}')
+
+            log.info('Creating token network for %s', token_network_address)
+            token_network_listener = BlockchainMonitor(
+                web3=self.web3,
+                contract_manager=self.contract_manager,
+                contract_address=token_network_address,
+                contract_name=CONTRACT_TOKEN_NETWORK,
+                required_confirmations=self.required_confirmations,
+                poll_interval=self.poll_interval,
+                sync_start_block=event_block_number,
+            )
+
+            # subscribe to event notifications from blockchain monitor
+            token_network_listener.add_confirmed_listener(
+                topics=create_channel_event_topics(),
+                callback=self.on_channel_event,
+            )
+            token_network_listener.start()
+            self.token_networks.add(token_network_address)
+            self.token_network_listeners.append(token_network_listener)
+
     def _run(self):
         register_error_handler(error_handler)
         self.transport.start()
@@ -210,16 +241,6 @@ class MonitoringService(gevent.Greenlet):
         )
         self.state_db.delete_monitor_request(event['args']['channel_identifier'])
 
-    def check_event(self, event, balance_proof: BalanceProof):
-        # FIXME
-        return False
-
-    def challenge_proof(self, channel_id):
-        balance_proof = self.state_db.balance_proofs.get(
-            channel_id, None,
-        )
-        log.info('challenging proof channel=%s BP=%s' % (channel_id, balance_proof))
-
     def on_message_event(self, message):
         """This handles messages received over the Transport"""
         print(message)
@@ -244,7 +265,7 @@ class MonitoringService(gevent.Greenlet):
             StoreMonitorRequest(self.web3, self.state_db, monitor_request),
         )
 
-    def start_task(self, task):
+    def start_task(self, task: gevent.Greenlet):
         task.start()
         self.task_list.append(task)
 
@@ -258,34 +279,3 @@ class MonitoringService(gevent.Greenlet):
             if len(self.task_list) == 0:
                 return
             gevent.sleep(1)
-
-    def handle_token_network_created(self, event):
-        token_network_address = event['args']['token_network_address']
-        token_address = event['args']['token_address']
-        event_block_number = event['blockNumber']
-
-        assert is_checksum_address(token_network_address)
-        assert is_checksum_address(token_address)
-
-        if token_network_address not in self.token_networks:
-            log.info(f'Found token network for token {token_address} @ {token_network_address}')
-
-            log.info('Creating token network for %s', token_network_address)
-            token_network_listener = BlockchainMonitor(
-                web3=self.web3,
-                contract_manager=self.contract_manager,
-                contract_address=token_network_address,
-                contract_name=CONTRACT_TOKEN_NETWORK,
-                required_confirmations=self.required_confirmations,
-                poll_interval=self.poll_interval,
-                sync_start_block=event_block_number,
-            )
-
-            # subscribe to event notifications from blockchain monitor
-            token_network_listener.add_confirmed_listener(
-                topics=create_channel_event_topics(),
-                callback=self.on_channel_event,
-            )
-            token_network_listener.start()
-            self.token_networks.add(token_network_address)
-            self.token_network_listeners.append(token_network_listener)
