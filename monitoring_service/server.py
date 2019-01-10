@@ -243,7 +243,6 @@ class MonitoringService(gevent.Greenlet):
 
     def on_message_event(self, message):
         """This handles messages received over the Transport"""
-        print(message)
         assert isinstance(message, Message)
         if isinstance(message, MonitorRequest):
             self.on_monitor_request(message)

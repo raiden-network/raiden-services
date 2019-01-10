@@ -6,25 +6,18 @@ from raiden_contracts.contract_manager import ContractManager
 from raiden_libs.utils import make_filter
 
 
-# test if ChannelClosed event triggers an callback of the blockchain wrapper
-class Trigger:
-    def __init__(self):
-        self.trigger_count = 0
-
-    def trigger(self, *args):
-        self.trigger_count += 1
-
-
 def test_blockchain(generate_raiden_client, blockchain, wait_for_blocks):
-    t = Trigger()
+    trigger_count = 0
 
     def trigger_closed(ev, tx):
+        nonlocal trigger_count
         if ev['event'] == ChannelEvent.CLOSED:
-            t.trigger()
+            trigger_count += 1
 
     def trigger_settled(ev, tx):
+        nonlocal trigger_count
         if ev['event'] == ChannelEvent.SETTLED:
-            t.trigger()
+            trigger_count += 1
 
     blockchain.add_confirmed_listener(
         create_channel_event_topics(),
@@ -48,7 +41,7 @@ def test_blockchain(generate_raiden_client, blockchain, wait_for_blocks):
     wait_for_blocks(5)
     blockchain._update()
 
-    assert t.trigger_count == 1
+    assert trigger_count == 1
 
     wait_for_blocks(30)
     c1.settle_channel(
@@ -60,7 +53,7 @@ def test_blockchain(generate_raiden_client, blockchain, wait_for_blocks):
     wait_for_blocks(4)
     blockchain._update()
 
-    assert t.trigger_count == 2
+    assert trigger_count == 2
 
 
 def test_filter(
