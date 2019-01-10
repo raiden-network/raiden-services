@@ -127,6 +127,11 @@ config = {
                                      'webui/index.html',
                                      'webui/microraiden/dist/umd/microraiden.js',
                                      'VERSION']},
+    'entry_points': {
+        'console_scripts': [
+            'monitoring_service=monitoring_service.cli:main',
+        ],
+    },
     'classifiers': [
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
