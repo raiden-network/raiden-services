@@ -1,4 +1,5 @@
 import logging
+import sqlite3
 
 import gevent
 from eth_utils import is_address
@@ -45,16 +46,16 @@ class StoreMonitorRequest(gevent.Greenlet):
         self.state_db.store_monitor_request(self.msg)
         return True
 
-    def check_channel(self, monitor_request, channel):
+    def check_channel(self, monitor_request: MonitorRequest, channel: sqlite3.Row):
         """We must know about the channel and it must be open"""
         return channel is not None and channel['state'] == ChannelState.OPENED
 
-    def verify_contract_code(self, monitor_request, channel):
+    def verify_contract_code(self, monitor_request: MonitorRequest, channel: sqlite3.Row):
         """Verify if address set in token_network_address field contains code"""
         balance_proof = monitor_request.balance_proof
         return self.web3.eth.getCode(balance_proof.token_network_address) != HexBytes('0x')
 
-    def check_signatures(self, monitor_request, channel):
+    def check_signatures(self, monitor_request: MonitorRequest, channel: sqlite3.Row):
         """Check if signatures set in the message are correct"""
         balance_proof = monitor_request.balance_proof
         participants = [channel['participant1'], channel['participant2']]
@@ -68,6 +69,6 @@ class StoreMonitorRequest(gevent.Greenlet):
         except InvalidSignature:
             return False
 
-    def check_balance(self, monitor_request, channel):
+    def check_balance(self, monitor_request: MonitorRequest, channel: sqlite3.Row):
         """Check if there is enough tokens to pay out reward amount"""
         return True

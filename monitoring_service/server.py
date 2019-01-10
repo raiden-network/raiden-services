@@ -201,10 +201,10 @@ class MonitoringService(gevent.Greenlet):
     def on_channel_open(self, event: Dict, tx: Dict):
         log.info('on channel open: event=%s tx=%s' % (event, tx))
         self.state_db.store_new_channel(
-            event['args']['channel_identifier'],
-            event['address'],
-            event['args']['participant1'],
-            event['args']['participant2'],
+            channel_identifier=event['args']['channel_identifier'],
+            token_network_address=event['address'],
+            participant1=event['args']['participant1'],
+            participant2=event['args']['participant2'],
         )
 
     def on_channel_close(self, event: Dict, tx: Dict):
