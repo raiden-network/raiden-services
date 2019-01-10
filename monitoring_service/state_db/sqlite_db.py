@@ -9,7 +9,11 @@ from raiden_libs.messages import BalanceProof, MonitorRequest
 from raiden_libs.types import Address, ChannelIdentifier
 from raiden_libs.utils import is_channel_identifier
 
-from .queries import ADD_MONITOR_REQUEST_SQL, DB_CREATION_SQL, UPDATE_METADATA_SQL
+
+SCHEMA_FILENAME = os.path.join(
+    os.path.dirname(os.path.realpath(__file__)),
+    'schema.sql',
+)
 
 
 def convert_hex(raw: bytes):
@@ -37,8 +41,14 @@ class StateDBSqlite:
         assert is_checksum_address(receiver)
         assert is_checksum_address(contract_address)
         assert network_id >= 0
-        self.conn.executescript(DB_CREATION_SQL)
-        self.conn.execute(UPDATE_METADATA_SQL, [network_id, contract_address, receiver])
+        with open(SCHEMA_FILENAME) as schema_file:
+            self.conn.executescript(schema_file.read())
+        self.conn.execute("""
+            UPDATE metadata
+            SET chain_id = ?,
+                monitoring_contract_address = ?,
+                receiver = ?;
+        """, [network_id, contract_address, receiver])
         self.conn.commit()
 
     def is_initialized(self) -> bool:
@@ -112,7 +122,10 @@ class StateDBSqlite:
             hex(monitor_request.reward_amount),
             balance_proof.token_network_address,
         ]
-        self.conn.execute(ADD_MONITOR_REQUEST_SQL, params)
+        self.conn.execute("""
+            INSERT OR REPLACE INTO monitor_requests
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, params)
 
     @staticmethod
     def check_monitor_request(monitor_request):
