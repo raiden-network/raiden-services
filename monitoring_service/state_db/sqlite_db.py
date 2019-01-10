@@ -1,6 +1,6 @@
 import os
 import sqlite3
-from typing import Dict, Iterable, List, Optional
+from typing import Dict, Iterable, Optional
 
 from eth_utils import is_checksum_address
 
@@ -12,10 +12,21 @@ from raiden_libs.utils import is_channel_identifier
 from .queries import ADD_MONITOR_REQUEST_SQL, DB_CREATION_SQL, UPDATE_METADATA_SQL
 
 
+def convert_hex(raw: bytes):
+    return int(raw, 16)
+
+
+sqlite3.register_converter('HEX_INT', convert_hex)
+
+
 class StateDBSqlite:
     def __init__(self, filename: str):
         self.filename = filename
-        self.conn = sqlite3.connect(self.filename, isolation_level="EXCLUSIVE")
+        self.conn = sqlite3.connect(
+            self.filename,
+            isolation_level="EXCLUSIVE",
+            detect_types=sqlite3.PARSE_DECLTYPES,
+        )
         self.conn.row_factory = sqlite3.Row
         self.cursor = self.conn.cursor()
         self.cursor.execute("PRAGMA foreign_keys = ON")
@@ -39,14 +50,13 @@ class StateDBSqlite:
 
     def fetch_scalar(self, query: str, query_args: Iterable = ()):
         """ Helper function to fetch a single field of a single row """
-        self.cursor.execute(query, query_args)
-        return self.cursor.fetchone()[0]
+        return self.conn.execute(query, query_args).fetchone()[0]
 
     def get_monitor_request_rows(
         self,
         channel_identifier: ChannelIdentifier = None,
         non_closing_signer: Address = None,
-    ) -> List[dict]:
+    ) -> Iterable[sqlite3.Row]:
         """ Fetch MRs from the db, optionally filtered """
         query = 'SELECT * FROM monitor_requests WHERE 1=1'  # 1=1 for easier query building
         query_args = []
@@ -58,14 +68,7 @@ class StateDBSqlite:
             query_args.append(non_closing_signer)
 
         self.cursor.execute(query, query_args)
-        ret = []
-        for x in self.cursor:
-            x = dict(x)
-            for hex_key in ['reward_amount', 'nonce', 'channel_identifier']:
-                x[hex_key] = int(x[hex_key], 16)
-            ret.append(x)
-
-        return ret
+        return self.cursor
 
     def get_monitor_requests(
         self,
@@ -134,12 +137,7 @@ class StateDBSqlite:
             "SELECT * FROM channels WHERE channel_identifier = ?",
             [hex(channel_identifier)],
         )
-        channel = self.cursor.fetchone()
-        if channel is None:
-            return None
-        channel = dict(channel)
-        channel['channel_identifier'] = int(channel['channel_identifier'], 16)
-        return channel
+        return self.cursor.fetchone()
 
     def store_new_channel(
         self,
