@@ -1,6 +1,7 @@
 import pytest
-from eth_utils import encode_hex
+from eth_utils import decode_hex, encode_hex
 
+from raiden_contracts.constants import MessageTypeId
 from raiden_libs.messages import BalanceProof, MonitorRequest
 from raiden_libs.utils import private_key_to_address, sha3
 from raiden_libs.utils.signing import eth_sign
@@ -48,7 +49,8 @@ def get_monitor_request_for_same_channel(
         ))
         non_closing_signature = encode_hex(eth_sign(
             privkey_non_closing if not bad_key_for_non_closing else keys[2],
-            balance_proof.serialize_bin(),
+            balance_proof.serialize_bin(msg_type=MessageTypeId.BALANCE_PROOF_UPDATE) +
+            decode_hex(balance_proof.signature),
         ))
 
         monitor_request = MonitorRequest(

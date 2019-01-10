@@ -7,7 +7,7 @@ def test_bp_dispatch(monitoring_service, generate_raiden_client, wait_for_blocks
     channel_id = c1.open_channel(c2.address)
     wait_for_blocks(1)  # wait for ChannelOpened event to be confirmed
     gevent.sleep(0.1)   # ...and processed
-    bp = c1.get_balance_proof(c2.address, transferred_amount=1, nonce=1)
+    bp = c2.get_balance_proof(c1.address, transferred_amount=1, nonce=1)
     monitor_request = c1.get_monitor_request(c2.address, bp, 1, monitoring_service.address)
     transport = monitoring_service.transport
 

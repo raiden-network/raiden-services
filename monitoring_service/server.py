@@ -20,7 +20,6 @@ from raiden_contracts.constants import (
     CONTRACT_TOKEN_NETWORK,
     CONTRACT_TOKEN_NETWORK_REGISTRY,
     ChannelEvent,
-    ChannelState,
 )
 from raiden_contracts.contract_manager import ContractManager
 from raiden_libs.gevent_error_handler import register_error_handler
@@ -262,11 +261,6 @@ class MonitoringService(gevent.Greenlet):
         This will spawn a greenlet and store its reference in an internal list.
         Return value of the greenlet is then checked in the main loop."""
         assert isinstance(monitor_request, MonitorRequest)
-        channel_id = monitor_request.balance_proof.channel_identifier
-        channel = self.state_db.get_channel(channel_id)
-        if channel is None or channel['state'] != ChannelState.OPENED:
-            log.debug(f'Discarding MR for channel {channel_id}')
-            return
         self.start_task(
             StoreMonitorRequest(self.web3, self.state_db, monitor_request),
         )

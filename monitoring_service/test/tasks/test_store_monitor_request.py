@@ -30,11 +30,11 @@ def test_request_validation(
     assert not store_successful(mr)
 
     # signatures by wrong party
-    # mr = get_monitor_request_for_same_channel(user=0, bad_key_for_bp=True)
-    # assert not store_successful(mr)
+    mr = get_monitor_request_for_same_channel(user=0, bad_key_for_bp=True)
+    assert not store_successful(mr)
 
-    # mr = get_monitor_request_for_same_channel(user=0, bad_key_for_non_closing=True)
-    # assert not store_successful(mr)
+    mr = get_monitor_request_for_same_channel(user=0, bad_key_for_non_closing=True)
+    assert not store_successful(mr)
 
     # must fail because no reward is deposited
     # TODO: enable once we check deposits

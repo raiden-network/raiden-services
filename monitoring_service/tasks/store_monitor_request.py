@@ -4,6 +4,7 @@ import gevent
 from eth_utils import is_address
 from hexbytes import HexBytes
 
+from raiden_contracts.constants import ChannelState
 from raiden_libs.exceptions import InvalidSignature
 from raiden_libs.messages import MonitorRequest
 
@@ -26,36 +27,47 @@ class StoreMonitorRequest(gevent.Greenlet):
         self.web3 = web3
 
     def _run(self):
+        channel = self.state_db.get_channel(self.msg.balance_proof.channel_identifier)
         checks = [
+            self.check_channel,
             self.check_signatures,
             self.verify_contract_code,
             self.check_balance,
         ]
-        results = [
-            check(self.msg)
-            for check in checks
-        ]
-        if not (False in results):
-            self.state_db.store_monitor_request(self.msg)
-        return not (False in results)
+        for check in checks:
+            if not check(self.msg, channel):
+                log.debug('MR for channel {} did not pass {}'.format(
+                    channel['channel_identifier'],
+                    check.__name__,
+                ))
+                return False
 
-    def verify_contract_code(self, monitor_request):
+        self.state_db.store_monitor_request(self.msg)
+        return True
+
+    def check_channel(self, monitor_request, channel):
+        """We must know about the channel and it must be open"""
+        return channel is not None and channel['state'] == ChannelState.OPENED
+
+    def verify_contract_code(self, monitor_request, channel):
         """Verify if address set in token_network_address field contains code"""
         balance_proof = monitor_request.balance_proof
         return self.web3.eth.getCode(balance_proof.token_network_address) != HexBytes('0x')
 
-    def check_signatures(self, monitor_request):
+    def check_signatures(self, monitor_request, channel):
         """Check if signatures set in the message are correct"""
         balance_proof = monitor_request.balance_proof
+        participants = [channel['participant1'], channel['participant2']]
         try:
             return (
                 is_address(monitor_request.reward_proof_signer) and
-                is_address(balance_proof.signer) and
-                is_address(monitor_request.non_closing_signer)
+                balance_proof.signer in participants and
+                monitor_request.non_closing_signer in participants and
+                balance_proof.signer != monitor_request.non_closing_signer
             )
         except InvalidSignature:
             return False
 
-    def check_balance(self, monitor_request):
+    def check_balance(self, monitor_request, channel):
         """Check if there is enough tokens to pay out reward amount"""
         return True
