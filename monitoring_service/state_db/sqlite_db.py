@@ -16,7 +16,7 @@ SCHEMA_FILENAME = os.path.join(
 )
 
 
-def convert_hex(raw: bytes):
+def convert_hex(raw: bytes) -> int:
     return int(raw, 16)
 
 
