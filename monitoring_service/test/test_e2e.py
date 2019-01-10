@@ -60,8 +60,6 @@ def test_e2e(
         5) wait for channel settle
         6) MS claims the reward
     """
-    monitoring_service.start()
-
     initial_balance = monitoring_service_contract.functions.balances(
         monitoring_service.address,
     ).call()
@@ -110,7 +108,6 @@ def test_e2e(
     wait_for_blocks(1)
     gevent.sleep(TEST_POLL_INTERVAL)
 
-    assert len(monitoring_service.open_channels) > 0
     monitoring_service.transport.receive_fake_data(monitor_request.serialize_full())
     gevent.sleep(1)
     assert (channel_id, c1.address) in monitoring_service.monitor_requests

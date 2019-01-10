@@ -30,7 +30,6 @@ def test_request_validation(
     assert not store_successful(mr)
 
     # signatures by wrong party
-    # TODO: enable once we check participant addresses
     # mr = get_monitor_request_for_same_channel(user=0, bad_key_for_bp=True)
     # assert not store_successful(mr)
 

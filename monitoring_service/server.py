@@ -20,6 +20,7 @@ from raiden_contracts.constants import (
     CONTRACT_TOKEN_NETWORK,
     CONTRACT_TOKEN_NETWORK_REGISTRY,
     ChannelEvent,
+    ChannelState,
 )
 from raiden_contracts.contract_manager import ContractManager
 from raiden_libs.gevent_error_handler import register_error_handler
@@ -85,7 +86,6 @@ class MonitoringService(gevent.Greenlet):
         self.sync_start_block = sync_start_block
         self.required_confirmations = required_confirmations
         self.poll_interval = poll_interval
-        self.open_channels: Set[int] = set()
         self.token_networks: Set[Address] = set()
         self.token_network_listeners: List[BlockchainListener] = []
 
@@ -201,8 +201,12 @@ class MonitoringService(gevent.Greenlet):
 
     def on_channel_open(self, event: Dict, tx: Dict):
         log.info('on channel open: event=%s tx=%s' % (event, tx))
-        channel_id = event['args']['channel_identifier']
-        self.open_channels.add(channel_id)
+        self.state_db.store_new_channel(
+            event['args']['channel_identifier'],
+            event['address'],
+            event['args']['participant1'],
+            event['args']['participant2'],
+        )
 
     def on_channel_close(self, event: Dict, tx: Dict):
         log.info('on channel close: event=%s tx=%s' % (event, tx))
@@ -232,7 +236,6 @@ class MonitoringService(gevent.Greenlet):
             self.start_task(
                 OnChannelClose(self.monitor_contract, monitor_request, self.private_key),
             )
-        self.open_channels.discard(channel_id)
 
     def on_channel_settled(self, event: Dict, tx: Dict):
         channel_id = event['args']['channel_identifier']
@@ -242,7 +245,6 @@ class MonitoringService(gevent.Greenlet):
             self.start_task(
                 OnChannelSettle(monitor_request, self.monitor_contract, self.private_key),
             )
-        self.state_db.delete_monitor_request(event['args']['channel_identifier'])
 
     def on_message_event(self, message):
         """This handles messages received over the Transport"""
@@ -261,7 +263,8 @@ class MonitoringService(gevent.Greenlet):
         Return value of the greenlet is then checked in the main loop."""
         assert isinstance(monitor_request, MonitorRequest)
         channel_id = monitor_request.balance_proof.channel_identifier
-        if channel_id not in self.open_channels:
+        channel = self.state_db.get_channel(channel_id)
+        if channel is None or channel['state'] != ChannelState.OPENED:
             log.debug(f'Discarding MR for channel {channel_id}')
             return
         self.start_task(

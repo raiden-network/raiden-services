@@ -1,15 +1,39 @@
 DB_CREATION_SQL = """
+
 CREATE TABLE `metadata` (
     `chain_id`                              INTEGER,
     `monitoring_contract_address`           CHAR(42),
     `receiver`                              CHAR(42)
 );
+INSERT INTO `metadata` VALUES (
+    NULL,
+    NULL,
+    NULL
+);
+
 CREATE TABLE `syncstate` (
     `confirmed_head_number`   INTEGER,
     `confirmed_head_hash`     CHAR(66),
     `unconfirmed_head_number` INTEGER,
     `unconfirmed_head_hash`   CHAR(66)
 );
+INSERT INTO `syncstate` VALUES (
+    NULL,
+    NULL,
+    NULL,
+    NULL
+);
+
+CREATE TABLE channels (
+    channel_identifier      CHAR(42) NOT NULL,
+    token_network_address   CHAR(42) NOT NULL,
+    participant1            CHAR(42) NOT NULL,
+    participant2            CHAR(42) NOT NULL,
+    -- see raiden_contracts.constants.ChannelState for value meaning
+    state         INT NOT NULL CHECK (state >= 0 AND state <= 4),
+    PRIMARY KEY (channel_identifier, token_network_address)
+);
+
 -- channel_id is bytes32 (hash, hex-encoded)
 -- transferred_amount is uint256
 -- reward_amount is uint192
@@ -25,18 +49,9 @@ CREATE TABLE `monitor_requests` (
     `reward_proof_signature`   CHAR(42)    NOT NULL,
     `reward_amount`            CHAR(34)    NOT NULL,
     `token_network_address`    CHAR(42)    NOT NULL,
-    PRIMARY KEY (channel_identifier, non_closing_signer)
-);
-INSERT INTO `metadata` VALUES (
-    NULL,
-    NULL,
-    NULL
-);
-INSERT INTO `syncstate` VALUES (
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    PRIMARY KEY (channel_identifier, token_network_address, non_closing_signer)
+    FOREIGN KEY (channel_identifier, token_network_address)
+        REFERENCES channels(channel_identifier, token_network_address) ON DELETE CASCADE
 );
 """
 

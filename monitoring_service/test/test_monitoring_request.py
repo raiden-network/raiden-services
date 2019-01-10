@@ -1,4 +1,3 @@
-import gevent
 
 
 def test_monitoring_request(
@@ -25,7 +24,6 @@ def test_monitoring_request(
         monitoring_service.address,
     )
 
-    monitoring_service.start()
-    gevent.sleep(0)
+    wait_for_blocks(1)  # wait for the ChannelOpened event to be confirmed
     monitoring_service.transport.receive_fake_data(monitor_request.serialize_full())
     monitoring_service.wait_tasks()

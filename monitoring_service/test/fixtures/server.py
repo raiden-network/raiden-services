@@ -72,5 +72,6 @@ def monitoring_service(
         required_confirmations=1,  # for faster tests
         poll_interval=0,  # for faster tests
     )
+    ms.start()
     yield ms
     ms.stop()

@@ -1,9 +1,10 @@
 import os
 import sqlite3
-from typing import Dict, Iterable, List
+from typing import Dict, Iterable, List, Optional
 
 from eth_utils import is_checksum_address
 
+from raiden_contracts.constants import ChannelState
 from raiden_libs.messages import BalanceProof, MonitorRequest
 from raiden_libs.types import Address, ChannelIdentifier
 from raiden_libs.utils import is_channel_identifier
@@ -17,6 +18,7 @@ class StateDBSqlite:
         self.conn = sqlite3.connect(self.filename, isolation_level="EXCLUSIVE")
         self.conn.row_factory = sqlite3.Row
         self.cursor = self.conn.cursor()
+        self.cursor.execute("PRAGMA foreign_keys = ON")
         if filename not in (None, ':memory:'):
             os.chmod(filename, 0o600)
 
@@ -111,14 +113,6 @@ class StateDBSqlite:
         ]
         self.conn.execute(ADD_MONITOR_REQUEST_SQL, params)
 
-    def delete_monitor_request(self, channel_id: ChannelIdentifier) -> None:
-        """ Delete all MRs for the given channel """
-        assert is_channel_identifier(channel_id)
-        self.cursor.execute(
-            'DELETE FROM monitor_requests WHERE channel_identifier = ?',
-            [channel_id],
-        )
-
     @staticmethod
     def check_monitor_request(monitor_request):
         balance_proof = monitor_request.balance_proof
@@ -134,3 +128,30 @@ class StateDBSqlite:
 
     def monitoring_contract_address(self):
         return self.fetch_scalar("SELECT monitoring_contract_address FROM metadata")
+
+    def get_channel(self, channel_identifier: ChannelIdentifier) -> Optional[sqlite3.Row]:
+        self.cursor.execute(
+            "SELECT * FROM channels WHERE channel_identifier = ?",
+            [hex(channel_identifier)],
+        )
+        channel = self.cursor.fetchone()
+        if channel is None:
+            return None
+        channel = dict(channel)
+        channel['channel_identifier'] = int(channel['channel_identifier'], 16)
+        return channel
+
+    def store_new_channel(
+        self,
+        channel_identifier: ChannelIdentifier,
+        token_network_address: Address,
+        participant1: Address,
+        participant2: Address,
+    ):
+        self.cursor.execute("INSERT INTO channels VALUES (?, ?, ?, ?, ?)", [
+            hex(channel_identifier),
+            token_network_address,
+            participant1,
+            participant2,
+            ChannelState.OPENED,
+        ])

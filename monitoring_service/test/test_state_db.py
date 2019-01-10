@@ -1,5 +1,11 @@
 def test_state_db_sqlite(state_db_sqlite, get_random_monitor_request, get_random_address):
     request = get_random_monitor_request()
+    state_db_sqlite.store_new_channel(
+        request.balance_proof.channel_identifier,
+        request.balance_proof.token_network_address,
+        request.balance_proof.signer,
+        request.non_closing_signer,
+    )
     state_db_sqlite.store_monitor_request(request)
     ret = list(state_db_sqlite.get_monitor_requests().values())
     assert len(ret) == 1
