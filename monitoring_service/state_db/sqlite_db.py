@@ -45,7 +45,7 @@ class StateDBSqlite:
         channel_identifier: ChannelIdentifier = None,
         non_closing_signer: Address = None,
     ) -> List[dict]:
-        """ Fetch MRs form the db, optionally filtered """
+        """ Fetch MRs from the db, optionally filtered """
         query = 'SELECT * FROM monitor_requests WHERE 1=1'  # 1=1 for easier query building
         query_args = []
         if channel_identifier:
