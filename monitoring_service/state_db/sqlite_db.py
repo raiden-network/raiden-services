@@ -28,8 +28,7 @@ class StateDBSqlite:
             detect_types=sqlite3.PARSE_DECLTYPES,
         )
         self.conn.row_factory = sqlite3.Row
-        self.cursor = self.conn.cursor()
-        self.cursor.execute("PRAGMA foreign_keys = ON")
+        self.conn.execute("PRAGMA foreign_keys = ON")
         if filename not in (None, ':memory:'):
             os.chmod(filename, 0o600)
 
@@ -43,10 +42,10 @@ class StateDBSqlite:
         self.conn.commit()
 
     def is_initialized(self) -> bool:
-        self.cursor.execute(
+        cursor = self.conn.execute(
             "SELECT name FROM sqlite_master WHERE type='table' AND name='metadata'",
         )
-        return self.cursor.fetchone() is not None
+        return cursor.fetchone() is not None
 
     def fetch_scalar(self, query: str, query_args: Iterable = ()):
         """ Helper function to fetch a single field of a single row """
@@ -67,8 +66,7 @@ class StateDBSqlite:
             query += ' AND non_closing_signer = ?'
             query_args.append(non_closing_signer)
 
-        self.cursor.execute(query, query_args)
-        return self.cursor
+        return self.conn.execute(query, query_args)
 
     def get_monitor_requests(
         self,
@@ -133,11 +131,10 @@ class StateDBSqlite:
         return self.fetch_scalar("SELECT monitoring_contract_address FROM metadata")
 
     def get_channel(self, channel_identifier: ChannelIdentifier) -> Optional[sqlite3.Row]:
-        self.cursor.execute(
+        return self.conn.execute(
             "SELECT * FROM channels WHERE channel_identifier = ?",
             [hex(channel_identifier)],
-        )
-        return self.cursor.fetchone()
+        ).fetchone()
 
     def store_new_channel(
         self,
@@ -146,7 +143,7 @@ class StateDBSqlite:
         participant1: Address,
         participant2: Address,
     ):
-        self.cursor.execute("INSERT INTO channels VALUES (?, ?, ?, ?, ?)", [
+        self.conn.execute("INSERT INTO channels VALUES (?, ?, ?, ?, ?)", [
             hex(channel_identifier),
             token_network_address,
             participant1,
