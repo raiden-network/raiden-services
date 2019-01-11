@@ -45,7 +45,6 @@ def blockchain(web3, contracts_manager, token_network):
 def monitoring_service(
     server_private_key,
     blockchain,
-    dummy_transport,
     state_db_sqlite,
     web3,
     monitoring_service_contract,
@@ -67,7 +66,6 @@ def monitoring_service(
         contract_manager=contracts_manager,
         private_key=server_private_key,
         state_db=state_db_sqlite,
-        transport=dummy_transport,
         registry_address=token_network_registry_contract.address,
         monitor_contract_address=monitoring_service_contract.address,
         required_confirmations=1,  # for faster tests

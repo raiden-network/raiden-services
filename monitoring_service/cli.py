@@ -16,7 +16,6 @@ from web3 import HTTPProvider, Web3
 from monitoring_service import MonitoringService
 from monitoring_service.state_db import StateDBSqlite
 from raiden_contracts.contract_manager import ContractManager, contracts_precompiled_path
-from raiden_libs.transport import MatrixTransport
 from raiden_libs.types import Address
 
 log = logging.getLogger(__name__)
@@ -55,28 +54,6 @@ def setup_logging(log_level: str, log_config: TextIO):
     default=None,
     required=True,
     help='Private key to use (the address should have enough ETH balance to send transactions)',
-)
-@click.option(
-    '--monitoring-channel',
-    default='#monitor_test:transport01.raiden.network',
-    help='Location of the monitoring channel to connect to',
-)
-@click.option(
-    '--matrix-homeserver',
-    default='https://transport01.raiden.network',
-    help='Matrix username',
-)
-@click.option(
-    '--matrix-username',
-    default=None,
-    required=True,
-    help='Matrix username',
-)
-@click.option(
-    '--matrix-password',
-    default=None,
-    required=True,
-    help='Matrix password',
 )
 @click.option(
     '--eth-rpc',
@@ -128,10 +105,6 @@ def setup_logging(log_level: str, log_config: TextIO):
 )
 def main(
     private_key: str,
-    monitoring_channel: str,
-    matrix_homeserver: str,
-    matrix_username: str,
-    matrix_password: str,
     eth_rpc: str,
     registry_address: Address,
     start_block: int,
@@ -172,13 +145,6 @@ def main(
     if os.path.isdir(app_dir) is False:
         os.makedirs(app_dir)
 
-    transport = MatrixTransport(
-        matrix_homeserver,
-        matrix_username,
-        matrix_password,
-        monitoring_channel,
-    )
-
     database = StateDBSqlite(state_db)
 
     service = None
@@ -188,7 +154,6 @@ def main(
             contract_manager=contract_manager,
             private_key=private_key,
             state_db=database,
-            transport=transport,
             registry_address=registry_address,
             monitor_contract_address=monitor_contract_address,
         )

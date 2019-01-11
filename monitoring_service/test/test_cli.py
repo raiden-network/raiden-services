@@ -8,8 +8,6 @@ from monitoring_service.cli import main
 
 DEFAULT_ARGS = [
     '--private-key', 'some_key',
-    '--matrix-username', 'TEST',
-    '--matrix-password', 'TEST',
 ]
 
 patch_args = dict(

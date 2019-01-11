@@ -25,15 +25,10 @@ from raiden_contracts.contract_manager import ContractManager
 from raiden_libs.gevent_error_handler import register_error_handler
 from raiden_libs.messages import BalanceProof
 from raiden_libs.private_contract import PrivateContract
-from raiden_libs.transport import Transport
 from raiden_libs.types import Address
 from raiden_libs.utils import is_channel_identifier, private_key_to_address
 
 log = logging.getLogger(__name__)
-
-
-def order_participants(p1: str, p2: str):
-    return (p1, p2) if p1 < p2 else (p2, p1)
 
 
 def error_handler(context, exc_info):
@@ -53,7 +48,6 @@ class MonitoringService(gevent.Greenlet):
         contract_manager: ContractManager,
         private_key: str,
         state_db: StateDBSqlite,
-        transport: Transport,
         registry_address: Address,
         monitor_contract_address: Address,
         sync_start_block: int = 0,
@@ -63,16 +57,13 @@ class MonitoringService(gevent.Greenlet):
         super().__init__()
 
         assert isinstance(private_key, str)
-        assert isinstance(transport, Transport)
         assert is_checksum_address(private_key_to_address(private_key))
 
         self.web3 = web3
         self.contract_manager = contract_manager
         self.private_key = private_key
-        self.transport = transport
         self.state_db = state_db
         self.stop_event = gevent.event.Event()
-        self.transport.privkey = lambda: self.private_key
         self.address = private_key_to_address(self.private_key)
         self.monitor_contract = PrivateContract(
             self.web3.eth.contract(
@@ -166,7 +157,6 @@ class MonitoringService(gevent.Greenlet):
 
     def _run(self):
         register_error_handler(error_handler)
-        self.transport.start()
         self.token_network_registry_listener.start()
 
         # this loop will wait until spawned greenlets complete

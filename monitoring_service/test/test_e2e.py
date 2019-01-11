@@ -109,7 +109,7 @@ def test_e2e(
     wait_for_blocks(1)
     gevent.sleep(TEST_POLL_INTERVAL)
 
-    monitoring_service.transport.receive_fake_data(monitor_request.serialize_full())
+    request_collector.transport.receive_fake_data(monitor_request.serialize_full())
     gevent.sleep(1)
     assert (channel_id, c1.address) in monitoring_service.monitor_requests
 
