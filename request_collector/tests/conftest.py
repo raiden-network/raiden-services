@@ -1,1 +1,1 @@
-from monitoring_service.test.conftest import *  # noqa
+from monitoring_service.tests.conftest import *  # noqa

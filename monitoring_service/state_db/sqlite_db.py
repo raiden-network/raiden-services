@@ -9,7 +9,6 @@ from raiden_libs.messages import BalanceProof, MonitorRequest
 from raiden_libs.types import Address, ChannelIdentifier
 from raiden_libs.utils import is_channel_identifier
 
-
 SCHEMA_FILENAME = os.path.join(
     os.path.dirname(os.path.realpath(__file__)),
     'schema.sql',
