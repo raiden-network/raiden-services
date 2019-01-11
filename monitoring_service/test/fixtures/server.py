@@ -3,6 +3,7 @@ import logging
 import pytest
 
 from monitoring_service import MonitoringService
+from request_collector.server import RequestCollector
 from monitoring_service.utils import BlockchainMonitor, register_service
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK
 from raiden_contracts.contract_manager import ContractManager
@@ -75,3 +76,24 @@ def monitoring_service(
     ms.start()
     yield ms
     ms.stop()
+
+
+@pytest.fixture
+def request_collector(
+    server_private_key,
+    blockchain,
+    dummy_transport,
+    state_db_sqlite,
+    web3,
+    monitoring_service_contract,
+    token_network_registry_contract,
+    send_funds,
+    contracts_manager: ContractManager,
+):
+    rc = RequestCollector(
+        state_db=state_db_sqlite,
+        transport=dummy_transport,
+    )
+    rc.start()
+    yield rc
+    rc.stop()

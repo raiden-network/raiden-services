@@ -45,6 +45,7 @@ def blockchain_validator(
 def test_e2e(
     web3,
     monitoring_service,
+    request_collector,
     generate_raiden_clients,
     monitoring_service_contract,
     wait_for_blocks,

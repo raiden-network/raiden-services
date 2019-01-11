@@ -9,7 +9,7 @@ from web3 import Web3
 
 from monitoring_service.exceptions import ServiceNotRegistered, StateDBInvalid
 from monitoring_service.state_db import StateDBSqlite
-from monitoring_service.tasks import OnChannelClose, OnChannelSettle, StoreMonitorRequest
+from monitoring_service.tasks import OnChannelClose, OnChannelSettle
 from monitoring_service.utils import BlockchainListener, BlockchainMonitor, is_service_registered
 from monitoring_service.utils.blockchain_listener import (
     create_channel_event_topics,
@@ -23,7 +23,7 @@ from raiden_contracts.constants import (
 )
 from raiden_contracts.contract_manager import ContractManager
 from raiden_libs.gevent_error_handler import register_error_handler
-from raiden_libs.messages import BalanceProof, Message, MonitorRequest
+from raiden_libs.messages import BalanceProof
 from raiden_libs.private_contract import PrivateContract
 from raiden_libs.transport import Transport
 from raiden_libs.types import Address
@@ -72,7 +72,6 @@ class MonitoringService(gevent.Greenlet):
         self.transport = transport
         self.state_db = state_db
         self.stop_event = gevent.event.Event()
-        self.transport.add_message_callback(lambda message: self.on_message_event(message))
         self.transport.privkey = lambda: self.private_key
         self.address = private_key_to_address(self.private_key)
         self.monitor_contract = PrivateContract(
@@ -244,26 +243,6 @@ class MonitoringService(gevent.Greenlet):
             self.start_task(
                 OnChannelSettle(monitor_request, self.monitor_contract, self.private_key),
             )
-
-    def on_message_event(self, message):
-        """This handles messages received over the Transport"""
-        assert isinstance(message, Message)
-        if isinstance(message, MonitorRequest):
-            self.on_monitor_request(message)
-        else:
-            log.warn('Ignoring unknown message type %s' % type(message))
-
-    def on_monitor_request(
-        self,
-        monitor_request: MonitorRequest,
-    ):
-        """Called whenever a monitor proof message is received.
-        This will spawn a greenlet and store its reference in an internal list.
-        Return value of the greenlet is then checked in the main loop."""
-        assert isinstance(monitor_request, MonitorRequest)
-        self.start_task(
-            StoreMonitorRequest(self.web3, self.state_db, monitor_request),
-        )
 
     def start_task(self, task: gevent.Greenlet):
         task.start()

@@ -130,6 +130,7 @@ config = {
     'entry_points': {
         'console_scripts': [
             'monitoring_service=monitoring_service.cli:main',
+            'request_collector=request_collector.cli:main',
         ],
     },
     'classifiers': [

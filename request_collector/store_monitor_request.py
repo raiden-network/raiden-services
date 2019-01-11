@@ -3,7 +3,6 @@ import sqlite3
 
 import gevent
 from eth_utils import is_address
-from hexbytes import HexBytes
 
 from raiden_contracts.constants import ChannelState
 from raiden_libs.exceptions import InvalidSignature
@@ -20,19 +19,17 @@ class StoreMonitorRequest(gevent.Greenlet):
         Return:
             True if monitor request is valid
     """
-    def __init__(self, web3, state_db, monitor_request):
+    def __init__(self, state_db, monitor_request):
         super().__init__()
         assert isinstance(monitor_request, MonitorRequest)
         self.msg = monitor_request
         self.state_db = state_db
-        self.web3 = web3
 
     def _run(self):
         channel = self.state_db.get_channel(self.msg.balance_proof.channel_identifier)
         checks = [
             self.check_channel,
             self.check_signatures,
-            self.verify_contract_code,
             self.check_balance,
         ]
         for check in checks:
@@ -49,11 +46,6 @@ class StoreMonitorRequest(gevent.Greenlet):
     def check_channel(self, monitor_request: MonitorRequest, channel: sqlite3.Row):
         """We must know about the channel and it must be open"""
         return channel is not None and channel['state'] == ChannelState.OPENED
-
-    def verify_contract_code(self, monitor_request: MonitorRequest, channel: sqlite3.Row):
-        """Verify if address set in token_network_address field contains code"""
-        balance_proof = monitor_request.balance_proof
-        return self.web3.eth.getCode(balance_proof.token_network_address) != HexBytes('0x')
 
     def check_signatures(self, monitor_request: MonitorRequest, channel: sqlite3.Row):
         """Check if signatures set in the message are correct"""
