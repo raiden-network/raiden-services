@@ -37,7 +37,7 @@ def order_participants(p1: str, p2: str):
 
 
 def error_handler(context, exc_info):
-    log.fatal("Unhandled exception terminating the program")
+    log.critical("Unhandled exception terminating the program")
     traceback.print_exception(
         etype=exc_info[0],
         value=exc_info[1],

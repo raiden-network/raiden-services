@@ -7,7 +7,7 @@ lint: mypy
 	isort $(ISORT_PARAMS) --diff --check-only
 
 mypy:
-	mypy --ignore-missing-imports monitoring_service/
+	mypy --ignore-missing-imports --check-untyped-defs monitoring_service/
 
 isort:
 	isort $(ISORT_PARAMS)
