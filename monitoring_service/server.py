@@ -10,6 +10,7 @@ from web3 import Web3
 from monitoring_service.exceptions import ServiceNotRegistered, StateDBInvalid
 from monitoring_service.state_db import StateDBSqlite
 from monitoring_service.tasks import OnChannelClose, OnChannelSettle
+from monitoring_service.token_network_listener import TokenNetworkListener
 from monitoring_service.utils import is_service_registered
 from raiden_contracts.constants import CONTRACT_MONITORING_SERVICE, ChannelEvent
 from raiden_contracts.contract_manager import ContractManager
@@ -63,7 +64,6 @@ class MonitoringService(gevent.Greenlet):
             ),
         )
 
-        from monitoring_service.token_network_listener import TokenNetworkListener
         self.token_network_listener = TokenNetworkListener(
             web3,
             contract_manager,

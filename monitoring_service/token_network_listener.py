@@ -91,7 +91,7 @@ class TokenNetworkListener(gevent.Greenlet):
             )
             token_network_listener.add_confirmed_listener(
                 topics=create_channel_event_topics(),
-                callback=self.make_handler(self.confirmed_channel_event_listeners),
+                callback=self.handle_confirmed_events,
             )
 
             token_network_listener.start()
@@ -108,11 +108,9 @@ class TokenNetworkListener(gevent.Greenlet):
             task.stop()
         self.stop_event.set()
 
-    def make_handler(self, listeners: List[Callable]):
-        def call_listeners(event: Dict, tx: Dict):
-            for l in listeners:
-                l(event, tx)
-        return call_listeners
+    def handle_confirmed_events(self, event: Dict, tx: Dict):
+        for l in self.confirmed_channel_event_listeners:
+            l(event, tx)
 
     def add_confirmed_channel_event_listener(self, callback: Callable):
         """ Trigger callback on confirmed events in all token networks """
