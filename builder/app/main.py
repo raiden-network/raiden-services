@@ -12,6 +12,7 @@ REPOS = {
             'source': '/data/raiden-pathfinding-service',
             'deployment': '/data/services-dev',
         },
+        'name': 'pfs-dev',
     },
 }
 
@@ -25,7 +26,7 @@ def main():
     branch = data.get('ref', '').replace('refs/heads/', '')
     branch_config = REPOS.get(repo)
     if branch_config and branch in branch_config:
-        res = build(branch, **branch_config[branch])
+        res = build(branch, branch_config['name'], **branch_config[branch])
         if res:
             pprint(
                 {
@@ -44,9 +45,10 @@ def main():
 def _print(s):
     print(s, file=sys.stderr)
 
-def build(branch, source, deployment, **kw):
+def build(branch, container_name, source, deployment, **kw):
     try:
         _print(f'Switching to {source}')
+        _print(f'Container name = {container_name}')
         os.chdir(source)
         _print(f'git fetch')
         subprocess.check_output(["git", "fetch", "--all"])
@@ -58,7 +60,7 @@ def build(branch, source, deployment, **kw):
         _print(f'docker build')
         subprocess.check_output(["docker-compose", "build"])
         _print(f'docker down')
-        subprocess.check_output(["docker-compose", "down"])
+        subprocess.check_output(["docker-compose", "stop", container_name])
         _print(f'docker up')
         subprocess.check_output(["docker-compose", "up", "-d"])
     except e:
