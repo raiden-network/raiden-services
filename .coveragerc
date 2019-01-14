@@ -10,4 +10,5 @@ exclude_lines =
     if __name__ == .__main__.:
 ignore_errors = True
 omit =
-    monitoring_service/test/*
+    monitoring_service/tests/*
+    request_collector/tests/*

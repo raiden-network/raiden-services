@@ -12,13 +12,9 @@ from eth_utils import is_checksum_address
 
 from request_collector.server import RequestCollector
 from monitoring_service.state_db import StateDBSqlite
-from raiden_contracts.contract_manager import ContractManager, contracts_precompiled_path
 from raiden_libs.transport import MatrixTransport
 
 log = logging.getLogger(__name__)
-contract_manager = ContractManager(contracts_precompiled_path())
-
-DEFAULT_REQUIRED_CONFIRMATIONS = 8
 
 
 def validate_address(ctx, param, value):
