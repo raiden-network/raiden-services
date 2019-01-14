@@ -42,8 +42,10 @@ def main():
             print("Error building", file=sys.stderr)
     return "OK"
 
+
 def _print(s):
     print(s, file=sys.stderr)
+
 
 def build(branch, container_name, source, deployment, **kw):
     try:
@@ -63,7 +65,7 @@ def build(branch, container_name, source, deployment, **kw):
         subprocess.check_output(["docker-compose", "stop", container_name])
         _print(f'docker up')
         subprocess.check_output(["docker-compose", "up", "-d"])
-    except e:
+    except Exception as e:
         _print(str(e))
         return False
     return True
