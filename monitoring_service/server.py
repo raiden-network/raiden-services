@@ -1,7 +1,7 @@
 import logging
 import sys
 import traceback
-from typing import Dict, List, Set
+from typing import Dict, List
 
 import gevent
 from eth_utils import encode_hex, is_address, is_checksum_address, is_same_address
@@ -10,17 +10,8 @@ from web3 import Web3
 from monitoring_service.exceptions import ServiceNotRegistered, StateDBInvalid
 from monitoring_service.state_db import StateDBSqlite
 from monitoring_service.tasks import OnChannelClose, OnChannelSettle
-from monitoring_service.utils import BlockchainListener, BlockchainMonitor, is_service_registered
-from monitoring_service.utils.blockchain_listener import (
-    create_channel_event_topics,
-    create_registry_event_topics,
-)
-from raiden_contracts.constants import (
-    CONTRACT_MONITORING_SERVICE,
-    CONTRACT_TOKEN_NETWORK,
-    CONTRACT_TOKEN_NETWORK_REGISTRY,
-    ChannelEvent,
-)
+from monitoring_service.utils import is_service_registered
+from raiden_contracts.constants import CONTRACT_MONITORING_SERVICE, ChannelEvent
 from raiden_contracts.contract_manager import ContractManager
 from raiden_libs.gevent_error_handler import register_error_handler
 from raiden_libs.messages import BalanceProof
@@ -71,12 +62,19 @@ class MonitoringService(gevent.Greenlet):
                 address=monitor_contract_address,
             ),
         )
-        self.registry_address = registry_address
-        self.sync_start_block = sync_start_block
-        self.required_confirmations = required_confirmations
-        self.poll_interval = poll_interval
-        self.token_networks: Set[Address] = set()
-        self.token_network_listeners: List[BlockchainListener] = []
+
+        from monitoring_service.token_network_listener import TokenNetworkListener
+        self.token_network_listener = TokenNetworkListener(
+            web3,
+            contract_manager,
+            registry_address,
+            sync_start_block,
+            required_confirmations,
+            poll_interval,
+        )
+        self.token_network_listener.add_confirmed_channel_event_listener(
+            self.on_channel_event,
+        )
 
         # some sanity checks
         chain_id = int(self.web3.version.network)
@@ -100,64 +98,9 @@ class MonitoringService(gevent.Greenlet):
                 (self.address, monitor_contract_address),
             )
 
-        log.info('Starting TokenNetworkRegistry Listener (required confirmations: {})...'.format(
-            self.required_confirmations,
-        ))
-        self.token_network_registry_listener = BlockchainListener(
-            web3=self.web3,
-            contract_manager=self.contract_manager,
-            contract_name=CONTRACT_TOKEN_NETWORK_REGISTRY,
-            contract_address=self.registry_address,
-            required_confirmations=self.required_confirmations,
-            poll_interval=self.poll_interval,
-            sync_start_block=self.sync_start_block,
-        )
-        log.info(
-            f'Listening to token network registry @ {registry_address} '
-            f'from block {sync_start_block}',
-        )
-        self._setup_token_networks()
-
-    def _setup_token_networks(self):
-        self.token_network_registry_listener.add_confirmed_listener(
-            topics=create_registry_event_topics(self.contract_manager),
-            callback=self.handle_token_network_created,
-        )
-
-    def handle_token_network_created(self, event):
-        token_network_address = event['args']['token_network_address']
-        token_address = event['args']['token_address']
-        event_block_number = event['blockNumber']
-
-        assert is_checksum_address(token_network_address)
-        assert is_checksum_address(token_address)
-
-        if token_network_address not in self.token_networks:
-            log.info(f'Found token network for token {token_address} @ {token_network_address}')
-
-            log.info('Creating token network for %s', token_network_address)
-            token_network_listener = BlockchainMonitor(
-                web3=self.web3,
-                contract_manager=self.contract_manager,
-                contract_address=token_network_address,
-                contract_name=CONTRACT_TOKEN_NETWORK,
-                required_confirmations=self.required_confirmations,
-                poll_interval=self.poll_interval,
-                sync_start_block=event_block_number,
-            )
-
-            # subscribe to event notifications from blockchain monitor
-            token_network_listener.add_confirmed_listener(
-                topics=create_channel_event_topics(),
-                callback=self.on_channel_event,
-            )
-            token_network_listener.start()
-            self.token_networks.add(token_network_address)
-            self.token_network_listeners.append(token_network_listener)
-
     def _run(self):
         register_error_handler(error_handler)
-        self.token_network_registry_listener.start()
+        self.token_network_listener.start()
 
         # this loop will wait until spawned greenlets complete
         while self.stop_event.is_set() is False:
@@ -170,9 +113,7 @@ class MonitoringService(gevent.Greenlet):
             self.task_list.remove(task)
 
     def stop(self):
-        self.token_network_registry_listener.stop()
-        for task in self.token_network_listeners:
-            task.stop()
+        self.token_network_listener.stop()
         self.stop_event.set()
 
     def on_channel_event(self, event: Dict, tx: Dict):
