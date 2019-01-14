@@ -8,4 +8,4 @@ ADD . /pfs
 
 RUN python3 -m pip install -r requirements.txt
 RUN python3 setup.py develop
-CMD ["python3", "-m", "pathfinder.cli"]
+CMD ["python3", "-m", "pathfinding_service.cli"]
