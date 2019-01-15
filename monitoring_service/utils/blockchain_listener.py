@@ -1,6 +1,6 @@
 import logging
 import sys
-from typing import Callable, Dict, List, Tuple, Union
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import gevent
 import gevent.event
@@ -13,6 +13,7 @@ from web3.utils.abi import filter_by_type
 
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, EVENT_TOKEN_NETWORK_CREATED
 from raiden_contracts.contract_manager import ContractManager
+from raiden_libs.types import Address
 from raiden_libs.utils import decode_contract_call
 
 log = logging.getLogger(__name__)
@@ -101,6 +102,8 @@ class BlockchainListener(gevent.Greenlet):
             sync_chunk_size: int = 100_000,
             poll_interval: float = 15.0,
             sync_start_block: int = 0,
+            load_syncstate: Callable[[Address], Optional[Dict]] = lambda _: None,
+            save_syncstate: Callable[['BlockchainListener'], None] = lambda _: None,
     ) -> None:
         """Creates a new BlockchainListener
 
@@ -124,6 +127,7 @@ class BlockchainListener(gevent.Greenlet):
 
         self.confirmed_callbacks: Dict[int, Tuple[List, Callable]] = {}
         self.unconfirmed_callbacks: Dict[int, Tuple[List, Callable]] = {}
+        self.chunk_callbacks: List[Callable] = [save_syncstate]
 
         self.wait_sync_event = gevent.event.Event()
         self.is_connected = gevent.event.Event()
@@ -131,10 +135,17 @@ class BlockchainListener(gevent.Greenlet):
         self.running = False
         self.poll_interval = poll_interval
 
-        self.unconfirmed_head_number = sync_start_block
-        self.confirmed_head_number = sync_start_block
-        self.unconfirmed_head_hash = None
-        self.confirmed_head_hash = None
+        syncstate = load_syncstate(contract_address)
+        if syncstate:
+            self.unconfirmed_head_number = syncstate['unconfirmed_head_number']
+            self.confirmed_head_number = syncstate['confirmed_head_number']
+            self.unconfirmed_head_hash = syncstate['unconfirmed_head_hash']
+            self.confirmed_head_hash = syncstate['confirmed_head_hash']
+        else:
+            self.unconfirmed_head_number = sync_start_block
+            self.confirmed_head_number = sync_start_block
+            self.unconfirmed_head_hash = None
+            self.confirmed_head_hash = None
 
         self.counter = 0
 
@@ -147,6 +158,14 @@ class BlockchainListener(gevent.Greenlet):
         """ Add a callback to listen for unconfirmed events. """
         self.unconfirmed_callbacks[self.counter] = (topics, callback)
         self.counter += 1
+
+    def add_chunk_callback(self, callback: Callable):
+        """ Trigger callback after processing a chunk of blocks.
+
+        This is useful to save the processing state to disk. The callback gets
+        called the BlockchainListener as argument.
+        """
+        self.chunk_callbacks.append(callback)
 
     def _run(self):
         self.running = True
@@ -249,6 +268,10 @@ class BlockchainListener(gevent.Greenlet):
         self.unconfirmed_head_hash = new_unconfirmed_head_hash
         self.confirmed_head_number = new_confirmed_head_number
         self.confirmed_head_hash = new_confirmed_head_hash
+
+        # trigger callbacks after processing chunk
+        for callback in self.chunk_callbacks:
+            callback(self)
 
         if not self.wait_sync_event.is_set() and new_unconfirmed_head_number == current_block:
             self.wait_sync_event.set()

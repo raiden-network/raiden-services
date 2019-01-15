@@ -71,6 +71,9 @@ class MonitoringService(gevent.Greenlet):
             sync_start_block,
             required_confirmations,
             poll_interval,
+            load_syncstate=state_db.load_syncstate,
+            save_syncstate=state_db.save_syncstate,
+            get_synced_contracts=state_db.get_synced_contracts,
         )
         self.token_network_listener.add_confirmed_channel_event_listener(
             self.on_channel_event,

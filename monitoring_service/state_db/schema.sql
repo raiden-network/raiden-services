@@ -10,16 +10,11 @@ INSERT INTO metadata VALUES (
 );
 
 CREATE TABLE syncstate (
-    confirmed_head_number   INTEGER,
-    confirmed_head_hash     CHAR(66),
-    unconfirmed_head_number INTEGER,
-    unconfirmed_head_hash   CHAR(66)
-);
-INSERT INTO syncstate VALUES (
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    contract_address        CHAR(42) PRIMARY KEY,
+    confirmed_head_number   INTEGER NOT NULL,
+    confirmed_head_hash     CHAR(66) NOT NULL,
+    unconfirmed_head_number INTEGER NOT NULL,
+    unconfirmed_head_hash   CHAR(66) NOT NULL
 );
 
 CREATE TABLE channels (

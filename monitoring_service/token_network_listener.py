@@ -1,5 +1,5 @@
 import logging
-from typing import Callable, Dict, List, Set
+from typing import Callable, Dict, Iterable, List, Optional, Set
 
 import gevent
 from eth_utils import is_checksum_address
@@ -32,7 +32,10 @@ class TokenNetworkListener(gevent.Greenlet):
         registry_address: Address,
         sync_start_block: int = 0,
         required_confirmations: int = 8,
-        poll_interval: int = 10,
+        poll_interval: float = 10,
+        load_syncstate: Callable[[Address], Optional[Dict]] = lambda _: None,
+        save_syncstate: Callable[[BlockchainListener], None] = lambda _: None,
+        get_synced_contracts: Callable[[], Iterable[Address]] = lambda: [],
     ):
         super().__init__()
 
@@ -43,6 +46,8 @@ class TokenNetworkListener(gevent.Greenlet):
         self.sync_start_block = sync_start_block
         self.required_confirmations = required_confirmations
         self.poll_interval = poll_interval
+        self.load_syncstate = load_syncstate
+        self.save_syncstate = save_syncstate
         self.token_networks: Set[Address] = set()
         self.token_network_listeners: List[BlockchainListener] = []
         self.confirmed_channel_event_listeners: List[Callable] = []
@@ -58,6 +63,8 @@ class TokenNetworkListener(gevent.Greenlet):
             required_confirmations=self.required_confirmations,
             poll_interval=self.poll_interval,
             sync_start_block=self.sync_start_block,
+            load_syncstate=load_syncstate,
+            save_syncstate=save_syncstate,
         )
         log.info(
             f'Listening to token network registry @ {registry_address} '
@@ -65,19 +72,19 @@ class TokenNetworkListener(gevent.Greenlet):
         )
         self.token_network_registry_listener.add_confirmed_listener(
             topics=create_registry_event_topics(self.contract_manager),
-            callback=self.handle_token_network_created,
+            callback=lambda event: self.handle_token_network_created(
+                event['args']['token_network_address'],
+            ),
         )
 
-    def handle_token_network_created(self, event: Dict):
-        token_network_address = event['args']['token_network_address']
-        token_address = event['args']['token_address']
-        event_block_number = event['blockNumber']
+        for contract_address in get_synced_contracts():
+            self.handle_token_network_created(contract_address)
 
+    def handle_token_network_created(self, token_network_address: Address):
         assert is_checksum_address(token_network_address)
-        assert is_checksum_address(token_address)
 
         if token_network_address not in self.token_networks:
-            log.info(f'Found token network for token {token_address} @ {token_network_address}')
+            log.info(f'Found token network {token_network_address}')
 
             log.info('Creating token network for %s', token_network_address)
             token_network_listener = BlockchainMonitor(
@@ -87,7 +94,9 @@ class TokenNetworkListener(gevent.Greenlet):
                 contract_name=CONTRACT_TOKEN_NETWORK,
                 required_confirmations=self.required_confirmations,
                 poll_interval=self.poll_interval,
-                sync_start_block=event_block_number,
+                sync_start_block=0,  # TODO
+                load_syncstate=self.load_syncstate,
+                save_syncstate=self.save_syncstate,
             )
             token_network_listener.add_confirmed_listener(
                 topics=create_channel_event_topics(),

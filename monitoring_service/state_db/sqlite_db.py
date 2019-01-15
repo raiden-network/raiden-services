@@ -4,6 +4,7 @@ from typing import Dict, Iterable, Optional
 
 from eth_utils import is_checksum_address
 
+from monitoring_service.utils import BlockchainListener
 from raiden_contracts.constants import ChannelState
 from raiden_libs.messages import BalanceProof, MonitorRequest
 from raiden_libs.types import Address, ChannelIdentifier
@@ -162,3 +163,24 @@ class StateDBSqlite:
             participant2,
             ChannelState.OPENED,
         ])
+
+    def save_syncstate(self, blockchain_listener: BlockchainListener):
+        self.conn.execute("INSERT OR REPLACE INTO syncstate VALUES (?, ?, ?, ?, ?)", [
+            blockchain_listener.contract_address,
+            blockchain_listener.confirmed_head_number,
+            blockchain_listener.confirmed_head_hash,
+            blockchain_listener.unconfirmed_head_number,
+            blockchain_listener.unconfirmed_head_hash,
+        ])
+
+    def load_syncstate(self, contract_address: Address) -> Optional[Dict]:
+        return self.conn.execute(
+            "SELECT * FROM syncstate WHERE contract_address = ?",
+            [contract_address],
+        ).fetchone()
+
+    def get_synced_contracts(self) -> Iterable[Address]:
+        return [
+            row['contract_address']
+            for row in self.conn.execute("SELECT contract_address FROM syncstate")
+        ]
