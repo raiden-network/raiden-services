@@ -2,7 +2,6 @@ import logging
 from unittest.mock import DEFAULT, patch
 
 from click.testing import CliRunner
-
 from request_collector.cli import main
 
 DEFAULT_ARGS = [

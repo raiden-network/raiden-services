@@ -1,5 +1,5 @@
-ISORT_PARAMS = --ignore-whitespace --settings-path . --recursive monitoring_service/
 CODE_DIRS = monitoring_service/ request_collector/
+ISORT_PARAMS = --ignore-whitespace --settings-path . --recursive $(CODE_DIRS)
 
 all: lint mypy
 

@@ -1,5 +1,4 @@
 import gevent
-
 from request_collector.store_monitor_request import StoreMonitorRequest
 
 
