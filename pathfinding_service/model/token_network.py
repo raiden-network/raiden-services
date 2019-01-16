@@ -15,7 +15,7 @@ log = logging.getLogger(__name__)
 class TokenNetwork:
     """ Manages a token network for pathfinding. """
 
-    def __init__(self, token_network_address: Address, token_address: Address) -> None:
+    def __init__(self, token_network_address: Address, token_address: Address):
         """ Initializes a new TokenNetwork. """
 
         self.address = token_network_address

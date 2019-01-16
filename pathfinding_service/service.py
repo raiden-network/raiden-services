@@ -56,7 +56,7 @@ class PathfindingService(gevent.Greenlet):
         sync_start_block: int = 0,
         required_confirmations: int = 8,
         poll_interval: int = 10,
-    ) -> None:
+    ):
         """ Creates a new pathfinding service
 
         Args:

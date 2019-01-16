@@ -26,7 +26,7 @@ log = logging.getLogger(__name__)
 
 class PathfinderResource(Resource):
 
-    def __init__(self, pathfinding_service: PathfindingService) -> None:
+    def __init__(self, pathfinding_service: PathfindingService):
         self.pathfinding_service = pathfinding_service
 
     def _validate_token_network_argument(
@@ -142,7 +142,7 @@ class InfoResource(PathfinderResource):
 
 
 class ServiceApi:
-    def __init__(self, pathfinding_service: PathfindingService) -> None:
+    def __init__(self, pathfinding_service: PathfindingService):
         self.flask_app = Flask(__name__)
         self.api = Api(self.flask_app)
         self.rest_server: WSGIServer = None
