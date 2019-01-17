@@ -127,7 +127,7 @@ class BlockchainListener(gevent.Greenlet):
 
         self.confirmed_callbacks: Dict[int, Tuple[List, Callable]] = {}
         self.unconfirmed_callbacks: Dict[int, Tuple[List, Callable]] = {}
-        self.chunk_callbacks: List[Callable] = [save_syncstate]
+        self.save_syncstate = save_syncstate
 
         self.wait_sync_event = gevent.event.Event()
         self.is_connected = gevent.event.Event()
@@ -158,14 +158,6 @@ class BlockchainListener(gevent.Greenlet):
         """ Add a callback to listen for unconfirmed events. """
         self.unconfirmed_callbacks[self.counter] = (topics, callback)
         self.counter += 1
-
-    def add_chunk_callback(self, callback: Callable):
-        """ Trigger callback after processing a chunk of blocks.
-
-        This is useful to save the processing state to disk. The callback gets
-        called the BlockchainListener as argument.
-        """
-        self.chunk_callbacks.append(callback)
 
     def _run(self):
         self.running = True
@@ -268,10 +260,7 @@ class BlockchainListener(gevent.Greenlet):
         self.unconfirmed_head_hash = new_unconfirmed_head_hash
         self.confirmed_head_number = new_confirmed_head_number
         self.confirmed_head_hash = new_confirmed_head_hash
-
-        # trigger callbacks after processing chunk
-        for callback in self.chunk_callbacks:
-            callback(self)
+        self.save_syncstate(self)
 
         if not self.wait_sync_event.is_set() and new_unconfirmed_head_number == current_block:
             self.wait_sync_event.set()
