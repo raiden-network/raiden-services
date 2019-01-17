@@ -68,7 +68,6 @@ class MonitoringService(gevent.Greenlet):
             web3,
             contract_manager,
             registry_address,
-            sync_start_block,
             required_confirmations,
             poll_interval,
             load_syncstate=state_db.load_syncstate,

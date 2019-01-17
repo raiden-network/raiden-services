@@ -16,7 +16,6 @@ def get_token_network_listener(
             web3,
             contracts_manager,
             registry_address=token_network_registry_contract.address,
-            sync_start_block=0,
             required_confirmations=1,
             poll_interval=0.001,
             load_syncstate=state_db_sqlite.load_syncstate,

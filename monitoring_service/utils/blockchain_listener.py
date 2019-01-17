@@ -101,7 +101,7 @@ class BlockchainListener(gevent.Greenlet):
             required_confirmations: int = 4,
             sync_chunk_size: int = 100_000,
             poll_interval: float = 15.0,
-            sync_start_block: int = 0,
+            sync_start_block: int = 0,  # only used if load_syncstate returns None
             load_syncstate: Callable[[Address], Optional[Dict]] = lambda _: None,
             save_syncstate: Callable[['BlockchainListener'], None] = lambda _: None,
     ) -> None:

@@ -30,7 +30,6 @@ class TokenNetworkListener(gevent.Greenlet):
         web3: Web3,
         contract_manager: ContractManager,
         registry_address: Address,
-        sync_start_block: int = 0,
         required_confirmations: int = 8,
         poll_interval: float = 10,
         load_syncstate: Callable[[Address], Optional[Dict]] = lambda _: None,
@@ -43,7 +42,6 @@ class TokenNetworkListener(gevent.Greenlet):
         self.contract_manager = contract_manager
         self.stop_event = gevent.event.Event()
         self.registry_address = registry_address
-        self.sync_start_block = sync_start_block
         self.required_confirmations = required_confirmations
         self.poll_interval = poll_interval
         self.load_syncstate = load_syncstate
@@ -62,14 +60,10 @@ class TokenNetworkListener(gevent.Greenlet):
             contract_address=self.registry_address,
             required_confirmations=self.required_confirmations,
             poll_interval=self.poll_interval,
-            sync_start_block=self.sync_start_block,
             load_syncstate=load_syncstate,
             save_syncstate=save_syncstate,
         )
-        log.info(
-            f'Listening to token network registry @ {registry_address} '
-            f'from block {sync_start_block}',
-        )
+        log.info(f'Listening to token network registry @ {registry_address}')
         self.token_network_registry_listener.add_confirmed_listener(
             topics=create_registry_event_topics(self.contract_manager),
             callback=lambda event: self.handle_token_network_created(
@@ -83,10 +77,11 @@ class TokenNetworkListener(gevent.Greenlet):
     def handle_token_network_created(self, token_network_address: Address):
         assert is_checksum_address(token_network_address)
 
+        # use current block as start_block for newly discovered token networks
+        start_block = self.token_network_registry_listener.confirmed_head_number
+
         if token_network_address not in self.token_networks:
             log.info(f'Found token network {token_network_address}')
-
-            log.info('Creating token network for %s', token_network_address)
             token_network_listener = BlockchainMonitor(
                 web3=self.web3,
                 contract_manager=self.contract_manager,
@@ -94,7 +89,7 @@ class TokenNetworkListener(gevent.Greenlet):
                 contract_name=CONTRACT_TOKEN_NETWORK,
                 required_confirmations=self.required_confirmations,
                 poll_interval=self.poll_interval,
-                sync_start_block=0,  # TODO
+                sync_start_block=start_block,
                 load_syncstate=self.load_syncstate,
                 save_syncstate=self.save_syncstate,
             )
