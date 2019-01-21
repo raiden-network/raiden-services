@@ -1,0 +1,4 @@
+[flake8]
+ignore = E701, E731, E402, W504, C814
+max-line-length = 99
+exclude = build,dist,.git,.venv
