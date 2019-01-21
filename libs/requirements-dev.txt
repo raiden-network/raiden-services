@@ -14,8 +14,10 @@ coverage
 Sphinx
 sphinx_rtd_theme
 
-pytest
+pytest>=4.0.1
 pytest-runner
+pytest-cov
 pdbpp
 
 eth-tester[py-evm]>=0.1.0b31
+attrs==18.2.0  # needed for travis
