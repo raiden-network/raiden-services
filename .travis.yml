@@ -2,11 +2,19 @@ language: python
 python: 3.6
 cache: pip
 
+matrix:
+  include:
+    - env: MODULE=libs
+    - env: MODULE=monitoring
+    - env: MODULE=pathfinding
+
 install:
   - pip install codecov pytest-travis-fold
-  - pip install -r monitoring/requirements-dev.txt
 
 script:
+  - cd $MODULE
+  - pip install -r requirements-dev.txt
+  - pip install -e .
   - make lint
   - pytest -v --cov=./
   - codecov

@@ -14,4 +14,6 @@ isort:
 	isort $(ISORT_PARAMS)
 
 test:
-	py.test -v
+	py.test -v libs
+	py.test -v pathfinding
+	py.test -v monitoring
