@@ -108,9 +108,9 @@ class TokenNetwork:
     ):
         view: ChannelView = attr['view']
         return 1 + visited.get(
-                    view.channel_id,
-                    0,
-               )
+            view.channel_id,
+            0,
+        )
 
     def get_paths(
         self,

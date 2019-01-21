@@ -172,9 +172,9 @@ def test_get_info(
     response = requests.get(url)
     assert response.status_code == 200
     assert response.json() == {
-            'ip': socket.gethostbyname(socket.gethostname()),
-            'settings': 'PLACEHOLDER FOR PATHFINDER SETTINGS',
-            'version': pkg_resources.require(pathfinding_service.__name__)[0].version,
-            'operator': 'PLACEHOLDER FOR PATHFINDER OPERATOR',
-            'message': 'PLACEHOLDER FOR ADDITIONAL MESSAGE BY THE PFS',
-        }
+        'ip': socket.gethostbyname(socket.gethostname()),
+        'settings': 'PLACEHOLDER FOR PATHFINDER SETTINGS',
+        'version': pkg_resources.require(pathfinding_service.__name__)[0].version,
+        'operator': 'PLACEHOLDER FOR PATHFINDER OPERATOR',
+        'message': 'PLACEHOLDER FOR ADDITIONAL MESSAGE BY THE PFS',
+    }

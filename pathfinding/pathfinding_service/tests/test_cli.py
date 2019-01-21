@@ -74,7 +74,7 @@ def test_start_block():
     with patch.multiple(**patch_args) as mocks:
         mocks['get_default_registry_and_start_block'].return_value = Mock(), Mock()
         start_block = 10
-        address = Web3.toChecksumAddress('0x' + '1'*40)
+        address = Web3.toChecksumAddress('0x' + '1' * 40)
         result = runner.invoke(main, [
             '--registry-address', address, '--start-block', str(start_block)],
         )
