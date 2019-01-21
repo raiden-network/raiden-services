@@ -155,8 +155,8 @@ def main(
 
     if registry_address is None:
         registry_address, start_block = get_default_registry_and_start_block(
-                net_version,
-                contracts_version,
+            net_version,
+            contracts_version,
         )
 
     service = None

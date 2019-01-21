@@ -25,9 +25,9 @@ def pytest_addoption(parser):
 
 def _get_running_greenlets():
     return [
-            obj
-            for obj in gc.get_objects()
-            if isinstance(obj, gevent.Greenlet) and obj and not obj.dead
+        obj
+        for obj in gc.get_objects()
+        if isinstance(obj, gevent.Greenlet) and obj and not obj.dead
     ]
 
 
