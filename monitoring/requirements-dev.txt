@@ -1,0 +1,22 @@
+-r requirements.txt
+
+pip>=18.1.0
+bumpversion>=0.5.3
+
+eth-tester[py-evm]==0.1.0b33
+pudb
+pytest-pudb
+flask_restful
+
+coverage>=4.5.2
+
+flake8>=3.6.0
+flake8-bugbear==18.8.0
+flake8-commas==2.0.0
+flake8-tuple==0.2.13
+isort==4.3.4
+mypy==0.650
+
+pytest>=4.0.1
+pytest-runner
+pytest-cov
