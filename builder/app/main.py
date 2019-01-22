@@ -7,12 +7,12 @@ from flask import Flask, request
 
 
 REPOS = {
-    'raiden-network/raiden-pathfinding-service': {
+    'raiden-network/raiden-services': {
         'master': {
-            'source': '/data/raiden-pathfinding-service',
+            'source': '/data/raiden-services',
             'deployment': '/data/services-dev',
         },
-        'name': 'pfs-dev',
+        'name': 'pfs-ropsten',
     },
 }
 
