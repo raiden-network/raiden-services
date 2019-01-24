@@ -9,3 +9,5 @@ DEFAULT_PERCENTAGE_FEE: int = 1000  # in ppm
 DIVERSITY_PEN_DEFAULT: int = 5
 MAX_PATHS_PER_REQUEST: int = 25
 DEFAULT_MAX_PATHS: int = 5  # number of paths return when no `max_path` argument is given
+
+DEFAULT_REVEAL_TIMEOUT: int = 50

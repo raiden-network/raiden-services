@@ -9,6 +9,7 @@ from typing import List
 import gevent
 
 from pathfinding_service import PathfindingService
+from pathfinding_service.config import DEFAULT_REVEAL_TIMEOUT
 from pathfinding_service.model import ChannelView
 from raiden_contracts.contract_manager import ContractManager
 
@@ -74,7 +75,7 @@ def test_pfs_with_mocked_client(
     # there should be as many open channels as described
     assert len(token_network.channel_id_to_addresses.keys()) == len(channel_descriptions_case_1)
 
-    # check that deposits and transfers got registered
+    # check that deposits, settle_timeout and transfers got registered
     for index, (
         _p1_index,
         p1_deposit,
@@ -89,10 +90,12 @@ def test_pfs_with_mocked_client(
         p1_address, p2_address = token_network.channel_id_to_addresses[channel_identifier]
         view1: ChannelView = graph[p1_address][p2_address]['view']
         view2: ChannelView = graph[p2_address][p1_address]['view']
-
         assert view1.deposit == p1_deposit
         assert view2.deposit == p2_deposit
-
+        assert view1.settle_timeout == 15
+        assert view2.settle_timeout == 15
+        assert view1.reveal_timeout == DEFAULT_REVEAL_TIMEOUT
+        assert view2.reveal_timeout == DEFAULT_REVEAL_TIMEOUT
     # now close all channels
     for (
         p1_index,

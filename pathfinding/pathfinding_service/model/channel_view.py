@@ -2,7 +2,7 @@ from enum import Enum
 
 from eth_utils import is_checksum_address
 
-from pathfinding_service.config import DEFAULT_PERCENTAGE_FEE
+from pathfinding_service.config import DEFAULT_PERCENTAGE_FEE, DEFAULT_REVEAL_TIMEOUT
 from raiden_libs.types import Address, ChannelIdentifier
 
 
@@ -20,7 +20,9 @@ class ChannelView:
         channel_id: ChannelIdentifier,
         participant1: Address,
         participant2: Address,
+        settle_timeout: int,
         deposit: int = 0,
+        reveal_timeout: int = DEFAULT_REVEAL_TIMEOUT,
     ):
         assert is_checksum_address(participant1)
         assert is_checksum_address(participant2)
@@ -35,6 +37,8 @@ class ChannelView:
         self._capacity = deposit
         self.state = ChannelView.State.OPEN
         self.channel_id = channel_id
+        self.settle_timeout = settle_timeout
+        self.reveal_timeout = reveal_timeout
 
     def update_capacity(
         self,
