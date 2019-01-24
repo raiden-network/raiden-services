@@ -16,7 +16,8 @@ from raiden_libs.types import Address
 def test_edge_weight(addresses):
     a = addresses[0]
     b = addresses[1]
-    view = ChannelView(1, a, b)
+    settle_timeout = 15
+    view = ChannelView(1, a, b, settle_timeout)
 
     assert TokenNetwork.edge_weight(
         dict(),

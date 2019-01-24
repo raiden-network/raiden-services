@@ -162,11 +162,13 @@ class PathfindingService(gevent.Greenlet):
         channel_identifier = event['args']['channel_identifier']
         participant1 = event['args']['participant1']
         participant2 = event['args']['participant2']
+        settle_timeout = event['args']['settle_timeout']
 
         token_network.handle_channel_opened_event(
             channel_identifier,
             participant1,
             participant2,
+            settle_timeout,
         )
 
     def handle_channel_new_deposit(self, event: Dict):

@@ -62,6 +62,7 @@ def test_pfs_with_mocked_events(
                 channel_identifier=index,
                 participant1=addresses[p1_index],
                 participant2=addresses[p2_index],
+                settle_timeout=15,
             ),
         ))
 
@@ -186,6 +187,7 @@ def test_pfs_idempotency_of_channel_openings(
                 channel_identifier=decode_hex('0x%064x' % 1),
                 participant1=addresses[0],
                 participant2=addresses[1],
+                settle_timeout=15,
             ),
         ))
 
@@ -244,6 +246,7 @@ def test_pfs_multiple_channels_for_two_participants_opened(
             channel_identifier=decode_hex('0x%064x' % 1),
             participant1=addresses[0],
             participant2=addresses[1],
+            settle_timeout=15,
         ),
     ))
 
@@ -255,6 +258,7 @@ def test_pfs_multiple_channels_for_two_participants_opened(
             channel_identifier=decode_hex('0x%064x' % 2),
             participant1=addresses[1],
             participant2=addresses[0],
+            settle_timeout=15,
         ),
     ))
 

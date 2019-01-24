@@ -36,6 +36,7 @@ class TokenNetwork:
         channel_identifier: ChannelIdentifier,
         participant1: Address,
         participant2: Address,
+        settle_timeout: int,
     ):
         """ Register the channel in the graph, add participents to graph if necessary.
 
@@ -46,8 +47,19 @@ class TokenNetwork:
 
         self.channel_id_to_addresses[channel_identifier] = (participant1, participant2)
 
-        view1 = ChannelView(channel_identifier, participant1, participant2, deposit=0)
-        view2 = ChannelView(channel_identifier, participant2, participant1, deposit=0)
+        view1 = ChannelView(
+            channel_id=channel_identifier,
+            participant1=participant1,
+            participant2=participant2,
+            settle_timeout=15,
+            deposit=0)
+
+        view2 = ChannelView(
+            channel_id=channel_identifier,
+            participant2=participant2,
+            participant1=participant1,
+            settle_timeout=15,
+            deposit=0)
 
         self.G.add_edge(participant1, participant2, view=view1)
         self.G.add_edge(participant2, participant1, view=view2)
