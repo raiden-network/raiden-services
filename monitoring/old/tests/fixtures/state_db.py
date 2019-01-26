@@ -1,6 +1,6 @@
 import pytest
 
-from monitoring_service.state_db import StateDBSqlite
+from old.state_db import StateDBSqlite
 from raiden_libs.utils import private_key_to_address
 
 

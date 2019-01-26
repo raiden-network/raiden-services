@@ -1,6 +1,6 @@
 import gevent
 
-from monitoring_service.utils.blockchain_listener import create_channel_event_topics
+from old.utils.blockchain_listener import create_channel_event_topics
 from raiden_contracts.constants import ChannelEvent
 from raiden_contracts.contract_manager import ContractManager
 from raiden_libs.utils import make_filter

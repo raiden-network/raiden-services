@@ -1,8 +1,8 @@
 import pytest
 
-from monitoring_service import MonitoringService
-from monitoring_service.exceptions import ServiceNotRegistered
-from monitoring_service.utils import is_service_registered, register_service
+from old import MonitoringService
+from old.exceptions import ServiceNotRegistered
+from old.utils import is_service_registered, register_service
 from raiden_libs.utils import private_key_to_address
 
 

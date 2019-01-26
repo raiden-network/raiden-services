@@ -4,7 +4,7 @@ from typing import Dict, List
 import gevent
 import pytest
 
-from monitoring_service.tests.fixtures.server import TEST_POLL_INTERVAL
+from old.tests.fixtures.server import TEST_POLL_INTERVAL
 from raiden_contracts.constants import CONTRACT_MONITORING_SERVICE
 from raiden_contracts.contract_manager import ContractManager
 from raiden_libs.blockchain import BlockchainListener

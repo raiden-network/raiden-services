@@ -4,7 +4,7 @@ from typing import Dict, Iterable, Optional
 
 from eth_utils import is_checksum_address
 
-from monitoring_service.utils import BlockchainListener
+from old.utils import BlockchainListener
 from raiden_contracts.constants import ChannelState
 from raiden_libs.messages import BalanceProof, MonitorRequest
 from raiden_libs.types import Address, ChannelIdentifier
