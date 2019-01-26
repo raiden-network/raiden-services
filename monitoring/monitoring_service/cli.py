@@ -23,8 +23,10 @@ def handle_event(handlers: Dict, event: Event):
 def main():
     ms_state = MonitoringServiceState(
         token_network_registry_address='0x40a5D15fD98b9a351855D64daa9bc621F400cbc5',
+        monitor_contract_address='',
         latest_known_block=0,
     )
+    # TODO: tie databsae to chain id
     database = Database()
     scheduled_events: List[ScheduledEvent] = list()
 
@@ -41,6 +43,7 @@ def main():
         db=database,
         scheduled_events=scheduled_events,
         w3=w3,
+        contract_manager=contract_manager,
     )
 
     handlers = {

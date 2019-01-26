@@ -17,7 +17,8 @@ from monitoring_service.events import (
     UpdatedHeadBlockEvent,
 )
 from monitoring_service.states import Channel, MonitoringServiceState
-from raiden_contracts.constants import ChannelState
+from raiden_contracts.constants import CONTRACT_MONITORING_SERVICE, ChannelState
+from raiden_contracts.contract_manager import ContractManager
 
 
 @dataclass
@@ -26,6 +27,7 @@ class Context:
     db: Database
     scheduled_events: List[ScheduledEvent]
     w3: Web3
+    contract_manager: ContractManager
 
 
 class EventHandler:
@@ -75,27 +77,36 @@ class ChannelClosedEventHandler(EventHandler):
 
     def handle_event(self, event: Event):
         if isinstance(event, ContractReceiveChannelClosedEvent):
-            channel = self.context.db.get_channel(event.channel_identifier)
+            channel = self.context.db.get_channel(
+                event.token_network_address,
+                event.channel_identifier,
+            )
 
-            if channel and channel.state == ChannelState.OPENED:
+            if channel:
                 print(
                     'Channel closed, triggering monitoring check',
                     channel.identifier,
                 )
 
                 # trigger the monitoring action by an event
-                # TODO: check if we have a matching BP
-                e = ActionMonitoringTriggeredEvent(
+                monitor_request = self.context.db.get_monitor_request(
                     token_network_address=channel.token_network_address,
-                    channel_identifier=channel.identifier,
+                    channel_id=channel.identifier,
                 )
-                trigger_block = event.block_number + self.wait_blocks
-                self.context.scheduled_events.append(
-                    ScheduledEvent(
-                        trigger_block_number=trigger_block,
-                        event=cast(Event, e),
-                    ),
-                )
+                if monitor_request is not None:
+                    e = ActionMonitoringTriggeredEvent(
+                        token_network_address=channel.token_network_address,
+                        channel_identifier=channel.identifier,
+                    )
+                    trigger_block = event.block_number + self.wait_blocks
+                    self.context.scheduled_events.append(
+                        ScheduledEvent(
+                            trigger_block_number=trigger_block,
+                            event=cast(Event, e),
+                        ),
+                    )
+                else:
+                    print('No MR found for this channel, skipping')
 
                 channel.state = ChannelState.CLOSED
                 channel.closing_block = event.block_number
@@ -122,9 +133,12 @@ class ChannelSettledEventHandler(EventHandler):
     #     for now we keep it to make debugging easier
     def handle_event(self, event: Event):
         if isinstance(event, ContractReceiveChannelSettledEvent):
-            channel = self.context.db.get_channel(event.channel_identifier)
+            channel = self.context.db.get_channel(
+                event.token_network_address,
+                event.channel_identifier,
+            )
 
-            if channel and channel.state == ChannelState.CLOSED:
+            if channel:
                 print('Received settle event for channel', event.channel_identifier)
 
                 # trigger the claim reward action by an event
@@ -166,6 +180,40 @@ class ActionMonitoringTriggeredEventHandler(EventHandler):
     def handle_event(self, event: Event):
         if isinstance(event, ActionMonitoringTriggeredEvent):
             print('Triggering channel monitoring')
+
+            monitor_request = self.context.db.get_monitor_request(
+                token_network_address=event.token_network_address,
+                channel_id=event.channel_identifier,
+            )
+
+            if monitor_request is not None:
+                # FIXME: don't monitor when closer is MR signer
+                contract = self.context.w3.eth.contract(
+                    abi=self.context.contract_manager.get_contract_abi(
+                        CONTRACT_MONITORING_SERVICE,
+                    ),
+                    address=self.context.ms_state.monitor_contract_address,
+                )
+                tx_hash = contract.functions.monitor(
+                    monitor_request.signer,
+                    monitor_request.non_closing_signer,
+                    monitor_request.balance_hash,
+                    monitor_request.nonce,
+                    monitor_request.additional_hash,
+                    monitor_request.signature,
+                    monitor_request.non_closing_signature,
+                    monitor_request.reward_amount,
+                    monitor_request.token_network_address,
+                    monitor_request.reward_proof_signature,
+                ).transact(
+                    {'gas_limit': 350000},
+                    private_key='',  # FIXME: use signing middleware
+                )
+                print(f'Submit MR to SC, got tx_hash {tx_hash}')
+                assert tx_hash is not None
+                # TODO: store tx hash in state
+            else:
+                print('Related MR not found, this is a bug')
 
 
 @dataclass
