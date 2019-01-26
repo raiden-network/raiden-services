@@ -1,16 +1,18 @@
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, Optional
 
 from raiden_contracts.constants import ChannelState
 
 
 @dataclass
 class Channel:
+    token_network_address: str
     identifier: int
     participant1: str
     participant2: str
     settle_timeout: int
     state: ChannelState = ChannelState.OPENED
+    closing_block: Optional[int] = None
 
 
 @dataclass

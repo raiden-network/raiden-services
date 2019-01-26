@@ -146,6 +146,9 @@ class BlockchainListener:
     def get_events(self, context: Context, to_block: int) -> Generator[Event, None, None]:
         from_block = context.ms_state.latest_known_block
 
+        if to_block <= from_block:
+            return
+
         # first check for new token networks
         registry_events = self._get_token_network_registry_events(
             registry_address=context.ms_state.token_network_registry_address,
@@ -169,6 +172,7 @@ class BlockchainListener:
 
             for event in network_events:
                 event_name = event['event']
+                block_number = event['blockNumber']
 
                 if event_name == ChannelEvent.OPENED:
                     yield ContractReceiveChannelOpenedEvent(
@@ -177,17 +181,14 @@ class BlockchainListener:
                         participant1=event['args']['participant1'],
                         participant2=event['args']['participant2'],
                         settle_timeout=event['args']['settle_timeout'],
+                        block_number=block_number,
                     )
                 elif event_name == ChannelEvent.CLOSED:
                     yield ContractReceiveChannelClosedEvent(
                         token_network_address=event['address'],
                         channel_identifier=event['args']['channel_identifier'],
                         closing_participant=event['args']['closing_participant'],
-                    )
-                elif event_name == ChannelEvent.SETTLED:
-                    yield ContractReceiveChannelSettledEvent(
-                        token_network_address=event['address'],
-                        channel_identifier=event['args']['channel_identifier'],
+                        block_number=block_number,
                     )
                 elif event_name == ChannelEvent.BALANCE_PROOF_UPDATED:
                     yield ContractReceiveNonClosingBalanceProofUpdatedEvent(
@@ -195,6 +196,13 @@ class BlockchainListener:
                         channel_identifier=event['args']['channel_identifier'],
                         closing_participant=event['args']['closing_participant'],
                         nonce=event['args']['nonce'],
+                        block_number=block_number,
+                    )
+                elif event_name == ChannelEvent.SETTLED:
+                    yield ContractReceiveChannelSettledEvent(
+                        token_network_address=event['address'],
+                        channel_identifier=event['args']['channel_identifier'],
+                        block_number=block_number,
                     )
         # commit new block number
         yield UpdatedHeadBlockEvent(
