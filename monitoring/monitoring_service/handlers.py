@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import List, cast
 
+import structlog
 from web3 import Web3
 
 from monitoring_service.database import Database
@@ -19,6 +20,8 @@ from monitoring_service.events import (
 from monitoring_service.states import Channel, MonitoringServiceState
 from raiden_contracts.constants import CONTRACT_MONITORING_SERVICE, ChannelState
 from raiden_contracts.contract_manager import ContractManager
+
+log = structlog.get_logger(__name__)
 
 
 @dataclass
@@ -46,7 +49,10 @@ class TokenNetworkCreatedEventHandler(EventHandler):
 
     def handle_event(self, event: Event):
         if isinstance(event, ContractReceiveTokenNetworkCreatedEvent):
-            print('Got new token network: ', event.token_network_address)
+            log.info(
+                'Received new token network: ',
+                token_network_address=event.token_network_address,
+            )
             self.context.ms_state.token_network_addresses.append(event.token_network_address)
             self.context.db.update_state(self.context.ms_state)
 
@@ -57,7 +63,11 @@ class ChannelOpenedEventHandler(EventHandler):
 
     def handle_event(self, event: Event):
         if isinstance(event, ContractReceiveChannelOpenedEvent):
-            print('Adding channel to DB: ', event.channel_identifier)
+            log.info(
+                'Received new channel: ',
+                token_network_address=event.token_network_address,
+                identifier=event.channel_identifier,
+            )
             self.context.db.upsert_channel(
                 Channel(
                     token_network_address=event.token_network_address,
@@ -83,9 +93,10 @@ class ChannelClosedEventHandler(EventHandler):
             )
 
             if channel:
-                print(
+                log.info(
                     'Channel closed, triggering monitoring check',
-                    channel.identifier,
+                    token_network_address=event.token_network_address,
+                    identifier=channel.identifier,
                 )
 
                 # trigger the monitoring action by an event
@@ -106,13 +117,13 @@ class ChannelClosedEventHandler(EventHandler):
                         ),
                     )
                 else:
-                    print('No MR found for this channel, skipping')
+                    log.info('No MR found for this channel, skipping')
 
                 channel.state = ChannelState.CLOSED
                 channel.closing_block = event.block_number
                 self.context.db.upsert_channel(channel)
             else:
-                print('Channel not in database')
+                log.warning('Channel not in database')
                 # FIXME: this is a bad error
 
 
@@ -139,7 +150,11 @@ class ChannelSettledEventHandler(EventHandler):
             )
 
             if channel:
-                print('Received settle event for channel', event.channel_identifier)
+                log.info(
+                    'Received settle event for channel',
+                    token_network_address=event.token_network_address,
+                    identifier=event.channel_identifier,
+                )
 
                 # trigger the claim reward action by an event
                 # TODO: check if we did update the state
@@ -158,7 +173,7 @@ class ChannelSettledEventHandler(EventHandler):
                 channel.state = ChannelState.SETTLED
                 self.context.db.upsert_channel(channel)
             else:
-                print('Channel not in database')
+                log.warning('Channel not in database')
                 # FIXME: this is a bad error
 
 
@@ -179,7 +194,7 @@ class ActionMonitoringTriggeredEventHandler(EventHandler):
 
     def handle_event(self, event: Event):
         if isinstance(event, ActionMonitoringTriggeredEvent):
-            print('Triggering channel monitoring')
+            log.info('Triggering channel monitoring')
 
             monitor_request = self.context.db.get_monitor_request(
                 token_network_address=event.token_network_address,
@@ -209,11 +224,11 @@ class ActionMonitoringTriggeredEventHandler(EventHandler):
                     {'gas_limit': 350000},
                     private_key='',  # FIXME: use signing middleware
                 )
-                print(f'Submit MR to SC, got tx_hash {tx_hash}')
+                log.info(f'Submit MR to SC, got tx_hash {tx_hash}')
                 assert tx_hash is not None
                 # TODO: store tx hash in state
             else:
-                print('Related MR not found, this is a bug')
+                log.warning('Related MR not found, this is a bug')
 
 
 @dataclass
@@ -222,7 +237,7 @@ class ActionClaimRewardTriggeredEventHandler(EventHandler):
 
     def handle_event(self, event: Event):
         if isinstance(event, ActionClaimRewardTriggeredEvent):
-            print('Triggering reward claim')
+            log.info('Triggering reward claim')
 
 
 HANDLERS = {

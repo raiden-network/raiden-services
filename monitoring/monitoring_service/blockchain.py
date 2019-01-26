@@ -1,5 +1,6 @@
 from typing import Dict, Generator, List
 
+import structlog
 from eth_utils import decode_hex, encode_hex, to_checksum_address
 from eth_utils.abi import event_abi_to_log_topic
 from web3 import Web3
@@ -23,6 +24,8 @@ from raiden_contracts.constants import (
     ChannelEvent,
 )
 from raiden_contracts.contract_manager import ContractManager
+
+log = structlog.get_logger(__name__)
 
 
 def create_channel_event_topics() -> List:
@@ -148,6 +151,8 @@ class BlockchainListener:
 
         if to_block <= from_block:
             return
+
+        log.info('Querying new block(s)', from_block=from_block, end_block=to_block)
 
         # first check for new token networks
         registry_events = self._get_token_network_registry_events(
