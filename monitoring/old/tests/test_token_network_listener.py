@@ -1,7 +1,7 @@
 import gevent
 import pytest
 
-from monitoring_service.token_network_listener import TokenNetworkListener
+from old.token_network_listener import TokenNetworkListener
 
 
 @pytest.fixture

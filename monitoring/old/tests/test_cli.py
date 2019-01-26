@@ -4,7 +4,7 @@ from unittest.mock import DEFAULT, patch
 from click.testing import CliRunner
 from eth_utils import to_checksum_address
 
-from monitoring_service.cli import main
+from old.cli import main
 
 DEFAULT_ARGS = [
     '--private-key', 'some_key',

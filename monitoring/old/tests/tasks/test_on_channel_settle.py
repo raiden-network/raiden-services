@@ -1,4 +1,4 @@
-from monitoring_service.tasks import OnChannelSettle
+from old.tasks import OnChannelSettle
 from raiden_libs.private_contract import PrivateContract
 from raiden_libs.utils import private_key_to_address
 

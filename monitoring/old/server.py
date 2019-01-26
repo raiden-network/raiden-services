@@ -7,11 +7,11 @@ import gevent
 from eth_utils import encode_hex, is_address, is_checksum_address, is_same_address
 from web3 import Web3
 
-from monitoring_service.exceptions import ServiceNotRegistered, StateDBInvalid
-from monitoring_service.state_db import StateDBSqlite
-from monitoring_service.tasks import OnChannelClose, OnChannelSettle
-from monitoring_service.token_network_listener import TokenNetworkListener
-from monitoring_service.utils import is_service_registered
+from old.exceptions import ServiceNotRegistered, StateDBInvalid
+from old.state_db import StateDBSqlite
+from old.tasks import OnChannelClose, OnChannelSettle
+from old.token_network_listener import TokenNetworkListener
+from old.utils import is_service_registered
 from raiden_contracts.constants import CONTRACT_MONITORING_SERVICE, ChannelEvent
 from raiden_contracts.contract_manager import ContractManager
 from raiden_libs.gevent_error_handler import register_error_handler

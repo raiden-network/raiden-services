@@ -5,8 +5,8 @@ import gevent
 from eth_utils import is_checksum_address
 from web3 import Web3
 
-from monitoring_service.utils import BlockchainListener, BlockchainMonitor
-from monitoring_service.utils.blockchain_listener import (
+from old.utils import BlockchainListener, BlockchainMonitor
+from old.utils.blockchain_listener import (
     create_channel_event_topics,
     create_registry_event_topics,
 )

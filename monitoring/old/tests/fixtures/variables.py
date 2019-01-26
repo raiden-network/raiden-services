@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-from monitoring_service import __file__ as MS_PATH
+from old import __file__ as MS_PATH
 
 
 @pytest.fixture

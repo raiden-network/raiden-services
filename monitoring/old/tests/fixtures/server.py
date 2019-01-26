@@ -3,8 +3,8 @@ import logging
 import pytest
 from request_collector.server import RequestCollector
 
-from monitoring_service import MonitoringService
-from monitoring_service.utils import BlockchainMonitor, register_service
+from old import MonitoringService
+from old.utils import BlockchainMonitor, register_service
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK
 from raiden_contracts.contract_manager import ContractManager
 from raiden_libs.test.mocks.dummy_transport import DummyTransport
