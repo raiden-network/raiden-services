@@ -1,7 +1,8 @@
-from pprint import pprint
+import sys
 from time import sleep
 from typing import Dict, List
 
+import structlog
 from web3 import HTTPProvider, Web3
 
 from monitoring_service.blockchain import BlockchainListener
@@ -12,10 +13,11 @@ from monitoring_service.states import MonitoringServiceState
 from raiden_contracts.contract_manager import ContractManager, contracts_precompiled_path
 
 contract_manager = ContractManager(contracts_precompiled_path())
+log = structlog.get_logger(__name__)
 
 
 def handle_event(handlers: Dict, event: Event):
-    print('> Current event:', event)
+    log.debug('Processing event:', event_=event)
     handler: EventHandler = handlers[type(event)]
     handler.handle_event(event)
 
@@ -32,7 +34,6 @@ def main():
 
     provider = HTTPProvider('http://parity.ropsten.ethnodes.brainbot.com:8545')
     w3 = Web3(provider)
-    print('Startup finished')
     bcl = BlockchainListener(
         web3=w3,
         contract_manager=contract_manager,
@@ -50,15 +51,11 @@ def main():
         event: handler(context) for event, handler in HANDLERS.items()
     }
 
-    pprint(handlers)
-
     while True:
         last_block = w3.eth.blockNumber - 5
-        print('Last block', last_block)
         for e in bcl.get_events(context, last_block):
             handle_event(handlers, e)
 
-        print('scheduled_events', scheduled_events)
         # check triggered events
         # TODO: create a priority scheduled_events for this
         to_remove = []
@@ -72,10 +69,14 @@ def main():
         for d in to_remove:
             scheduled_events.remove(d)
 
-        print('Known channels', len(database.channels))
-        print('scheduled_events', scheduled_events)
+        if scheduled_events:
+            log.info('scheduled_events', events=scheduled_events)
 
-        sleep(1)
+        try:
+            sleep(1)
+        except KeyboardInterrupt:
+            log.info('Shutting down.')
+            sys.exit(0)
 
 
 if __name__ == '__main__':
