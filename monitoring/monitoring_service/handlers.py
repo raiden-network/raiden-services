@@ -99,12 +99,18 @@ class ChannelClosedEventHandler(EventHandler):
                     identifier=channel.identifier,
                 )
 
+                # check if the settle timeout is already over
+                # this is important when starting up the MS
+                settle_period_end_block = event.block_number + channel.settle_timeout
+                settle_period_over = (
+                    settle_period_end_block < self.context.ms_state.latest_known_block
+                )
                 # trigger the monitoring action by an event
                 monitor_request = self.context.db.get_monitor_request(
                     token_network_address=channel.token_network_address,
                     channel_id=channel.identifier,
                 )
-                if monitor_request is not None:
+                if monitor_request is not None and not settle_period_over:
                     e = ActionMonitoringTriggeredEvent(
                         token_network_address=channel.token_network_address,
                         channel_identifier=channel.identifier,
@@ -117,7 +123,10 @@ class ChannelClosedEventHandler(EventHandler):
                         ),
                     )
                 else:
-                    log.info('No MR found for this channel, skipping')
+                    if settle_period_over:
+                        log.info('Settle period timeout is in the past, skipping')
+                    else:
+                        log.info('No MR found for this channel, skipping')
 
                 channel.state = ChannelState.CLOSED
                 channel.closing_block = event.block_number
