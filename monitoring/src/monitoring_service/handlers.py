@@ -51,7 +51,7 @@ class TokenNetworkCreatedEventHandler(EventHandler):
     def handle_event(self, event: Event):
         if isinstance(event, ReceiveTokenNetworkCreatedEvent):
             log.info(
-                'Received new token network: ',
+                'Received new token network',
                 token_network_address=event.token_network_address,
             )
             self.context.ms_state.token_network_addresses.append(event.token_network_address)
@@ -65,7 +65,7 @@ class ChannelOpenedEventHandler(EventHandler):
     def handle_event(self, event: Event):
         if isinstance(event, ReceiveChannelOpenedEvent):
             log.info(
-                'Received new channel: ',
+                'Received new channel',
                 token_network_address=event.token_network_address,
                 identifier=event.channel_identifier,
             )
