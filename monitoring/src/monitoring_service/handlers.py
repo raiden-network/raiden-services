@@ -8,12 +8,12 @@ from monitoring_service.database import Database
 from monitoring_service.events import (
     ActionClaimRewardTriggeredEvent,
     ActionMonitoringTriggeredEvent,
-    ContractReceiveChannelClosedEvent,
-    ContractReceiveChannelOpenedEvent,
-    ContractReceiveChannelSettledEvent,
-    ContractReceiveNonClosingBalanceProofUpdatedEvent,
-    ContractReceiveTokenNetworkCreatedEvent,
     Event,
+    ReceiveChannelClosedEvent,
+    ReceiveChannelOpenedEvent,
+    ReceiveChannelSettledEvent,
+    ReceiveNonClosingBalanceProofUpdatedEvent,
+    ReceiveTokenNetworkCreatedEvent,
     ScheduledEvent,
     UpdatedHeadBlockEvent,
 )
@@ -31,6 +31,7 @@ class Context:
     scheduled_events: List[ScheduledEvent]
     w3: Web3
     contract_manager: ContractManager
+    last_known_block: int
 
 
 class EventHandler:
@@ -48,7 +49,7 @@ class TokenNetworkCreatedEventHandler(EventHandler):
     context: Context
 
     def handle_event(self, event: Event):
-        if isinstance(event, ContractReceiveTokenNetworkCreatedEvent):
+        if isinstance(event, ReceiveTokenNetworkCreatedEvent):
             log.info(
                 'Received new token network: ',
                 token_network_address=event.token_network_address,
@@ -62,7 +63,7 @@ class ChannelOpenedEventHandler(EventHandler):
     context: Context
 
     def handle_event(self, event: Event):
-        if isinstance(event, ContractReceiveChannelOpenedEvent):
+        if isinstance(event, ReceiveChannelOpenedEvent):
             log.info(
                 'Received new channel: ',
                 token_network_address=event.token_network_address,
@@ -86,7 +87,7 @@ class ChannelClosedEventHandler(EventHandler):
     wait_blocks: int = 100
 
     def handle_event(self, event: Event):
-        if isinstance(event, ContractReceiveChannelClosedEvent):
+        if isinstance(event, ReceiveChannelClosedEvent):
             channel = self.context.db.get_channel(
                 event.token_network_address,
                 event.channel_identifier,
@@ -103,7 +104,7 @@ class ChannelClosedEventHandler(EventHandler):
                 # this is important when starting up the MS
                 settle_period_end_block = event.block_number + channel.settle_timeout
                 settle_period_over = (
-                    settle_period_end_block < self.context.ms_state.latest_known_block
+                    settle_period_end_block < self.context.last_known_block
                 )
                 # trigger the monitoring action by an event
                 monitor_request = self.context.db.get_monitor_request(
@@ -124,9 +125,19 @@ class ChannelClosedEventHandler(EventHandler):
                     )
                 else:
                     if settle_period_over:
-                        log.info('Settle period timeout is in the past, skipping')
+                        log.info(
+                            'Settle period timeout is in the past, skipping',
+                            token_network_address=event.token_network_address,
+                            identifier=channel.identifier,
+                            settle_period_end_block=settle_period_end_block,
+                            known_block=self.context.last_known_block,
+                        )
                     else:
-                        log.info('No MR found for this channel, skipping')
+                        log.info(
+                            'No MR found for this channel, skipping',
+                            token_network_address=event.token_network_address,
+                            identifier=channel.identifier,
+                        )
 
                 channel.state = ChannelState.CLOSED
                 channel.closing_block = event.block_number
@@ -141,7 +152,7 @@ class ChannelNonClosingBalanceProofUpdatedEventHandler(EventHandler):
     context: Context
 
     def handle_event(self, event: Event):
-        if isinstance(event, ContractReceiveNonClosingBalanceProofUpdatedEvent):
+        if isinstance(event, ReceiveNonClosingBalanceProofUpdatedEvent):
             pass
 
 
@@ -149,10 +160,10 @@ class ChannelNonClosingBalanceProofUpdatedEventHandler(EventHandler):
 class ChannelSettledEventHandler(EventHandler):
     context: Context
 
-    # TODO: we might want to remove all related sstate here in the future
+    # TODO: we might want to remove all related state here in the future
     #     for now we keep it to make debugging easier
     def handle_event(self, event: Event):
-        if isinstance(event, ContractReceiveChannelSettledEvent):
+        if isinstance(event, ReceiveChannelSettledEvent):
             channel = self.context.db.get_channel(
                 event.token_network_address,
                 event.channel_identifier,
@@ -250,12 +261,12 @@ class ActionClaimRewardTriggeredEventHandler(EventHandler):
 
 
 HANDLERS = {
-    ContractReceiveTokenNetworkCreatedEvent: TokenNetworkCreatedEventHandler,
-    ContractReceiveChannelOpenedEvent: ChannelOpenedEventHandler,
-    ContractReceiveChannelClosedEvent: ChannelClosedEventHandler,
-    ContractReceiveNonClosingBalanceProofUpdatedEvent:
+    ReceiveTokenNetworkCreatedEvent: TokenNetworkCreatedEventHandler,
+    ReceiveChannelOpenedEvent: ChannelOpenedEventHandler,
+    ReceiveChannelClosedEvent: ChannelClosedEventHandler,
+    ReceiveNonClosingBalanceProofUpdatedEvent:
         ChannelNonClosingBalanceProofUpdatedEventHandler,
-    ContractReceiveChannelSettledEvent: ChannelSettledEventHandler,
+    ReceiveChannelSettledEvent: ChannelSettledEventHandler,
     UpdatedHeadBlockEvent: UpdatedHeadBlockEventHandler,
     ActionMonitoringTriggeredEvent: ActionMonitoringTriggeredEventHandler,
     ActionClaimRewardTriggeredEvent: ActionClaimRewardTriggeredEventHandler,
