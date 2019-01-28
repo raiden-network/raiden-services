@@ -8,12 +8,12 @@ from web3.contract import get_event_data
 from web3.utils.abi import filter_by_type
 
 from monitoring_service.events import (
-    ContractReceiveChannelClosedEvent,
-    ContractReceiveChannelOpenedEvent,
-    ContractReceiveChannelSettledEvent,
-    ContractReceiveNonClosingBalanceProofUpdatedEvent,
-    ContractReceiveTokenNetworkCreatedEvent,
     Event,
+    ReceiveChannelClosedEvent,
+    ReceiveChannelOpenedEvent,
+    ReceiveChannelSettledEvent,
+    ReceiveNonClosingBalanceProofUpdatedEvent,
+    ReceiveTokenNetworkCreatedEvent,
     UpdatedHeadBlockEvent,
 )
 from monitoring_service.handlers import Context
@@ -42,28 +42,28 @@ def create_registry_event_topics(contract_manager: ContractManager) -> List:
     return [encode_hex(event_abi_to_log_topic(new_network_abi))]
 
 
-def decode_event(abi: Dict, log: Dict):
+def decode_event(abi: Dict, log_: Dict):
     """ Helper function to unpack event data using a provided ABI
 
     Args:
         abi: The ABI of the contract, not the ABI of the event
-        log: The raw event data
+        log_: The raw event data
 
     Returns:
         The decoded event
     """
-    if isinstance(log['topics'][0], str):
-        log['topics'][0] = decode_hex(log['topics'][0])
-    elif isinstance(log['topics'][0], int):
-        log['topics'][0] = decode_hex(hex(log['topics'][0]))
-    event_id = log['topics'][0]
+    if isinstance(log_['topics'][0], str):
+        log_['topics'][0] = decode_hex(log_['topics'][0])
+    elif isinstance(log_['topics'][0], int):
+        log_['topics'][0] = decode_hex(hex(log_['topics'][0]))
+    event_id = log_['topics'][0]
     events = filter_by_type('event', abi)
     topic_to_event_abi = {
         event_abi_to_log_topic(event_abi): event_abi
         for event_abi in events
     }
     event_abi = topic_to_event_abi[event_id]
-    return get_event_data(event_abi, log)
+    return get_event_data(event_abi, log_)
 
 
 def query_blockchain_events(
@@ -80,8 +80,8 @@ def query_blockchain_events(
     Args:
         web3: A Web3 instance
         contract_manager: A contract manager
-        contract_name: The name of the contract
         contract_address: The address of the contract to be filtered, can be `None`
+        contract_name: The name of the contract
         topics: The topics to filter for
         from_block: The block to start search events
         to_block: The block to stop searching for events
@@ -162,7 +162,7 @@ class BlockchainListener:
         )
 
         for event in registry_events:
-            yield ContractReceiveTokenNetworkCreatedEvent(
+            yield ReceiveTokenNetworkCreatedEvent(
                 token_network_address=event['args']['token_network_address'],
             )
 
@@ -180,7 +180,7 @@ class BlockchainListener:
                 block_number = event['blockNumber']
 
                 if event_name == ChannelEvent.OPENED:
-                    yield ContractReceiveChannelOpenedEvent(
+                    yield ReceiveChannelOpenedEvent(
                         token_network_address=event['address'],
                         channel_identifier=event['args']['channel_identifier'],
                         participant1=event['args']['participant1'],
@@ -189,14 +189,14 @@ class BlockchainListener:
                         block_number=block_number,
                     )
                 elif event_name == ChannelEvent.CLOSED:
-                    yield ContractReceiveChannelClosedEvent(
+                    yield ReceiveChannelClosedEvent(
                         token_network_address=event['address'],
                         channel_identifier=event['args']['channel_identifier'],
                         closing_participant=event['args']['closing_participant'],
                         block_number=block_number,
                     )
                 elif event_name == ChannelEvent.BALANCE_PROOF_UPDATED:
-                    yield ContractReceiveNonClosingBalanceProofUpdatedEvent(
+                    yield ReceiveNonClosingBalanceProofUpdatedEvent(
                         token_network_address=event['address'],
                         channel_identifier=event['args']['channel_identifier'],
                         closing_participant=event['args']['closing_participant'],
@@ -204,7 +204,7 @@ class BlockchainListener:
                         block_number=block_number,
                     )
                 elif event_name == ChannelEvent.SETTLED:
-                    yield ContractReceiveChannelSettledEvent(
+                    yield ReceiveChannelSettledEvent(
                         token_network_address=event['address'],
                         channel_identifier=event['args']['channel_identifier'],
                         block_number=block_number,

@@ -6,16 +6,13 @@ class Event:
     pass
 
 
-# Blockchain related events
-# As in Raiden these are named ContractReceive*
-
 @dataclass
-class ContractReceiveTokenNetworkCreatedEvent(Event):
+class ReceiveTokenNetworkCreatedEvent(Event):
     token_network_address: str
 
 
 @dataclass
-class ContractReceiveChannelOpenedEvent(Event):
+class ReceiveChannelOpenedEvent(Event):
     token_network_address: str
     channel_identifier: int
     participant1: str
@@ -25,7 +22,7 @@ class ContractReceiveChannelOpenedEvent(Event):
 
 
 @dataclass
-class ContractReceiveChannelClosedEvent(Event):
+class ReceiveChannelClosedEvent(Event):
     token_network_address: str
     channel_identifier: int
     closing_participant: str
@@ -33,7 +30,7 @@ class ContractReceiveChannelClosedEvent(Event):
 
 
 @dataclass
-class ContractReceiveNonClosingBalanceProofUpdatedEvent(Event):
+class ReceiveNonClosingBalanceProofUpdatedEvent(Event):
     token_network_address: str
     channel_identifier: int
     closing_participant: str
@@ -42,7 +39,7 @@ class ContractReceiveNonClosingBalanceProofUpdatedEvent(Event):
 
 
 @dataclass
-class ContractReceiveChannelSettledEvent(Event):
+class ReceiveChannelSettledEvent(Event):
     token_network_address: str
     channel_identifier: int
     block_number: int

@@ -45,6 +45,7 @@ def main():
         scheduled_events=scheduled_events,
         w3=w3,
         contract_manager=contract_manager,
+        last_known_block=0,
     )
 
     handlers = {
@@ -53,6 +54,7 @@ def main():
 
     while True:
         last_block = w3.eth.blockNumber - 5
+        context.last_known_block = last_block
         for e in bcl.get_events(context, last_block):
             handle_event(handlers, e)
 

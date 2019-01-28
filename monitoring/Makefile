@@ -1,4 +1,4 @@
-CODE_DIRS = monitoring_service/ request_collector/
+CODE_DIRS = src/ tests/ setup.py
 ISORT_PARAMS = --ignore-whitespace --settings-path . --recursive $(CODE_DIRS)
 
 all: lint mypy
@@ -14,4 +14,4 @@ isort:
 	isort $(ISORT_PARAMS)
 
 test:
-	py.test -v
+	py.test -v tests/
