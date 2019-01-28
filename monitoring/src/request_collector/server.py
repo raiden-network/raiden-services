@@ -4,7 +4,7 @@ import traceback
 from typing import List
 
 import gevent
-from old.state_db import StateDBSqlite
+from request_collector.state_db import StateDBSqlite
 from request_collector.store_monitor_request import StoreMonitorRequest
 
 from raiden_libs.gevent_error_handler import register_error_handler
