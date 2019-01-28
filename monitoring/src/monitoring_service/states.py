@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field  # isort:skip noqa differences between python 3.6 and 3.7
 from typing import List, Optional
 
 from eth_utils import decode_hex, to_checksum_address

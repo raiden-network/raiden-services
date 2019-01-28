@@ -1,7 +1,9 @@
 import logging
 
+import gevent.event  # noqa  needed for DummyTransport fixture
 import pytest
 from eth_utils import is_checksum_address, to_checksum_address
+from request_collector.server import RequestCollector
 from web3 import Web3
 from web3.utils.transactions import wait_for_transaction_receipt
 
@@ -9,6 +11,7 @@ from monitoring_service.cli import MonitoringService
 from raiden_contracts.constants import CONTRACT_MONITORING_SERVICE, CONTRACT_RAIDEN_SERVICE_BUNDLE
 from raiden_contracts.contract_manager import ContractManager
 from raiden_libs.private_contract import PrivateContract
+from raiden_libs.test.mocks.dummy_transport import DummyTransport
 from raiden_libs.utils import private_key_to_address
 
 log = logging.getLogger(__name__)
@@ -66,6 +69,11 @@ def register_service(
 
 
 @pytest.fixture
+def dummy_transport():
+    return DummyTransport()
+
+
+@pytest.fixture
 def monitoring_service(
     server_private_key,
     web3,
@@ -93,3 +101,23 @@ def monitoring_service(
         poll_interval=1,  # for faster tests
     )
     return ms
+
+
+@pytest.fixture
+def request_collector(
+    server_private_key,
+    dummy_transport,
+    state_db_sqlite,
+    web3,
+    monitoring_service_contract,
+    token_network_registry_contract,
+    send_funds,
+    contracts_manager: ContractManager,
+):
+    rc = RequestCollector(
+        state_db=state_db_sqlite,
+        transport=dummy_transport,
+    )
+    rc.start()
+    yield rc
+    rc.stop()
