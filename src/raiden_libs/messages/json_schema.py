@@ -58,9 +58,6 @@ MONITOR_REQUEST_SCHEMA = {
         'reward_amount': {
             'type': 'integer',
         },
-        'monitor_address': {
-            'type': 'string',
-        },
         'balance_proof': {
             'type': 'object',
         },

@@ -14,7 +14,6 @@ class MonitorRequest(Message):
     """Message sent by a Raiden node to the MS. It cointains all data required to
     call MSC
     """
-    monitor_address = address_property('_monitor_address')  # type: ignore
     _type = 'MonitorRequest'
 
     def __init__(
@@ -23,24 +22,20 @@ class MonitorRequest(Message):
         non_closing_signature: str = None,
         reward_proof_signature: bytes = None,  # bytes
         reward_amount: int = None,             # uint192
-        monitor_address: Address = None,
     ) -> None:
         assert non_closing_signature is None or len(decode_hex(non_closing_signature)) == 65
         assert reward_amount is None or (reward_amount >= 0) and (reward_amount <= UINT192_MAX)
         # todo: validate reward proof signature
-        assert is_address(monitor_address)
         assert isinstance(balance_proof, BalanceProof)
 
         self._balance_proof = balance_proof
         self.non_closing_signature = non_closing_signature
         self.reward_proof_signature = reward_proof_signature
         self.reward_amount = reward_amount
-        self.monitor_address = monitor_address
 
     def serialize_data(self):
         msg = self.__dict__.copy()
         msg.pop('_balance_proof')
-        msg['monitor_address'] = msg.pop('_monitor_address')
         msg['balance_proof'] = self.balance_proof.serialize_data()
         msg['reward_proof_signature'] = self.reward_proof_signature
         return msg
@@ -70,7 +65,6 @@ class MonitorRequest(Message):
             data['non_closing_signature'],
             data['reward_proof_signature'],
             data['reward_amount'],
-            data['monitor_address'],
         )
         return result
 

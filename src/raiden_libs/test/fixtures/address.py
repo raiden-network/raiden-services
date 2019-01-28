@@ -70,7 +70,6 @@ def get_random_monitor_request(get_random_bp, get_random_address, get_random_pri
             balance_proof,
             non_closing_signature,
             reward_amount=random.randint(0, UINT192_MAX),
-            monitor_address=get_random_address(),
         )
         monitor_request.reward_proof_signature = encode_hex(
             eth_sign(privkey, monitor_request.serialize_reward_proof()),

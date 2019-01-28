@@ -58,7 +58,6 @@ def get_monitor_request_for_same_channel(
             balance_proof,
             non_closing_signature,
             reward_amount=reward_amount,
-            monitor_address=get_random_address(),
         )
         monitor_request.reward_proof_signature = encode_hex(
             eth_sign(privkey, monitor_request.serialize_reward_proof()),
