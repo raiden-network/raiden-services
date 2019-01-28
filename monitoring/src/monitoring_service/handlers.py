@@ -4,6 +4,7 @@ from typing import List, cast
 import structlog
 from web3 import Web3
 
+from monitoring_service.constants import WAIT_BLOCKS_BEFORE_MONITOR
 from monitoring_service.database import Database
 from monitoring_service.events import (
     ActionClaimRewardTriggeredEvent,
@@ -34,267 +35,223 @@ class Context:
     last_known_block: int
 
 
-class EventHandler:
-    """ Base class for event handlers.
+def token_network_created_event_handler(event: Event, context: Context):
+    assert isinstance(event, ReceiveTokenNetworkCreatedEvent)
+    log.info(
+        'Received new token network',
+        token_network_address=event.token_network_address,
+    )
+    context.ms_state.token_network_addresses.append(event.token_network_address)
+    context.db.update_state(context.ms_state)
 
-    An event handler needs to be idempotent as events can be triggered
-    multiple times.
-    """
-    def handle_event(self, event: Event):
-        raise NotImplementedError
+
+def channel_opened_event_handler(event: Event, context: Context):
+    assert isinstance(event, ReceiveChannelOpenedEvent)
+    log.info(
+        'Received new channel',
+        token_network_address=event.token_network_address,
+        identifier=event.channel_identifier,
+    )
+    context.db.upsert_channel(
+        Channel(
+            token_network_address=event.token_network_address,
+            identifier=event.channel_identifier,
+            participant1=event.participant1,
+            participant2=event.participant2,
+            settle_timeout=event.settle_timeout,
+        ),
+    )
 
 
-@dataclass
-class TokenNetworkCreatedEventHandler(EventHandler):
-    context: Context
+def channel_closed_event_handler(event: Event, context: Context):
+    assert isinstance(event, ReceiveChannelClosedEvent)
+    channel = context.db.get_channel(
+        event.token_network_address,
+        event.channel_identifier,
+    )
 
-    def handle_event(self, event: Event):
-        if isinstance(event, ReceiveTokenNetworkCreatedEvent):
-            log.info(
-                'Received new token network',
-                token_network_address=event.token_network_address,
+    if channel:
+        log.info(
+            'Channel closed, triggering monitoring check',
+            token_network_address=event.token_network_address,
+            identifier=channel.identifier,
+        )
+
+        # check if the settle timeout is already over
+        # this is important when starting up the MS
+        settle_period_end_block = event.block_number + channel.settle_timeout
+        settle_period_over = (
+            settle_period_end_block < context.last_known_block
+        )
+        # trigger the monitoring action by an event
+        monitor_request = context.db.get_monitor_request(
+            token_network_address=channel.token_network_address,
+            channel_id=channel.identifier,
+        )
+        if monitor_request is not None and not settle_period_over:
+            e = ActionMonitoringTriggeredEvent(
+                token_network_address=channel.token_network_address,
+                channel_identifier=channel.identifier,
             )
-            self.context.ms_state.token_network_addresses.append(event.token_network_address)
-            self.context.db.update_state(self.context.ms_state)
-
-
-@dataclass
-class ChannelOpenedEventHandler(EventHandler):
-    context: Context
-
-    def handle_event(self, event: Event):
-        if isinstance(event, ReceiveChannelOpenedEvent):
-            log.info(
-                'Received new channel',
-                token_network_address=event.token_network_address,
-                identifier=event.channel_identifier,
-            )
-            self.context.db.upsert_channel(
-                Channel(
-                    token_network_address=event.token_network_address,
-                    identifier=event.channel_identifier,
-                    participant1=event.participant1,
-                    participant2=event.participant2,
-                    settle_timeout=event.settle_timeout,
+            trigger_block = event.block_number + WAIT_BLOCKS_BEFORE_MONITOR
+            context.scheduled_events.append(
+                ScheduledEvent(
+                    trigger_block_number=trigger_block,
+                    event=cast(Event, e),
                 ),
             )
-
-
-@dataclass
-class ChannelClosedEventHandler(EventHandler):
-    context: Context
-    # TODO: fixme
-    wait_blocks: int = 100
-
-    def handle_event(self, event: Event):
-        if isinstance(event, ReceiveChannelClosedEvent):
-            channel = self.context.db.get_channel(
-                event.token_network_address,
-                event.channel_identifier,
-            )
-
-            if channel:
+        else:
+            if settle_period_over:
                 log.info(
-                    'Channel closed, triggering monitoring check',
+                    'Settle period timeout is in the past, skipping',
+                    token_network_address=event.token_network_address,
+                    identifier=channel.identifier,
+                    settle_period_end_block=settle_period_end_block,
+                    known_block=context.last_known_block,
+                )
+            else:
+                log.info(
+                    'No MR found for this channel, skipping',
                     token_network_address=event.token_network_address,
                     identifier=channel.identifier,
                 )
 
-                # check if the settle timeout is already over
-                # this is important when starting up the MS
-                settle_period_end_block = event.block_number + channel.settle_timeout
-                settle_period_over = (
-                    settle_period_end_block < self.context.last_known_block
-                )
-                # trigger the monitoring action by an event
-                monitor_request = self.context.db.get_monitor_request(
-                    token_network_address=channel.token_network_address,
-                    channel_id=channel.identifier,
-                )
-                if monitor_request is not None and not settle_period_over:
-                    e = ActionMonitoringTriggeredEvent(
-                        token_network_address=channel.token_network_address,
-                        channel_identifier=channel.identifier,
-                    )
-                    trigger_block = event.block_number + self.wait_blocks
-                    self.context.scheduled_events.append(
-                        ScheduledEvent(
-                            trigger_block_number=trigger_block,
-                            event=cast(Event, e),
-                        ),
-                    )
-                else:
-                    if settle_period_over:
-                        log.info(
-                            'Settle period timeout is in the past, skipping',
-                            token_network_address=event.token_network_address,
-                            identifier=channel.identifier,
-                            settle_period_end_block=settle_period_end_block,
-                            known_block=self.context.last_known_block,
-                        )
-                    else:
-                        log.info(
-                            'No MR found for this channel, skipping',
-                            token_network_address=event.token_network_address,
-                            identifier=channel.identifier,
-                        )
-
-                channel.state = ChannelState.CLOSED
-                channel.closing_block = event.block_number
-                self.context.db.upsert_channel(channel)
-            else:
-                log.warning('Channel not in database')
-                # FIXME: this is a bad error
+        channel.state = ChannelState.CLOSED
+        channel.closing_block = event.block_number
+        context.db.upsert_channel(channel)
+    else:
+        log.warning('Channel not in database')
+        # FIXME: this is a bad error
 
 
-@dataclass
-class ChannelNonClosingBalanceProofUpdatedEventHandler(EventHandler):
-    context: Context
-
-    def handle_event(self, event: Event):
-        if isinstance(event, ReceiveNonClosingBalanceProofUpdatedEvent):
-            pass
+def channel_non_closing_balance_proof_updated_event_handler(event: Event, context: Context):
+    assert isinstance(event, ReceiveNonClosingBalanceProofUpdatedEvent)
+    pass
 
 
-@dataclass
-class ChannelSettledEventHandler(EventHandler):
-    context: Context
-
+def channel_settled_event_handler(event: Event, context: Context):
     # TODO: we might want to remove all related state here in the future
     #     for now we keep it to make debugging easier
-    def handle_event(self, event: Event):
-        if isinstance(event, ReceiveChannelSettledEvent):
-            channel = self.context.db.get_channel(
-                event.token_network_address,
-                event.channel_identifier,
-            )
+    assert isinstance(event, ReceiveChannelSettledEvent)
+    channel = context.db.get_channel(
+        event.token_network_address,
+        event.channel_identifier,
+    )
 
-            if channel:
-                log.info(
-                    'Received settle event for channel',
-                    token_network_address=event.token_network_address,
-                    identifier=event.channel_identifier,
-                )
+    if channel:
+        log.info(
+            'Received settle event for channel',
+            token_network_address=event.token_network_address,
+            identifier=event.channel_identifier,
+        )
 
-                # trigger the claim reward action by an event
-                # TODO: check if we did update the state
-                e = ActionClaimRewardTriggeredEvent(
-                    token_network_address=channel.token_network_address,
-                    channel_identifier=channel.identifier,
-                )
-                trigger_block = event.block_number + channel.settle_timeout
-                self.context.scheduled_events.append(
-                    ScheduledEvent(
-                        trigger_block_number=trigger_block,
-                        event=cast(Event, e),
-                    ),
-                )
+        # trigger the claim reward action by an event
+        # TODO: check if we did update the state
+        e = ActionClaimRewardTriggeredEvent(
+            token_network_address=channel.token_network_address,
+            channel_identifier=channel.identifier,
+        )
+        trigger_block = event.block_number + channel.settle_timeout
+        context.scheduled_events.append(
+            ScheduledEvent(
+                trigger_block_number=trigger_block,
+                event=cast(Event, e),
+            ),
+        )
 
-                channel.state = ChannelState.SETTLED
-                self.context.db.upsert_channel(channel)
-            else:
-                log.warning('Channel not in database')
-                # FIXME: this is a bad error
+        channel.state = ChannelState.SETTLED
+        context.db.upsert_channel(channel)
+    else:
+        log.warning('Channel not in database')
+        # FIXME: this is a bad error
 
 
-@dataclass
-class UpdatedHeadBlockEventHandler(EventHandler):
+def updated_head_block_event_handler(event: Event, context: Context):
     """ Triggers commit of the new block number. """
-    context: Context
-
-    def handle_event(self, event: Event):
-        if isinstance(event, UpdatedHeadBlockEvent):
-            self.context.ms_state.latest_known_block = event.head_block_number
-            self.context.db.update_state(self.context.ms_state)
+    assert isinstance(event, UpdatedHeadBlockEvent)
+    context.ms_state.latest_known_block = event.head_block_number
+    context.db.update_state(context.ms_state)
 
 
-@dataclass
-class ActionMonitoringTriggeredEventHandler(EventHandler):
-    context: Context
+def action_monitoring_triggered_event_handler(event: Event, context: Context):
+    assert isinstance(event, ActionMonitoringTriggeredEvent)
+    log.info('Triggering channel monitoring')
 
-    def handle_event(self, event: Event):
-        if isinstance(event, ActionMonitoringTriggeredEvent):
-            log.info('Triggering channel monitoring')
+    monitor_request = context.db.get_monitor_request(
+        token_network_address=event.token_network_address,
+        channel_id=event.channel_identifier,
+    )
 
-            monitor_request = self.context.db.get_monitor_request(
-                token_network_address=event.token_network_address,
-                channel_id=event.channel_identifier,
-            )
-
-            if monitor_request is not None:
-                # FIXME: don't monitor when closer is MR signer
-                contract = self.context.w3.eth.contract(
-                    abi=self.context.contract_manager.get_contract_abi(
-                        CONTRACT_MONITORING_SERVICE,
-                    ),
-                    address=self.context.ms_state.monitor_contract_address,
-                )
-                tx_hash = contract.functions.monitor(
-                    monitor_request.signer,
-                    monitor_request.non_closing_signer,
-                    monitor_request.balance_hash,
-                    monitor_request.nonce,
-                    monitor_request.additional_hash,
-                    monitor_request.signature,
-                    monitor_request.non_closing_signature,
-                    monitor_request.reward_amount,
-                    monitor_request.token_network_address,
-                    monitor_request.reward_proof_signature,
-                ).transact(
-                    {'gas_limit': 350000},
-                    private_key='',  # FIXME: use signing middleware
-                )
-                log.info(f'Submit MR to SC, got tx_hash {tx_hash}')
-                assert tx_hash is not None
-                # TODO: store tx hash in state
-            else:
-                log.warning('Related MR not found, this is a bug')
+    if monitor_request is not None:
+        # FIXME: don't monitor when closer is MR signer
+        contract = context.w3.eth.contract(
+            abi=context.contract_manager.get_contract_abi(
+                CONTRACT_MONITORING_SERVICE,
+            ),
+            address=context.ms_state.monitor_contract_address,
+        )
+        tx_hash = contract.functions.monitor(
+            monitor_request.signer,
+            monitor_request.non_closing_signer,
+            monitor_request.balance_hash,
+            monitor_request.nonce,
+            monitor_request.additional_hash,
+            monitor_request.signature,
+            monitor_request.non_closing_signature,
+            monitor_request.reward_amount,
+            monitor_request.token_network_address,
+            monitor_request.reward_proof_signature,
+        ).transact(
+            {'gas_limit': 350000},
+            private_key='',  # FIXME: use signing middleware
+        )
+        log.info(f'Submit MR to SC, got tx_hash {tx_hash}')
+        assert tx_hash is not None
+        # TODO: store tx hash in state
+    else:
+        log.warning('Related MR not found, this is a bug')
 
 
-@dataclass
-class ActionClaimRewardTriggeredEventHandler(EventHandler):
-    context: Context
+def action_claim_reward_triggered_event_handler(event: Event, context: Context):
+    assert isinstance(event, ActionClaimRewardTriggeredEvent)
+    log.info('Triggering reward claim')
 
-    def handle_event(self, event: Event):
-        if isinstance(event, ActionClaimRewardTriggeredEvent):
-            log.info('Triggering reward claim')
+    monitor_request = context.db.get_monitor_request(
+        token_network_address=event.token_network_address,
+        channel_id=event.channel_identifier,
+    )
 
-            monitor_request = self.context.db.get_monitor_request(
-                token_network_address=event.token_network_address,
-                channel_id=event.channel_identifier,
-            )
+    if monitor_request is not None:
+        contract = context.w3.eth.contract(
+            abi=context.contract_manager.get_contract_abi(
+                CONTRACT_MONITORING_SERVICE,
+            ),
+            address=context.ms_state.monitor_contract_address,
+        )
 
-            if monitor_request is not None:
-                contract = self.context.w3.eth.contract(
-                    abi=self.context.contract_manager.get_contract_abi(
-                        CONTRACT_MONITORING_SERVICE,
-                    ),
-                    address=self.context.ms_state.monitor_contract_address,
-                )
-
-                tx_hash = contract.functions.claimReward(
-                    monitor_request.channel_identifier,
-                    monitor_request.token_network_address,
-                    monitor_request.signer,
-                    monitor_request.non_closing_signer,
-                ).transact(
-                    {'gas': 210000},
-                    # private_key=private_key,
-                )
-                receipt = self.context.w3.eth.getTransactionReceipt(tx_hash)
-                log.info(receipt)
-            else:
-                log.warning('Related MR not found, this is a bug')
+        tx_hash = contract.functions.claimReward(
+            monitor_request.channel_identifier,
+            monitor_request.token_network_address,
+            monitor_request.signer,
+            monitor_request.non_closing_signer,
+        ).transact(
+            {'gas': 210000},
+            # private_key=private_key,
+        )
+        receipt = context.w3.eth.getTransactionReceipt(tx_hash)
+        log.info(receipt)
+    else:
+        log.warning('Related MR not found, this is a bug')
 
 
 HANDLERS = {
-    ReceiveTokenNetworkCreatedEvent: TokenNetworkCreatedEventHandler,
-    ReceiveChannelOpenedEvent: ChannelOpenedEventHandler,
-    ReceiveChannelClosedEvent: ChannelClosedEventHandler,
+    ReceiveTokenNetworkCreatedEvent: token_network_created_event_handler,
+    ReceiveChannelOpenedEvent: channel_opened_event_handler,
+    ReceiveChannelClosedEvent: channel_closed_event_handler,
     ReceiveNonClosingBalanceProofUpdatedEvent:
-        ChannelNonClosingBalanceProofUpdatedEventHandler,
-    ReceiveChannelSettledEvent: ChannelSettledEventHandler,
-    UpdatedHeadBlockEvent: UpdatedHeadBlockEventHandler,
-    ActionMonitoringTriggeredEvent: ActionMonitoringTriggeredEventHandler,
-    ActionClaimRewardTriggeredEvent: ActionClaimRewardTriggeredEventHandler,
+        channel_non_closing_balance_proof_updated_event_handler,
+    ReceiveChannelSettledEvent: channel_settled_event_handler,
+    UpdatedHeadBlockEvent: updated_head_block_event_handler,
+    ActionMonitoringTriggeredEvent: action_monitoring_triggered_event_handler,
+    ActionClaimRewardTriggeredEvent: action_claim_reward_triggered_event_handler,
 }
