@@ -259,6 +259,33 @@ class ActionClaimRewardTriggeredEventHandler(EventHandler):
         if isinstance(event, ActionClaimRewardTriggeredEvent):
             log.info('Triggering reward claim')
 
+            monitor_request = self.context.db.get_monitor_request(
+                token_network_address=event.token_network_address,
+                channel_id=event.channel_identifier,
+            )
+
+            if monitor_request is not None:
+                contract = self.context.w3.eth.contract(
+                    abi=self.context.contract_manager.get_contract_abi(
+                        CONTRACT_MONITORING_SERVICE,
+                    ),
+                    address=self.context.ms_state.monitor_contract_address,
+                )
+
+                tx_hash = contract.functions.claimReward(
+                    monitor_request.channel_identifier,
+                    monitor_request.token_network_address,
+                    monitor_request.signer,
+                    monitor_request.non_closing_signer,
+                ).transact(
+                    {'gas': 210000},
+                    # private_key=private_key,
+                )
+                receipt = self.context.w3.eth.getTransactionReceipt(tx_hash)
+                log.info(receipt)
+            else:
+                log.warning('Related MR not found, this is a bug')
+
 
 HANDLERS = {
     ReceiveTokenNetworkCreatedEvent: TokenNetworkCreatedEventHandler,
