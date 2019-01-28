@@ -100,9 +100,6 @@ class StateDBSqlite:
                 non_closing_signature=x['non_closing_signature'],
                 reward_proof_signature=x['reward_proof_signature'],
                 reward_amount=x['reward_amount'],
-                # Monitor address is not used, but required for now, see
-                # https://github.com/raiden-network/raiden-monitoring-service/issues/42
-                monitor_address='0x' + '0' * 40,
             )
             for x in mr_rows
         }
@@ -132,7 +129,6 @@ class StateDBSqlite:
         balance_proof = monitor_request.balance_proof
         assert is_channel_identifier(balance_proof.channel_identifier)
         assert is_checksum_address(balance_proof.token_network_address)
-        assert is_checksum_address(monitor_request.monitor_address)
 
     def chain_id(self):
         return int(self.fetch_scalar("SELECT chain_id FROM metadata"))

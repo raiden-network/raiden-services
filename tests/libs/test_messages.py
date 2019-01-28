@@ -187,7 +187,6 @@ def test_monitor_request(get_random_bp, get_random_privkey, get_random_address):
         non_closing_signature=balance_proof.signature,
         reward_proof_signature='',
         reward_amount=1,
-        monitor_address=get_random_address(),
     )
     monitor_request.reward_proof_signature = encode_hex(
         eth_sign(
@@ -199,7 +198,6 @@ def test_monitor_request(get_random_bp, get_random_privkey, get_random_address):
     serialized = monitor_request.serialize_data()
     monitor_request_verify = MonitorRequest.deserialize(serialized)
     balance_proof_verify = monitor_request_verify.balance_proof
-    assert is_same_address(monitor_request_verify.monitor_address, monitor_request.monitor_address)
     assert is_same_address(
         monitor_request_verify.reward_proof_signer,
         monitor_request.reward_proof_signer,
