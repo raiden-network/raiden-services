@@ -3,7 +3,7 @@ from unittest.mock import Mock
 import pytest
 
 from monitoring_service.events import Event, ReceiveTokenNetworkCreatedEvent
-from monitoring_service.handlers import Context, TokenNetworkCreatedEventHandler
+from monitoring_service.handlers import Context, token_network_created_event_handler
 from monitoring_service.states import MonitoringServiceState
 
 
@@ -24,34 +24,28 @@ def context():
     )
 
 
-@pytest.fixture()
-def token_network_created_event_handler(context):
-    return TokenNetworkCreatedEventHandler(context)
-
-
-def test_network_created_event_adds_network_address(
+def test_token_network_created_event_handler_adds_network_address(
     context: Context,
-    token_network_created_event_handler: TokenNetworkCreatedEventHandler,
 ):
     event = ReceiveTokenNetworkCreatedEvent(
         token_network_address='abc',
     )
 
-    token_network_created_event_handler.handle_event(
+    token_network_created_event_handler(
         event=event,
+        context=context,
     )
 
     assert context.ms_state.token_network_addresses == ['abc']
 
 
-def test_tnceh_ignores_other_event(
+def test_token_network_created_event_handler_ignores_other_event(
     context: Context,
-    token_network_created_event_handler: TokenNetworkCreatedEventHandler,
 ):
     event = Event()
 
-    token_network_created_event_handler.handle_event(
-        event=event,
-    )
-
-    assert context.ms_state.token_network_addresses == []
+    with pytest.raises(AssertionError):
+        token_network_created_event_handler(
+            event=event,
+            context=context,
+        )

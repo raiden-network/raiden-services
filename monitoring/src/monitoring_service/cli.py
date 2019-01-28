@@ -1,6 +1,6 @@
 import sys
 import time
-from typing import Callable, Dict, List
+from typing import Callable, List
 
 import structlog
 from web3 import HTTPProvider, Web3
@@ -8,7 +8,7 @@ from web3 import HTTPProvider, Web3
 from monitoring_service.blockchain import BlockchainListener
 from monitoring_service.database import Database
 from monitoring_service.events import Event, ScheduledEvent
-from monitoring_service.handlers import HANDLERS, Context, EventHandler
+from monitoring_service.handlers import HANDLERS, Context
 from monitoring_service.states import MonitoringServiceState
 from raiden_contracts.contract_manager import ContractManager, contracts_precompiled_path
 from raiden_libs.utils import private_key_to_address
@@ -16,10 +16,10 @@ from raiden_libs.utils import private_key_to_address
 log = structlog.get_logger(__name__)
 
 
-def handle_event(handlers: Dict, event: Event):
+def handle_event(event: Event, context: Context):
     log.debug('Processing event', event_=event)
-    handler: EventHandler = handlers[type(event)]
-    handler.handle_event(event)
+    handler: Callable = HANDLERS[type(event)]
+    handler(event, context)
 
 
 class MonitoringService:
@@ -65,17 +65,13 @@ class MonitoringService:
             last_known_block=0,
         )
 
-        self.handlers = {
-            event: handler(self.context) for event, handler in HANDLERS.items()
-        }
-
     def start(self, wait_function: Callable = time.sleep):
         while True:
             last_block = self.web3.eth.blockNumber - self.required_confirmations
             self.context.last_known_block = last_block
 
-            for e in self.bcl.get_events(self.context, last_block):
-                handle_event(self.handlers, e)
+            for event in self.bcl.get_events(self.context, last_block):
+                handle_event(event, self.context)
 
             # check triggered events
             # TODO: create a priority queue for this
@@ -85,7 +81,7 @@ class MonitoringService:
 
                 if last_block >= scheduled_event.trigger_block_number:
                     to_remove.append(scheduled_event)
-                    handle_event(self.handlers, event)
+                    handle_event(event, self.context)
 
             for d in to_remove:
                 self.scheduled_events.remove(d)
