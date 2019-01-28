@@ -52,6 +52,7 @@ def test_e2e(
     blockchain_validator,
     custom_token,
     raiden_service_bundle,
+    user_deposit_contract,
 ):
     """Test complete message lifecycle
         1) client opens channel & submits monitoring request
@@ -61,7 +62,8 @@ def test_e2e(
         5) wait for channel settle
         6) MS claims the reward
     """
-    initial_balance = monitoring_service_contract.functions.balances(
+    user_deposit_contract.functions.init(monitoring_service_contract.address).transact()
+    initial_balance = user_deposit_contract.functions.balances(
         monitoring_service.address,
     ).call()
     c1, c2 = generate_raiden_clients(2)
@@ -70,10 +72,10 @@ def test_e2e(
     # TODO: this should be done via RSB at some point
     node_deposit = 10
     custom_token.functions.approve(
-        monitoring_service_contract.address,
+        user_deposit_contract.address,
         node_deposit,
     ).transact({'from': c1.address})
-    monitoring_service_contract.functions.deposit(
+    user_deposit_contract.functions.deposit(
         c1.address, node_deposit,
     ).transact({'from': c1.address})
 
@@ -138,7 +140,7 @@ def test_e2e(
         'NewBalanceProofReceived', 'RewardClaimed',
     ]
 
-    final_balance = monitoring_service_contract.functions.balances(
+    final_balance = user_deposit_contract.functions.balances(
         monitoring_service.address,
     ).call()
     assert final_balance == (initial_balance + reward_amount)
