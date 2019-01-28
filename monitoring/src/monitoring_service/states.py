@@ -1,7 +1,10 @@
 from dataclasses import dataclass, field
 from typing import List, Optional
 
-from raiden_contracts.constants import ChannelState
+from eth_utils import decode_hex, to_checksum_address
+
+from raiden_contracts.constants import ChannelState, MessageTypeId
+from raiden_libs.utils import eth_recover, pack_data
 
 
 @dataclass
@@ -26,36 +29,89 @@ class MonitoringServiceState:
 @dataclass
 class MonitorRequest:
     # balance proof
-    signature_prefix: str
-    message_length: str
+    channel_identifier: int
     token_network_address: str
     chain_id: int
-    message_type_id: int
-    channel_identifier: int
-    balance_hash: bytes
+
+    balance_hash: str
     nonce: int
-    additional_hash: bytes
-    signature: bytes
+    additional_hash: str
+    signature: str
+
+    # FIXME: necessary?
+    # signature_prefix: str
+    # message_length: str
+    # message_type_id: int
 
     # reward infos
-    non_closing_signature: bytes
+    non_closing_signature: str
     reward_amount: int
-    reward_proof_signature: bytes
+    reward_proof_signature: str
+
+    def packed_balance_proof_data(
+        self,
+        message_type: MessageTypeId = MessageTypeId.BALANCE_PROOF,
+    ) -> bytes:
+        return pack_data([
+            'address',
+            'uint256',
+            'uint256',
+            'uint256',
+            'bytes32',
+            'uint256',
+            'bytes32',
+        ], [
+            self.token_network_address,
+            self.chain_id,
+            message_type.value,
+            self.channel_identifier,
+            decode_hex(self.balance_hash),
+            self.nonce,
+            decode_hex(self.additional_hash),
+        ])
+
+    def packed_reward_proof_data(self) -> bytes:
+        """Return reward proof data serialized to binary"""
+        return pack_data([
+            'uint256',
+            'uint256',
+            'address',
+            'uint256',
+            'uint256',
+        ], [
+            self.channel_identifier,
+            self.reward_amount,
+            self.token_network_address,
+            self.chain_id,
+            self.nonce,
+        ])
+
+    def packed_non_closing_data(self) -> bytes:
+        balance_proof = self.packed_balance_proof_data(
+            message_type=MessageTypeId.BALANCE_PROOF_UPDATE,
+        )
+        return balance_proof + decode_hex(self.signature)
 
     @property
     def signer(self) -> str:
-        # signer = eth_recover(
-        #     data=self.serialize_bin(),
-        #     signature=decode_hex(self.signature),
-        # )
-        # return to_checksum_address(signer)
-        return ''  # FIXME: implement
+        signer = eth_recover(
+            data=self.packed_balance_proof_data(),
+            signature=decode_hex(self.signature),
+        )
+        return to_checksum_address(signer)
 
     @property
     def non_closing_signer(self) -> str:
-        # signer = eth_recover(
-        #     data=self.non_closing_data,
-        #     signature=decode_hex(self.non_closing_signature),
-        # )
-        # return to_checksum_address(signer)
-        return ''  # FIXME: implement
+        signer = eth_recover(
+            data=self.packed_non_closing_data(),
+            signature=decode_hex(self.non_closing_signature),
+        )
+        return to_checksum_address(signer)
+
+    @property
+    def reward_proof_signer(self) -> str:
+        signer = eth_recover(
+            data=self.packed_reward_proof_data(),
+            signature=decode_hex(self.reward_proof_signature),
+        )
+        return to_checksum_address(signer)
