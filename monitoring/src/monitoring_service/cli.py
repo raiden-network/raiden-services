@@ -11,7 +11,6 @@ from monitoring_service.events import Event, ScheduledEvent
 from monitoring_service.handlers import HANDLERS, Context
 from monitoring_service.states import MonitoringServiceState
 from raiden_contracts.contract_manager import ContractManager, contracts_precompiled_path
-from raiden_libs.utils import private_key_to_address
 
 log = structlog.get_logger(__name__)
 
@@ -37,7 +36,6 @@ class MonitoringService:
         self.web3 = web3
         self.contract_manager = contract_manager
         self.private_key = private_key
-        self.address = private_key_to_address(self.private_key)
         self.required_confirmations = required_confirmations
         self.poll_interval = poll_interval
 
