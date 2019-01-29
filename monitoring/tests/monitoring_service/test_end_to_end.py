@@ -1,6 +1,6 @@
 import gevent
 
-from monitoring_service.cli import MonitoringService
+from monitoring_service.service import MonitoringService
 
 
 def test_e2e(

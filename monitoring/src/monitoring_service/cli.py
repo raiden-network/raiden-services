@@ -1,122 +1,89 @@
-import sys
-import time
-from typing import Callable, List
-
+import click
 import structlog
+from eth_utils import is_checksum_address
 from web3 import HTTPProvider, Web3
 
-from monitoring_service.blockchain import BlockchainListener
-from monitoring_service.database import Database
-from monitoring_service.events import Event, ScheduledEvent
-from monitoring_service.handlers import HANDLERS, Context
-from monitoring_service.states import BlockchainState, MonitoringServiceState
+from monitoring_service.constants import DEFAULT_REQUIRED_CONFIRMATIONS
+from monitoring_service.service import MonitoringService
 from raiden_contracts.contract_manager import ContractManager, contracts_precompiled_path
+from raiden_libs.types import Address
 
 log = structlog.get_logger(__name__)
 
 
-def handle_event(event: Event, context: Context):
-    log.debug('Processing event', event_=event)
-    handler: Callable = HANDLERS[type(event)]
-    handler(event, context)
+def validate_address(_ctx, _param, value):
+    if value is None:
+        # None as default value allowed
+        return None
+    if not is_checksum_address(value):
+        raise click.BadParameter('not an EIP-55 checksummed address')
+    return value
 
 
-class MonitoringService:
-    def __init__(
-        self,
-        web3: Web3,
-        contract_manager: ContractManager,
-        private_key: str,
-        registry_address: str = '0x40a5D15fD98b9a351855D64daa9bc621F400cbc5',
-        monitor_contract_address: str = '',
-        sync_start_block: int = 0,
-        required_confirmations: int = 8,
-        poll_interval: int = 1,
-    ):
-        self.web3 = web3
-        self.contract_manager = contract_manager
-        self.private_key = private_key
-        self.required_confirmations = required_confirmations
-        self.poll_interval = poll_interval
-
-        chain_state = BlockchainState(
-            token_network_registry_address=registry_address,
-            monitor_contract_address=monitor_contract_address,
-            latest_known_block=sync_start_block,
-        )
-        self.ms_state = MonitoringServiceState(
-            blockchain_state=chain_state,
-        )
-
-        # TODO: tie database to chain id
-        self.database = Database()
-        self.scheduled_events: List[ScheduledEvent] = list()
-
-        self.bcl = BlockchainListener(
-            web3=self.web3,
-            contract_manager=contract_manager,
-        )
-
-        self.context = Context(
-            ms_state=self.ms_state,
-            db=self.database,
-            scheduled_events=self.scheduled_events,
-            w3=self.web3,
-            contract_manager=contract_manager,
-            last_known_block=0,
-        )
-
-    def start(self, wait_function: Callable = time.sleep):
-        while True:
-            last_block = self.web3.eth.blockNumber - self.required_confirmations
-            self.context.last_known_block = last_block
-
-            # BCL return a new state and events related to channel lifecycle
-            new_chain_state, events = self.bcl.get_events(
-                chain_state=self.context.ms_state.blockchain_state,
-                to_block=last_block,
-            )
-            self.context.ms_state.blockchain_state = new_chain_state
-            for event in events:
-                handle_event(event, self.context)
-
-            # check triggered events
-            # TODO: create a priority queue for this
-            to_remove = []
-            for scheduled_event in self.scheduled_events:
-                event = scheduled_event.event
-
-                if last_block >= scheduled_event.trigger_block_number:
-                    to_remove.append(scheduled_event)
-                    handle_event(event, self.context)
-
-            for d in to_remove:
-                self.scheduled_events.remove(d)
-
-            if self.scheduled_events:
-                log.info('Scheduled_events', events=self.scheduled_events)
-
-            try:
-                wait_function(self.poll_interval)
-            except KeyboardInterrupt:
-                log.info('Shutting down.')
-                sys.exit(0)
-
-
-def main():
-    provider = HTTPProvider('http://parity.ropsten.ethnodes.brainbot.com:8545')
-    w3 = Web3(provider)
+@click.command()
+@click.option(
+    '--private-key',
+    default=None,
+    required=True,
+    help='Private key to use (the address should have enough ETH balance to send transactions)',
+)
+@click.option(
+    '--eth-rpc',
+    default='http://parity.ropsten.ethnodes.brainbot.com:8545',
+    type=str,
+    help='Ethereum node RPC URI',
+)
+@click.option(
+    '--registry-address',
+    type=str,
+    help='Address of the token network registry',
+    default='0x40a5D15fD98b9a351855D64daa9bc621F400cbc5',
+    callback=validate_address,
+)
+@click.option(
+    '--monitor-contract-address',
+    type=str,
+    help='Address of the token monitor contract',
+    default='0x1111111111111111111111111111111111111111',
+    callback=validate_address,
+)
+@click.option(
+    '--start-block',
+    default=0,
+    type=click.IntRange(min=0),
+    help='Block to start syncing at',
+)
+@click.option(
+    '--confirmations',
+    default=DEFAULT_REQUIRED_CONFIRMATIONS,
+    type=click.IntRange(min=0),
+    help='Number of block confirmations to wait for',
+)
+def main(
+    private_key: str,
+    eth_rpc: str,
+    registry_address: Address,
+    monitor_contract_address: Address,
+    start_block: int,
+    confirmations: int,
+):
+    provider = HTTPProvider(eth_rpc)
+    web3 = Web3(provider)
 
     contract_manager = ContractManager(contracts_precompiled_path())
 
     ms = MonitoringService(
-        web3=w3,
+        web3=web3,
         contract_manager=contract_manager,
-        private_key='',
+        private_key=private_key,
+        registry_address=registry_address,
+        monitor_contract_address=monitor_contract_address,
+        sync_start_block=start_block,
+        required_confirmations=confirmations,
     )
 
     ms.start()
 
 
 if __name__ == '__main__':
-    main()
+    main(auto_envvar_prefix='MS')
