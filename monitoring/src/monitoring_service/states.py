@@ -43,11 +43,6 @@ class MonitorRequest:
     additional_hash: str
     signature: str
 
-    # FIXME: necessary?
-    # signature_prefix: str
-    # message_length: str
-    # message_type_id: int
-
     # reward infos
     non_closing_signature: str
     reward_amount: int
