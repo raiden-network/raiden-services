@@ -32,7 +32,7 @@ class MonitoringService:
         monitor_contract_address: str,
         sync_start_block: int = 0,
         required_confirmations: int = DEFAULT_REQUIRED_CONFIRMATIONS,
-        poll_interval: int = 1,
+        poll_interval: int = 5,
     ):
         self.web3 = web3
         self.contract_manager = contract_manager
@@ -77,6 +77,7 @@ class MonitoringService:
                 chain_state=self.context.ms_state.blockchain_state,
                 to_block=last_block,
             )
+
             self.context.ms_state.blockchain_state = new_chain_state
             for event in events:
                 handle_event(event, self.context)
