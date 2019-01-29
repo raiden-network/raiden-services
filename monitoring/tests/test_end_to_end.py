@@ -22,9 +22,9 @@ def test_e2e(
         6) MS claims the reward
     """
     user_deposit_contract.functions.init(monitoring_service_contract.address).transact()
-    user_deposit_contract.functions.balances(
-        monitoring_service.address,
-    ).call()
+    # user_deposit_contract.functions.balances(
+    #     monitoring_service.address,
+    # ).call()
     c1, c2 = generate_raiden_clients(2)
 
     # add deposit for c1
@@ -62,7 +62,7 @@ def test_e2e(
     # need to wait here till the MS has some time to react
     gevent.sleep()
 
-    assert monitoring_service.ms_state.token_network_addresses
+    assert monitoring_service.ms_state.blockchain_state.token_network_addresses
     # c1 asks MS to monitor the channel
     # reward_amount = 1
     # monitor_request = c1.get_monitor_request(

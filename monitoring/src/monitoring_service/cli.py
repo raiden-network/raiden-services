@@ -9,7 +9,7 @@ from monitoring_service.blockchain import BlockchainListener
 from monitoring_service.database import Database
 from monitoring_service.events import Event, ScheduledEvent
 from monitoring_service.handlers import HANDLERS, Context
-from monitoring_service.states import MonitoringServiceState
+from monitoring_service.states import BlockchainState, MonitoringServiceState
 from raiden_contracts.contract_manager import ContractManager, contracts_precompiled_path
 
 log = structlog.get_logger(__name__)
@@ -39,10 +39,13 @@ class MonitoringService:
         self.required_confirmations = required_confirmations
         self.poll_interval = poll_interval
 
-        self.ms_state = MonitoringServiceState(
+        chain_state = BlockchainState(
             token_network_registry_address=registry_address,
             monitor_contract_address=monitor_contract_address,
             latest_known_block=sync_start_block,
+        )
+        self.ms_state = MonitoringServiceState(
+            blockchain_state=chain_state,
         )
 
         # TODO: tie database to chain id
@@ -68,7 +71,13 @@ class MonitoringService:
             last_block = self.web3.eth.blockNumber - self.required_confirmations
             self.context.last_known_block = last_block
 
-            for event in self.bcl.get_events(self.context, last_block):
+            # BCL return a new state and events related to channel lifecycle
+            new_chain_state, events = self.bcl.get_events(
+                chain_state=self.context.ms_state.blockchain_state,
+                to_block=last_block,
+            )
+            self.context.ms_state.blockchain_state = new_chain_state
+            for event in events:
                 handle_event(event, self.context)
 
             # check triggered events

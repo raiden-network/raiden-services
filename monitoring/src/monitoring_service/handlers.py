@@ -14,7 +14,6 @@ from monitoring_service.events import (
     ReceiveChannelOpenedEvent,
     ReceiveChannelSettledEvent,
     ReceiveNonClosingBalanceProofUpdatedEvent,
-    ReceiveTokenNetworkCreatedEvent,
     ScheduledEvent,
     UpdatedHeadBlockEvent,
 )
@@ -33,16 +32,6 @@ class Context:
     w3: Web3
     contract_manager: ContractManager
     last_known_block: int
-
-
-def token_network_created_event_handler(event: Event, context: Context):
-    assert isinstance(event, ReceiveTokenNetworkCreatedEvent)
-    log.info(
-        'Received new token network',
-        token_network_address=event.token_network_address,
-    )
-    context.ms_state.token_network_addresses.append(event.token_network_address)
-    context.db.update_state(context.ms_state)
 
 
 def channel_opened_event_handler(event: Event, context: Context):
@@ -126,7 +115,6 @@ def channel_closed_event_handler(event: Event, context: Context):
 
 def channel_non_closing_balance_proof_updated_event_handler(event: Event, context: Context):
     assert isinstance(event, ReceiveNonClosingBalanceProofUpdatedEvent)
-    pass
 
 
 def channel_settled_event_handler(event: Event, context: Context):
@@ -169,7 +157,7 @@ def channel_settled_event_handler(event: Event, context: Context):
 def updated_head_block_event_handler(event: Event, context: Context):
     """ Triggers commit of the new block number. """
     assert isinstance(event, UpdatedHeadBlockEvent)
-    context.ms_state.latest_known_block = event.head_block_number
+    context.ms_state.blockchain_state.latest_known_block = event.head_block_number
     context.db.update_state(context.ms_state)
 
 
@@ -188,7 +176,7 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context):
             abi=context.contract_manager.get_contract_abi(
                 CONTRACT_MONITORING_SERVICE,
             ),
-            address=context.ms_state.monitor_contract_address,
+            address=context.ms_state.blockchain_state.monitor_contract_address,
         )
         tx_hash = contract.functions.monitor(
             monitor_request.signer,
@@ -226,7 +214,7 @@ def action_claim_reward_triggered_event_handler(event: Event, context: Context):
             abi=context.contract_manager.get_contract_abi(
                 CONTRACT_MONITORING_SERVICE,
             ),
-            address=context.ms_state.monitor_contract_address,
+            address=context.ms_state.blockchain_state.monitor_contract_address,
         )
 
         tx_hash = contract.functions.claimReward(
@@ -245,7 +233,6 @@ def action_claim_reward_triggered_event_handler(event: Event, context: Context):
 
 
 HANDLERS = {
-    ReceiveTokenNetworkCreatedEvent: token_network_created_event_handler,
     ReceiveChannelOpenedEvent: channel_opened_event_handler,
     ReceiveChannelClosedEvent: channel_closed_event_handler,
     ReceiveNonClosingBalanceProofUpdatedEvent:
