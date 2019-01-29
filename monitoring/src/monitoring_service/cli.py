@@ -1,3 +1,6 @@
+import logging
+import sys
+
 import click
 import structlog
 from eth_utils import is_checksum_address
@@ -20,10 +23,38 @@ def validate_address(_ctx, _param, value):
     return value
 
 
+def setup_logging(log_level: str):
+    logging.basicConfig(
+        level=log_level,
+        stream=sys.stdout,
+        format="%(message)s",
+    )
+
+    logging.getLogger('web3').setLevel('INFO')
+    logging.getLogger('urllib3').setLevel('INFO')
+
+    chain = [
+        structlog.stdlib.add_log_level,
+        structlog.stdlib.add_logger_name,
+        structlog.stdlib.PositionalArgumentsFormatter(),
+        structlog.processors.TimeStamper(fmt="%Y-%m-%d %H:%M:%S.%f"),
+        structlog.processors.StackInfoRenderer(),
+        structlog.processors.format_exc_info,
+        structlog.dev.ConsoleRenderer(),
+    ]
+    structlog.configure_once(
+        processors=chain,
+        context_class=dict,
+        logger_factory=structlog.stdlib.LoggerFactory(),
+        wrapper_class=structlog.stdlib.BoundLogger,
+        cache_logger_on_first_use=True,
+    )
+
+
 @click.command()
 @click.option(
     '--private-key',
-    default=None,
+    default='test',
     required=True,
     help='Private key to use (the address should have enough ETH balance to send transactions)',
 )
@@ -59,6 +90,12 @@ def validate_address(_ctx, _param, value):
     type=click.IntRange(min=0),
     help='Number of block confirmations to wait for',
 )
+@click.option(
+    '--log-level',
+    default='INFO',
+    type=click.Choice(['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG']),
+    help='Print log messages of this level and more important ones',
+)
 def main(
     private_key: str,
     eth_rpc: str,
@@ -66,7 +103,9 @@ def main(
     monitor_contract_address: Address,
     start_block: int,
     confirmations: int,
+    log_level: str,
 ):
+    setup_logging(log_level)
     provider = HTTPProvider(eth_rpc)
     web3 = Web3(provider)
 
