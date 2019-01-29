@@ -7,11 +7,6 @@ class Event:
 
 
 @dataclass
-class ReceiveTokenNetworkCreatedEvent(Event):
-    token_network_address: str
-
-
-@dataclass
 class ReceiveChannelOpenedEvent(Event):
     token_network_address: str
     channel_identifier: int

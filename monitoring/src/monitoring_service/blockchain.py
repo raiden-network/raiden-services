@@ -1,4 +1,5 @@
-from typing import Dict, Generator, List
+from copy import deepcopy
+from typing import Dict, List, Tuple
 
 import structlog
 from eth_utils import decode_hex, encode_hex, to_checksum_address
@@ -13,10 +14,9 @@ from monitoring_service.events import (
     ReceiveChannelOpenedEvent,
     ReceiveChannelSettledEvent,
     ReceiveNonClosingBalanceProofUpdatedEvent,
-    ReceiveTokenNetworkCreatedEvent,
     UpdatedHeadBlockEvent,
 )
-from monitoring_service.handlers import Context
+from monitoring_service.states import BlockchainState
 from raiden_contracts.constants import (
     CONTRACT_TOKEN_NETWORK,
     CONTRACT_TOKEN_NETWORK_REGISTRY,
@@ -146,29 +146,34 @@ class BlockchainListener:
             to_block=to_block,
         )
 
-    def get_events(self, context: Context, to_block: int) -> Generator[Event, None, None]:
-        from_block = context.ms_state.latest_known_block
+    def get_events(
+        self,
+        chain_state: BlockchainState,
+        to_block: int,
+    ) -> Tuple[BlockchainState, List[Event]]:
+        from_block = chain_state.latest_known_block
 
         if to_block <= from_block:
-            return
+            return chain_state, []
 
+        new_chain_state = deepcopy(chain_state)
         log.info('Querying new block(s)', from_block=from_block, end_block=to_block)
 
-        # first check for new token networks
+        # first check for new token networks and add to state
         registry_events = self._get_token_network_registry_events(
-            registry_address=context.ms_state.token_network_registry_address,
+            registry_address=chain_state.token_network_registry_address,
             from_block=from_block,
             to_block=to_block,
         )
 
         for event in registry_events:
-            yield ReceiveTokenNetworkCreatedEvent(
-                token_network_address=event['args']['token_network_address'],
+            new_chain_state.token_network_addresses.append(
+                event['args']['token_network_address'],
             )
 
         # then check all token networks
-        # the new token networks are registered by now
-        for token_network_address in context.ms_state.token_network_addresses:
+        events: List[Event] = []
+        for token_network_address in chain_state.token_network_addresses:
             network_events = self._get_token_networks_events(
                 network_address=token_network_address,
                 from_block=from_block,
@@ -180,36 +185,39 @@ class BlockchainListener:
                 block_number = event['blockNumber']
 
                 if event_name == ChannelEvent.OPENED:
-                    yield ReceiveChannelOpenedEvent(
+                    events.append(ReceiveChannelOpenedEvent(
                         token_network_address=event['address'],
                         channel_identifier=event['args']['channel_identifier'],
                         participant1=event['args']['participant1'],
                         participant2=event['args']['participant2'],
                         settle_timeout=event['args']['settle_timeout'],
                         block_number=block_number,
-                    )
+                    ))
                 elif event_name == ChannelEvent.CLOSED:
-                    yield ReceiveChannelClosedEvent(
+                    events.append(ReceiveChannelClosedEvent(
                         token_network_address=event['address'],
                         channel_identifier=event['args']['channel_identifier'],
                         closing_participant=event['args']['closing_participant'],
                         block_number=block_number,
-                    )
+                    ))
                 elif event_name == ChannelEvent.BALANCE_PROOF_UPDATED:
-                    yield ReceiveNonClosingBalanceProofUpdatedEvent(
+                    events.append(ReceiveNonClosingBalanceProofUpdatedEvent(
                         token_network_address=event['address'],
                         channel_identifier=event['args']['channel_identifier'],
                         closing_participant=event['args']['closing_participant'],
                         nonce=event['args']['nonce'],
                         block_number=block_number,
-                    )
+                    ))
                 elif event_name == ChannelEvent.SETTLED:
-                    yield ReceiveChannelSettledEvent(
+                    events.append(ReceiveChannelSettledEvent(
                         token_network_address=event['address'],
                         channel_identifier=event['args']['channel_identifier'],
                         block_number=block_number,
-                    )
+                    ))
+
         # commit new block number
-        yield UpdatedHeadBlockEvent(
+        events.append(UpdatedHeadBlockEvent(
             head_block_number=to_block,
-        )
+        ))
+
+        return new_chain_state, events

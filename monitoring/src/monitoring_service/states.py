@@ -19,11 +19,16 @@ class Channel:
 
 
 @dataclass
-class MonitoringServiceState:
+class BlockchainState:
     token_network_registry_address: str
     monitor_contract_address: str
     latest_known_block: int
     token_network_addresses: List[str] = field(default_factory=list)
+
+
+@dataclass
+class MonitoringServiceState:
+    blockchain_state: BlockchainState
 
 
 @dataclass
