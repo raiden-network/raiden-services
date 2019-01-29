@@ -161,7 +161,7 @@ class BlockchainListener:
 
         # first check for new token networks and add to state
         registry_events = self._get_token_network_registry_events(
-            registry_address=chain_state.token_network_registry_address,
+            registry_address=new_chain_state.token_network_registry_address,
             from_block=from_block,
             to_block=to_block,
         )
@@ -173,7 +173,7 @@ class BlockchainListener:
 
         # then check all token networks
         events: List[Event] = []
-        for token_network_address in chain_state.token_network_addresses:
+        for token_network_address in new_chain_state.token_network_addresses:
             network_events = self._get_token_networks_events(
                 network_address=token_network_address,
                 from_block=from_block,
