@@ -7,7 +7,7 @@ from request_collector.server import RequestCollector
 from web3 import Web3
 from web3.utils.transactions import wait_for_transaction_receipt
 
-from monitoring_service.cli import MonitoringService
+from monitoring_service.service import MonitoringService
 from raiden_contracts.constants import CONTRACT_MONITORING_SERVICE, CONTRACT_RAIDEN_SERVICE_BUNDLE
 from raiden_contracts.contract_manager import ContractManager
 from raiden_libs.private_contract import PrivateContract
