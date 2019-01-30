@@ -41,7 +41,7 @@ class MonitorRequest:
     balance_hash: str
     nonce: int
     additional_hash: str
-    signature: str
+    closing_signature: str
 
     # reward infos
     non_closing_signature: str
@@ -90,13 +90,13 @@ class MonitorRequest:
         balance_proof = self.packed_balance_proof_data(
             message_type=MessageTypeId.BALANCE_PROOF_UPDATE,
         )
-        return balance_proof + decode_hex(self.signature)
+        return balance_proof + decode_hex(self.closing_signature)
 
     @property
     def signer(self) -> str:
         signer = eth_recover(
             data=self.packed_balance_proof_data(),
-            signature=decode_hex(self.signature),
+            signature=decode_hex(self.closing_signature),
         )
         return to_checksum_address(signer)
 

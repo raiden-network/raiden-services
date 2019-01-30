@@ -5,6 +5,7 @@ import click
 import structlog
 from eth_utils import is_checksum_address
 from web3 import HTTPProvider, Web3
+from web3.middleware import construct_sign_and_send_raw_middleware
 
 from monitoring_service.constants import DEFAULT_REQUIRED_CONFIRMATIONS
 from monitoring_service.service import MonitoringService
@@ -106,8 +107,12 @@ def main(
     log_level: str,
 ):
     setup_logging(log_level)
+
     provider = HTTPProvider(eth_rpc)
     web3 = Web3(provider)
+    web3.middleware_stack.add(
+        construct_sign_and_send_raw_middleware(private_key),
+    )
 
     contract_manager = ContractManager(contracts_precompiled_path())
 
