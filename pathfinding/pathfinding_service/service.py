@@ -163,7 +163,6 @@ class PathfindingService(gevent.Greenlet):
         participant1 = event['args']['participant1']
         participant2 = event['args']['participant2']
         settle_timeout = event['args']['settle_timeout']
-
         token_network.handle_channel_opened_event(
             channel_identifier,
             participant1,

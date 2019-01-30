@@ -5,7 +5,11 @@ import networkx as nx
 from eth_utils import is_checksum_address
 from networkx import DiGraph
 
-from pathfinding_service.config import DIVERSITY_PEN_DEFAULT, MAX_PATHS_PER_REQUEST
+from pathfinding_service.config import (
+    DEFAULT_SETTLE_TO_REVEAL_TIMEOUT_RATIO,
+    DIVERSITY_PEN_DEFAULT,
+    MAX_PATHS_PER_REQUEST,
+)
 from pathfinding_service.model import ChannelView
 from raiden_libs.types import Address, ChannelIdentifier
 
@@ -51,14 +55,14 @@ class TokenNetwork:
             channel_id=channel_identifier,
             participant1=participant1,
             participant2=participant2,
-            settle_timeout=15,
+            settle_timeout=settle_timeout,
             deposit=0)
 
         view2 = ChannelView(
             channel_id=channel_identifier,
             participant2=participant2,
             participant1=participant1,
-            settle_timeout=15,
+            settle_timeout=settle_timeout,
             deposit=0)
 
         self.G.add_edge(participant1, participant2, view=view1)
@@ -113,6 +117,35 @@ class TokenNetwork:
                 ),
             )
 
+    def handle_channel_balance_update_message(
+        self,
+        channel_identifier: ChannelIdentifier,
+        sender: Address,
+        reveal_timeout: int,
+    ):
+        """ Sends Balance Update to PFS including the reveal timeout
+        - actual balance still missing """
+
+        assert is_checksum_address(sender)
+
+        try:
+            participant1, participant2 = self.channel_id_to_addresses[channel_identifier]
+
+            if sender == participant1:
+                self.G[participant1][participant2]['view'].reveal_timeout = reveal_timeout
+            elif sender == participant2:
+                self.G[participant2][participant1]['view'].reveal_timeout = reveal_timeout
+            else:
+                log.error(
+                    "Sender in Channel Balance Update does not fit the internal channel",
+                )
+        except KeyError:
+            log.error(
+                "Sender Balance Update for unknown channel '{}'".format(
+                    channel_identifier,
+                ),
+            )
+
     @staticmethod
     def edge_weight(
         visited: Dict[ChannelIdentifier, float],
@@ -123,6 +156,22 @@ class TokenNetwork:
             view.channel_id,
             0,
         )
+
+    def check_path_constraints(
+        self,
+        value: int,
+        path: List,
+    ) -> bool:
+        for node1, node2 in zip(path[:-1], path[1:]):
+            channel: ChannelView = self.G[node1][node2]['view']
+            # check if available balance > value
+            if value > channel.capacity:
+                return False
+            # check if settle_timeout / reveal_timeout >= default ratio
+            ratio = channel.settle_timeout / channel.reveal_timeout
+            if ratio < DEFAULT_SETTLE_TO_REVEAL_TIMEOUT_RATIO:
+                return False
+        return True
 
     def get_paths(
         self,
@@ -148,9 +197,11 @@ class TokenNetwork:
             # find next path
             all_paths = nx.shortest_simple_paths(self.G, source, target, weight='weight')
             try:
-                path = next(all_paths)
-                while path in paths:  # skip duplicates
-                    path = next(all_paths)
+                # skip duplicates and invalid paths
+                path = next(
+                    path for path in all_paths
+                    if self.check_path_constraints(value, path) and path not in paths
+                )
             except StopIteration:
                 break
 
