@@ -79,7 +79,7 @@ def test_routing_simple(
     )
     assert len(paths) == 1
     assert paths[0] == {
-        'path': [addresses[0], addresses[2], addresses[3]],
+        'path': [addresses[0], addresses[1], addresses[4], addresses[3]],
         'estimated_fee': 0,
     }
 
@@ -101,17 +101,13 @@ def test_routing_result_order(
         hop_bias=1,
     )
     # 5 paths requested, but only 3 are available
-    assert len(paths) == 3
+    assert len(paths) == 2
     assert paths[0] == {
         'path': [addresses[0], addresses[2]],
         'estimated_fee': 0,
     }
     assert paths[1] == {
         'path': [addresses[0], addresses[1], addresses[2]],
-        'estimated_fee': 0,
-    }
-    assert paths[2] == {
-        'path': [addresses[0], addresses[1], addresses[4], addresses[3], addresses[2]],
         'estimated_fee': 0,
     }
 

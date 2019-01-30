@@ -56,10 +56,13 @@ def test_pfs_with_mocked_client(
         p1_deposit,
         _p1_transferred_amount,
         _p1_fee,
+        _p1_reveal_timeout,
         p2_index,
         p2_deposit,
         _p2_transferred_amount,
         _p2_fee,
+        _p2_reveal_timeout,
+        _settle_timeout,
     ) in channel_descriptions_case_1:
         # order is important here because we check order later
         channel_identifier = clients[p1_index].open_channel(clients[p2_index].address)
@@ -81,10 +84,13 @@ def test_pfs_with_mocked_client(
         p1_deposit,
         _p1_transferred_amount,
         _p1_fee,
+        _p1_reveal_timeout,
         _p2_index,
         p2_deposit,
         _p2_transferred_amount,
         _p2_fee,
+        _p2_reveal_timeout,
+        _settle_timeout,
     ) in enumerate(channel_descriptions_case_1):
         channel_identifier = channel_identifiers[index]
         p1_address, p2_address = token_network.channel_id_to_addresses[channel_identifier]
@@ -102,10 +108,13 @@ def test_pfs_with_mocked_client(
         _p1_deposit,
         _p1_transferred_amount,
         _p1_fee,
+        _p1_reveal_timeout,
         p2_index,
         _p2_deposit,
         _p2_transferred_amount,
         _p2_fee,
+        _p2_reveal_timeout,
+        _settle_timeout,
     ) in channel_descriptions_case_1:
         balance_proof = clients[p2_index].get_balance_proof(
             clients[p1_index].address,

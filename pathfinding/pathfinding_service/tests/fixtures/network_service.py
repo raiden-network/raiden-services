@@ -28,10 +28,13 @@ def channel_descriptions_case_1() -> List:
     #     p1_deposit,
     #     p1_transferred_amount,
     #     p1_fee,
+    #     p1_reveal_timeout,
     #     p2_index,
     #     p2_deposit,
     #     p2_transferred_amount,
-    #     p2_fee
+    #     p2_fee,
+    #     p2_reveal_timeout,
+    #     settle_timeout
     # )
     # Topology:
     #       /-------------\
@@ -39,13 +42,13 @@ def channel_descriptions_case_1() -> List:
     #  \-------/
 
     channel_descriptions = [
-        (0, 100,  20,  10, 1,  50,  10, 15),  # capacities  90 --  60
-        (1,  40,  10,   8, 2, 130, 100, 12),  # capacities 130 --  40
-        (2,  90,  10,   7, 3,  10,   0, 10),  # capacities  80 --  10
-        (3,  50,  20,  11, 4,  50,  20, 11),  # capacities  50 --  50
-        (0,  40,  40,  15, 2,  80,   0, 25),  # capacities   0 -- 120
-        (1,  30,  10, 100, 4,  40,  15, 18),  # capacities  35 --  35
-        (5, 500, 900,  30, 6, 750, 950, 40),  # capacities 550 -- 700
+        (0, 100,  20,  10, 2, 1,  50,  10, 15, 2, 14),  # capacities  90 --  60
+        (1,  40,  10,   8, 2, 2, 130, 100, 12, 2, 14),  # capacities 130 --  40
+        (2,  90,  10,   7, 2, 3,  10,   0, 10, 2,  3),  # capacities  80 --  20
+        (3,  50,  20,  11, 2, 4,  50,  20, 11, 2, 14),  # capacities  50 --  50
+        (0,  40,  40,  15, 2, 2,  80,   0, 25, 2, 14),  # capacities   0 -- 120
+        (1,  30,  10, 100, 2, 4,  40,  15, 18, 2, 14),  # capacities  35 --  35
+        (5, 500, 900,  30, 2, 6, 750, 950, 40, 2, 14),  # capacities 550 -- 700
     ]
     return channel_descriptions
 
@@ -64,10 +67,13 @@ def channel_descriptions_case_2() -> List:
     #     p1_deposit,
     #     p1_transferred_amount,
     #     p1_fee,
+    #     p1_reveal_timeout,
     #     p2_index,
     #     p2_deposit,
     #     p2_transferred_amount,
-    #     p2_fee
+    #     p2_fee,
+    #     p2_reveal_timeout,
+    #     settle_timeout
     # )
     # Topology:
     #  /----- 1 ----\
@@ -75,13 +81,13 @@ def channel_descriptions_case_2() -> List:
     #       \-- 5 --/
 
     channel_descriptions = [
-        (0, 100,  20, 3000, 1,  50,  10, 3000),  # capacities  90 --  60
-        (1,  40,  10, 2000, 4, 130, 100, 2000),  # capacities 130 --  40
-        (0,  90,  10, 1000, 2,  10,   0, 1000),  # capacities  80 --  10
-        (2,  50,  20, 1500, 3,  50,  20, 1500),  # capacities  50 --  50
-        (3, 100,  40, 1000, 4,  80,   0, 1000),  # capacities  60 -- 120
-        (2,  30,  10, 1000, 5,  40,  15, 1000),  # capacities  35 --  35
-        (5, 500, 900, 1000, 4, 750, 950, 1000),  # capacities 550 -- 700
+        (0, 100,  20, 3000, 2, 1,  50,  10, 3000, 2, 15),  # capacities  90 --  60
+        (1,  40,  10, 2000, 2, 4, 130, 100, 2000, 2, 15),  # capacities 130 --  40
+        (0,  90,  10, 1000, 2, 2,  10,   0, 1000, 2, 15),  # capacities  80 --  10
+        (2,  50,  20, 1500, 2, 3,  50,  20, 1500, 2, 15),  # capacities  50 --  50
+        (3, 100,  40, 1000, 2, 4,  80,   0, 1000, 2, 15),  # capacities  60 -- 120
+        (2,  30,  10, 1000, 2, 5,  40,  15, 1000, 2, 15),  # capacities  35 --  35
+        (5, 500, 900, 1000, 2, 4, 750, 950, 1000, 2, 15),  # capacities 550 -- 700
     ]
     return channel_descriptions
 
@@ -97,10 +103,13 @@ def channel_descriptions_case_3() -> List:
     #     p1_deposit,
     #     p1_transferred_amount,
     #     p1_fee,
+    #     p1_reveal_timeout,
     #     p2_index,
     #     p2_deposit,
     #     p2_transferred_amount,
     #     p2_fee
+    #     p2_reveal_timeout,
+    #     settle_timeout
     # )
     # Topology:
     #    /- 1 - 2 - 3 - 4 --\
@@ -110,7 +119,7 @@ def channel_descriptions_case_3() -> List:
     #         \- 9 - 10 -/
 
     channel_descriptions = [
-        (a, 100, 0, 0, b, 100, 0, 0)
+        (a, 100, 0, 0, 2, b, 100, 0, 0, 2, 15)
         for a, b in [
             (0, 1),
             (1, 2),
@@ -166,6 +175,16 @@ def populate_token_network_random(
             address2,
             deposit2,
         )
+        token_network_model.handle_channel_balance_update_message(
+            channel_id,
+            address1,
+            reveal_timeout=2,
+        )
+        token_network_model.handle_channel_balance_update_message(
+            channel_id,
+            address2,
+            reveal_timeout=2,
+        )
 
 
 @pytest.fixture
@@ -182,16 +201,19 @@ def populate_token_network() -> Callable:
             p1_deposit,
             _p1_transferred_amount,
             _p1_fee,
+            p1_reveal_timeout,
             p2_index,
             p2_deposit,
             _p2_transferred_amount,
             _p2_fee,
+            p2_reveal_timeout,
+            settle_timeout,
         ) in enumerate(channel_descriptions):
             token_network.handle_channel_opened_event(
                 ChannelIdentifier(channel_id),
                 addresses[p1_index],
                 addresses[p2_index],
-                settle_timeout=15,
+                settle_timeout=settle_timeout,
             )
 
             token_network.handle_channel_new_deposit_event(
@@ -203,6 +225,16 @@ def populate_token_network() -> Callable:
                 ChannelIdentifier(channel_id),
                 addresses[p2_index],
                 p2_deposit,
+            )
+            token_network.handle_channel_balance_update_message(
+                ChannelIdentifier(channel_id),
+                addresses[p1_index],
+                p1_reveal_timeout,
+            )
+            token_network.handle_channel_balance_update_message(
+                ChannelIdentifier(channel_id),
+                addresses[p2_index],
+                p2_reveal_timeout,
             )
 
     return populate_token_network

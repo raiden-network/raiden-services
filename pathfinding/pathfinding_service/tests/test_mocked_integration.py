@@ -50,10 +50,13 @@ def test_pfs_with_mocked_events(
         p1_deposit,
         _p1_transferred_amount,
         _p1_fee,
+        p1_reveal_timeout,
         p2_index,
         p2_deposit,
         _p2_transferred_amount,
         _p2_fee,
+        p2_reveal_timeout,
+        settle_timeout,
     ) in enumerate(channel_descriptions_case_1):
         network_listener.emit_event(dict(
             address=token_network_address,
@@ -62,7 +65,7 @@ def test_pfs_with_mocked_events(
                 channel_identifier=index,
                 participant1=addresses[p1_index],
                 participant2=addresses[p2_index],
-                settle_timeout=15,
+                settle_timeout=settle_timeout,
             ),
         ))
 
@@ -85,20 +88,32 @@ def test_pfs_with_mocked_events(
                 total_deposit=p2_deposit,
             ),
         ))
+        token_network.handle_channel_balance_update_message(
+            index,
+            sender=addresses[p1_index],
+            reveal_timeout=p1_reveal_timeout,
+        )
+        token_network.handle_channel_balance_update_message(
+            index,
+            sender=addresses[p2_index],
+            reveal_timeout=p2_reveal_timeout,
+        )
 
     # now there should be seven channels
     assert len(token_network.channel_id_to_addresses.keys()) == 7
-
     # check that deposits got registered
     for index, (
         p1_index,
         p1_deposit,
         _p1_transferred_amount,
         _p1_fee,
+        _p1_reveal_timeout,
         p2_index,
         p2_deposit,
         _p2_transferred_amount,
         _p2_fee,
+        _p2_reveal_timeout,
+        _settle_timeout,
     ) in enumerate(channel_descriptions_case_1):
         p1, p2 = token_network.channel_id_to_addresses[index]
         assert p1 == addresses[p1_index]
@@ -110,13 +125,12 @@ def test_pfs_with_mocked_events(
         assert view1.deposit == p1_deposit
         assert view2.deposit == p2_deposit
 
-    # check pathfinding
+    # check pathfinding without respecting transferred amounts
+    # channel 2 <-> 3 has settle_timeout 3, so path is not eligible
     paths = token_network.get_paths(addresses[0], addresses[3], 10, 5)
-    assert len(paths) == 4
-    assert paths[0]['path'] == [addresses[0], addresses[2], addresses[3]]
-    assert paths[1]['path'] == [addresses[0], addresses[1], addresses[4], addresses[3]]
-    assert paths[2]['path'] == [addresses[0], addresses[1], addresses[2], addresses[3]]
-    assert paths[3]['path'] == [
+    assert len(paths) == 2
+    assert paths[0]['path'] == [addresses[0], addresses[1], addresses[4], addresses[3]]
+    assert paths[1]['path'] == [
         addresses[0],
         addresses[2],
         addresses[1],
@@ -124,16 +138,25 @@ def test_pfs_with_mocked_events(
         addresses[3],
     ]
 
+    # check pathfinding without having enough capacity on 2 <-> 0
+    # so only 1 path is provided
+    paths2 = token_network.get_paths(addresses[2], addresses[1], 85, 5)
+    assert len(paths2) == 1
+    assert paths2[0]['path'] == [addresses[2], addresses[1]]
+
     # wow close all channels
     for index, (
         p1_index,
         _p1_deposit,
         _p1_transferred_amount,
         _p1_fee,
+        _p1_reveal_timeout,
         _p2_index,
         _p2_deposit,
         _p2_transferred_amount,
         _p2_fee,
+        _p2_reveal_timeout,
+        _settle_timeout,
     ) in enumerate(channel_descriptions_case_1):
         network_listener.emit_event(dict(
             address=token_network_address,
