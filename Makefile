@@ -1,4 +1,4 @@
-CODE_DIRS = monitoring/monitoring_service/ monitoring/request_collector/ pathfinding/pathfinding_service
+CODE_DIRS = src/monitoring_service src/pathfinding_service
 ISORT_PARAMS = --ignore-whitespace --settings-path . --recursive $(CODE_DIRS)
 
 all: lint mypy
@@ -14,6 +14,4 @@ isort:
 	isort $(ISORT_PARAMS)
 
 test:
-	py.test -v libs
-	py.test -v pathfinding
-	py.test -v monitoring
+	py.test -v tests
