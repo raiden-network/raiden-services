@@ -3,6 +3,7 @@ import time
 from typing import Callable, List
 
 import structlog
+from raiden_libs.utils import private_key_to_address
 from web3 import Web3
 
 from monitoring_service.blockchain import BlockchainListener
@@ -37,6 +38,7 @@ class MonitoringService:
         self.web3 = web3
         self.contract_manager = contract_manager
         self.private_key = private_key
+        self.address = private_key_to_address(private_key)
         self.required_confirmations = required_confirmations
         self.poll_interval = poll_interval
 

@@ -15,13 +15,17 @@ from monitoring_service.events import (
     ReceiveChannelSettledEvent,
     ReceiveNonClosingBalanceProofUpdatedEvent,
     UpdatedHeadBlockEvent,
+    ReceiveMonitoringNewBalanceProofEvent,
+    ReceiveMonitorinRewardClaimedEvent,
 )
 from monitoring_service.states import BlockchainState
 from raiden_contracts.constants import (
     CONTRACT_TOKEN_NETWORK,
     CONTRACT_TOKEN_NETWORK_REGISTRY,
+    CONTRACT_MONITORING_SERVICE,
     EVENT_TOKEN_NETWORK_CREATED,
     ChannelEvent,
+    MonitoringServiceEvent,
 )
 from raiden_contracts.contract_manager import ContractManager
 
@@ -29,6 +33,12 @@ log = structlog.get_logger(__name__)
 
 
 def create_channel_event_topics() -> List:
+    return [
+        None,  # event topic is any
+    ]
+
+
+def create_monitoring_service_topics() -> List:
     return [
         None,  # event topic is any
     ]
@@ -146,6 +156,22 @@ class BlockchainListener:
             to_block=to_block,
         )
 
+    def _get_monitoring_service_events(
+            self,
+            monitoring_service_address: str,
+            from_block: int,
+            to_block: int,
+    ) -> List[Dict]:
+        return query_blockchain_events(
+            web3=self.w3,
+            contract_manager=self.contract_manager,
+            contract_address=monitoring_service_address,
+            contract_name=CONTRACT_MONITORING_SERVICE,
+            topics=create_monitoring_service_topics(),
+            from_block=from_block,
+            to_block=to_block,
+        )
+
     def get_events(
         self,
         chain_state: BlockchainState,
@@ -214,6 +240,34 @@ class BlockchainListener:
                         channel_identifier=event['args']['channel_identifier'],
                         block_number=block_number,
                     ))
+
+        # get events from monitoring service contract
+        monitoring_service_events = self._get_monitoring_service_events(
+            monitoring_service_address=new_chain_state.monitor_contract_address,
+            from_block=from_block,
+            to_block=to_block,
+        )
+        for event in monitoring_service_events:
+            event_name = event['event']
+            block_number = event['blockNumber']
+
+            if event_name == MonitoringServiceEvent.NEW_BALANCE_PROOF_RECEIVED:
+                events.append(ReceiveMonitoringNewBalanceProofEvent(
+                    token_network_address=event['args']['token_network_address'],
+                    channel_identifier=event['args']['channel_identifier'],
+                    reward_amount=event['args']['reward_amount'],
+                    nonce=event['args']['nonce'],
+                    ms_address=event['args']['ms_address'],
+                    raiden_node_address=event['args']['raiden_node_address'],
+                    block_number=block_number,
+                ))
+            elif event_name == MonitoringServiceEvent.REWARD_CLAIMED:
+                events.append(ReceiveMonitorinRewardClaimedEvent(
+                    ms_address=event['args']['ms_address'],
+                    amount=event['args']['amount'],
+                    reward_identifier=event['args']['reward_identifier'],
+                    block_number=block_number,
+                ))
 
         # commit new block number
         events.append(UpdatedHeadBlockEvent(

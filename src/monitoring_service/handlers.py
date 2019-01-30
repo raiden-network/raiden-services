@@ -2,6 +2,7 @@ from dataclasses import dataclass  # isort:skip noqa differences between local a
 from typing import List, cast
 
 import structlog
+from eth_utils import encode_hex
 from web3 import Web3
 
 from monitoring_service.constants import WAIT_BLOCKS_BEFORE_MONITOR
@@ -16,6 +17,8 @@ from monitoring_service.events import (
     ReceiveNonClosingBalanceProofUpdatedEvent,
     ScheduledEvent,
     UpdatedHeadBlockEvent,
+    ReceiveMonitoringNewBalanceProofEvent,
+    ReceiveMonitorinRewardClaimedEvent,
 )
 from monitoring_service.states import Channel, MonitoringServiceState
 from raiden_contracts.constants import CONTRACT_MONITORING_SERVICE, ChannelState
@@ -154,6 +157,16 @@ def channel_settled_event_handler(event: Event, context: Context):
         # FIXME: this is a bad error
 
 
+def monitor_new_balance_proof_event_handler(event: Event, _context: Context):
+    assert isinstance(event, ReceiveMonitoringNewBalanceProofEvent)
+    log.info('Received MSC NewBalanceProof event', evt=event)
+
+
+def monitor_reward_claim_event_handler(event: Event, _context: Context):
+    assert isinstance(event, ReceiveMonitorinRewardClaimedEvent)
+    log.info('Received MSC RewardClaimed event', evt=event)
+
+
 def updated_head_block_event_handler(event: Event, context: Context):
     """ Triggers commit of the new block number. """
     assert isinstance(event, UpdatedHeadBlockEvent)
@@ -178,24 +191,25 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context):
             ),
             address=context.ms_state.blockchain_state.monitor_contract_address,
         )
-        tx_hash = contract.functions.monitor(
-            monitor_request.signer,
-            monitor_request.non_closing_signer,
-            monitor_request.balance_hash,
-            monitor_request.nonce,
-            monitor_request.additional_hash,
-            monitor_request.signature,
-            monitor_request.non_closing_signature,
-            monitor_request.reward_amount,
-            monitor_request.token_network_address,
-            monitor_request.reward_proof_signature,
-        ).transact(
-            {'gas_limit': 350000},
-            private_key='',  # FIXME: use signing middleware
-        )
-        log.info(f'Submit MR to SC, got tx_hash {tx_hash}')
-        assert tx_hash is not None
-        # TODO: store tx hash in state
+        try:
+            tx_hash = contract.functions.monitor(
+                monitor_request.signer,
+                monitor_request.non_closing_signer,
+                monitor_request.balance_hash,
+                monitor_request.nonce,
+                monitor_request.additional_hash,
+                monitor_request.closing_signature,
+                monitor_request.non_closing_signature,
+                monitor_request.reward_amount,
+                monitor_request.token_network_address,
+                monitor_request.reward_proof_signature,
+            ).transact({'gas': 100_000})  # TODO: estimate gas better here
+            log.info(f'Submit MR to SC, got tx_hash {encode_hex(tx_hash)}')
+            assert tx_hash is not None
+            data = context.w3.eth.waitForTransactionReceipt(tx_hash)
+            log.info('MINED', tx=data)
+        except Exception as e:
+            log.error('Sending tx failed', exc_info=True, err=e)
     else:
         log.warning('Related MR not found, this is a bug')
 
@@ -217,20 +231,19 @@ def action_claim_reward_triggered_event_handler(event: Event, context: Context):
             address=context.ms_state.blockchain_state.monitor_contract_address,
         )
 
-        tx_hash = contract.functions.claimReward(
-            monitor_request.channel_identifier,
-            monitor_request.token_network_address,
-            monitor_request.signer,
-            monitor_request.non_closing_signer,
-        ).transact(
-            {'gas': 210000},
-            # private_key=private_key,
-        )
-        receipt = context.w3.eth.getTransactionReceipt(tx_hash)
-        log.info(receipt)
+        try:
+            tx_hash = contract.functions.claimReward(
+                monitor_request.channel_identifier,
+                monitor_request.token_network_address,
+                monitor_request.signer,
+                monitor_request.non_closing_signer,
+            ).transact()
+            receipt = context.w3.eth.getTransactionReceipt(tx_hash)
+            log.info(receipt)
+        except Exception as e:
+            log.error('Sending tx failed', exc_info=True, err=e)
     else:
         log.warning('Related MR not found, this is a bug')
-
 
 HANDLERS = {
     ReceiveChannelOpenedEvent: channel_opened_event_handler,
@@ -238,6 +251,8 @@ HANDLERS = {
     ReceiveNonClosingBalanceProofUpdatedEvent:
         channel_non_closing_balance_proof_updated_event_handler,
     ReceiveChannelSettledEvent: channel_settled_event_handler,
+    ReceiveMonitoringNewBalanceProofEvent: monitor_new_balance_proof_event_handler,
+    ReceiveMonitorinRewardClaimedEvent: monitor_reward_claim_event_handler,
     UpdatedHeadBlockEvent: updated_head_block_event_handler,
     ActionMonitoringTriggeredEvent: action_monitoring_triggered_event_handler,
     ActionClaimRewardTriggeredEvent: action_claim_reward_triggered_event_handler,

@@ -64,7 +64,7 @@ def get_random_monitor_request(get_random_address, get_random_private_key, get_r
             reward_amount=0,
             reward_proof_signature='',
         )
-        monitor_request.signature = encode_hex(
+        monitor_request.closing_signature = encode_hex(
             eth_sign(privkey, monitor_request.packed_balance_proof_data()),
         )
         monitor_request.non_closing_signature = encode_hex(
