@@ -52,7 +52,7 @@ class ReceiveMonitoringNewBalanceProofEvent(Event):
 
 
 @dataclass
-class ReceiveMonitorinRewardClaimedEvent(Event):
+class ReceiveMonitoringRewardClaimedEvent(Event):
     ms_address: str
     amount: int
     reward_identifier: int

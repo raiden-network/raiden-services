@@ -14,7 +14,7 @@ from monitoring_service.events import (
     ReceiveChannelOpenedEvent,
     ReceiveChannelSettledEvent,
     ReceiveMonitoringNewBalanceProofEvent,
-    ReceiveMonitorinRewardClaimedEvent,
+    ReceiveMonitoringRewardClaimedEvent,
     ReceiveNonClosingBalanceProofUpdatedEvent,
     UpdatedHeadBlockEvent,
 )
@@ -262,7 +262,7 @@ class BlockchainListener:
                     block_number=block_number,
                 ))
             elif event_name == MonitoringServiceEvent.REWARD_CLAIMED:
-                events.append(ReceiveMonitorinRewardClaimedEvent(
+                events.append(ReceiveMonitoringRewardClaimedEvent(
                     ms_address=event['args']['ms_address'],
                     amount=event['args']['amount'],
                     reward_identifier=event['args']['reward_identifier'],

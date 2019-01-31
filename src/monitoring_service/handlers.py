@@ -16,7 +16,7 @@ from monitoring_service.events import (
     ReceiveChannelOpenedEvent,
     ReceiveChannelSettledEvent,
     ReceiveMonitoringNewBalanceProofEvent,
-    ReceiveMonitorinRewardClaimedEvent,
+    ReceiveMonitoringRewardClaimedEvent,
     ReceiveNonClosingBalanceProofUpdatedEvent,
     ScheduledEvent,
     UpdatedHeadBlockEvent,
@@ -198,7 +198,7 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context):
 
 
 def monitor_reward_claim_event_handler(event: Event, _context: Context):
-    assert isinstance(event, ReceiveMonitorinRewardClaimedEvent)
+    assert isinstance(event, ReceiveMonitoringRewardClaimedEvent)
     log.info('Received MSC RewardClaimed event', evt=event)
 
 
@@ -304,7 +304,7 @@ HANDLERS = {
         channel_non_closing_balance_proof_updated_event_handler,
     ReceiveChannelSettledEvent: channel_settled_event_handler,
     ReceiveMonitoringNewBalanceProofEvent: monitor_new_balance_proof_event_handler,
-    ReceiveMonitorinRewardClaimedEvent: monitor_reward_claim_event_handler,
+    ReceiveMonitoringRewardClaimedEvent: monitor_reward_claim_event_handler,
     UpdatedHeadBlockEvent: updated_head_block_event_handler,
     ActionMonitoringTriggeredEvent: action_monitoring_triggered_event_handler,
     ActionClaimRewardTriggeredEvent: action_claim_reward_triggered_event_handler,
