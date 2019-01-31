@@ -3,8 +3,8 @@ import time
 from typing import Callable, List
 
 import structlog
-from raiden_libs.utils import private_key_to_address
 from web3 import Web3
+from web3.middleware import construct_sign_and_send_raw_middleware
 
 from monitoring_service.blockchain import BlockchainListener
 from monitoring_service.constants import DEFAULT_REQUIRED_CONFIRMATIONS
@@ -12,7 +12,9 @@ from monitoring_service.database import Database
 from monitoring_service.events import Event, ScheduledEvent
 from monitoring_service.handlers import HANDLERS, Context
 from monitoring_service.states import BlockchainState, MonitoringServiceState
+from raiden_contracts.constants import CONTRACT_MONITORING_SERVICE
 from raiden_contracts.contract_manager import ContractManager
+from raiden_libs.utils import private_key_to_address
 
 log = structlog.get_logger(__name__)
 
@@ -42,6 +44,17 @@ class MonitoringService:
         self.required_confirmations = required_confirmations
         self.poll_interval = poll_interval
 
+        web3.middleware_stack.add(
+            construct_sign_and_send_raw_middleware(private_key),
+        )
+
+        monitoring_contract = self.web3.eth.contract(
+            abi=self.contract_manager.get_contract_abi(
+                CONTRACT_MONITORING_SERVICE,
+            ),
+            address=monitor_contract_address,
+        )
+
         chain_state = BlockchainState(
             token_network_registry_address=registry_address,
             monitor_contract_address=monitor_contract_address,
@@ -49,6 +62,7 @@ class MonitoringService:
         )
         self.ms_state = MonitoringServiceState(
             blockchain_state=chain_state,
+            address=self.address,
         )
 
         # TODO: tie database to chain id
@@ -67,6 +81,7 @@ class MonitoringService:
             w3=self.web3,
             contract_manager=contract_manager,
             last_known_block=0,
+            monitoring_service_contract=monitoring_contract,
         )
 
     def start(self, wait_function: Callable = time.sleep):

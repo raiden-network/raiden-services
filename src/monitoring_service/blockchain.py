@@ -13,16 +13,16 @@ from monitoring_service.events import (
     ReceiveChannelClosedEvent,
     ReceiveChannelOpenedEvent,
     ReceiveChannelSettledEvent,
-    ReceiveNonClosingBalanceProofUpdatedEvent,
-    UpdatedHeadBlockEvent,
     ReceiveMonitoringNewBalanceProofEvent,
     ReceiveMonitorinRewardClaimedEvent,
+    ReceiveNonClosingBalanceProofUpdatedEvent,
+    UpdatedHeadBlockEvent,
 )
 from monitoring_service.states import BlockchainState
 from raiden_contracts.constants import (
+    CONTRACT_MONITORING_SERVICE,
     CONTRACT_TOKEN_NETWORK,
     CONTRACT_TOKEN_NETWORK_REGISTRY,
-    CONTRACT_MONITORING_SERVICE,
     EVENT_TOKEN_NETWORK_CREATED,
     ChannelEvent,
     MonitoringServiceEvent,

@@ -17,6 +17,9 @@ class Channel:
     state: ChannelState = ChannelState.OPENED
     closing_block: Optional[int] = None
 
+    closing_tx_hash: Optional[str] = None
+    claim_tx_hash: Optional[str] = None
+
 
 @dataclass
 class BlockchainState:
@@ -29,6 +32,7 @@ class BlockchainState:
 @dataclass
 class MonitoringServiceState:
     blockchain_state: BlockchainState
+    address: str
 
 
 @dataclass

@@ -4,6 +4,7 @@ from typing import List, cast
 import structlog
 from eth_utils import encode_hex
 from web3 import Web3
+from web3.contract import Contract
 
 from monitoring_service.constants import WAIT_BLOCKS_BEFORE_MONITOR
 from monitoring_service.database import Database
@@ -14,14 +15,14 @@ from monitoring_service.events import (
     ReceiveChannelClosedEvent,
     ReceiveChannelOpenedEvent,
     ReceiveChannelSettledEvent,
+    ReceiveMonitoringNewBalanceProofEvent,
+    ReceiveMonitorinRewardClaimedEvent,
     ReceiveNonClosingBalanceProofUpdatedEvent,
     ScheduledEvent,
     UpdatedHeadBlockEvent,
-    ReceiveMonitoringNewBalanceProofEvent,
-    ReceiveMonitorinRewardClaimedEvent,
 )
 from monitoring_service.states import Channel, MonitoringServiceState
-from raiden_contracts.constants import CONTRACT_MONITORING_SERVICE, ChannelState
+from raiden_contracts.constants import ChannelState
 from raiden_contracts.contract_manager import ContractManager
 
 log = structlog.get_logger(__name__)
@@ -35,6 +36,7 @@ class Context:
     w3: Web3
     contract_manager: ContractManager
     last_known_block: int
+    monitoring_service_contract: Contract
 
 
 def channel_opened_event_handler(event: Event, context: Context):
@@ -43,6 +45,7 @@ def channel_opened_event_handler(event: Event, context: Context):
         'Received new channel',
         token_network_address=event.token_network_address,
         identifier=event.channel_identifier,
+        channel=event,
     )
     context.db.upsert_channel(
         Channel(
@@ -112,12 +115,26 @@ def channel_closed_event_handler(event: Event, context: Context):
         channel.closing_block = event.block_number
         context.db.upsert_channel(channel)
     else:
-        log.warning('Channel not in database')
+        log.error('Channel not in database')
         # FIXME: this is a bad error
 
 
 def channel_non_closing_balance_proof_updated_event_handler(event: Event, context: Context):
     assert isinstance(event, ReceiveNonClosingBalanceProofUpdatedEvent)
+    channel = context.db.get_channel(
+        event.token_network_address,
+        event.channel_identifier,
+    )
+
+    if channel:
+        log.info(
+            'Received update event for channel',
+            token_network_address=event.token_network_address,
+            identifier=event.channel_identifier,
+        )
+    else:
+        log.error('Channel not in database')
+        # FIXME: this is a bad error
 
 
 def channel_settled_event_handler(event: Event, context: Context):
@@ -136,30 +153,48 @@ def channel_settled_event_handler(event: Event, context: Context):
             identifier=event.channel_identifier,
         )
 
-        # trigger the claim reward action by an event
-        # TODO: check if we did update the state
-        e = ActionClaimRewardTriggeredEvent(
-            token_network_address=channel.token_network_address,
-            channel_identifier=channel.identifier,
-        )
-        trigger_block = event.block_number + channel.settle_timeout
-        context.scheduled_events.append(
-            ScheduledEvent(
-                trigger_block_number=trigger_block,
-                event=cast(Event, e),
-            ),
-        )
-
         channel.state = ChannelState.SETTLED
         context.db.upsert_channel(channel)
     else:
-        log.warning('Channel not in database')
+        log.error('Channel not in database')
         # FIXME: this is a bad error
 
 
-def monitor_new_balance_proof_event_handler(event: Event, _context: Context):
+def monitor_new_balance_proof_event_handler(event: Event, context: Context):
     assert isinstance(event, ReceiveMonitoringNewBalanceProofEvent)
-    log.info('Received MSC NewBalanceProof event', evt=event)
+    channel = context.db.get_channel(
+        event.token_network_address,
+        event.channel_identifier,
+    )
+
+    if channel:
+        log.info(
+            'Received MSC NewBalanceProof event',
+            token_network_address=event.token_network_address,
+            identifier=event.channel_identifier,
+            evt=event,
+        )
+
+        # check if this was our update, if so schedule the call
+        # of `claimReward`
+        if event.ms_address == context.ms_state.address:
+            # trigger the claim reward action by an event
+            e = ActionClaimRewardTriggeredEvent(
+                token_network_address=channel.token_network_address,
+                channel_identifier=channel.identifier,
+            )
+
+            assert channel.closing_block is not None, 'closing_block not set'
+            trigger_block: int = channel.closing_block + channel.settle_timeout + 5
+            context.scheduled_events.append(
+                ScheduledEvent(
+                    trigger_block_number=trigger_block,
+                    event=cast(Event, e),
+                ),
+            )
+    else:
+        log.error('Channel not in database')
+        # FIXME: this is a bad error
 
 
 def monitor_reward_claim_event_handler(event: Event, _context: Context):
@@ -184,34 +219,41 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context):
     )
 
     if monitor_request is not None:
-        # FIXME: don't monitor when closer is MR signer
-        contract = context.w3.eth.contract(
-            abi=context.contract_manager.get_contract_abi(
-                CONTRACT_MONITORING_SERVICE,
-            ),
-            address=context.ms_state.blockchain_state.monitor_contract_address,
+        channel = context.db.get_channel(
+            token_network_address=monitor_request.token_network_address,
+            channel_id=monitor_request.channel_identifier,
         )
-        try:
-            tx_hash = contract.functions.monitor(
-                monitor_request.signer,
-                monitor_request.non_closing_signer,
-                monitor_request.balance_hash,
-                monitor_request.nonce,
-                monitor_request.additional_hash,
-                monitor_request.closing_signature,
-                monitor_request.non_closing_signature,
-                monitor_request.reward_amount,
-                monitor_request.token_network_address,
-                monitor_request.reward_proof_signature,
-            ).transact({'gas': 100_000})  # TODO: estimate gas better here
-            log.info(f'Submit MR to SC, got tx_hash {encode_hex(tx_hash)}')
-            assert tx_hash is not None
-            data = context.w3.eth.waitForTransactionReceipt(tx_hash)
-            log.info('MINED', tx=data)
-        except Exception as e:
-            log.error('Sending tx failed', exc_info=True, err=e)
+
+        if channel is not None and channel.closing_tx_hash is None:
+            # FIXME: don't monitor when closer is MR signer
+            try:
+                tx_hash = context.monitoring_service_contract.functions.monitor(
+                    monitor_request.signer,
+                    monitor_request.non_closing_signer,
+                    monitor_request.balance_hash,
+                    monitor_request.nonce,
+                    monitor_request.additional_hash,
+                    monitor_request.closing_signature,
+                    monitor_request.non_closing_signature,
+                    monitor_request.reward_amount,
+                    monitor_request.token_network_address,
+                    monitor_request.reward_proof_signature,
+                ).transact({'from': context.ms_state.address})
+
+                log.info(
+                    'Calling `monitor` on channel',
+                    token_network_address=channel.token_network_address,
+                    channel_identifier=channel.identifier,
+                    transaction_hash=encode_hex(tx_hash),
+                )
+                assert tx_hash is not None
+
+                channel.closing_tx_hash = tx_hash
+                context.db.upsert_channel(channel)
+            except Exception as e:
+                log.error('Sending tx failed', exc_info=True, err=e)
     else:
-        log.warning('Related MR not found, this is a bug')
+        log.error('Related MR not found, this is a bug')
 
 
 def action_claim_reward_triggered_event_handler(event: Event, context: Context):
@@ -224,26 +266,36 @@ def action_claim_reward_triggered_event_handler(event: Event, context: Context):
     )
 
     if monitor_request is not None:
-        contract = context.w3.eth.contract(
-            abi=context.contract_manager.get_contract_abi(
-                CONTRACT_MONITORING_SERVICE,
-            ),
-            address=context.ms_state.blockchain_state.monitor_contract_address,
+        channel = context.db.get_channel(
+            token_network_address=monitor_request.token_network_address,
+            channel_id=monitor_request.channel_identifier,
         )
 
-        try:
-            tx_hash = contract.functions.claimReward(
-                monitor_request.channel_identifier,
-                monitor_request.token_network_address,
-                monitor_request.signer,
-                monitor_request.non_closing_signer,
-            ).transact()
-            receipt = context.w3.eth.getTransactionReceipt(tx_hash)
-            log.info(receipt)
-        except Exception as e:
-            log.error('Sending tx failed', exc_info=True, err=e)
+        if channel is not None and channel.claim_tx_hash is None:
+
+            try:
+                tx_hash = context.monitoring_service_contract.functions.claimReward(
+                    monitor_request.channel_identifier,
+                    monitor_request.token_network_address,
+                    monitor_request.signer,
+                    monitor_request.non_closing_signer,
+                ).transact({'from': context.ms_state.address})
+
+                log.info(
+                    'Calling `claimReward` on channel',
+                    token_network_address=channel.token_network_address,
+                    channel_identifier=channel.identifier,
+                    transaction_hash=encode_hex(tx_hash),
+                )
+                assert tx_hash is not None
+
+                channel.claim_tx_hash = tx_hash
+                context.db.upsert_channel(channel)
+            except Exception as e:
+                log.error('Sending tx failed', exc_info=True, err=e)
     else:
-        log.warning('Related MR not found, this is a bug')
+        log.error('Related MR not found, this is a bug')
+
 
 HANDLERS = {
     ReceiveChannelOpenedEvent: channel_opened_event_handler,
