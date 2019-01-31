@@ -16,3 +16,8 @@ def register_error_handler(error_handler):
         self._origin_handle_error(context, type, value, tb)
 
     Hub.handle_error = custom_handle_error
+
+
+def unregister_error_handler():
+    if hasattr(Hub, '_origin_handle_error'):
+        Hub.handle_error = Hub._origin_handle_error
