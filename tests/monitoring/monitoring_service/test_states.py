@@ -59,7 +59,7 @@ def get_random_monitor_request(get_random_address, get_random_private_key, get_r
             balance_hash=balance_hash,
             nonce=nonce,
             additional_hash=additional_hash,
-            signature='',
+            closing_signature='',
             non_closing_signature='',
             reward_amount=0,
             reward_proof_signature='',

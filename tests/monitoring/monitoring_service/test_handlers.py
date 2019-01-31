@@ -23,12 +23,14 @@ def context():
                 latest_known_block=0,
                 token_network_addresses=[],
             ),
+            address='',
         ),
         db=Database(),
         scheduled_events=[],
         w3=Mock(),
         contract_manager=Mock(),
         last_known_block=0,
+        monitoring_service_contract=Mock()
     )
 
 
