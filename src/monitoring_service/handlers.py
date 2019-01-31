@@ -1,4 +1,4 @@
-from dataclasses import dataclass  # isort:skip noqa differences between python 3.6 and 3.7
+from dataclasses import dataclass  # isort:skip noqa differences between local and travis
 from typing import List, cast
 
 import structlog

@@ -4,7 +4,6 @@ git+https://github.com/matrix-org/matrix-python-sdk.git
 git+https://github.com/raiden-network/raiden-contracts.git
 # raiden-contracts==0.8.0
 
-dataclasses==0.6
 structlog
 colorama
 
