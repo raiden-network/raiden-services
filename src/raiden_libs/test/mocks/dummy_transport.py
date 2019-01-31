@@ -33,6 +33,9 @@ class DummyTransport(Transport):
     def _run(self):
         self.is_running.wait()
 
+    def stop(self):
+        self.is_running.set()
+
     def receive_fake_data(self, data: str):
         """ Fakes that `data` was received and calls all callbacks. """
         self.received_messages.append(data)

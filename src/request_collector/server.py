@@ -56,6 +56,7 @@ class RequestCollector(gevent.Greenlet):
             self.task_list.remove(task)
 
     def stop(self):
+        self.transport.stop()
         self.stop_event.set()
 
     def on_message_event(self, message):

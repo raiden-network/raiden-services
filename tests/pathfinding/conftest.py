@@ -53,3 +53,9 @@ def no_greenlets_left():
     if tasks:
         print('The following greenlets are still running after the test:', tasks)
     assert not tasks, 'All greenlets must be stopped at the end of a test.'
+
+
+@pytest.fixture(autouse=True)
+def unregsiter_error_handler():
+    from raiden_libs.gevent_error_handler import unregister_error_handler
+    unregister_error_handler()

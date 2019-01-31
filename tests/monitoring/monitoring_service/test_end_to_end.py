@@ -57,12 +57,14 @@ def test_e2e(
     #     additional_hash='0x%064x' % 0,
     # )
 
-    gevent.spawn(monitoring_service.start, gevent.sleep)
+    ms_greenlet = gevent.spawn(monitoring_service.start, gevent.sleep)
 
     # need to wait here till the MS has some time to react
     gevent.sleep()
 
     assert monitoring_service.ms_state.blockchain_state.token_network_addresses
+
+    ms_greenlet.kill()
     # c1 asks MS to monitor the channel
     # reward_amount = 1
     # monitor_request = c1.get_monitor_request(

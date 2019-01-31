@@ -58,4 +58,4 @@ def test_save_mr_from_transport(
     transport = request_collector.transport
     transport.receive_fake_data(monitor_request.serialize_full())
     request_collector.wait_tasks()
-    len(request_collector.monitor_requests) == 1
+    assert len(request_collector.monitor_requests) == 1
