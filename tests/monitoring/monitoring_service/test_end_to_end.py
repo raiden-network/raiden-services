@@ -137,7 +137,7 @@ def test_e2e(
     c2.close_channel(c1.address, balance_proof_c1)
     # Wait one block until the ChannelClosed event is confirmed and handled
     # by the MS
-    wait_for_blocks(1)
+    wait_for_blocks(5)  # 30% of 15 blocks
     # Now give the monitoring service a chance to submit the missing BP
     gevent.sleep(1)
 

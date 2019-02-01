@@ -6,7 +6,7 @@ from eth_utils import encode_hex
 from web3 import Web3
 from web3.contract import Contract
 
-from monitoring_service.constants import WAIT_BLOCKS_BEFORE_MONITOR
+from monitoring_service.constants import RATIO_OF_SETTLE_TIMEOUT_BEFORE_MONITOR
 from monitoring_service.database import Database
 from monitoring_service.events import (
     ActionClaimRewardTriggeredEvent,
@@ -88,7 +88,10 @@ def channel_closed_event_handler(event: Event, context: Context):
                 token_network_address=channel.token_network_address,
                 channel_identifier=channel.identifier,
             )
-            trigger_block = event.block_number + WAIT_BLOCKS_BEFORE_MONITOR
+            client_update_period: int = round(
+                channel.settle_timeout * RATIO_OF_SETTLE_TIMEOUT_BEFORE_MONITOR,
+            )
+            trigger_block = event.block_number + client_update_period
             context.scheduled_events.append(
                 ScheduledEvent(
                     trigger_block_number=trigger_block,
