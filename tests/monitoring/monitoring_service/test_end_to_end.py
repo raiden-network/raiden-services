@@ -68,7 +68,6 @@ def test_e2e(
         5) wait for channel settle
         6) MS claims the reward
     """
-    user_deposit_contract.functions.init(monitoring_service_contract.address).transact()
     initial_balance = user_deposit_contract.functions.balances(
         monitoring_service.address,
     ).call()
