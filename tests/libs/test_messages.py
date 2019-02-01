@@ -8,10 +8,7 @@ from raiden_libs.utils import eth_sign, encode_hex, private_key_to_address
 from raiden_libs.messages import (
     BalanceProof,
     Message,
-    FeeInfo,
     MonitorRequest,
-    PathsRequest,
-    PathsReply,
 )
 from raiden_libs.exceptions import MessageTypeError
 from raiden_libs.types import Address, ChannelIdentifier
@@ -99,82 +96,6 @@ def test_balance_proof():
     assert serialized['chain_id'] == balance_proof.chain_id
     assert serialized['additional_hash'] == balance_proof.additional_hash
     assert serialized['balance_hash'] == balance_proof.balance_hash
-
-
-def test_fee_info():
-    message: Dict = dict(
-        message_type='FeeInfo',
-        token_network_address='0x82dd0e0eA3E84D00Cc119c46Ee22060939E5D1FC',
-        chain_id=1,
-        channel_identifier=get_random_channel_id(),
-        nonce=1,
-        relative_fee=10000,
-        signature='signature',
-    )
-    assert message == Message.deserialize(message).serialize_data()
-    message['message_type'] = 'FeeInfo'
-    assert isinstance(Message.deserialize(message), FeeInfo)
-
-
-def test_paths_request():
-    message: Dict = dict(
-        message_type='PathsRequest',
-        token_network_address='0x82dd0e0eA3E84D00Cc119c46Ee22060939E5D1FC',
-        source_address='0x82dd0e0eA3E84D00Cc119c46Ee22060939E5D1FC',
-        target_address='0x82dd0e0eA3E84D00Cc119c46Ee22060939E5D1FC',
-        value=1000,
-        num_paths=1,
-        chain_id=1,
-        nonce=1,
-        signature='signature',
-    )
-
-    assert message == Message.deserialize(message).serialize_data()
-    message['message_type'] = 'PathsRequest'
-    assert isinstance(Message.deserialize(message), PathsRequest)
-
-
-def test_paths_reply():
-    message: Dict = dict(
-        message_type='PathsReply',
-        token_network_address='0x82dd0e0eA3E84D00Cc119c46Ee22060939E5D1FC',
-        target_address='0x82dd0e0eA3E84D00Cc119c46Ee22060939E5D1FC',
-        value=1000,
-        chain_id=1,
-        nonce=1,
-        paths_and_fees=[{
-            'estimated_fee': 10000,
-            'paths': [[
-                '0x82dd0e0eA3E84D00Cc119c46Ee220609',
-                '0xA3E84D00Cc119c46Ee22060939E5D1FC',
-            ]],
-        }],
-        signature='signature',
-    )
-
-    assert message == Message.deserialize(message).serialize_data()
-    message['message_type'] = 'PathsReply'
-    assert isinstance(Message.deserialize(message), PathsReply)
-
-
-def test_deserialize_with_required_type():
-    message: Dict = dict(
-        message_type='FeeInfo',
-        token_network_address='0x82dd0e0eA3E84D00Cc119c46Ee22060939E5D1FC',
-        chain_id=1,
-        channel_identifier=get_random_channel_id(),
-        nonce=1,
-        relative_fee=1000,
-        signature='signature',
-    )
-
-    deserialized_message = Message.deserialize(message, FeeInfo)
-    assert isinstance(deserialized_message, FeeInfo)
-
-    # during deserialization the `message_type` is removed, add it back
-    message['message_type'] = 'FeeInfo'
-    with pytest.raises(MessageTypeError):
-        Message.deserialize(message, BalanceProof)
 
 
 def test_monitor_request(get_random_bp, get_random_privkey, get_random_address):

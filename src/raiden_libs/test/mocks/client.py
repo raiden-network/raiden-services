@@ -10,10 +10,7 @@ from web3.utils.events import get_event_data
 from raiden_contracts.constants import MessageTypeId
 from raiden_libs.messages import (
     BalanceProof,
-    FeeInfo,
     Message,
-    PathsReply,
-    PathsRequest,
 )
 from monitoring_service.states import MonitorRequest
 from raiden_libs.transport import Transport
@@ -80,10 +77,7 @@ class MockRaidenNode:
     def on_message_event(self, message: Message):
         """This handles messages received over the Transport"""
         assert isinstance(message, Message)
-        if isinstance(message, PathsReply):
-            self.on_paths_reply_message(self, message)
-        else:
-            log.error("Ignoring unknown message of type '%s'", (type(message)))
+        log.error("Ignoring unknown message of type '%s'", (type(message)))
 
     @sync_channels
     def open_channel(self, partner_address: Address) -> ChannelIdentifier:
@@ -288,45 +282,6 @@ class MockRaidenNode:
             eth_sign(self.privkey, monitor_request.packed_non_closing_data()),
         )
         return monitor_request
-
-    @assert_channel_existence
-    def get_fee_info(self, partner_address: Address, **kwargs) -> FeeInfo:
-        """Get a signed fee info message for an open channel.
-        Parameters:
-            partner_address - address of a partner the node has channel open with
-            **kwargs - arguments to FeeInfo constructor
-        """
-        channel_id = self.partner_to_channel_id[partner_address]
-        fee_info = FeeInfo(
-            self.contract.address,
-            channel_id,
-            **kwargs,
-        )
-        fee_info.signature = encode_hex(eth_sign(self.privkey, fee_info.serialize_bin()))
-        return fee_info
-
-    def request_paths(self, target_address: Address, **kwargs) -> PathsRequest:
-        """Generate a PathsRequest for pathfinding-service .
-        Parameters:
-            target_address: address of the transaction target, this method is agnostic
-            that this is verified.
-            **kwargs: arguments to FeeInfo constructor
-        """
-        # FIXME implement a nonce for replay protection
-        request = PathsRequest(
-            self.contract.address,
-            self.address,
-            target_address,
-            **kwargs,
-        )
-        request.signature = encode_hex(eth_sign(self.privkey, request.serialize_bin()))
-        return request
-
-    @staticmethod
-    def on_paths_reply_message(self, pfs_reply: PathsReply):
-        """Orders paths_and_fees. Returns the result for testing.
-        """
-        self.paths_and_fees = pfs_reply.paths_and_fees
 
     @assert_channel_existence
     def update_transfer(self, partner_address: Address, balance_proof: BalanceProof):
