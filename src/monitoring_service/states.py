@@ -8,6 +8,12 @@ from raiden_libs.utils import eth_recover, pack_data
 
 
 @dataclass
+class OnChainUpdateStatus:
+    update_sender_address: str
+    nonce: int
+
+
+@dataclass
 class Channel:
     token_network_address: str
     identifier: int
@@ -19,6 +25,8 @@ class Channel:
 
     closing_tx_hash: Optional[str] = None
     claim_tx_hash: Optional[str] = None
+
+    update_status: Optional[OnChainUpdateStatus] = None
 
 
 @dataclass
