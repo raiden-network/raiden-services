@@ -17,24 +17,6 @@ def test_client_multiple_topups(generate_raiden_clients):
     assert sum(deposits) == channel_info['deposit']
 
 
-def test_client_fee_info(generate_raiden_clients):
-    c1, c2 = generate_raiden_clients(2)
-    channel_identifier = c1.open_channel(c2.address)
-    assert is_channel_identifier(channel_identifier)
-
-    fi = c1.get_fee_info(c2.address, nonce=5, relative_fee=1000, chain_id=2)
-    fee_info_signer = eth_recover(
-        data=fi.serialize_bin(),
-        signature=decode_hex(fi.signature),
-    )
-
-    assert is_same_address(fee_info_signer, c1.address)
-
-    assert fi.nonce == 5
-    assert fi.relative_fee == 1000
-    assert fi.chain_id == 2
-
-
 @pytest.mark.skip(reason='MSC not yet merged to master')
 def test_message_signature(generate_raiden_clients):
     c1, c2 = generate_raiden_clients(2)
