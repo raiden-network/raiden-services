@@ -12,10 +12,10 @@ from raiden_libs.messages import (
     BalanceProof,
     FeeInfo,
     Message,
-    MonitorRequest,
     PathsReply,
     PathsRequest,
 )
+from monitoring_service.states import MonitorRequest
 from raiden_libs.transport import Transport
 from raiden_libs.types import Address, ChannelIdentifier, T_ChannelIdentifier
 from raiden_libs.utils import UINT256_MAX, eth_sign, make_filter, private_key_to_address
@@ -221,7 +221,6 @@ class MockRaidenNode:
         # locked + transferred amount of p2 have to be bigger than p1 for the settle call
         # fix order if necessary
         if transferred[0] + locked[0] > transferred[1] + locked[1]:
-            print('reorder')
             self.contract.functions.settleChannel(
                 self.partner_to_channel_id[partner_address],
                 partner_address,
@@ -268,23 +267,25 @@ class MockRaidenNode:
         partner_address: Address,
         balance_proof: BalanceProof,
         reward_amount: int,
-        monitor_address: Address,
     ) -> MonitorRequest:
         """Get monitor request message for a given balance proof."""
         monitor_request = MonitorRequest(
-            balance_proof,
-            reward_proof_signature=None,
+            channel_identifier=balance_proof.channel_identifier,
+            token_network_address=balance_proof.token_network_address,
+            chain_id=balance_proof.chain_id,
+            balance_hash=balance_proof.balance_hash,
+            nonce=balance_proof.nonce,
+            additional_hash=balance_proof.additional_hash,
+            closing_signature=balance_proof.signature,
+            non_closing_signature='',
             reward_amount=reward_amount,
-            monitor_address=monitor_address,
+            reward_proof_signature='',
         )
         monitor_request.reward_proof_signature = encode_hex(
-            eth_sign(
-                self.privkey,
-                monitor_request.serialize_reward_proof(),
-            ),
+            eth_sign(self.privkey, monitor_request.packed_reward_proof_data()),
         )
         monitor_request.non_closing_signature = encode_hex(
-            eth_sign(self.privkey, monitor_request.non_closing_data),
+            eth_sign(self.privkey, monitor_request.packed_non_closing_data()),
         )
         return monitor_request
 

@@ -11,6 +11,7 @@ from monitoring_service.states import MonitorRequest
 from raiden_contracts.constants import CONTRACT_MONITORING_SERVICE, MonitoringServiceEvent, CONTRACT_TOKEN_NETWORK
 from raiden_contracts.contract_manager import ContractManager
 from raiden_libs.blockchain import BlockchainListener
+from raiden_libs.utils import eth_sign
 
 TEST_POLL_INTERVAL = 0.1
 log = structlog.get_logger(__name__)
@@ -120,26 +121,13 @@ def test_e2e(
         c2.address,
         balance_proof_c2,
         reward_amount,
-        monitoring_service.address,
     )
+    # TODO: this should be done with help of the request receiver
+    monitoring_service.database.upsert_monitor_request(monitor_request)
+
     # wait for channel open event to be processed by the MS
     wait_for_blocks(1)
     gevent.sleep(0)
-
-    # TODO: this should be done with help of the request receiver
-    mr = MonitorRequest(
-        channel_identifier=monitor_request.balance_proof.channel_identifier,
-        token_network_address=monitor_request.balance_proof.token_network_address,
-        chain_id=monitor_request.balance_proof.chain_id,
-        balance_hash=monitor_request.balance_proof.balance_hash,
-        nonce=monitor_request.balance_proof.nonce,
-        additional_hash=monitor_request.balance_proof.additional_hash,
-        closing_signature=monitor_request.balance_proof.signature,
-        non_closing_signature=monitor_request.non_closing_signature,
-        reward_amount=monitor_request.reward_amount,
-        reward_proof_signature=monitor_request.reward_proof_signature,
-    )
-    monitoring_service.database.upsert_monitor_request(mr)
 
     # request_collector.transport.receive_fake_data(monitor_request.serialize_full())
     # gevent.sleep(1)
