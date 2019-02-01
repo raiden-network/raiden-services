@@ -151,9 +151,7 @@ def test_e2e(
         (balance_proof_c2.locked_amount, balance_proof_c1.locked_amount),
         (balance_proof_c1.locksroot, balance_proof_c1.locksroot),
     )
-    gevent.sleep()
     # Wait until the ChannelSettled is confirmed
-    wait_for_blocks(20)
     # Let the MS claim its reward
     gevent.sleep(1)
     assert [e.event for e in blockchain_validator.events] == [

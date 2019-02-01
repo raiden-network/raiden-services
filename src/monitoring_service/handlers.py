@@ -21,7 +21,7 @@ from monitoring_service.events import (
     ScheduledEvent,
     UpdatedHeadBlockEvent,
 )
-from monitoring_service.states import Channel, MonitoringServiceState
+from monitoring_service.states import Channel, MonitoringServiceState, OnChainUpdateStatus
 from raiden_contracts.constants import ChannelState
 from raiden_contracts.contract_manager import ContractManager
 
@@ -175,8 +175,49 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context):
             evt=event,
         )
 
+        # check for know monitor calls and update accordingly
+        update_status = channel.update_status
+        if update_status is None:
+            log.info(
+                'Creating channel update state',
+                token_network_address=channel.token_network_address,
+                channel_identifier=channel.identifier,
+                new_nonce=event.nonce,
+                new_sender=event.ms_address,
+            )
+
+            channel.update_status = OnChainUpdateStatus(
+                update_sender_address=event.ms_address,
+                nonce=event.nonce,
+            )
+
+            context.db.upsert_channel(channel)
+        else:
+            # nonce not bigger, nothing to do
+            if event.nonce <= update_status.nonce:
+                log.info(
+                    'MSC NewBalanceProof nonce smaller than the known one, ignoring.',
+                    know_nonce=update_status.nonce,
+                    received_nonce=event.nonce,
+                )
+                return
+
+            log.info(
+                'Updating channel update state',
+                token_network_address=channel.token_network_address,
+                channel_identifier=channel.identifier,
+                new_nonce=event.nonce,
+                new_sender=event.ms_address,
+            )
+            # update channel status
+            update_status.nonce = event.nonce
+            update_status.update_sender_address = event.ms_address
+
+            context.db.upsert_channel(channel)
+
         # check if this was our update, if so schedule the call
         # of `claimReward`
+        # it will be checked there that our update was the latest one
         if event.ms_address == context.ms_state.address:
             # trigger the claim reward action by an event
             e = ActionClaimRewardTriggeredEvent(
@@ -271,8 +312,18 @@ def action_claim_reward_triggered_event_handler(event: Event, context: Context):
             channel_id=monitor_request.channel_identifier,
         )
 
-        if channel is not None and channel.claim_tx_hash is None:
-
+        # check that the latest update was ours and that we didn't send a transaction yet
+        send_claim = (
+            channel is not None and
+            channel.claim_tx_hash is None and
+            channel.update_status is not None and
+            channel.update_status.update_sender_address == context.ms_state.address
+        )
+        log.info(
+            'Checking if eligible for reward',
+            reward_available=send_claim,
+        )
+        if send_claim:
             try:
                 tx_hash = context.monitoring_service_contract.functions.claimReward(
                     monitor_request.channel_identifier,
