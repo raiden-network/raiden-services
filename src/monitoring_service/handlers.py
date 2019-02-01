@@ -175,7 +175,7 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context):
             evt=event,
         )
 
-        # check for know monitor calls and update accordingly
+        # check for known monitor calls and update accordingly
         update_status = channel.update_status
         if update_status is None:
             log.info(
@@ -193,9 +193,9 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context):
 
             context.db.upsert_channel(channel)
         else:
-            # nonce not bigger, nothing to do
+            # nonce not bigger, should never happen as it is checked in the contract
             if event.nonce <= update_status.nonce:
-                log.info(
+                log.error(
                     'MSC NewBalanceProof nonce smaller than the known one, ignoring.',
                     know_nonce=update_status.nonce,
                     received_nonce=event.nonce,
