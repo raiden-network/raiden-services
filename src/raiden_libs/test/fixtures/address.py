@@ -55,29 +55,6 @@ def get_random_bp(get_random_address, get_random_privkey) -> Callable:
     return f
 
 
-@pytest.fixture
-def get_random_monitor_request(get_random_bp, get_random_address, get_random_privkey):
-    def f():
-        balance_proof = get_random_bp()
-        privkey = get_random_privkey()
-        privkey_non_closing = get_random_privkey()
-        balance_proof.signature = encode_hex(eth_sign(privkey, balance_proof.serialize_bin()))
-        non_closing_signature = encode_hex(
-            eth_sign(privkey_non_closing, balance_proof.serialize_bin()),
-        )
-
-        monitor_request = MonitorRequest(
-            balance_proof,
-            non_closing_signature,
-            reward_amount=random.randint(0, UINT192_MAX),
-        )
-        monitor_request.reward_proof_signature = encode_hex(
-            eth_sign(privkey, monitor_request.serialize_reward_proof()),
-        )
-        return monitor_request
-    return f
-
-
 @pytest.fixture(scope='session')
 def faucet_private_key():
     """Returns private key of a faucet used in tests"""
