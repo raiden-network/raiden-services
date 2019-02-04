@@ -283,7 +283,7 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context):
         # FIXME: this is a bad error
 
 
-def monitor_reward_claim_event_handler(event: Event, _context: Context):
+def monitor_reward_claim_event_handler(event: Event, context: Context):
     assert isinstance(event, ReceiveMonitoringRewardClaimedEvent)
     log.info('Received MSC RewardClaimed event', evt=event)
 
