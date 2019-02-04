@@ -125,7 +125,7 @@ def test_e2e(
     # Now give the monitoring service a chance to submit the missing BP
     gevent.sleep(1)
 
-    assert [e.event for e in query()] == [MonitoringServiceEvent.NEW_BALANCE_PROOF_RECEIVED]
+    assert [e.event for e in query()] == [MonitoringServiceEvent.NEW_BALANCE_PROOF_RECEIVED.value]
 
     # wait for settle timeout
     wait_for_blocks(20)
@@ -139,8 +139,8 @@ def test_e2e(
     # Let the MS claim its reward
     gevent.sleep(1)
     assert [e.event for e in query()] == [
-        MonitoringServiceEvent.NEW_BALANCE_PROOF_RECEIVED,
-        MonitoringServiceEvent.REWARD_CLAIMED,
+        MonitoringServiceEvent.NEW_BALANCE_PROOF_RECEIVED.value,
+        MonitoringServiceEvent.REWARD_CLAIMED.value,
     ]
 
     final_balance = user_deposit_contract.functions.balances(
