@@ -22,6 +22,7 @@ class Channel:
     settle_timeout: int
     state: ChannelState = ChannelState.OPENED
     closing_block: Optional[int] = None
+    closing_participant: Optional[str] = None
 
     closing_tx_hash: Optional[str] = None
     claim_tx_hash: Optional[str] = None
