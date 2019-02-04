@@ -4,10 +4,9 @@ from typing import Callable
 import pytest
 from eth_utils import denoms, encode_hex, is_address
 
-from raiden_libs.messages import BalanceProof, MonitorRequest
+from raiden_libs.messages import BalanceProof
 from raiden_libs.types import Address, ChannelIdentifier
-from raiden_libs.utils import UINT64_MAX, UINT192_MAX, UINT256_MAX, private_key_to_address, sha3
-from raiden_libs.utils.signing import eth_sign
+from raiden_libs.utils import UINT64_MAX, UINT256_MAX, private_key_to_address, sha3
 
 
 @pytest.fixture

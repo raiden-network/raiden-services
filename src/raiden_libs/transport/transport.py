@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import Union, List
+from typing import List, Union
 
 import gevent
 import jsonschema

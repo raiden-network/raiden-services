@@ -7,12 +7,9 @@ from web3 import Web3
 from web3.contract import Contract, find_matching_event_abi
 from web3.utils.events import get_event_data
 
-from raiden_contracts.constants import MessageTypeId
-from raiden_libs.messages import (
-    BalanceProof,
-    Message,
-)
 from monitoring_service.states import MonitorRequest
+from raiden_contracts.constants import MessageTypeId
+from raiden_libs.messages import BalanceProof, Message
 from raiden_libs.transport import Transport
 from raiden_libs.types import Address, ChannelIdentifier, T_ChannelIdentifier
 from raiden_libs.utils import UINT256_MAX, eth_sign, make_filter, private_key_to_address

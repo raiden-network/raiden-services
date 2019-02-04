@@ -1,4 +1,4 @@
-CODE_DIRS = src/monitoring_service src/pathfinding_service tests/
+CODE_DIRS = src/ tests/
 ISORT_PARAMS = --ignore-whitespace --settings-path . --recursive $(CODE_DIRS)
 
 all: lint mypy
