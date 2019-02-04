@@ -7,6 +7,7 @@ from request_collector.cli import main
 DEFAULT_ARGS = [
     '--matrix-username', 'TEST',
     '--matrix-password', 'TEST',
+    '--state-db', ':memory:',
 ]
 
 patch_args = dict(
@@ -19,7 +20,7 @@ def test_success():
     """ Calling the request_collector with default args should succeed after heavy mocking """
     runner = CliRunner()
     with patch.multiple(**patch_args):
-        result = runner.invoke(main, DEFAULT_ARGS)
+        result = runner.invoke(main, DEFAULT_ARGS, catch_exceptions=False)
     assert result.exit_code == 0
 
 
@@ -37,9 +38,10 @@ def test_shutdown():
 def test_log_level():
     """ Setting of log level via command line switch """
     runner = CliRunner()
-    with patch('request_collector.cli.logging.basicConfig') as basicConfig:
+    with patch.multiple(**patch_args), \
+            patch('request_collector.cli.logging.basicConfig') as basicConfig:
         for log_level in ('CRITICAL', 'WARNING'):
-            runner.invoke(main, DEFAULT_ARGS + ['--log-level', log_level])
+            runner.invoke(main, DEFAULT_ARGS + ['--log-level', log_level], catch_exceptions=False)
             # pytest already initializes logging, so basicConfig does not have
             # an effect. Use mocking to check that it's called properly.
             assert logging.getLevelName(
