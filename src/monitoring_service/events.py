@@ -73,12 +73,12 @@ class ScheduledEvent(Event):
 
 
 @dataclass
-class ActionMonitoringTriggeredEvent:
+class ActionMonitoringTriggeredEvent(Event):
     token_network_address: str
     channel_identifier: int
 
 
 @dataclass
-class ActionClaimRewardTriggeredEvent:
+class ActionClaimRewardTriggeredEvent(Event):
     token_network_address: str
     channel_identifier: int

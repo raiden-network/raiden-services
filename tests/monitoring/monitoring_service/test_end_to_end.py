@@ -2,11 +2,10 @@ import gevent
 import structlog
 from web3 import Web3
 
-import raiden_libs.messages
+from monitoring_service.blockchain import query_blockchain_events
 from monitoring_service.service import MonitoringService
 from raiden_contracts.constants import CONTRACT_MONITORING_SERVICE, MonitoringServiceEvent
 from raiden_contracts.contract_manager import ContractManager
-from monitoring_service.blockchain import query_blockchain_events
 
 log = structlog.get_logger(__name__)
 
@@ -101,7 +100,7 @@ def test_e2e(
 
     # c1 asks MS to monitor the channel
     reward_amount = 1
-    monitor_request: raiden_libs.messages.MonitorRequest = c1.get_monitor_request(
+    monitor_request = c1.get_monitor_request(
         c2.address,
         balance_proof_c2,
         reward_amount,

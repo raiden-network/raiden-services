@@ -2,10 +2,10 @@ import pytest
 from eth_utils import keccak
 
 from raiden_libs.utils import (
+    compute_merkle_proof,
     compute_merkle_tree,
     get_merkle_root,
     is_empty_merkle_root,
-    compute_merkle_proof,
     validate_merkle_proof,
 )
 

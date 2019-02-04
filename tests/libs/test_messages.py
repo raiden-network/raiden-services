@@ -1,18 +1,11 @@
-from typing import Dict
+import random
 
 import pytest
-import random
 from eth_utils import is_same_address
 
-from raiden_libs.utils import eth_sign, encode_hex, private_key_to_address
-from raiden_libs.messages import (
-    BalanceProof,
-    Message,
-    MonitorRequest,
-)
-from raiden_libs.exceptions import MessageTypeError
+from raiden_libs.messages import BalanceProof, Message, MonitorRequest
 from raiden_libs.types import Address, ChannelIdentifier
-from raiden_libs.utils import UINT256_MAX
+from raiden_libs.utils import UINT256_MAX, encode_hex, eth_sign, private_key_to_address
 
 
 def get_random_channel_id() -> ChannelIdentifier:
