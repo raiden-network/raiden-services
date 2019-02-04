@@ -16,8 +16,12 @@ from monitoring_service.handlers import (
     channel_closed_event_handler,
     channel_opened_event_handler,
     channel_non_closing_balance_proof_updated_event_handler,
+    channel_settled_event_handler,
     monitor_new_balance_proof_event_handler,
+    monitor_reward_claim_event_handler,
     action_monitoring_triggered_event_handler,
+    action_claim_reward_triggered_event_handler,
+    updated_head_block_event_handler,
 )
 from monitoring_service.states import BlockchainState, MonitoringServiceState, MonitorRequest
 from raiden_contracts.constants import ChannelState
@@ -44,13 +48,61 @@ def context():
     )
 
 
-def test_channel_opened_event_handler_ignores_other_event(
+def test_event_handler_ignore_other_events(
     context: Context,
 ):
     event = Event()
 
     with pytest.raises(AssertionError):
         channel_opened_event_handler(
+            event=event,
+            context=context,
+        )
+
+    with pytest.raises(AssertionError):
+        channel_closed_event_handler(
+            event=event,
+            context=context,
+        )
+
+    with pytest.raises(AssertionError):
+        channel_non_closing_balance_proof_updated_event_handler(
+            event=event,
+            context=context,
+        )
+
+    with pytest.raises(AssertionError):
+        channel_settled_event_handler(
+            event=event,
+            context=context,
+        )
+
+    with pytest.raises(AssertionError):
+        monitor_new_balance_proof_event_handler(
+            event=event,
+            context=context,
+        )
+
+    with pytest.raises(AssertionError):
+        monitor_reward_claim_event_handler(
+            event=event,
+            context=context,
+        )
+
+    with pytest.raises(AssertionError):
+        action_monitoring_triggered_event_handler(
+            event=event,
+            context=context,
+        )
+
+    with pytest.raises(AssertionError):
+        action_claim_reward_triggered_event_handler(
+            event=event,
+            context=context,
+        )
+
+    with pytest.raises(AssertionError):
+        updated_head_block_event_handler(
             event=event,
             context=context,
         )
@@ -72,18 +124,6 @@ def test_channel_opened_event_handler_adds_channel(
     channel_opened_event_handler(event, context)
 
     assert len(context.db.channels) == 1
-
-
-def test_channel_closed_event_handler_ignores_other_event(
-    context: Context,
-):
-    event = Event()
-
-    with pytest.raises(AssertionError):
-        channel_closed_event_handler(
-            event=event,
-            context=context,
-        )
 
 
 def test_channel_closed_event_handler_closes_existing_channel(
@@ -144,18 +184,6 @@ def test_channel_closed_event_handler_leaves_existing_channel(
 
     assert len(context.db.channels) == 1
     assert context.db.channels[0].state == ChannelState.OPENED
-
-
-def test_channel_bp_updated_event_handler_ignores_other_event(
-    context: Context,
-):
-    event = Event()
-
-    with pytest.raises(AssertionError):
-        channel_non_closing_balance_proof_updated_event_handler(
-            event=event,
-            context=context,
-        )
 
 
 def test_channel_bp_updated_event_handler_sets_update_status_if_not_set(
@@ -221,18 +249,6 @@ def test_channel_bp_updated_event_handler_sets_update_status_if_not_set(
     assert channel.update_status is not None
     assert channel.update_status.nonce == 5
     assert channel.update_status.update_sender_address == 'A'
-
-
-def test_monitor_new_balance_proof_event_handler_ignores_other_event(
-    context: Context,
-):
-    event = Event()
-
-    with pytest.raises(AssertionError):
-        monitor_new_balance_proof_event_handler(
-            event=event,
-            context=context,
-        )
 
 
 def test_monitor_new_balance_proof_event_handler_sets_update_status(
@@ -302,18 +318,6 @@ def test_monitor_new_balance_proof_event_handler_sets_update_status(
     assert channel.update_status is not None
     assert channel.update_status.nonce == 5
     assert channel.update_status.update_sender_address == 'D'
-
-
-def test_action_monitoring_triggered_event_handler_ignores_other_event(
-    context: Context,
-):
-    event = Event()
-
-    with pytest.raises(AssertionError):
-        action_monitoring_triggered_event_handler(
-            event=event,
-            context=context,
-        )
 
 
 def test_action_monitoring_triggered_event_handler_does_not_trigger_monitor_call_when_nonce_to_small(
