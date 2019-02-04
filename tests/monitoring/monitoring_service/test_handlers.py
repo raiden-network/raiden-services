@@ -89,59 +89,22 @@ def test_event_handler_ignore_other_events(
 ):
     event = Event()
 
-    with pytest.raises(AssertionError):
-        channel_opened_event_handler(
-            event=event,
-            context=context,
-        )
-
-    with pytest.raises(AssertionError):
-        channel_closed_event_handler(
-            event=event,
-            context=context,
-        )
-
-    with pytest.raises(AssertionError):
-        channel_non_closing_balance_proof_updated_event_handler(
-            event=event,
-            context=context,
-        )
-
-    with pytest.raises(AssertionError):
-        channel_settled_event_handler(
-            event=event,
-            context=context,
-        )
-
-    with pytest.raises(AssertionError):
-        monitor_new_balance_proof_event_handler(
-            event=event,
-            context=context,
-        )
-
-    with pytest.raises(AssertionError):
-        monitor_reward_claim_event_handler(
-            event=event,
-            context=context,
-        )
-
-    with pytest.raises(AssertionError):
-        action_monitoring_triggered_event_handler(
-            event=event,
-            context=context,
-        )
-
-    with pytest.raises(AssertionError):
-        action_claim_reward_triggered_event_handler(
-            event=event,
-            context=context,
-        )
-
-    with pytest.raises(AssertionError):
-        updated_head_block_event_handler(
-            event=event,
-            context=context,
-        )
+    for handler in [
+        channel_opened_event_handler,
+        channel_closed_event_handler,
+        channel_non_closing_balance_proof_updated_event_handler,
+        channel_settled_event_handler,
+        monitor_new_balance_proof_event_handler,
+        monitor_reward_claim_event_handler,
+        action_monitoring_triggered_event_handler,
+        action_claim_reward_triggered_event_handler,
+        updated_head_block_event_handler,
+    ]:
+        with pytest.raises(AssertionError):
+            handler(
+                event=event,
+                context=context,
+            )
 
 
 def test_channel_opened_event_handler_adds_channel(
