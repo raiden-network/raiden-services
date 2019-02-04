@@ -263,6 +263,7 @@ class MockRaidenNode:
         reward_amount: int,
     ) -> MonitorRequest:
         """Get monitor request message for a given balance proof."""
+        assert balance_proof.signature
         monitor_request = MonitorRequest(
             channel_identifier=balance_proof.channel_identifier,
             token_network_address=balance_proof.token_network_address,

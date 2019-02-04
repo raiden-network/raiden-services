@@ -1,4 +1,5 @@
 import pytest
+
 from raiden_contracts.contract_manager import ContractManager, contracts_precompiled_path
 
 

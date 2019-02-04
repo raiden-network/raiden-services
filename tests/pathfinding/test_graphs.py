@@ -14,11 +14,11 @@ from raiden_libs.types import Address, ChannelIdentifier
 # This test is boring right now, but should get more interesting as the routing
 # gets more options.
 def test_edge_weight(addresses):
-    a = ChannelIdentifier(1)
-    b = addresses[0]
-    c = addresses[1]
+    channel_id = ChannelIdentifier(1)
+    participant1 = addresses[0]
+    participant2 = addresses[1]
     settle_timeout = 15
-    view = ChannelView(a, b, c, settle_timeout)
+    view = ChannelView(channel_id, participant1, participant2, settle_timeout)
 
     assert TokenNetwork.edge_weight(
         dict(),

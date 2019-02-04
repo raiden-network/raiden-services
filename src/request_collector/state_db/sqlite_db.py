@@ -116,7 +116,7 @@ class StateDBSqlite:
             balance_proof.signature,
             monitor_request.non_closing_signature,
             monitor_request.reward_proof_signature,
-            hex(monitor_request.reward_amount),
+            hex(monitor_request.reward_amount),  # type: ignore
             balance_proof.token_network_address,
         ]
         self.conn.execute("""

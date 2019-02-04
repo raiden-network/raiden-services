@@ -319,7 +319,6 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context):
         token_network_address=monitor_request.token_network_address,
         channel_id=monitor_request.channel_identifier,
     )
-
     if channel is None:
         return
 
@@ -369,47 +368,48 @@ def action_claim_reward_triggered_event_handler(event: Event, context: Context):
         token_network_address=event.token_network_address,
         channel_id=event.channel_identifier,
     )
+    if monitor_request is None:
+        return
 
-    if monitor_request is not None:
-        channel = context.db.get_channel(
-            token_network_address=monitor_request.token_network_address,
-            channel_id=monitor_request.channel_identifier,
-        )
+    channel = context.db.get_channel(
+        token_network_address=monitor_request.token_network_address,
+        channel_id=monitor_request.channel_identifier,
+    )
+    if channel is None:
+        return
 
-        # check that the latest update was ours and that we didn't send a transaction yet
-        send_claim = (
-            channel is not None and
-            channel.claim_tx_hash is None and
-            channel.update_status is not None and
-            channel.update_status.update_sender_address == context.ms_state.address
-        )
-        log.info(
-            'Checking if eligible for reward',
-            reward_available=send_claim,
-        )
-        if send_claim:
-            try:
-                tx_hash = context.monitoring_service_contract.functions.claimReward(
-                    monitor_request.channel_identifier,
-                    monitor_request.token_network_address,
-                    monitor_request.signer,
-                    monitor_request.non_closing_signer,
-                ).transact({'from': context.ms_state.address})
+    # check that the latest update was ours and that we didn't send a transaction yet
+    send_claim = (
+        channel is not None and
+        channel.claim_tx_hash is None and
+        channel.update_status is not None and
+        channel.update_status.update_sender_address == context.ms_state.address
+    )
+    log.info(
+        'Checking if eligible for reward',
+        reward_available=send_claim,
+    )
+    if send_claim:
+        try:
+            tx_hash = context.monitoring_service_contract.functions.claimReward(
+                monitor_request.channel_identifier,
+                monitor_request.token_network_address,
+                monitor_request.signer,
+                monitor_request.non_closing_signer,
+            ).transact({'from': context.ms_state.address})
 
-                log.info(
-                    'Calling `claimReward` on channel',
-                    token_network_address=channel.token_network_address,
-                    channel_identifier=channel.identifier,
-                    transaction_hash=encode_hex(tx_hash),
-                )
-                assert tx_hash is not None
+            log.info(
+                'Calling `claimReward` on channel',
+                token_network_address=channel.token_network_address,
+                channel_identifier=channel.identifier,
+                transaction_hash=encode_hex(tx_hash),
+            )
+            assert tx_hash is not None
 
-                channel.claim_tx_hash = tx_hash
-                context.db.upsert_channel(channel)
-            except Exception as e:
-                log.error('Sending tx failed', exc_info=True, err=e)
-    else:
-        log.error('Related MR not found, this is a bug')
+            channel.claim_tx_hash = tx_hash
+            context.db.upsert_channel(channel)
+        except Exception as e:
+            log.error('Sending tx failed', exc_info=True, err=e)
 
 
 HANDLERS = {

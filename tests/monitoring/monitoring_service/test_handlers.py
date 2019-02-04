@@ -4,23 +4,23 @@ import pytest
 
 from monitoring_service.database import Database
 from monitoring_service.events import (
+    ActionMonitoringTriggeredEvent,
     Event,
     ReceiveChannelClosedEvent,
     ReceiveChannelOpenedEvent,
-    ReceiveNonClosingBalanceProofUpdatedEvent,
     ReceiveMonitoringNewBalanceProofEvent,
-    ActionMonitoringTriggeredEvent,
+    ReceiveNonClosingBalanceProofUpdatedEvent,
 )
 from monitoring_service.handlers import (
     Context,
+    action_claim_reward_triggered_event_handler,
+    action_monitoring_triggered_event_handler,
     channel_closed_event_handler,
-    channel_opened_event_handler,
     channel_non_closing_balance_proof_updated_event_handler,
+    channel_opened_event_handler,
     channel_settled_event_handler,
     monitor_new_balance_proof_event_handler,
     monitor_reward_claim_event_handler,
-    action_monitoring_triggered_event_handler,
-    action_claim_reward_triggered_event_handler,
     updated_head_block_event_handler,
 )
 from monitoring_service.states import BlockchainState, MonitoringServiceState, MonitorRequest
@@ -80,7 +80,7 @@ def context():
         w3=Mock(),
         contract_manager=Mock(),
         last_known_block=0,
-        monitoring_service_contract=Mock()
+        monitoring_service_contract=Mock(),
     )
 
 
@@ -199,12 +199,14 @@ def test_channel_bp_updated_event_handler_sets_update_status_if_not_set(
     )
 
     channel = context.db.get_channel(event3.token_network_address, event3.channel_identifier)
+    assert channel
     assert channel.update_status is None
 
     channel_non_closing_balance_proof_updated_event_handler(event3, context)
 
     assert len(context.db.channels) == 1
     channel = context.db.get_channel(event3.token_network_address, event3.channel_identifier)
+    assert channel
     assert channel.update_status is not None
     assert channel.update_status.nonce == 2
     assert channel.update_status.update_sender_address == DEFAULT_PARTICIPANT1
@@ -221,6 +223,7 @@ def test_channel_bp_updated_event_handler_sets_update_status_if_not_set(
 
     assert len(context.db.channels) == 1
     channel = context.db.get_channel(event3.token_network_address, event3.channel_identifier)
+    assert channel
     assert channel.update_status is not None
     assert channel.update_status.nonce == 5
     assert channel.update_status.update_sender_address == DEFAULT_PARTICIPANT1
@@ -242,12 +245,14 @@ def test_monitor_new_balance_proof_event_handler_sets_update_status(
     )
 
     channel = context.db.get_channel(event3.token_network_address, event3.channel_identifier)
+    assert channel
     assert channel.update_status is None
 
     monitor_new_balance_proof_event_handler(event3, context)
 
     assert len(context.db.channels) == 1
     channel = context.db.get_channel(event3.token_network_address, event3.channel_identifier)
+    assert channel
     assert channel.update_status is not None
     assert channel.update_status.nonce == 2
     assert channel.update_status.update_sender_address == 'C'
@@ -266,12 +271,13 @@ def test_monitor_new_balance_proof_event_handler_sets_update_status(
 
     assert len(context.db.channels) == 1
     channel = context.db.get_channel(event3.token_network_address, event3.channel_identifier)
+    assert channel
     assert channel.update_status is not None
     assert channel.update_status.nonce == 5
     assert channel.update_status.update_sender_address == 'D'
 
 
-def test_action_monitoring_triggered_event_handler_does_not_trigger_monitor_call_when_nonce_to_small(
+def test_action_monitoring_triggered_event_handler_does_not_trigger_monitor_call_when_nonce_to_small(  # noqa
     context: Context,
 ):
     context = setup_state_with_closed_channel(context)
@@ -287,6 +293,7 @@ def test_action_monitoring_triggered_event_handler_does_not_trigger_monitor_call
     )
 
     channel = context.db.get_channel(event3.token_network_address, event3.channel_identifier)
+    assert channel
     assert channel.update_status is None
 
     monitor_new_balance_proof_event_handler(event3, context)
@@ -311,10 +318,12 @@ def test_action_monitoring_triggered_event_handler_does_not_trigger_monitor_call
     )
 
     channel = context.db.get_channel(event4.token_network_address, event4.channel_identifier)
+    assert channel
     assert channel.update_status is not None
     assert channel.closing_tx_hash is None
 
     action_monitoring_triggered_event_handler(event4, context)
 
     assert len(context.db.channels) == 1
+    assert channel
     assert channel.closing_tx_hash is None

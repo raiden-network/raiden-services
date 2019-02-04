@@ -3,12 +3,12 @@ from typing import Callable, Generator, List
 from unittest.mock import Mock, patch
 
 import pytest
+from tests.pathfinding.config import NUMBER_OF_CHANNELS
+from tests.pathfinding.mocks.blockchain_listener import BlockchainListenerMock
 from web3 import Web3
 
 from pathfinding_service import PathfindingService
 from pathfinding_service.model.token_network import TokenNetwork
-from tests.pathfinding.config import NUMBER_OF_CHANNELS
-from tests.pathfinding.mocks.blockchain_listener import BlockchainListenerMock
 from raiden_contracts.contract_manager import ContractManager
 from raiden_libs.types import Address, ChannelIdentifier
 from raiden_libs.utils import private_key_to_address

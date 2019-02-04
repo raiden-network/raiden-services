@@ -1,8 +1,6 @@
 import pytest
+from eth_utils import is_same_address
 
-from eth_utils import decode_hex, is_same_address
-
-from raiden_libs.utils.signing import eth_recover
 from raiden_libs.utils import is_channel_identifier
 
 
