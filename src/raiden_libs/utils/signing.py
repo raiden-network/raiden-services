@@ -108,7 +108,7 @@ def address_from_signature(data: bytes, signature: bytes, hasher: Hasher = sha3)
         signature = signature[:-1] + bytes([signature[-1] - 27])
 
     try:
-        signer_pubkey = PublicKey.from_signature_and_message(signature, data, hasher=hasher)  # type: ignore
+        signer_pubkey = PublicKey.from_signature_and_message(signature, data, hasher=hasher)  # type: ignore # noqa
         return public_key_to_address(signer_pubkey)
     except Exception as e:  # pylint: disable=broad-except
         # coincurve raises bare exception on verify error

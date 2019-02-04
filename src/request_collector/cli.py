@@ -9,8 +9,8 @@ from typing import TextIO
 
 import click
 from eth_utils import is_checksum_address
-from request_collector.state_db import StateDBSqlite
 from request_collector.server import RequestCollector
+from request_collector.state_db import StateDBSqlite
 
 from raiden_libs.transport import MatrixTransport
 

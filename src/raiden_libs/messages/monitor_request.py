@@ -1,12 +1,10 @@
 import jsonschema
-from eth_utils import decode_hex, is_address, to_checksum_address
+from eth_utils import decode_hex, to_checksum_address
 
 from raiden_contracts.constants import MessageTypeId
 from raiden_libs.messages.balance_proof import BalanceProof
 from raiden_libs.messages.json_schema import MONITOR_REQUEST_SCHEMA
 from raiden_libs.messages.message import Message
-from raiden_libs.properties import address_property
-from raiden_libs.types import Address
 from raiden_libs.utils import UINT192_MAX, eth_recover, pack_data
 
 
