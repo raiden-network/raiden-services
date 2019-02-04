@@ -239,7 +239,7 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context):
             context.db.upsert_channel(channel)
         else:
             # nonce not bigger, should never happen as it is checked in the contract
-            if event.nonce <= update_status.nonce:
+            if event.nonce < update_status.nonce:
                 log.error(
                     'MSC NewBalanceProof nonce smaller than the known one, ignoring.',
                     know_nonce=update_status.nonce,
