@@ -137,9 +137,18 @@ def channel_non_closing_balance_proof_updated_event_handler(event: Event, contex
             identifier=event.channel_identifier,
         )
 
-        non_closing_participant = channel.participant1
         if event.closing_participant == channel.participant1:
             non_closing_participant = channel.participant2
+        elif event.closing_participant == channel.participant2:
+            non_closing_participant = channel.participant1
+        else:
+            log.error(
+                'Update event contains invalid closing participant',
+                participant1=channel.participant1,
+                participant2=channel.participant2,
+                closing_participant=event.closing_participant,
+            )
+            return
 
         # check for known update calls and update accordingly
         if channel.update_status is None:
