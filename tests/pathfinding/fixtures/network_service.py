@@ -306,7 +306,7 @@ def pathfinding_service_full_mock(
         pathfinding_service = PathfindingService(
             web3=web3_mock,
             contract_manager=contracts_manager,
-            registry_address='',
+            registry_address=Address(''),
         )
         pathfinding_service.token_networks = {
             token_network_model.address: token_network_model,
@@ -328,7 +328,7 @@ def pathfinding_service_mocked_listeners(
         pathfinding_service = PathfindingService(
             web3=web3,
             contract_manager=contracts_manager,
-            registry_address='',
+            registry_address=Address(''),
         )
 
         yield pathfinding_service

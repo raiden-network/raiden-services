@@ -16,7 +16,7 @@ from raiden_libs.utils import UINT256_MAX
 
 
 def get_random_channel_id() -> ChannelIdentifier:
-    return random.randrange(0, UINT256_MAX)
+    return ChannelIdentifier(random.randrange(0, UINT256_MAX))
 
 
 def test_serialize_deserialize(get_random_bp, get_random_privkey):
@@ -106,7 +106,7 @@ def test_monitor_request(get_random_bp, get_random_privkey, get_random_address):
     monitor_request = MonitorRequest(
         balance_proof,
         non_closing_signature=balance_proof.signature,
-        reward_proof_signature='',
+        reward_proof_signature=b'',
         reward_amount=1,
     )
     monitor_request.reward_proof_signature = encode_hex(

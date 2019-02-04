@@ -8,16 +8,17 @@ from networkx import NetworkXNoPath
 
 from pathfinding_service.config import DEFAULT_PERCENTAGE_FEE
 from pathfinding_service.model import ChannelView, TokenNetwork
-from raiden_libs.types import Address
+from raiden_libs.types import Address, ChannelIdentifier
 
 
 # This test is boring right now, but should get more interesting as the routing
 # gets more options.
 def test_edge_weight(addresses):
-    a = addresses[0]
-    b = addresses[1]
+    a = ChannelIdentifier(1)
+    b = addresses[0]
+    c = addresses[1]
     settle_timeout = 15
-    view = ChannelView(1, a, b, settle_timeout)
+    view = ChannelView(a, b, c, settle_timeout)
 
     assert TokenNetwork.edge_weight(
         dict(),

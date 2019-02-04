@@ -15,7 +15,7 @@ class Message:
     json_schema = ENVELOPE_SCHEMA
 
     def __init__(self):
-        self._type = None
+        self._type = ''
 
     def serialize_data(self) -> dict:
         """get message data as a dict"""

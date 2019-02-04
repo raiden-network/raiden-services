@@ -19,7 +19,7 @@ class Transport(gevent.Greenlet):
     """
     def __init__(self):
         super().__init__()
-        self.message_callbacks = list()
+        self.message_callbacks: list = list()
 
     def add_message_callback(self, callback):
         self.message_callbacks.append(callback)
