@@ -10,7 +10,7 @@ from eth_utils import decode_hex
 
 from pathfinding_service import PathfindingService
 from pathfinding_service.model import TokenNetwork
-from raiden_libs.types import Address
+from raiden_libs.types import Address, ChannelIdentifier
 
 
 def test_pfs_with_mocked_events(
@@ -89,12 +89,12 @@ def test_pfs_with_mocked_events(
             ),
         ))
         token_network.handle_channel_balance_update_message(
-            index,
+            ChannelIdentifier(index),
             sender=addresses[p1_index],
             reveal_timeout=p1_reveal_timeout,
         )
         token_network.handle_channel_balance_update_message(
-            index,
+            ChannelIdentifier(index),
             sender=addresses[p2_index],
             reveal_timeout=p2_reveal_timeout,
         )
@@ -115,7 +115,7 @@ def test_pfs_with_mocked_events(
         _p2_reveal_timeout,
         _settle_timeout,
     ) in enumerate(channel_descriptions_case_1):
-        p1, p2 = token_network.channel_id_to_addresses[index]
+        p1, p2 = token_network.channel_id_to_addresses[ChannelIdentifier(index)]
         assert p1 == addresses[p1_index]
         assert p2 == addresses[p2_index]
 
