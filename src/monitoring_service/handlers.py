@@ -116,6 +116,7 @@ def channel_closed_event_handler(event: Event, context: Context):
 
         channel.state = ChannelState.CLOSED
         channel.closing_block = event.block_number
+        channel.closing_participant = event.closing_participant
         context.db.upsert_channel(channel)
     else:
         log.error('Channel not in database')
@@ -135,6 +136,47 @@ def channel_non_closing_balance_proof_updated_event_handler(event: Event, contex
             token_network_address=event.token_network_address,
             identifier=event.channel_identifier,
         )
+
+        non_closing_participant = channel.participant1
+        if event.closing_participant == channel.participant1:
+            non_closing_participant = channel.participant2
+
+        # check for known update calls and update accordingly
+        if channel.update_status is None:
+            log.info(
+                'Creating channel update state',
+                token_network_address=channel.token_network_address,
+                channel_identifier=channel.identifier,
+                new_nonce=event.nonce,
+            )
+
+            channel.update_status = OnChainUpdateStatus(
+                update_sender_address=non_closing_participant,
+                nonce=event.nonce,
+            )
+
+            context.db.upsert_channel(channel)
+        else:
+            # nonce not bigger, should never happen as it is checked in the contract
+            if event.nonce <= channel.update_status.nonce:
+                log.error(
+                    'updateNonClosingBalanceProof nonce smaller than the known one, ignoring.',
+                    know_nonce=channel.update_status.nonce,
+                    received_nonce=event.nonce,
+                )
+                return
+
+            log.info(
+                'Updating channel update state',
+                token_network_address=channel.token_network_address,
+                channel_identifier=channel.identifier,
+                new_nonce=event.nonce,
+            )
+            # update channel status
+            channel.update_status.nonce = event.nonce
+            channel.update_status.update_sender_address = non_closing_participant
+
+            context.db.upsert_channel(channel)
     else:
         log.error('Channel not in database')
         # FIXME: this is a bad error
