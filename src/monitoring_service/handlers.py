@@ -303,43 +303,53 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context):
         token_network_address=event.token_network_address,
         channel_id=event.channel_identifier,
     )
+    if monitor_request is None:
+        return
 
-    if monitor_request is not None:
-        channel = context.db.get_channel(
-            token_network_address=monitor_request.token_network_address,
-            channel_id=monitor_request.channel_identifier,
-        )
+    channel = context.db.get_channel(
+        token_network_address=monitor_request.token_network_address,
+        channel_id=monitor_request.channel_identifier,
+    )
 
-        if channel is not None and channel.closing_tx_hash is None:
-            # FIXME: don't monitor when closer is MR signer
-            try:
-                tx_hash = context.monitoring_service_contract.functions.monitor(
-                    monitor_request.signer,
-                    monitor_request.non_closing_signer,
-                    monitor_request.balance_hash,
-                    monitor_request.nonce,
-                    monitor_request.additional_hash,
-                    monitor_request.closing_signature,
-                    monitor_request.non_closing_signature,
-                    monitor_request.reward_amount,
-                    monitor_request.token_network_address,
-                    monitor_request.reward_proof_signature,
-                ).transact({'from': context.ms_state.address})
+    if channel is None:
+        return
 
-                log.info(
-                    'Calling `monitor` on channel',
-                    token_network_address=channel.token_network_address,
-                    channel_identifier=channel.identifier,
-                    transaction_hash=encode_hex(tx_hash),
-                )
-                assert tx_hash is not None
+    last_onchain_nonce = 0
+    if channel.update_status:
+        last_onchain_nonce = channel.update_status.nonce
 
-                channel.closing_tx_hash = tx_hash
-                context.db.upsert_channel(channel)
-            except Exception as e:
-                log.error('Sending tx failed', exc_info=True, err=e)
-    else:
-        log.error('Related MR not found, this is a bug')
+    call_monitor = (
+        channel.closing_tx_hash is None and
+        monitor_request.nonce > last_onchain_nonce
+    )
+    if call_monitor:
+        # FIXME: don't monitor when closer is MR signer
+        try:
+            tx_hash = context.monitoring_service_contract.functions.monitor(
+                monitor_request.signer,
+                monitor_request.non_closing_signer,
+                monitor_request.balance_hash,
+                monitor_request.nonce,
+                monitor_request.additional_hash,
+                monitor_request.closing_signature,
+                monitor_request.non_closing_signature,
+                monitor_request.reward_amount,
+                monitor_request.token_network_address,
+                monitor_request.reward_proof_signature,
+            ).transact({'from': context.ms_state.address})
+
+            log.info(
+                'Calling `monitor` on channel',
+                token_network_address=channel.token_network_address,
+                channel_identifier=channel.identifier,
+                transaction_hash=encode_hex(tx_hash),
+            )
+            assert tx_hash is not None
+
+            channel.closing_tx_hash = tx_hash
+            context.db.upsert_channel(channel)
+        except Exception as e:
+            log.error('Sending tx failed', exc_info=True, err=e)
 
 
 def action_claim_reward_triggered_event_handler(event: Event, context: Context):
