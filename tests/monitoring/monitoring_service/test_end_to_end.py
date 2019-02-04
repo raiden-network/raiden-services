@@ -14,7 +14,7 @@ log = structlog.get_logger(__name__)
 def create_ms_contract_events_query(
     web3: Web3,
     contract_manager: ContractManager,
-    contract_address: str
+    contract_address: str,
 ):
     def f():
         return query_blockchain_events(
@@ -36,7 +36,7 @@ def test_e2e(
     user_deposit_contract,
     wait_for_blocks,
     custom_token,
-    raiden_service_bundle,
+    service_registry,
     monitoring_service: MonitoringService,
     contracts_manager,
 ):
@@ -68,8 +68,8 @@ def test_e2e(
         c1.address, node_deposit,
     ).transact({'from': c1.address})
 
-    deposit = raiden_service_bundle.functions.deposits(
-        monitoring_service.address
+    deposit = service_registry.functions.deposits(
+        monitoring_service.address,
     ).call()
     assert deposit > 0
 
