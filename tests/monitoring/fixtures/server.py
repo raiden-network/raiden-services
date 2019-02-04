@@ -34,7 +34,7 @@ def monitoring_service(
     token_network_registry_contract,
     send_funds,
     contracts_manager: ContractManager,
-    raiden_service_bundle,
+    service_registry,
     custom_token,
 ):
     # register MS in ServiceRegistry
@@ -43,10 +43,10 @@ def monitoring_service(
     deposit = 10  # any amount is sufficient for regsitration, right now
     custom_token.functions.mint(deposit).transact({'from': ms_address})
     custom_token.functions.approve(
-        raiden_service_bundle.address,
+        service_registry.address,
         deposit,
     ).transact({'from': ms_address})
-    raiden_service_bundle.functions.deposit(deposit).transact({'from': ms_address})
+    service_registry.functions.deposit(deposit).transact({'from': ms_address})
 
     ms = MonitoringService(
         web3=web3,
