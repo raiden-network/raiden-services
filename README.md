@@ -5,6 +5,8 @@ Supplemental services for the [Raiden Network](https://raiden.network/).
 [![Build Status](https://travis-ci.com/raiden-network/raiden-services.svg?branch=master)](https://travis-ci.com/raiden-network/raiden-services)
 [![Coverage](https://img.shields.io/codecov/c/github/raiden-network/raiden-services.svg?style=round)](https://codecov.io/gh/raiden-network/raiden-services/)
 
+More information can be found in the [documentation](https://raiden-services.readthedocs.io/en/latest/).
+
 ### Monitoring Service
 
 The Monitoring Service watches open payment channels when the user is not online. In case one of the user’s channel partners wants to close a channel while the user is offline, the monitoring service sends the latest balance proof to the smart contract and thus ensures the correct settlement of the channel.
