@@ -1,6 +1,7 @@
 from unittest.mock import Mock
 
 import pytest
+from eth_utils import encode_hex
 
 from monitoring_service.database import Database
 from monitoring_service.events import (
@@ -25,11 +26,14 @@ from monitoring_service.handlers import (
 )
 from monitoring_service.states import BlockchainState, MonitoringServiceState, MonitorRequest
 from raiden_contracts.constants import ChannelState
+from raiden_libs.utils import eth_sign, private_key_to_address
 
 DEFAULT_TOKEN_NETWORK_ADDRESS = '0x0000000000000000000000000000000000000000'
 DEFAULT_CHANNEL_IDENTIFIER = 3
-DEFAULT_PARTICIPANT1 = '0x1111111111111111111111111111111111111111'
-DEFAULT_PARTICIPANT2 = '0x2222222222222222222222222222222222222222'
+DEFAULT_PRIVATE_KEY1 = '0x' + '1' * 64
+DEFAULT_PRIVATE_KEY2 = '0x' + '2' * 64
+DEFAULT_PARTICIPANT1 = private_key_to_address(DEFAULT_PRIVATE_KEY1)
+DEFAULT_PARTICIPANT2 = private_key_to_address(DEFAULT_PRIVATE_KEY2)
 DEFAULT_SETTLE_TIMEOUT = 100
 
 
@@ -61,6 +65,31 @@ def setup_state_with_closed_channel(context: Context) -> Context:
     assert context.db.channels[0].state == ChannelState.CLOSED
 
     return context
+
+
+def get_signed_monitor_request() -> MonitorRequest:
+    monitor_request = MonitorRequest(
+        channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
+        token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
+        chain_id=1,
+        balance_hash='',
+        nonce=5,
+        additional_hash='',
+        closing_signature='',
+        non_closing_signature='',
+        reward_amount=0,
+        reward_proof_signature='',
+    )
+    monitor_request.closing_signature = encode_hex(
+        eth_sign(DEFAULT_PRIVATE_KEY1, monitor_request.packed_balance_proof_data()),
+    )
+    monitor_request.non_closing_signature = encode_hex(
+        eth_sign(DEFAULT_PRIVATE_KEY2, monitor_request.packed_non_closing_data()),
+    )
+    monitor_request.reward_proof_signature = encode_hex(
+        eth_sign(DEFAULT_PRIVATE_KEY2, monitor_request.packed_reward_proof_data()),
+    )
+    return monitor_request
 
 
 @pytest.fixture
@@ -327,3 +356,27 @@ def test_action_monitoring_triggered_event_handler_does_not_trigger_monitor_call
     assert len(context.db.channels) == 1
     assert channel
     assert channel.closing_tx_hash is None
+
+
+def test_mr_available_before_channel_triggers_monitor_call(
+    context: Context,
+):
+    """ Tests that the MR is read from the DB, even if it is supplied before the channel was opened.
+
+    See https://github.com/raiden-network/raiden-services/issues/26
+    """
+
+    # add MR to DB
+    context.db.monitor_requests.append(get_signed_monitor_request())
+
+    context = setup_state_with_closed_channel(context)
+
+    event = ActionMonitoringTriggeredEvent(
+        token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
+        channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
+    )
+
+    action_monitoring_triggered_event_handler(event, context)
+
+    # check that the monitor call has been done
+    assert context.monitoring_service_contract.functions.monitor.called is True
