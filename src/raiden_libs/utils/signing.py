@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, List, Optional, Union
 
 from coincurve import PrivateKey, PublicKey
 from eth_utils import (
@@ -32,8 +32,8 @@ def eth_sign_sha3(data: bytes) -> bytes:
     return sha3(data)
 
 
-def pack(*args) -> bytes:
-    def format_int(value, size):
+def pack(*args: List) -> bytes:
+    def format_int(value: int, size: int) -> bytes:
         assert isinstance(value, int)
         assert isinstance(size, int)
         if value >= 0:
@@ -63,7 +63,7 @@ def pack(*args) -> bytes:
     return msg
 
 
-def keccak256(*args, hasher: Hasher = sha3) -> bytes:
+def keccak256(*args: List, hasher: Hasher = sha3) -> bytes:
     """
     Simulates Solidity's keccak256 packing. Integers can be passed as tuples where the second tuple
     element specifies the variable's size in bits, e.g.:
@@ -161,7 +161,7 @@ def eth_verify(data: Any, signature: bytes, hasher: Hasher = eth_sign_sha3) -> A
     return eth_recover(data=keccak256(data, hasher=hasher), signature=signature, hasher=None)
 
 
-def pack_data(abi_types, values) -> bytes:
+def pack_data(abi_types: List, values: List) -> bytes:
     """Normalize data and pack them into a byte array"""
     warnings.warn(
         'eth_recover from raiden-libs is deprecated. '

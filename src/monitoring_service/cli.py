@@ -1,5 +1,6 @@
 import logging
 import sys
+from typing import Any, Optional
 
 import click
 import structlog
@@ -14,7 +15,7 @@ from raiden_libs.types import Address
 log = structlog.get_logger(__name__)
 
 
-def validate_address(_ctx, _param, value):
+def validate_address(_ctx: Any, _param: Any, value: Optional[str]) -> Optional[str]:
     if value is None:
         # None as default value allowed
         return None
@@ -23,7 +24,7 @@ def validate_address(_ctx, _param, value):
     return value
 
 
-def setup_logging(log_level: str):
+def setup_logging(log_level: str) -> None:
     logging.basicConfig(
         level=log_level,
         stream=sys.stdout,
@@ -104,7 +105,7 @@ def main(
     start_block: int,
     confirmations: int,
     log_level: str,
-):
+) -> None:
     setup_logging(log_level)
 
     provider = HTTPProvider(eth_rpc)

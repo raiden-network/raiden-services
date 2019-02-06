@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import stat
+from typing import Optional
 
 from eth_keyfile import decode_keyfile_json
 from eth_utils import decode_hex, encode_hex, is_hex
@@ -10,7 +11,7 @@ from eth_utils import decode_hex, encode_hex, is_hex
 log = logging.getLogger(__name__)
 
 
-def check_permission_safety(path):
+def check_permission_safety(path: str) -> bool:
     """Check if the file at the given path is safe to use as a state file.
 
     This checks that group and others have no permissions on the file and that the current user is
@@ -20,7 +21,7 @@ def check_permission_safety(path):
     return (f_stats.st_mode & (stat.S_IRWXG | stat.S_IRWXO)) == 0 and f_stats.st_uid == os.getuid()
 
 
-def get_private_key(key_path, password_path=None):
+def get_private_key(key_path: str, password_path: str = None) -> Optional[str]:
     """Open a JSON-encoded private key and return it
 
     If a password file is provided, uses it to decrypt the key. If not, the
@@ -61,4 +62,5 @@ def get_private_key(key_path, password_path=None):
                     return encode_hex(decode_keyfile_json(json_data, password))
             except ValueError:
                 log.fatal("Invalid private key format or password!")
-                return None
+
+        return None
