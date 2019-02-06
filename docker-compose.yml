@@ -2,7 +2,7 @@ version: '3'
 
 services:
   pfs-ropsten:
-    build: ../raiden-services/pathfinding
+    build: ../raiden-services
     restart: always
     environment:
       - PFS_ETH_RPC=http://geth.ropsten.ethnodes.brainbot.com:8545
