@@ -37,7 +37,7 @@ DEFAULT_PARTICIPANT2 = private_key_to_address(DEFAULT_PRIVATE_KEY2)
 DEFAULT_SETTLE_TIMEOUT = 100
 
 
-def setup_state_with_closed_channel(context: Context) -> Context:
+def setup_state_with_open_channel(context: Context) -> Context:
     event = ReceiveChannelOpenedEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
@@ -50,8 +50,11 @@ def setup_state_with_closed_channel(context: Context) -> Context:
 
     channel_opened_event_handler(event, context)
 
-    assert len(context.db.channels) == 1
-    assert context.db.channels[0].state == ChannelState.OPENED
+    return context
+
+
+def setup_state_with_closed_channel(context: Context) -> Context:
+    context = setup_state_with_open_channel(context)
 
     event2 = ReceiveChannelClosedEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
@@ -152,25 +155,13 @@ def test_channel_opened_event_handler_adds_channel(
     channel_opened_event_handler(event, context)
 
     assert len(context.db.channels) == 1
+    assert context.db.channels[0].state == ChannelState.OPENED
 
 
 def test_channel_closed_event_handler_closes_existing_channel(
     context: Context,
 ):
-    event = ReceiveChannelOpenedEvent(
-        token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
-        channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
-        participant1=DEFAULT_PARTICIPANT1,
-        participant2=DEFAULT_PARTICIPANT2,
-        settle_timeout=100,
-        block_number=42,
-    )
-
-    assert len(context.db.channels) == 0
-    channel_opened_event_handler(event, context)
-
-    assert len(context.db.channels) == 1
-    assert context.db.channels[0].state == ChannelState.OPENED
+    context = setup_state_with_open_channel(context)
 
     event2 = ReceiveChannelClosedEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
@@ -187,20 +178,7 @@ def test_channel_closed_event_handler_closes_existing_channel(
 def test_channel_closed_event_handler_leaves_existing_channel(
     context: Context,
 ):
-    event = ReceiveChannelOpenedEvent(
-        token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
-        channel_identifier=3,
-        participant1=DEFAULT_PARTICIPANT1,
-        participant2=DEFAULT_PARTICIPANT2,
-        settle_timeout=100,
-        block_number=42,
-    )
-
-    assert len(context.db.channels) == 0
-    channel_opened_event_handler(event, context)
-
-    assert len(context.db.channels) == 1
-    assert context.db.channels[0].state == ChannelState.OPENED
+    context = setup_state_with_open_channel(context)
 
     event2 = ReceiveChannelClosedEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
@@ -212,6 +190,40 @@ def test_channel_closed_event_handler_leaves_existing_channel(
 
     assert len(context.db.channels) == 1
     assert context.db.channels[0].state == ChannelState.OPENED
+
+
+def test_channel_closed_event_handler_trigger_action_monitor_event_with_monitor_request(
+    context: Context,
+):
+    context = setup_state_with_open_channel(context)
+    # add MR to DB
+    context.db.monitor_requests.append(get_signed_monitor_request())
+
+    event2 = ReceiveChannelClosedEvent(
+        token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
+        channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
+        closing_participant=DEFAULT_PARTICIPANT2,
+        block_number=52,
+    )
+
+    channel_closed_event_handler(event2, context)
+    assert len(context.scheduled_events) == 1
+
+
+def test_channel_closed_event_handler_trigger_action_monitor_event_without_monitor_request(
+    context: Context,
+):
+    context = setup_state_with_open_channel(context)
+
+    event2 = ReceiveChannelClosedEvent(
+        token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
+        channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
+        closing_participant=DEFAULT_PARTICIPANT2,
+        block_number=52,
+    )
+
+    channel_closed_event_handler(event2, context)
+    assert len(context.scheduled_events) == 1
 
 
 def test_channel_bp_updated_event_handler_sets_update_status_if_not_set(
