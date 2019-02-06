@@ -1,3 +1,4 @@
+import functools
 import logging
 from functools import wraps
 from typing import Dict
@@ -6,13 +7,14 @@ from eth_utils import decode_hex, encode_hex, is_checksum_address, is_same_addre
 from web3 import Web3
 from web3.contract import Contract, find_matching_event_abi
 from web3.utils.events import get_event_data
+from web3.utils.filters import construct_event_filter_params
 
 from monitoring_service.states import MonitorRequest
 from raiden_contracts.constants import MessageTypeId
 from raiden_libs.messages import BalanceProof, Message
 from raiden_libs.transport import Transport
 from raiden_libs.types import Address, ChannelIdentifier, T_ChannelIdentifier
-from raiden_libs.utils import UINT256_MAX, eth_sign, make_filter, private_key_to_address
+from raiden_libs.utils import UINT256_MAX, eth_sign, private_key_to_address
 
 log = logging.getLogger(__name__)
 NULL_ADDRESS = '0x0000000000000000000000000000000000000000'
@@ -20,16 +22,27 @@ NULL_ADDRESS = '0x0000000000000000000000000000000000000000'
 
 def get_event_logs(
         web3: Web3,
-        contract_abi: dict,
+        contract_abi: Dict,
         event_name: str,
-        fromBlock=0,
-        toBlock=None,
+        from_block: int = 0,
+        to_block: int = None,
 ):
     """Helper function to get all event logs in a given range"""
     abi = find_matching_event_abi(contract_abi, event_name)
-    tmp_filter = make_filter(web3, abi, fromBlock=0, toBlock=toBlock)
-    entries = tmp_filter.get_all_entries()
-    web3.eth.uninstallFilter(tmp_filter.filter_id)
+    log_data_extract_fn = functools.partial(get_event_data, abi)
+    data_filter_set, filter_params = construct_event_filter_params(
+        abi,
+        argument_filters=None,
+        fromBlock=from_block,
+        toBlock=to_block,
+    )
+
+    event_filter = web3.eth.filter(filter_params)
+    event_filter.log_entry_formatter = log_data_extract_fn
+    event_filter.set_data_filters(data_filter_set)
+    event_filter.filter_params = filter_params
+    entries = event_filter.get_all_entries()
+    web3.eth.uninstallFilter(event_filter.filter_id)
     return entries
 
 

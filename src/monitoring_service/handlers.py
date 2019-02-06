@@ -39,7 +39,7 @@ class Context:
     monitoring_service_contract: Contract
 
 
-def channel_opened_event_handler(event: Event, context: Context):
+def channel_opened_event_handler(event: Event, context: Context) -> None:
     assert isinstance(event, ReceiveChannelOpenedEvent)
     log.info(
         'Received new channel',
@@ -58,7 +58,7 @@ def channel_opened_event_handler(event: Event, context: Context):
     )
 
 
-def channel_closed_event_handler(event: Event, context: Context):
+def channel_closed_event_handler(event: Event, context: Context) -> None:
     assert isinstance(event, ReceiveChannelClosedEvent)
     channel = context.db.get_channel(
         event.token_network_address,
@@ -115,7 +115,10 @@ def channel_closed_event_handler(event: Event, context: Context):
         # FIXME: this is a bad error
 
 
-def channel_non_closing_balance_proof_updated_event_handler(event: Event, context: Context):
+def channel_non_closing_balance_proof_updated_event_handler(
+    event: Event,
+    context: Context,
+) -> None:
     assert isinstance(event, ReceiveNonClosingBalanceProofUpdatedEvent)
     channel = context.db.get_channel(
         event.token_network_address,
@@ -183,7 +186,7 @@ def channel_non_closing_balance_proof_updated_event_handler(event: Event, contex
         # FIXME: this is a bad error
 
 
-def channel_settled_event_handler(event: Event, context: Context):
+def channel_settled_event_handler(event: Event, context: Context) -> None:
     # TODO: we might want to remove all related state here in the future
     #     for now we keep it to make debugging easier
     assert isinstance(event, ReceiveChannelSettledEvent)
@@ -206,7 +209,7 @@ def channel_settled_event_handler(event: Event, context: Context):
         # FIXME: this is a bad error
 
 
-def monitor_new_balance_proof_event_handler(event: Event, context: Context):
+def monitor_new_balance_proof_event_handler(event: Event, context: Context) -> None:
     assert isinstance(event, ReceiveMonitoringNewBalanceProofEvent)
     channel = context.db.get_channel(
         event.token_network_address,
@@ -284,19 +287,19 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context):
         # FIXME: this is a bad error
 
 
-def monitor_reward_claim_event_handler(event: Event, context: Context):
+def monitor_reward_claim_event_handler(event: Event, context: Context) -> None:
     assert isinstance(event, ReceiveMonitoringRewardClaimedEvent)
     log.info('Received MSC RewardClaimed event', evt=event)
 
 
-def updated_head_block_event_handler(event: Event, context: Context):
+def updated_head_block_event_handler(event: Event, context: Context) -> None:
     """ Triggers commit of the new block number. """
     assert isinstance(event, UpdatedHeadBlockEvent)
     context.ms_state.blockchain_state.latest_known_block = event.head_block_number
     context.db.update_state(context.ms_state)
 
 
-def action_monitoring_triggered_event_handler(event: Event, context: Context):
+def action_monitoring_triggered_event_handler(event: Event, context: Context) -> None:
     assert isinstance(event, ActionMonitoringTriggeredEvent)
     log.info('Triggering channel monitoring')
 
@@ -352,7 +355,7 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context):
             log.error('Sending tx failed', exc_info=True, err=e)
 
 
-def action_claim_reward_triggered_event_handler(event: Event, context: Context):
+def action_claim_reward_triggered_event_handler(event: Event, context: Context) -> None:
     assert isinstance(event, ActionClaimRewardTriggeredEvent)
     log.info('Triggering reward claim')
 

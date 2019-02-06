@@ -4,12 +4,12 @@ from monitoring_service.states import Channel, MonitoringServiceState, MonitorRe
 
 
 class Database:
-    def __init__(self):
+    def __init__(self) -> None:
         self.channels: List[Channel] = []
         self.monitor_requests: List[MonitorRequest] = []
-        self.ms_state: MonitoringServiceState = None
+        self.ms_state: Optional[MonitoringServiceState] = None
 
-    def upsert_channel(self, channel: Channel):
+    def upsert_channel(self, channel: Channel) -> None:
         try:
             index = self.channels.index(channel)
             self.channels[index] = channel
@@ -23,10 +23,10 @@ class Database:
 
         return None
 
-    def update_state(self, state: MonitoringServiceState):
+    def update_state(self, state: MonitoringServiceState) -> None:
         self.ms_state = state
 
-    def upsert_monitor_request(self, request: MonitorRequest):
+    def upsert_monitor_request(self, request: MonitorRequest) -> None:
         try:
             index = self.monitor_requests.index(request)
             self.monitor_requests[index] = request
@@ -47,5 +47,5 @@ class Database:
 
         return None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<DB [{}]>'.format(', '.join(str(e) for e in self.channels))

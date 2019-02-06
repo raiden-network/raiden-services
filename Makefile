@@ -9,6 +9,7 @@ lint: mypy
 
 mypy:
 	mypy --ignore-missing-imports --check-untyped-defs $(CODE_DIRS)
+	mypy --ignore-missing-imports --disallow-untyped-defs src/monitoring_service
 
 isort:
 	isort $(ISORT_PARAMS)

@@ -19,7 +19,7 @@ from raiden_libs.utils import private_key_to_address
 log = structlog.get_logger(__name__)
 
 
-def handle_event(event: Event, context: Context):
+def handle_event(event: Event, context: Context) -> None:
     log.debug('Processing event', event_=event)
     handler: Callable = HANDLERS[type(event)]
     handler(event, context)
@@ -84,7 +84,7 @@ class MonitoringService:
             monitoring_service_contract=monitoring_contract,
         )
 
-    def start(self, wait_function: Callable = time.sleep):
+    def start(self, wait_function: Callable = time.sleep) -> None:
         while True:
             last_block = self.web3.eth.blockNumber - self.required_confirmations
             self.context.last_known_block = last_block

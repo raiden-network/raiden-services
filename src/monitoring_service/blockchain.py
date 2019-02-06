@@ -52,7 +52,7 @@ def create_registry_event_topics(contract_manager: ContractManager) -> List:
     return [encode_hex(event_abi_to_log_topic(new_network_abi))]
 
 
-def decode_event(abi: Dict, log_: Dict):
+def decode_event(abi: Dict, log_: Dict) -> Dict:
     """ Helper function to unpack event data using a provided ABI
 
     Args:
