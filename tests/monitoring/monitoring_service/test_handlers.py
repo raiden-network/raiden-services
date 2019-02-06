@@ -67,13 +67,13 @@ def setup_state_with_closed_channel(context: Context) -> Context:
     return context
 
 
-def get_signed_monitor_request() -> MonitorRequest:
+def get_signed_monitor_request(nonce: int = 5) -> MonitorRequest:
     monitor_request = MonitorRequest(
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
         chain_id=1,
         balance_hash='',
-        nonce=5,
+        nonce=nonce,
         additional_hash='',
         closing_signature='',
         non_closing_signature='',
@@ -327,19 +327,8 @@ def test_action_monitoring_triggered_event_handler_does_not_trigger_monitor_call
 
     monitor_new_balance_proof_event_handler(event3, context)
 
-    # add MR to DB
-    context.db.monitor_requests.append(MonitorRequest(
-        channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
-        token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
-        chain_id=1,
-        balance_hash='',
-        nonce=5,
-        additional_hash='',
-        closing_signature='',
-        non_closing_signature='',
-        reward_amount=0,
-        reward_proof_signature='',
-    ))
+    # add MR to DB, with nonce being smaller than in event3
+    context.db.monitor_requests.append(get_signed_monitor_request(nonce=4))
 
     event4 = ActionMonitoringTriggeredEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
@@ -356,6 +345,51 @@ def test_action_monitoring_triggered_event_handler_does_not_trigger_monitor_call
     assert len(context.db.channels) == 1
     assert channel
     assert channel.closing_tx_hash is None
+
+
+def test_action_monitoring_triggered_event_handler_does_trigger_monitor_call(  # noqa
+    context: Context,
+):
+    """ Tests that `monitor` is called when the ActionMonitoringTriggeredEvent is triggered
+
+    Also a test for https://github.com/raiden-network/raiden-services/issues/29 , as the MR
+    is set after the channel has been closed.
+    """
+    context = setup_state_with_closed_channel(context)
+
+    event3 = ReceiveMonitoringNewBalanceProofEvent(
+        token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
+        channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
+        reward_amount=1,
+        nonce=5,
+        ms_address='C',
+        raiden_node_address=DEFAULT_PARTICIPANT2,
+        block_number=23,
+    )
+
+    channel = context.db.get_channel(event3.token_network_address, event3.channel_identifier)
+    assert channel
+    assert channel.update_status is None
+
+    monitor_new_balance_proof_event_handler(event3, context)
+
+    # add MR to DB, with nonce being smaller than in event3
+    context.db.monitor_requests.append(get_signed_monitor_request(nonce=6))
+
+    event4 = ActionMonitoringTriggeredEvent(
+        token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
+        channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
+    )
+
+    channel = context.db.get_channel(event4.token_network_address, event4.channel_identifier)
+    assert channel
+    assert channel.update_status is not None
+    assert channel.closing_tx_hash is None
+
+    action_monitoring_triggered_event_handler(event4, context)
+
+    # check that the monitor call has been done
+    assert context.monitoring_service_contract.functions.monitor.called is True
 
 
 def test_mr_available_before_channel_triggers_monitor_call(
