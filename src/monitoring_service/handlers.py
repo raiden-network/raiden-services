@@ -78,12 +78,11 @@ def channel_closed_event_handler(event: Event, context: Context):
         settle_period_over = (
             settle_period_end_block < context.last_known_block
         )
-        # trigger the monitoring action by an event
-        monitor_request = context.db.get_monitor_request(
-            token_network_address=channel.token_network_address,
-            channel_id=channel.identifier,
-        )
-        if monitor_request is not None and not settle_period_over:
+        if not settle_period_over:
+            # trigger the monitoring action event handler, this will check if a
+            # valid MR is avilable.
+            # This enables the client to send a late MR
+            # also see https://github.com/raiden-network/raiden-services/issues/29
             e = ActionMonitoringTriggeredEvent(
                 token_network_address=channel.token_network_address,
                 channel_identifier=channel.identifier,
@@ -99,20 +98,13 @@ def channel_closed_event_handler(event: Event, context: Context):
                 ),
             )
         else:
-            if settle_period_over:
-                log.info(
-                    'Settle period timeout is in the past, skipping',
-                    token_network_address=event.token_network_address,
-                    identifier=channel.identifier,
-                    settle_period_end_block=settle_period_end_block,
-                    known_block=context.last_known_block,
-                )
-            else:
-                log.info(
-                    'No MR found for this channel, skipping',
-                    token_network_address=event.token_network_address,
-                    identifier=channel.identifier,
-                )
+            log.warning(
+                'Settle period timeout is in the past, skipping',
+                token_network_address=event.token_network_address,
+                identifier=channel.identifier,
+                settle_period_end_block=settle_period_end_block,
+                known_block=context.last_known_block,
+            )
 
         channel.state = ChannelState.CLOSED
         channel.closing_block = event.block_number
