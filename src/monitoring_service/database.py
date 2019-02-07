@@ -76,7 +76,13 @@ class Database(BaseDatabase):
         super(Database, self).__init__(filename)
         self._setup(chain_id, msc_address, registry_address, receiver)
 
-    def _setup(self, chain_id: int, msc_address: str, registry_address: str, receiver: str):
+    def _setup(
+        self,
+        chain_id: int,
+        msc_address: str,
+        registry_address: str,
+        receiver: str,
+    ) -> None:
         """ Make sure that the db is initialized an matches the given settings """
         assert chain_id >= 0
         assert is_checksum_address(msc_address)
@@ -110,7 +116,7 @@ class Database(BaseDatabase):
                         receiver = ?;
                 """, settings)
 
-    def upsert_channel(self, channel: Channel):
+    def upsert_channel(self, channel: Channel) -> None:
         with self.conn:
             values = [
                 hex(val) if key == 'identifier' else
@@ -124,11 +130,6 @@ class Database(BaseDatabase):
             self.conn.execute(upsert_sql, values)
 
     def get_channel(self, token_network_address: str, channel_id: int) -> Optional[Channel]:
-        def to_dataclass(row, cls):
-            row = list(row)
-            if row[-1] is not None:
-                row[-1] = OnChainUpdateStatus(*row[-1])
-            return cls(*row)
 
         row = self.conn.execute(
             """
@@ -140,9 +141,12 @@ class Database(BaseDatabase):
 
         if row is None:
             return None
-        return to_dataclass(row, Channel)
+        row = list(row)
+        if row[-1] is not None:
+            row[-1] = OnChainUpdateStatus(*row[-1])
+        return Channel(*row)
 
-    def channel_count(self):
+    def channel_count(self) -> int:
         return self.conn.execute("SELECT count(*) FROM channel").fetchone()[0]
 
     def update_state(self, state: MonitoringServiceState) -> None:
