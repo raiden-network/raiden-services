@@ -1,13 +1,10 @@
 import gevent
-import structlog
 from web3 import Web3
 
 from monitoring_service.blockchain import query_blockchain_events
 from monitoring_service.service import MonitoringService
 from raiden_contracts.constants import CONTRACT_MONITORING_SERVICE, MonitoringServiceEvent
 from raiden_contracts.contract_manager import ContractManager
-
-log = structlog.get_logger(__name__)
 
 
 def create_ms_contract_events_query(
