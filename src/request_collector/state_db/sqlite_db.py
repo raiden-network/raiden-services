@@ -1,6 +1,7 @@
-import os
 import sqlite3
 from typing import Dict, Iterable, Optional
+import dataclasses
+import json
 
 from eth_utils import is_checksum_address
 
@@ -10,52 +11,36 @@ from raiden_libs.messages import BalanceProof, MonitorRequest
 from raiden_libs.types import Address, ChannelIdentifier
 from raiden_libs.utils import is_channel_identifier
 
-SCHEMA_FILENAME = os.path.join(
-    os.path.dirname(os.path.realpath(__file__)),
-    'schema.sql',
-)
-
 
 def convert_hex(raw: bytes) -> int:
     return int(raw, 16)
 
 
 sqlite3.register_converter('HEX_INT', convert_hex)
+sqlite3.register_converter('JSON', json.loads)
+
+
+def adapt_tuple(t: tuple) -> str:
+    return json.dumps(t)
+
+
+sqlite3.register_adapter(tuple, adapt_tuple)
 
 
 class StateDBSqlite:
-    def __init__(self, filename: str):
-        self.filename = filename
-        self.conn = sqlite3.connect(
-            self.filename,
-            isolation_level="EXCLUSIVE",
-            detect_types=sqlite3.PARSE_DECLTYPES,
-        )
-        self.conn.row_factory = sqlite3.Row
-        self.conn.execute("PRAGMA foreign_keys = ON")
-        if filename not in (None, ':memory:'):
-            os.chmod(filename, 0o600)
-
-    def setup_db(self, network_id: int, contract_address: str, receiver: str):
-        """Initialize an empty database. Call this if `is_initialized()` returns False"""
-        assert is_checksum_address(receiver)
-        assert is_checksum_address(contract_address)
-        assert network_id >= 0
-        with open(SCHEMA_FILENAME) as schema_file:
-            self.conn.executescript(schema_file.read())
-        self.conn.execute("""
-            UPDATE metadata
-            SET chain_id = ?,
-                monitoring_contract_address = ?,
-                receiver = ?;
-        """, [network_id, contract_address, receiver])
-        self.conn.commit()
-
-    def is_initialized(self) -> bool:
-        cursor = self.conn.execute(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name='metadata'",
-        )
-        return cursor.fetchone() is not None
+    def __init__(self, filename: str = None, conn=None):
+        if filename:
+            assert conn is None
+            self.conn = sqlite3.connect(
+                filename,
+                isolation_level="EXCLUSIVE",
+                detect_types=sqlite3.PARSE_DECLTYPES,
+            )
+            self.conn.row_factory = sqlite3.Row
+            self.conn.execute("PRAGMA foreign_keys = ON")
+        else:
+            assert conn
+            self.conn = conn
 
     def fetch_scalar(self, query: str, query_args: Iterable = ()):
         """ Helper function to fetch a single field of a single row """
@@ -131,19 +116,29 @@ class StateDBSqlite:
         assert is_checksum_address(balance_proof.token_network_address)
 
     def chain_id(self):
-        return int(self.fetch_scalar("SELECT chain_id FROM metadata"))
+        return int(self.fetch_scalar("SELECT chain_id FROM blockchain"))
 
     def server_address(self):
-        return self.fetch_scalar("SELECT receiver FROM metadata")
+        return self.fetch_scalar("SELECT receiver FROM blockchain")
 
     def monitoring_contract_address(self):
-        return self.fetch_scalar("SELECT monitoring_contract_address FROM metadata")
+        return self.fetch_scalar("SELECT monitor_contract_address FROM blockchain")
 
     def get_channel(self, channel_identifier: ChannelIdentifier) -> Optional[sqlite3.Row]:
         return self.conn.execute(
             "SELECT * FROM channels WHERE channel_identifier = ?",
             [hex(channel_identifier)],
         ).fetchone()
+
+    def upsert_dataclass(self, obj):
+        assert dataclasses.is_dataclass(obj)
+        table_name = obj.__class__.__name__
+        values = dataclasses.astuple(obj)
+        upsert_sql = "INSERT OR REPLACE INTO {} VALUES ({})".format(
+            table_name,
+            ', '.join('?' * len(values)),
+        )
+        self.conn.execute(upsert_sql, values)
 
     def store_new_channel(
         self,
@@ -159,24 +154,3 @@ class StateDBSqlite:
             participant2,
             ChannelState.OPENED,
         ])
-
-    # def save_syncstate(self, blockchain_listener: BlockchainListener):
-    #     self.conn.execute("INSERT OR REPLACE INTO syncstate VALUES (?, ?, ?, ?, ?)", [
-    #         blockchain_listener.contract_address,
-    #         blockchain_listener.confirmed_head_number,
-    #         blockchain_listener.confirmed_head_hash,
-    #         blockchain_listener.unconfirmed_head_number,
-    #         blockchain_listener.unconfirmed_head_hash,
-    #     ])
-
-    def load_syncstate(self, contract_address: Address) -> Optional[Dict]:
-        return self.conn.execute(
-            "SELECT * FROM syncstate WHERE contract_address = ?",
-            [contract_address],
-        ).fetchone()
-
-    def get_synced_contracts(self) -> Iterable[Address]:
-        return [
-            row['contract_address']
-            for row in self.conn.execute("SELECT contract_address FROM syncstate")
-        ]

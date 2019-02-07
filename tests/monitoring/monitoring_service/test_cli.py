@@ -9,9 +9,11 @@ from monitoring_service.cli import main
 patch_args = dict(
     target='monitoring_service.cli',
     MonitoringService=DEFAULT,
+    HTTPProvider=DEFAULT,
 )
 DEFAULT_ARGS: List[str] = [
     '--private-key', '0x' + '1' * 40,
+    '--state-db', ':memory:',
 ]
 
 
