@@ -32,18 +32,6 @@ from raiden_contracts.contract_manager import ContractManager
 log = structlog.get_logger(__name__)
 
 
-def create_channel_event_topics() -> List:
-    return [
-        None,  # event topic is any
-    ]
-
-
-def create_monitoring_service_topics() -> List:
-    return [
-        None,  # event topic is any
-    ]
-
-
 def create_registry_event_topics(contract_manager: ContractManager) -> List:
     new_network_abi = contract_manager.get_event_abi(
         CONTRACT_TOKEN_NETWORK_REGISTRY,
@@ -151,7 +139,7 @@ class BlockchainListener:
             contract_manager=self.contract_manager,
             contract_address=network_address,
             contract_name=CONTRACT_TOKEN_NETWORK,
-            topics=create_channel_event_topics(),
+            topics=[None],
             from_block=from_block,
             to_block=to_block,
         )
@@ -167,7 +155,7 @@ class BlockchainListener:
             contract_manager=self.contract_manager,
             contract_address=monitoring_service_address,
             contract_name=CONTRACT_MONITORING_SERVICE,
-            topics=create_monitoring_service_topics(),
+            topics=[None],
             from_block=from_block,
             to_block=to_block,
         )
