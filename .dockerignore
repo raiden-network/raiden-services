@@ -3,8 +3,13 @@ docker-compose*
 .dockerignore
 .git
 .gitignore
+.mypy_cache
+.pytest_cache
 README.md
 LICENSE
 .vscode
 .idea
 venv
+
+docs
+tests
