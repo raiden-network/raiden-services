@@ -12,6 +12,7 @@ import click
 from eth_utils import is_checksum_address
 from requests.exceptions import ConnectionError
 from web3 import HTTPProvider, Web3
+from web3.middleware import geth_poa_middleware
 
 from pathfinding_service import PathfindingService
 from pathfinding_service.api.rest import ServiceApi
@@ -146,6 +147,9 @@ def main(
             'your settings are correct.',
         )
         sys.exit(1)
+
+    # Add POA middleware for geth POA chains, no/op for other chains
+    web3.middleware_stack.inject(geth_poa_middleware, layer=0)
 
     # give web3 some time between retries before failing
     provider.middlewares.replace(
