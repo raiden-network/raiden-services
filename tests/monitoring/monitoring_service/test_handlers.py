@@ -365,11 +365,11 @@ def test_action_monitoring_triggered_event_handler_does_trigger_monitor_call(  #
     """ Tests that `monitor` is called when the ActionMonitoringTriggeredEvent is triggered
 
     Also a test for https://github.com/raiden-network/raiden-services/issues/29 , as the MR
-    is set after the channel has been closed.
+    is sent after the channel has been closed.
     """
     context = setup_state_with_closed_channel(context)
 
-    event3 = ReceiveMonitoringNewBalanceProofEvent(
+    event_new_bp = ReceiveMonitoringNewBalanceProofEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
         reward_amount=1,
@@ -379,13 +379,16 @@ def test_action_monitoring_triggered_event_handler_does_trigger_monitor_call(  #
         block_number=23,
     )
 
-    channel = context.db.get_channel(event3.token_network_address, event3.channel_identifier)
+    channel = context.db.get_channel(
+        event_new_bp.token_network_address,
+        event_new_bp.channel_identifier,
+    )
     assert channel
     assert channel.update_status is None
 
-    monitor_new_balance_proof_event_handler(event3, context)
+    monitor_new_balance_proof_event_handler(event_new_bp, context)
 
-    # add MR to DB, with nonce being smaller than in event3
+    # add MR to DB, with nonce being larger than in event_new_bp
     context.db.monitor_requests.append(get_signed_monitor_request(nonce=6))
 
     event4 = ActionMonitoringTriggeredEvent(
