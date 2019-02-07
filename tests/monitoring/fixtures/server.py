@@ -5,6 +5,7 @@ import pytest
 from request_collector.server import RequestCollector
 
 from monitoring_service.service import MonitoringService
+from monitoring_service.database import Database
 from raiden_contracts.contract_manager import ContractManager
 from raiden_libs.test.mocks.dummy_transport import DummyTransport
 from raiden_libs.utils import private_key_to_address
@@ -24,6 +25,17 @@ def server_private_key(get_random_privkey, ethereum_tester):
 @pytest.fixture
 def dummy_transport():
     return DummyTransport()
+
+
+@pytest.fixture
+def ms_database():
+    return Database(
+        filename=':memory:',
+        chain_id=1,
+        msc_address='0x' + '2' * 40,
+        registry_address='0x' + '3' * 40,
+        receiver='0x' + '4' * 40,
+    )
 
 
 @pytest.fixture
@@ -56,6 +68,7 @@ def monitoring_service(
         monitor_contract_address=monitoring_service_contract.address,
         required_confirmations=1,  # for faster tests
         poll_interval=1,  # for faster tests
+        db_filename=':memory:',
     )
     return ms
 

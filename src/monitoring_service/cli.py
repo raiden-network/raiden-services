@@ -1,6 +1,7 @@
 import logging
 import sys
 from typing import Any, Optional
+import os
 
 import click
 import structlog
@@ -55,7 +56,6 @@ def setup_logging(log_level: str) -> None:
 @click.command()
 @click.option(
     '--private-key',
-    default='test',
     required=True,
     help='Private key to use (the address should have enough ETH balance to send transactions)',
 )
@@ -97,6 +97,12 @@ def setup_logging(log_level: str) -> None:
     type=click.Choice(['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG']),
     help='Print log messages of this level and more important ones',
 )
+@click.option(
+    '--state-db',
+    default=os.path.join(click.get_app_dir('raiden-monitoring-service'), 'state.db'),
+    type=str,
+    help='path to SQLite3 db which stores the application state',
+)
 def main(
     private_key: str,
     eth_rpc: str,
@@ -105,12 +111,12 @@ def main(
     start_block: int,
     confirmations: int,
     log_level: str,
+    state_db: str,
 ) -> None:
     setup_logging(log_level)
 
     provider = HTTPProvider(eth_rpc)
     web3 = Web3(provider)
-
     contract_manager = ContractManager(contracts_precompiled_path())
 
     ms = MonitoringService(
@@ -121,6 +127,7 @@ def main(
         monitor_contract_address=monitor_contract_address,
         sync_start_block=start_block,
         required_confirmations=confirmations,
+        db_filename=state_db,
     )
 
     ms.start()

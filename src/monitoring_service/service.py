@@ -11,7 +11,6 @@ from monitoring_service.constants import DEFAULT_REQUIRED_CONFIRMATIONS
 from monitoring_service.database import Database
 from monitoring_service.events import Event, ScheduledEvent
 from monitoring_service.handlers import HANDLERS, Context
-from monitoring_service.states import BlockchainState, MonitoringServiceState
 from raiden_contracts.constants import CONTRACT_MONITORING_SERVICE
 from raiden_contracts.contract_manager import ContractManager
 from raiden_libs.utils import private_key_to_address
@@ -33,6 +32,7 @@ class MonitoringService:
         private_key: str,
         registry_address: str,
         monitor_contract_address: str,
+        db_filename: str,
         sync_start_block: int = 0,
         required_confirmations: int = DEFAULT_REQUIRED_CONFIRMATIONS,
         poll_interval: int = 5,
@@ -55,18 +55,15 @@ class MonitoringService:
             address=monitor_contract_address,
         )
 
-        chain_state = BlockchainState(
-            token_network_registry_address=registry_address,
-            monitor_contract_address=monitor_contract_address,
-            latest_known_block=sync_start_block,
+        chain_id = int(web3.net.version)
+        self.database = Database(
+            filename=db_filename,
+            chain_id=chain_id,
+            registry_address=registry_address,
+            receiver=self.address,
+            msc_address=monitor_contract_address,
         )
-        self.ms_state = MonitoringServiceState(
-            blockchain_state=chain_state,
-            address=self.address,
-        )
-
-        # TODO: tie database to chain id
-        self.database = Database()
+        self.ms_state = self.database.load_state(sync_start_block)
         self.scheduled_events: List[ScheduledEvent] = list()
 
         self.bcl = BlockchainListener(

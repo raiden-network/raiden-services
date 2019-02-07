@@ -3,7 +3,6 @@ from unittest.mock import Mock
 import pytest
 from eth_utils import encode_hex
 
-from monitoring_service.database import Database
 from monitoring_service.events import (
     ActionMonitoringTriggeredEvent,
     Event,
@@ -24,7 +23,7 @@ from monitoring_service.handlers import (
     monitor_reward_claim_event_handler,
     updated_head_block_event_handler,
 )
-from monitoring_service.states import BlockchainState, MonitoringServiceState, MonitorRequest
+from monitoring_service.states import MonitorRequest
 from raiden_contracts.constants import ChannelState
 from raiden_libs.utils import eth_sign, private_key_to_address
 
@@ -37,6 +36,15 @@ DEFAULT_PARTICIPANT2 = private_key_to_address(DEFAULT_PRIVATE_KEY2)
 DEFAULT_SETTLE_TIMEOUT = 100
 
 
+def assert_channel_state(context, state):
+    channel = context.db.get_channel(
+        DEFAULT_TOKEN_NETWORK_ADDRESS,
+        DEFAULT_CHANNEL_IDENTIFIER,
+    )
+    assert channel
+    assert channel.state == state
+
+
 def setup_state_with_open_channel(context: Context) -> Context:
     event = ReceiveChannelOpenedEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
@@ -46,7 +54,7 @@ def setup_state_with_open_channel(context: Context) -> Context:
         settle_timeout=DEFAULT_SETTLE_TIMEOUT,
         block_number=42,
     )
-    assert len(context.db.channels) == 0
+    assert context.db.channel_count() == 0
 
     channel_opened_event_handler(event, context)
 
@@ -64,8 +72,8 @@ def setup_state_with_closed_channel(context: Context) -> Context:
     )
     channel_closed_event_handler(event2, context)
 
-    assert len(context.db.channels) == 1
-    assert context.db.channels[0].state == ChannelState.CLOSED
+    assert context.db.channel_count() == 1
+    assert_channel_state(context, ChannelState.CLOSED)
 
     return context
 
@@ -96,18 +104,10 @@ def get_signed_monitor_request(nonce: int = 5) -> MonitorRequest:
 
 
 @pytest.fixture
-def context():
+def context(ms_database):
     return Context(
-        ms_state=MonitoringServiceState(
-            blockchain_state=BlockchainState(
-                token_network_registry_address='',
-                monitor_contract_address='',
-                latest_known_block=0,
-                token_network_addresses=[],
-            ),
-            address='',
-        ),
-        db=Database(),
+        ms_state=ms_database.load_state(sync_start_block=0),
+        db=ms_database,
         scheduled_events=[],
         w3=Mock(),
         contract_manager=Mock(),
@@ -151,11 +151,11 @@ def test_channel_opened_event_handler_adds_channel(
         block_number=42,
     )
 
-    assert len(context.db.channels) == 0
+    assert context.db.channel_count() == 0
     channel_opened_event_handler(event, context)
 
-    assert len(context.db.channels) == 1
-    assert context.db.channels[0].state == ChannelState.OPENED
+    assert context.db.channel_count() == 1
+    assert_channel_state(context, ChannelState.OPENED)
 
 
 def test_channel_closed_event_handler_closes_existing_channel(
@@ -171,8 +171,8 @@ def test_channel_closed_event_handler_closes_existing_channel(
     )
     channel_closed_event_handler(event2, context)
 
-    assert len(context.db.channels) == 1
-    assert context.db.channels[0].state == ChannelState.CLOSED
+    assert context.db.channel_count() == 1
+    assert_channel_state(context, ChannelState.CLOSED)
 
 
 def test_channel_closed_event_handler_leaves_existing_channel(
@@ -188,8 +188,8 @@ def test_channel_closed_event_handler_leaves_existing_channel(
     )
     channel_closed_event_handler(event2, context)
 
-    assert len(context.db.channels) == 1
-    assert context.db.channels[0].state == ChannelState.OPENED
+    assert context.db.channel_count() == 1
+    assert_channel_state(context, ChannelState.OPENED)
 
 
 def test_channel_closed_event_handler_trigger_action_monitor_event_with_monitor_request(
@@ -197,7 +197,7 @@ def test_channel_closed_event_handler_trigger_action_monitor_event_with_monitor_
 ):
     context = setup_state_with_open_channel(context)
     # add MR to DB
-    context.db.monitor_requests.append(get_signed_monitor_request())
+    context.db.upsert_monitor_request(get_signed_monitor_request())
 
     event2 = ReceiveChannelClosedEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
@@ -245,7 +245,7 @@ def test_channel_bp_updated_event_handler_sets_update_status_if_not_set(
 
     channel_non_closing_balance_proof_updated_event_handler(event3, context)
 
-    assert len(context.db.channels) == 1
+    assert context.db.channel_count() == 1
     channel = context.db.get_channel(event3.token_network_address, event3.channel_identifier)
     assert channel
     assert channel.update_status is not None
@@ -262,7 +262,7 @@ def test_channel_bp_updated_event_handler_sets_update_status_if_not_set(
 
     channel_non_closing_balance_proof_updated_event_handler(event4, context)
 
-    assert len(context.db.channels) == 1
+    assert context.db.channel_count() == 1
     channel = context.db.get_channel(event3.token_network_address, event3.channel_identifier)
     assert channel
     assert channel.update_status is not None
@@ -291,7 +291,7 @@ def test_monitor_new_balance_proof_event_handler_sets_update_status(
 
     monitor_new_balance_proof_event_handler(event3, context)
 
-    assert len(context.db.channels) == 1
+    assert context.db.channel_count() == 1
     channel = context.db.get_channel(event3.token_network_address, event3.channel_identifier)
     assert channel
     assert channel.update_status is not None
@@ -310,7 +310,7 @@ def test_monitor_new_balance_proof_event_handler_sets_update_status(
 
     monitor_new_balance_proof_event_handler(event4, context)
 
-    assert len(context.db.channels) == 1
+    assert context.db.channel_count() == 1
     channel = context.db.get_channel(event3.token_network_address, event3.channel_identifier)
     assert channel
     assert channel.update_status is not None
@@ -340,7 +340,7 @@ def test_action_monitoring_triggered_event_handler_does_not_trigger_monitor_call
     monitor_new_balance_proof_event_handler(event3, context)
 
     # add MR to DB, with nonce being smaller than in event3
-    context.db.monitor_requests.append(get_signed_monitor_request(nonce=4))
+    context.db.upsert_monitor_request(get_signed_monitor_request(nonce=4))
 
     event4 = ActionMonitoringTriggeredEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
@@ -354,7 +354,7 @@ def test_action_monitoring_triggered_event_handler_does_not_trigger_monitor_call
 
     action_monitoring_triggered_event_handler(event4, context)
 
-    assert len(context.db.channels) == 1
+    assert context.db.channel_count() == 1
     assert channel
     assert channel.closing_tx_hash is None
 
@@ -389,7 +389,7 @@ def test_action_monitoring_triggered_event_handler_does_trigger_monitor_call(  #
     monitor_new_balance_proof_event_handler(event_new_bp, context)
 
     # add MR to DB, with nonce being larger than in event_new_bp
-    context.db.monitor_requests.append(get_signed_monitor_request(nonce=6))
+    context.db.upsert_monitor_request(get_signed_monitor_request(nonce=6))
 
     event4 = ActionMonitoringTriggeredEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
@@ -416,7 +416,7 @@ def test_mr_available_before_channel_triggers_monitor_call(
     """
 
     # add MR to DB
-    context.db.monitor_requests.append(get_signed_monitor_request())
+    context.db.upsert_monitor_request(get_signed_monitor_request())
 
     context = setup_state_with_closed_channel(context)
 
