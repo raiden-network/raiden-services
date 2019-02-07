@@ -147,8 +147,7 @@ class Database:
             for key, val in dataclasses.asdict(request).items()
             if key != 'chain_id'
         ]
-        values.append('1')
-        # values.append(request.non_closing_signer)  # TODO
+        values.append(request.non_closing_signer)
         upsert_sql = "INSERT OR REPLACE INTO monitor_request VALUES ({})".format(
             ', '.join('?' * len(values)),
         )
@@ -158,14 +157,16 @@ class Database:
             self,
             token_network_address: str,
             channel_id: int,
-            # TODO: add non_closing_signer
+            non_closing_signer: str,
     ) -> Optional[MonitorRequest]:
         row = self.conn.execute(
             """
                 SELECT * FROM monitor_request
-                WHERE channel_identifier = ? AND token_network_address = ?
+                WHERE channel_identifier = ?
+                  AND token_network_address = ?
+                  AND non_closing_signer = ?
             """,
-            [hex(channel_id), token_network_address],
+            [hex(channel_id), token_network_address, non_closing_signer],
         ).fetchone()
 
         if row is None:

@@ -83,9 +83,14 @@ def channel_closed_event_handler(event: Event, context: Context) -> None:
             # valid MR is avilable.
             # This enables the client to send a late MR
             # also see https://github.com/raiden-network/raiden-services/issues/29
+            if channel.participant1 == event.closing_participant:
+                non_closing_participant = channel.participant2
+            else:
+                non_closing_participant = channel.participant1
             e = ActionMonitoringTriggeredEvent(
                 token_network_address=channel.token_network_address,
                 channel_identifier=channel.identifier,
+                non_closing_participant=non_closing_participant,
             )
             client_update_period: int = round(
                 channel.settle_timeout * RATIO_OF_SETTLE_TIMEOUT_BEFORE_MONITOR,
@@ -272,6 +277,7 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context) -> N
             e = ActionClaimRewardTriggeredEvent(
                 token_network_address=channel.token_network_address,
                 channel_identifier=channel.identifier,
+                non_closing_participant=event.raiden_node_address,
             )
 
             assert channel.closing_block is not None, 'closing_block not set'
@@ -306,6 +312,7 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
     monitor_request = context.db.get_monitor_request(
         token_network_address=event.token_network_address,
         channel_id=event.channel_identifier,
+        non_closing_signer=event.non_closing_participant,
     )
     if monitor_request is None:
         return
@@ -362,6 +369,7 @@ def action_claim_reward_triggered_event_handler(event: Event, context: Context) 
     monitor_request = context.db.get_monitor_request(
         token_network_address=event.token_network_address,
         channel_id=event.channel_identifier,
+        non_closing_signer=event.non_closing_participant,
     )
     if monitor_request is None:
         return

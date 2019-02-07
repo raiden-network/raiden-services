@@ -47,7 +47,7 @@ class ReceiveMonitoringNewBalanceProofEvent(Event):
     reward_amount: int
     nonce: int
     ms_address: str
-    raiden_node_address: str
+    raiden_node_address: str  # non_closing_participant
     block_number: int
 
 
@@ -76,9 +76,11 @@ class ScheduledEvent(Event):
 class ActionMonitoringTriggeredEvent(Event):
     token_network_address: str
     channel_identifier: int
+    non_closing_participant: str
 
 
 @dataclass
 class ActionClaimRewardTriggeredEvent(Event):
     token_network_address: str
     channel_identifier: int
+    non_closing_participant: str

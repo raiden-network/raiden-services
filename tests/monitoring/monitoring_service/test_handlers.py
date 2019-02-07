@@ -345,6 +345,7 @@ def test_action_monitoring_triggered_event_handler_does_not_trigger_monitor_call
     event4 = ActionMonitoringTriggeredEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
+        non_closing_participant=DEFAULT_PARTICIPANT2,
     )
 
     channel = context.db.get_channel(event4.token_network_address, event4.channel_identifier)
@@ -394,6 +395,7 @@ def test_action_monitoring_triggered_event_handler_does_trigger_monitor_call(  #
     event4 = ActionMonitoringTriggeredEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
+        non_closing_participant=DEFAULT_PARTICIPANT2,
     )
 
     channel = context.db.get_channel(event4.token_network_address, event4.channel_identifier)
@@ -423,6 +425,7 @@ def test_mr_available_before_channel_triggers_monitor_call(
     event = ActionMonitoringTriggeredEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
+        non_closing_participant=DEFAULT_PARTICIPANT2,
     )
 
     action_monitoring_triggered_event_handler(event, context)
