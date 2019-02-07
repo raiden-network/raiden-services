@@ -9,7 +9,27 @@ services:
       - PFS_HOST=0.0.0.0
     labels:
       - "traefik.enable=true"
-      - "traefik.frontend.rule=Host: pfs.services-dev.raiden.network"
+      - "traefik.frontend.rule=Host: pfs-ropsten.services-dev.raiden.network"
+
+  pfs-rinkeby:
+    build: ../raiden-services/pathfinding
+    restart: always
+    environment:
+      - PFS_ETH_RPC=http://geth.rinkeby.ethnodes.brainbot.com:8545
+      - PFS_HOST=0.0.0.0
+    labels:
+      - "traefik.enable=true"
+      - "traefik.frontend.rule=Host: pfs-rinkeby.services-dev.raiden.network"
+
+  pfs-kovan:
+    build: ../raiden-services/pathfinding
+    restart: always
+    environment:
+      - PFS_ETH_RPC=http://parity.kovan.ethnodes.brainbot.com:8545
+      - PFS_HOST=0.0.0.0
+    labels:
+      - "traefik.enable=true"
+      - "traefik.frontend.rule=Host: pfs-kovan.services-dev.raiden.network"
 
   builder:
     build: ./builder
