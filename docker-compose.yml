@@ -12,7 +12,7 @@ services:
       - "traefik.frontend.rule=Host: pfs-ropsten.services-dev.raiden.network"
 
   pfs-rinkeby:
-    build: ../raiden-services/pathfinding
+    build: ../raiden-services
     restart: always
     environment:
       - PFS_ETH_RPC=http://geth.rinkeby.ethnodes.brainbot.com:8545
@@ -22,7 +22,7 @@ services:
       - "traefik.frontend.rule=Host: pfs-rinkeby.services-dev.raiden.network"
 
   pfs-kovan:
-    build: ../raiden-services/pathfinding
+    build: ../raiden-services
     restart: always
     environment:
       - PFS_ETH_RPC=http://parity.kovan.ethnodes.brainbot.com:8545
