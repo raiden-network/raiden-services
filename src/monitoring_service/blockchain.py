@@ -177,7 +177,8 @@ class BlockchainListener:
         chain_state: BlockchainState,
         to_block: int,
     ) -> Tuple[BlockchainState, List[Event]]:
-        from_block = chain_state.latest_known_block
+        # increment by one, as latest_known_block has been queried last time already
+        from_block = chain_state.latest_known_block + 1
 
         if to_block <= from_block:
             return chain_state, []
@@ -188,7 +189,7 @@ class BlockchainListener:
         # first check for new token networks and add to state
         registry_events = self._get_token_network_registry_events(
             registry_address=new_chain_state.token_network_registry_address,
-            from_block=from_block + 1,
+            from_block=from_block,
             to_block=to_block,
         )
 
@@ -202,7 +203,7 @@ class BlockchainListener:
         for token_network_address in new_chain_state.token_network_addresses:
             network_events = self._get_token_networks_events(
                 network_address=token_network_address,
-                from_block=from_block + 1,
+                from_block=from_block,
                 to_block=to_block,
             )
 
@@ -244,7 +245,7 @@ class BlockchainListener:
         # get events from monitoring service contract
         monitoring_service_events = self._get_monitoring_service_events(
             monitoring_service_address=new_chain_state.monitor_contract_address,
-            from_block=from_block + 1,
+            from_block=from_block,
             to_block=to_block,
         )
         for event in monitoring_service_events:
