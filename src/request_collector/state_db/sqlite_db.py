@@ -1,11 +1,10 @@
 import sqlite3
 from typing import Dict, Iterable, Optional
-import dataclasses
 import json
 
 from eth_utils import is_checksum_address
 
-# from monitoring_service.utils import BlockchainListener
+from monitoring_service.database import BaseDatabase
 from raiden_contracts.constants import ChannelState
 from raiden_libs.messages import BalanceProof, MonitorRequest
 from raiden_libs.types import Address, ChannelIdentifier
@@ -27,18 +26,13 @@ def adapt_tuple(t: tuple) -> str:
 sqlite3.register_adapter(tuple, adapt_tuple)
 
 
-class StateDBSqlite:
+class StateDBSqlite(BaseDatabase):
     def __init__(self, filename: str = None, conn=None):
         if filename:
             assert conn is None
-            self.conn = sqlite3.connect(
-                filename,
-                isolation_level="EXCLUSIVE",
-                detect_types=sqlite3.PARSE_DECLTYPES,
-            )
-            self.conn.row_factory = sqlite3.Row
-            self.conn.execute("PRAGMA foreign_keys = ON")
+            super(StateDBSqlite, self).__init__(filename)
         else:
+            # for test fixture only
             assert conn
             self.conn = conn
 
@@ -118,27 +112,11 @@ class StateDBSqlite:
     def chain_id(self):
         return int(self.fetch_scalar("SELECT chain_id FROM blockchain"))
 
-    def server_address(self):
-        return self.fetch_scalar("SELECT receiver FROM blockchain")
-
-    def monitoring_contract_address(self):
-        return self.fetch_scalar("SELECT monitor_contract_address FROM blockchain")
-
     def get_channel(self, channel_identifier: ChannelIdentifier) -> Optional[sqlite3.Row]:
         return self.conn.execute(
             "SELECT * FROM channels WHERE channel_identifier = ?",
             [hex(channel_identifier)],
         ).fetchone()
-
-    def upsert_dataclass(self, obj):
-        assert dataclasses.is_dataclass(obj)
-        table_name = obj.__class__.__name__
-        values = dataclasses.astuple(obj)
-        upsert_sql = "INSERT OR REPLACE INTO {} VALUES ({})".format(
-            table_name,
-            ', '.join('?' * len(values)),
-        )
-        self.conn.execute(upsert_sql, values)
 
     def store_new_channel(
         self,

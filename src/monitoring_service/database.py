@@ -15,7 +15,56 @@ SCHEMA_FILENAME = os.path.join(
 )
 
 
-class Database:
+class BaseDatabase:
+
+    def __init__(self, filename: str):
+        self.conn = sqlite3.connect(
+            filename,
+            detect_types=sqlite3.PARSE_DECLTYPES,
+        )
+        self.conn.row_factory = sqlite3.Row
+        self.conn.execute("PRAGMA foreign_keys = ON")
+
+    def upsert_monitor_request(self, request: MonitorRequest) -> None:
+        values = [
+            hex(val) if key in ['channel_identifier', 'nonce', 'reward_amount']
+            else val
+            for key, val in dataclasses.asdict(request).items()
+            if key != 'chain_id'
+        ]
+        values.append(request.non_closing_signer)
+        upsert_sql = "INSERT OR REPLACE INTO monitor_request VALUES ({})".format(
+            ', '.join('?' * len(values)),
+        )
+        self.conn.execute(upsert_sql, values)
+
+    def get_monitor_request(
+            self,
+            token_network_address: str,
+            channel_id: int,
+            non_closing_signer: str,
+    ) -> Optional[MonitorRequest]:
+        row = self.conn.execute(
+            """
+                SELECT * FROM monitor_request
+                WHERE channel_identifier = ?
+                  AND token_network_address = ?
+                  AND non_closing_signer = ?
+            """,
+            [hex(channel_id), token_network_address, non_closing_signer],
+        ).fetchone()
+
+        if row is None:
+            return None
+        kwargs = {
+            key: val for key, val in zip(row.keys(), row)
+            if key in [f.name for f in dataclasses.fields(MonitorRequest)]
+        }
+        mr = MonitorRequest(chain_id=1, **kwargs)
+        return mr
+
+
+class Database(BaseDatabase):
     def __init__(
         self,
         filename: str,
@@ -24,12 +73,7 @@ class Database:
         registry_address: str,
         receiver: str,
     ) -> None:
-        self.conn = sqlite3.connect(
-            filename,
-            detect_types=sqlite3.PARSE_DECLTYPES,
-        )
-        self.conn.row_factory = sqlite3.Row
-        self.conn.execute("PRAGMA foreign_keys = ON")
+        super(Database, self).__init__(filename)
         self._setup(chain_id, msc_address, registry_address, receiver)
 
     def _setup(self, chain_id: int, msc_address: str, registry_address: str, receiver: str):
@@ -139,41 +183,3 @@ class Database:
             address=blockchain['receiver'],
         )
         return ms_state
-
-    def upsert_monitor_request(self, request: MonitorRequest) -> None:
-        values = [
-            hex(val) if key in ['channel_identifier', 'nonce', 'reward_amount']
-            else val
-            for key, val in dataclasses.asdict(request).items()
-            if key != 'chain_id'
-        ]
-        values.append(request.non_closing_signer)
-        upsert_sql = "INSERT OR REPLACE INTO monitor_request VALUES ({})".format(
-            ', '.join('?' * len(values)),
-        )
-        self.conn.execute(upsert_sql, values)
-
-    def get_monitor_request(
-            self,
-            token_network_address: str,
-            channel_id: int,
-            non_closing_signer: str,
-    ) -> Optional[MonitorRequest]:
-        row = self.conn.execute(
-            """
-                SELECT * FROM monitor_request
-                WHERE channel_identifier = ?
-                  AND token_network_address = ?
-                  AND non_closing_signer = ?
-            """,
-            [hex(channel_id), token_network_address, non_closing_signer],
-        ).fetchone()
-
-        if row is None:
-            return None
-        kwargs = {
-            key: val for key, val in zip(row.keys(), row)
-            if key in [f.name for f in dataclasses.fields(MonitorRequest)]
-        }
-        mr = MonitorRequest(chain_id=1, **kwargs)
-        return mr
