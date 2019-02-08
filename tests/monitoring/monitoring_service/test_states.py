@@ -4,7 +4,8 @@ from typing import Callable
 import pytest
 from eth_utils import encode_hex
 
-from monitoring_service.states import MonitorRequest
+from monitoring_service.states import Channel, MonitorRequest, OnChainUpdateStatus
+from raiden_contracts.constants import ChannelState
 from raiden_libs.types import ChannelIdentifier
 from raiden_libs.utils import UINT64_MAX, UINT256_MAX, private_key_to_address, sha3
 from raiden_libs.utils.signing import eth_sign
@@ -83,3 +84,43 @@ def test_monitor_request_properties(get_random_monitor_request):
     assert request.signer == private_key_to_address(p1)
     assert request.non_closing_signer == private_key_to_address(p2)
     assert request.reward_proof_signer == private_key_to_address(p1)
+
+
+def test_save_and_load_mr(get_random_monitor_request, ms_database):
+    request, _, _ = get_random_monitor_request()
+    ms_database.upsert_monitor_request(request)
+    loaded_request = ms_database.get_monitor_request(
+        token_network_address=request.token_network_address,
+        channel_id=request.channel_identifier,
+        non_closing_signer=request.non_closing_signer,
+    )
+    assert loaded_request == request
+
+
+def test_save_and_load_channel(ms_database, get_random_address):
+    for update_status in [
+        None,
+        OnChainUpdateStatus(
+            update_sender_address=get_random_address(),
+            nonce=random.randint(0, UINT256_MAX),
+        ),
+    ]:
+        channel = Channel(
+            token_network_address=get_random_address(),
+            identifier=random.randint(0, UINT256_MAX),
+            participant1=get_random_address(),
+            participant2=get_random_address(),
+            settle_timeout=random.randint(0, UINT256_MAX),
+            state=random.choice(list(ChannelState)),
+            closing_block=random.randint(0, UINT256_MAX),
+            closing_participant=get_random_address(),
+            closing_tx_hash='%d' % random.randint(0, UINT64_MAX),
+            claim_tx_hash='%d' % random.randint(0, UINT64_MAX),
+            update_status=update_status,
+        )
+        ms_database.upsert_channel(channel)
+        loaded_channel = ms_database.get_channel(
+            token_network_address=channel.token_network_address,
+            channel_id=channel.identifier,
+        )
+        assert loaded_channel == channel

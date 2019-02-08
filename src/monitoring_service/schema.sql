@@ -23,10 +23,10 @@ CREATE TABLE channel (
     identifier              HEX_INT  NOT NULL,
     participant1            CHAR(42) NOT NULL,
     participant2            CHAR(42) NOT NULL,
-    settle_timeout          INT      NOT NULL,
+    settle_timeout          HEX_INT  NOT NULL,
     -- see raiden_contracts.constants.ChannelState for value meaning
     state                   INT NOT NULL CHECK (state >= 0 AND state <= 4),
-    closing_block           INT,
+    closing_block           HEX_INT,
     closing_participant     CHAR(42),
     closing_tx_hash         CHAR(66),
     claim_tx_hash           CHAR(66),
