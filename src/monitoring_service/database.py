@@ -198,9 +198,9 @@ class Database(SharedDatabase):
                 "UPDATE blockchain SET latest_known_block = ?",
                 [state.blockchain_state.latest_known_block],
             )
-            self.conn.execute("DELETE FROM token_network")
+            # assumes that token_networks are not removed
             self.conn.executemany(
-                "INSERT INTO token_network VALUES (?)",
+                "INSERT OR REPLACE INTO token_network VALUES (?)",
                 [[address] for address in state.blockchain_state.token_network_addresses],
             )
 

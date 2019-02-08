@@ -15,6 +15,10 @@ def get_monitor_request_for_same_channel(
 ):
     keys = [get_random_privkey() for i in range(3)]
     token_network_address = token_network.address
+    ms_database.conn.execute(
+        "INSERT INTO token_network (address) VALUES (?)",
+        [token_network_address],
+    )
 
     channel_id = 1
     balance_hash_data = '0'

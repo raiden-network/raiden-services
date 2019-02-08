@@ -98,6 +98,11 @@ def test_save_and_load_mr(get_random_monitor_request, ms_database):
 
 
 def test_save_and_load_channel(ms_database, get_random_address):
+    token_network_address = get_random_address()
+    ms_database.conn.execute(
+        "INSERT INTO token_network (address) VALUES (?)",
+        [token_network_address],
+    )
     for update_status in [
         None,
         OnChainUpdateStatus(
@@ -106,7 +111,7 @@ def test_save_and_load_channel(ms_database, get_random_address):
         ),
     ]:
         channel = Channel(
-            token_network_address=get_random_address(),
+            token_network_address=token_network_address,
             identifier=random.randint(0, UINT256_MAX),
             participant1=get_random_address(),
             participant2=get_random_address(),
