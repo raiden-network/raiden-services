@@ -4,7 +4,6 @@ import gevent
 from eth_utils import is_address
 
 from monitoring_service.states import Channel, MonitorRequest
-from raiden_contracts.constants import ChannelState
 from raiden_libs.exceptions import InvalidSignature
 
 log = logging.getLogger(__name__)
@@ -30,7 +29,6 @@ class StoreMonitorRequest(gevent.Greenlet):
             self.msg.channel_identifier,
         )
         checks = [
-            self.check_channel,
             self.check_signatures,
             self.check_balance,
         ]
@@ -44,10 +42,6 @@ class StoreMonitorRequest(gevent.Greenlet):
 
         self.state_db.upsert_monitor_request(self.msg)
         return True
-
-    def check_channel(self, monitor_request: MonitorRequest, channel: Channel):
-        """We must know about the channel and it must be open"""
-        return channel is not None and channel.state == ChannelState.OPENED
 
     def check_signatures(self, monitor_request: MonitorRequest, channel: Channel):
         """Check if signatures set in the message are correct"""

@@ -4,6 +4,7 @@ import sqlite3
 from typing import List, Optional
 
 import dataclasses
+import structlog
 from eth_utils import is_checksum_address
 
 from monitoring_service.states import (
@@ -14,6 +15,7 @@ from monitoring_service.states import (
     OnChainUpdateStatus,
 )
 
+log = structlog.get_logger(__name__)
 SCHEMA_FILENAME = os.path.join(
     os.path.dirname(os.path.realpath(__file__)),
     'schema.sql',
@@ -38,10 +40,13 @@ sqlite3.register_adapter(tuple, adapt_tuple)
 class SharedDatabase:
     """ DB shared by MS and request collector """
 
-    def __init__(self, filename: str):
+    def __init__(self, filename: str, allow_create: bool = False):
+        log.info('Opening database at ' + filename)
+        mode = 'rwc' if allow_create else 'rw'
         self.conn = sqlite3.connect(
-            filename,
+            f'file:{filename}?mode={mode}',
             detect_types=sqlite3.PARSE_DECLTYPES,
+            uri=True,
         )
         self.conn.row_factory = sqlite3.Row
         self.conn.execute("PRAGMA foreign_keys = ON")
@@ -143,7 +148,7 @@ class Database(SharedDatabase):
         registry_address: str,
         receiver: str,
     ) -> None:
-        super(Database, self).__init__(filename)
+        super(Database, self).__init__(filename, allow_create=True)
         self._setup(chain_id, msc_address, registry_address, receiver)
 
     def _setup(
@@ -172,7 +177,8 @@ class Database(SharedDatabase):
                        receiver
                 FROM blockchain
             """).fetchone()
-            assert tuple(old_settings) == settings, f"{tuple(old_settings)} != {settings}"
+            for name, old, new in zip(old_settings.keys(), old_settings, settings):
+                assert old == new, f'DB was created with {name}={old}, got {new}!'
         else:
             with self.conn:
                 # create db schema
