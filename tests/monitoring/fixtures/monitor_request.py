@@ -1,9 +1,7 @@
 import pytest
-from eth_utils import decode_hex, encode_hex
+from eth_utils import encode_hex
 
-from raiden_contracts.constants import MessageTypeId
-from raiden_libs.messages import BalanceProof, MonitorRequest
-from raiden_libs.types import ChannelIdentifier
+from monitoring_service.states import MonitorRequest
 from raiden_libs.utils import private_key_to_address, sha3
 from raiden_libs.utils.signing import eth_sign
 
@@ -39,28 +37,33 @@ def get_monitor_request_for_same_channel(
         else:
             privkey = keys[1]
             privkey_non_closing = keys[0]
-        balance_proof = BalanceProof(
-            ChannelIdentifier(channel_id),
-            token_network_address,
-            balance_hash=encode_hex(sha3(balance_hash_data.encode())),
-        )
-        balance_proof.signature = encode_hex(eth_sign(
-            privkey if not bad_key_for_bp else keys[2],
-            balance_proof.serialize_bin(),
-        ))
-        non_closing_signature = encode_hex(eth_sign(
-            privkey_non_closing if not bad_key_for_non_closing else keys[2],
-            balance_proof.serialize_bin(msg_type=MessageTypeId.BALANCE_PROOF_UPDATE) +
-            decode_hex(balance_proof.signature),
-        ))
 
         monitor_request = MonitorRequest(
-            balance_proof,
-            non_closing_signature,
-            reward_amount=reward_amount,
+            channel_identifier=channel_id,
+            token_network_address=token_network_address,
+            chain_id=1,
+            balance_hash=encode_hex(sha3(balance_hash_data.encode())),
+            nonce=0,
+            additional_hash='0x%064x' % 0,
+            reward_amount=0,
+            closing_signature='',
+            non_closing_signature='',
+            reward_proof_signature='',
+        )
+        monitor_request.closing_signature = encode_hex(
+            eth_sign(
+                privkey if not bad_key_for_bp else keys[2],
+                monitor_request.packed_balance_proof_data(),
+            ),
+        )
+        monitor_request.non_closing_signature = encode_hex(
+            eth_sign(
+                privkey_non_closing if not bad_key_for_non_closing else keys[2],
+                monitor_request.packed_non_closing_data(),
+            ),
         )
         monitor_request.reward_proof_signature = encode_hex(
-            eth_sign(privkey, monitor_request.serialize_reward_proof()),
+            eth_sign(privkey_non_closing, monitor_request.packed_reward_proof_data()),
         )
         return monitor_request
     return f

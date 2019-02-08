@@ -12,7 +12,7 @@ def test_request_validation(
         task = StoreMonitorRequest(state_db_sqlite, mr)
         task.run()
         gevent.joinall([task])
-        return len(state_db_sqlite.get_monitor_requests()) == 1
+        return state_db_sqlite.monitor_request_count() == 1
 
     # invalid signatures
     invalid_sig = '0x' + '0' * 130
@@ -21,7 +21,7 @@ def test_request_validation(
     assert not store_successful(mr)
 
     mr = get_monitor_request_for_same_channel(user=0)
-    mr.balance_proof.signature = invalid_sig
+    mr.closing_signature = invalid_sig
     assert not store_successful(mr)
 
     mr = get_monitor_request_for_same_channel(user=0)
@@ -41,21 +41,8 @@ def test_request_validation(
     # task = StoreMonitorRequest(web3, state_db_sqlite, mr)
     # task.run()
     # gevent.joinall([task])
-    # assert len(state_db_sqlite.get_monitor_requests()) == 0
+    # assert state_db_sqlite.monitor_request_count() == 0
 
     # everything ok
     mr = get_monitor_request_for_same_channel(user=0)
     assert store_successful(mr)
-
-
-def test_save_mr_from_transport(
-    request_collector,
-    get_monitor_request_for_same_channel,
-    state_db_sqlite,
-):
-    """Does the request collector save submitted MRs?"""
-    monitor_request = get_monitor_request_for_same_channel(user=0)
-    transport = request_collector.transport
-    transport.receive_fake_data(monitor_request.serialize_full())
-    request_collector.wait_tasks()
-    assert len(request_collector.monitor_requests) == 1

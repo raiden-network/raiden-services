@@ -8,8 +8,8 @@ from request_collector.state_db import StateDBSqlite
 from request_collector.store_monitor_request import StoreMonitorRequest
 
 from raiden_libs.gevent_error_handler import register_error_handler
-from raiden_libs.messages import Message, MonitorRequest
 from raiden_libs.transport import Transport
+from monitoring_service.states import MonitorRequest
 
 log = logging.getLogger(__name__)
 
@@ -61,7 +61,6 @@ class RequestCollector(gevent.Greenlet):
 
     def on_message_event(self, message):
         """This handles messages received over the Transport"""
-        assert isinstance(message, Message)
         log.debug(message)
         if isinstance(message, MonitorRequest):
             self.on_monitor_request(message)

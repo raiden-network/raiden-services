@@ -6,7 +6,7 @@ from eth_utils import is_address
 
 from raiden_contracts.constants import ChannelState
 from raiden_libs.exceptions import InvalidSignature
-from raiden_libs.messages import MonitorRequest
+from monitoring_service.states import MonitorRequest
 
 log = logging.getLogger(__name__)
 
@@ -25,8 +25,8 @@ class StoreMonitorRequest(gevent.Greenlet):
         self.msg = monitor_request
         self.state_db = state_db
 
-    def _run(self):
-        channel = self.state_db.get_channel(self.msg.balance_proof.channel_identifier)
+    def _run(self) -> bool:
+        channel = self.state_db.get_channel(self.msg.channel_identifier)
         checks = [
             self.check_channel,
             self.check_signatures,
@@ -40,7 +40,7 @@ class StoreMonitorRequest(gevent.Greenlet):
                 ))
                 return False
 
-        self.state_db.store_monitor_request(self.msg)
+        self.state_db.upsert_monitor_request(self.msg)
         return True
 
     def check_channel(self, monitor_request: MonitorRequest, channel: sqlite3.Row):
@@ -49,14 +49,13 @@ class StoreMonitorRequest(gevent.Greenlet):
 
     def check_signatures(self, monitor_request: MonitorRequest, channel: sqlite3.Row):
         """Check if signatures set in the message are correct"""
-        balance_proof = monitor_request.balance_proof
         participants = [channel['participant1'], channel['participant2']]
         try:
             return (
                 is_address(monitor_request.reward_proof_signer) and
-                balance_proof.signer in participants and
+                monitor_request.signer in participants and
                 monitor_request.non_closing_signer in participants and
-                balance_proof.signer != monitor_request.non_closing_signer
+                monitor_request.signer != monitor_request.non_closing_signer
             )
         except InvalidSignature:
             return False
