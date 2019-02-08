@@ -10,7 +10,7 @@ def create_tnr_contract_events_query(
     contract_manager: ContractManager,
     contract_address: str,
 ):
-    def f():
+    def query_callback():
         return query_blockchain_events(
             web3=web3,
             contract_manager=contract_manager,
@@ -20,12 +20,12 @@ def create_tnr_contract_events_query(
             from_block=0,
             to_block=web3.eth.blockNumber,
         )
-    return f
+    return query_callback
 
 
 def test_limit_inclusivity_in_query_blockchain_events(
     web3,
-    generate_raiden_clients,
+    token_network,
     wait_for_blocks,
     contracts_manager,
     token_network_registry_contract,
@@ -36,9 +36,7 @@ def test_limit_inclusivity_in_query_blockchain_events(
         token_network_registry_contract.address,
     )
 
-    # this generates a new token network and registers it with the registry
-    generate_raiden_clients(2)
-
+    # A new token network has been registered by the `token_network` fixture
     events = query()
     assert len(events) == 1
     event = events[0]
