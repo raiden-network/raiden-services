@@ -71,6 +71,45 @@ class BaseDatabase:
     def monitor_request_count(self) -> int:
         return self.conn.execute("SELECT count(*) FROM monitor_request").fetchone()[0]
 
+    def upsert_channel(self, channel: Channel) -> None:
+        values = [
+            channel.token_network_address,
+            hex(channel.identifier),
+            channel.participant1,
+            channel.participant2,
+            channel.settle_timeout,
+            channel.state,
+            channel.closing_block,
+            channel.closing_participant,
+            channel.closing_tx_hash,
+            channel.claim_tx_hash,
+            dataclasses.astuple(channel.update_status) if channel.update_status else None,
+        ]
+        with self.conn:
+            upsert_sql = "INSERT OR REPLACE INTO channel VALUES ({})".format(
+                ', '.join('?' * len(values)),
+            )
+            self.conn.execute(upsert_sql, values)
+
+    def get_channel(self, token_network_address: str, channel_id: int) -> Optional[Channel]:
+        row = self.conn.execute(
+            """
+                SELECT * FROM channel
+                WHERE identifier = ? AND token_network_address = ?
+            """,
+            [hex(channel_id), token_network_address],
+        ).fetchone()
+
+        if row is None:
+            return None
+        row = list(row)
+        if row[-1] is not None:
+            row[-1] = OnChainUpdateStatus(*row[-1])
+        return Channel(*row)
+
+    def channel_count(self) -> int:
+        return self.conn.execute("SELECT count(*) FROM channel").fetchone()[0]
+
 
 class Database(BaseDatabase):
     """ Holds all MS state which can't be quickly regenerated after a crash/shutdown """
@@ -125,45 +164,6 @@ class Database(BaseDatabase):
                         token_network_registry_address = ?,
                         receiver = ?;
                 """, settings)
-
-    def upsert_channel(self, channel: Channel) -> None:
-        values = [
-            channel.token_network_address,
-            hex(channel.identifier),
-            channel.participant1,
-            channel.participant2,
-            channel.settle_timeout,
-            channel.state,
-            channel.closing_block,
-            channel.closing_participant,
-            channel.closing_tx_hash,
-            channel.claim_tx_hash,
-            dataclasses.astuple(channel.update_status) if channel.update_status else None,
-        ]
-        with self.conn:
-            upsert_sql = "INSERT OR REPLACE INTO channel VALUES ({})".format(
-                ', '.join('?' * len(values)),
-            )
-            self.conn.execute(upsert_sql, values)
-
-    def get_channel(self, token_network_address: str, channel_id: int) -> Optional[Channel]:
-        row = self.conn.execute(
-            """
-                SELECT * FROM channel
-                WHERE identifier = ? AND token_network_address = ?
-            """,
-            [hex(channel_id), token_network_address],
-        ).fetchone()
-
-        if row is None:
-            return None
-        row = list(row)
-        if row[-1] is not None:
-            row[-1] = OnChainUpdateStatus(*row[-1])
-        return Channel(*row)
-
-    def channel_count(self) -> int:
-        return self.conn.execute("SELECT count(*) FROM channel").fetchone()[0]
 
     def update_state(self, state: MonitoringServiceState) -> None:
         with self.conn:
