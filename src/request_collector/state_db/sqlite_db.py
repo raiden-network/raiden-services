@@ -1,10 +1,8 @@
 import sqlite3
-from typing import Iterable, Optional
+from typing import Iterable
 import json
 
 from monitoring_service.database import BaseDatabase
-from raiden_contracts.constants import ChannelState
-from raiden_libs.types import Address, ChannelIdentifier
 
 
 def convert_hex(raw: bytes) -> int:
@@ -38,24 +36,3 @@ class StateDBSqlite(BaseDatabase):
 
     def chain_id(self):
         return int(self.fetch_scalar("SELECT chain_id FROM blockchain"))
-
-    def get_channel(self, channel_identifier: ChannelIdentifier) -> Optional[sqlite3.Row]:
-        return self.conn.execute(
-            "SELECT * FROM channels WHERE channel_identifier = ?",
-            [hex(channel_identifier)],
-        ).fetchone()
-
-    def store_new_channel(
-        self,
-        channel_identifier: ChannelIdentifier,
-        token_network_address: Address,
-        participant1: Address,
-        participant2: Address,
-    ):
-        self.conn.execute("INSERT INTO channels VALUES (?, ?, ?, ?, ?)", [
-            hex(channel_identifier),
-            token_network_address,
-            participant1,
-            participant2,
-            ChannelState.OPENED,
-        ])
