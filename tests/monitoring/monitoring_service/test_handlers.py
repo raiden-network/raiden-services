@@ -46,6 +46,7 @@ def assert_channel_state(context, state):
 
 
 def setup_state_with_open_channel(context: Context) -> Context:
+    create_default_token_network(context)
     event = ReceiveChannelOpenedEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
@@ -116,6 +117,13 @@ def context(ms_database):
     )
 
 
+def create_default_token_network(context):
+    context.db.conn.execute(
+        "INSERT INTO token_network (address) VALUES (?)",
+        [DEFAULT_TOKEN_NETWORK_ADDRESS],
+    )
+
+
 def test_event_handler_ignore_other_events(
     context: Context,
 ):
@@ -142,6 +150,7 @@ def test_event_handler_ignore_other_events(
 def test_channel_opened_event_handler_adds_channel(
     context: Context,
 ):
+    create_default_token_network(context)
     event = ReceiveChannelOpenedEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,

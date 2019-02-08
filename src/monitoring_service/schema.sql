@@ -31,7 +31,9 @@ CREATE TABLE channel (
     closing_tx_hash         CHAR(66),
     claim_tx_hash           CHAR(66),
     update_status           JSON,
-    PRIMARY KEY (identifier, token_network_address)
+    PRIMARY KEY (identifier, token_network_address),
+    FOREIGN KEY (token_network_address)
+        REFERENCES token_network(address)
 );
 
 CREATE TABLE monitor_request (
