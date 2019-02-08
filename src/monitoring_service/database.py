@@ -27,12 +27,17 @@ class BaseDatabase:
 
     def upsert_monitor_request(self, request: MonitorRequest) -> None:
         values = [
-            hex(val) if key in ['channel_identifier', 'nonce', 'reward_amount']
-            else val
-            for key, val in dataclasses.asdict(request).items()
-            if key != 'chain_id'
+            hex(request.channel_identifier),
+            request.token_network_address,
+            request.balance_hash,
+            hex(request.nonce),
+            request.additional_hash,
+            request.closing_signature,
+            request.non_closing_signature,
+            hex(request.reward_amount),
+            request.reward_proof_signature,
+            request.non_closing_signer,
         ]
-        values.append(request.non_closing_signer)
         upsert_sql = "INSERT OR REPLACE INTO monitor_request VALUES ({})".format(
             ', '.join('?' * len(values)),
         )
@@ -53,9 +58,9 @@ class BaseDatabase:
             """,
             [hex(channel_id), token_network_address, non_closing_signer],
         ).fetchone()
-
         if row is None:
             return None
+
         kwargs = {
             key: val for key, val in zip(row.keys(), row)
             if key in [f.name for f in dataclasses.fields(MonitorRequest)]
@@ -65,6 +70,8 @@ class BaseDatabase:
 
 
 class Database(BaseDatabase):
+    """ Holds all MS state which can't be quickly regenerated after a crash/shutdown """
+
     def __init__(
         self,
         filename: str,
@@ -92,8 +99,8 @@ class Database(BaseDatabase):
         initialized = self.conn.execute(
             "SELECT name FROM sqlite_master WHERE type='table' AND name='blockchain'",
         ).fetchone()
-
         settings = [chain_id, msc_address, registry_address, receiver]
+
         if initialized:
             old_settings = self.conn.execute("""
                 SELECT chain_id,
@@ -117,20 +124,26 @@ class Database(BaseDatabase):
                 """, settings)
 
     def upsert_channel(self, channel: Channel) -> None:
+        values = [
+            channel.token_network_address,
+            hex(channel.identifier),
+            channel.participant1,
+            channel.participant2,
+            channel.settle_timeout,
+            channel.state,
+            channel.closing_block,
+            channel.closing_participant,
+            channel.closing_tx_hash,
+            channel.claim_tx_hash,
+            dataclasses.astuple(channel.update_status) if channel.update_status else None,
+        ]
         with self.conn:
-            values = [
-                hex(val) if key == 'identifier' else
-                tuple(val.values()) if key == 'update_status' and val is not None
-                else val
-                for key, val in dataclasses.asdict(channel).items()
-            ]
             upsert_sql = "INSERT OR REPLACE INTO channel VALUES ({})".format(
                 ', '.join('?' * len(values)),
             )
             self.conn.execute(upsert_sql, values)
 
     def get_channel(self, token_network_address: str, channel_id: int) -> Optional[Channel]:
-
         row = self.conn.execute(
             """
                 SELECT * FROM channel
@@ -151,14 +164,10 @@ class Database(BaseDatabase):
 
     def update_state(self, state: MonitoringServiceState) -> None:
         with self.conn:
-            self.conn.execute("""
-                UPDATE blockchain
-                SET token_network_registry_address = ?,
-                    latest_known_block = ?;
-            """, [
-                state.blockchain_state.token_network_registry_address,
-                state.blockchain_state.latest_known_block,
-            ])
+            self.conn.execute(
+                "UPDATE blockchain SET latest_known_block = ?",
+                [state.blockchain_state.latest_known_block],
+            )
             self.conn.execute("DELETE FROM token_network")
             self.conn.executemany(
                 "INSERT INTO token_network VALUES (?)",
@@ -166,10 +175,17 @@ class Database(BaseDatabase):
             )
 
     def load_state(self, sync_start_block: int) -> MonitoringServiceState:
+        """ Load MS state from db or return a new empty state if not saved one is present
+
+        An empty state is initialized with `latest_known_block =
+        sync_start_block - 1`. If a saved state is present, `sync_start_block`
+        is ignored.
+        """
         blockchain = self.conn.execute("SELECT * FROM blockchain").fetchone()
         if blockchain['latest_known_block'] is None:
+            # state has never been saved, initialize a new state
             token_network_addresses: List[str] = []
-            latest_known_block = sync_start_block
+            latest_known_block = sync_start_block - 1
         else:
             token_network_addresses = [
                 row[0] for row in self.conn.execute("SELECT address FROM token_network")
