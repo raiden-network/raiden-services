@@ -3,9 +3,9 @@ import logging
 import gevent
 from eth_utils import is_address
 
+from monitoring_service.states import Channel, MonitorRequest
 from raiden_contracts.constants import ChannelState
 from raiden_libs.exceptions import InvalidSignature
-from monitoring_service.states import MonitorRequest, Channel
 
 log = logging.getLogger(__name__)
 

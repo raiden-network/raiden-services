@@ -1,7 +1,7 @@
-from typing import Dict
+from typing import Any, Dict
 
 
-def deserialize(message: Dict):
+def deserialize(message: Dict) -> Any:
     from .balance_proof import BalanceProof
     from monitoring_service.states import MonitorRequest
     type_to_class = {

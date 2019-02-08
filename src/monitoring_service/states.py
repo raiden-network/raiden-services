@@ -1,12 +1,12 @@
 from dataclasses import dataclass, field  # isort:skip noqa differences between python 3.6 and 3.7
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
-from eth_utils import decode_hex, to_checksum_address
 import jsonschema
+from eth_utils import decode_hex, to_checksum_address
 
 from raiden_contracts.constants import ChannelState, MessageTypeId
-from raiden_libs.utils import eth_recover, pack_data
 from raiden_libs.messages.json_schema import MONITOR_REQUEST_SCHEMA
+from raiden_libs.utils import eth_recover, pack_data
 
 
 @dataclass
@@ -64,7 +64,7 @@ class MonitorRequest:
     reward_proof_signature: str
 
     @classmethod
-    def deserialize(cls, data):
+    def deserialize(cls, data: Dict[str, Any]) -> 'MonitorRequest':
         jsonschema.validate(data, MONITOR_REQUEST_SCHEMA)
         result = cls(
             data['balance_proof']['channel_identifier'],

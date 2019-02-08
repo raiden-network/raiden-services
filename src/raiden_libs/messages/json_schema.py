@@ -1,4 +1,4 @@
-def make_properties_required(schema):
+def make_properties_required(schema: dict) -> None:
     schema['required'] = list(schema['properties'].keys())
 
 

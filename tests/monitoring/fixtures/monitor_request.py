@@ -1,7 +1,7 @@
 import pytest
 from eth_utils import encode_hex
 
-from monitoring_service.states import MonitorRequest, Channel
+from monitoring_service.states import Channel, MonitorRequest
 from raiden_libs.utils import private_key_to_address, sha3
 from raiden_libs.utils.signing import eth_sign
 

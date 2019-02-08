@@ -1,13 +1,17 @@
-import sqlite3
-from typing import Optional, List
-import dataclasses
-import os
 import json
+import os
+import sqlite3
+from typing import List, Optional
 
+import dataclasses
 from eth_utils import is_checksum_address
 
 from monitoring_service.states import (
-    Channel, MonitoringServiceState, MonitorRequest, BlockchainState, OnChainUpdateStatus,
+    BlockchainState,
+    Channel,
+    MonitoringServiceState,
+    MonitorRequest,
+    OnChainUpdateStatus,
 )
 
 SCHEMA_FILENAME = os.path.join(
