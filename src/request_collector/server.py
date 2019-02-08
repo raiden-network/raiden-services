@@ -6,10 +6,10 @@ from typing import List
 import gevent
 from request_collector.store_monitor_request import StoreMonitorRequest
 
+from monitoring_service.database import SharedDatabase
+from monitoring_service.states import MonitorRequest
 from raiden_libs.gevent_error_handler import register_error_handler
 from raiden_libs.transport import Transport
-from monitoring_service.states import MonitorRequest
-from monitoring_service.database import SharedDatabase
 
 log = logging.getLogger(__name__)
 

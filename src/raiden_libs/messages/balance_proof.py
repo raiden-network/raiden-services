@@ -1,3 +1,5 @@
+from typing import Any, Type
+
 import jsonschema
 from eth_utils import decode_hex, encode_hex, is_address, to_checksum_address
 from web3 import Web3
@@ -81,7 +83,7 @@ class BalanceProof(Message):
 
         return result
 
-    def serialize_bin(self, msg_type: MessageTypeId = MessageTypeId.BALANCE_PROOF):
+    def serialize_bin(self, msg_type: MessageTypeId = MessageTypeId.BALANCE_PROOF) -> bytes:
         return pack_data([
             'address',
             'uint256',
@@ -101,7 +103,7 @@ class BalanceProof(Message):
         ])
 
     @classmethod
-    def deserialize(cls, data):
+    def deserialize(cls, data: Any, type: Type = None) -> 'Message':
         jsonschema.validate(data, BALANCE_PROOF_SCHEMA)
         result = cls(
             data['channel_identifier'],
@@ -137,7 +139,7 @@ class BalanceProof(Message):
         raise ValueError("Can't compute balance hash")
 
     @balance_hash.setter
-    def balance_hash(self, value) -> None:
+    def balance_hash(self, value: str) -> None:
         self._balance_hash = value
 
     @property

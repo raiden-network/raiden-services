@@ -1,7 +1,7 @@
 import logging
+import os
 import sys
 from typing import Any, Optional
-import os
 
 import click
 import structlog

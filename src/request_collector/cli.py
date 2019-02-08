@@ -10,8 +10,8 @@ from typing import TextIO
 import click
 from eth_utils import is_checksum_address
 from request_collector.server import RequestCollector
-from monitoring_service.database import SharedDatabase
 
+from monitoring_service.database import SharedDatabase
 from raiden_libs.transport import MatrixTransport
 
 log = logging.getLogger(__name__)
