@@ -77,7 +77,7 @@ def monitoring_service(
 def request_collector(
     server_private_key,
     dummy_transport,
-    state_db_sqlite,
+    ms_database,
     web3,
     monitoring_service_contract,
     token_network_registry_contract,
@@ -85,7 +85,7 @@ def request_collector(
     contracts_manager: ContractManager,
 ):
     rc = RequestCollector(
-        state_db=state_db_sqlite,
+        state_db=ms_database,
         transport=dummy_transport,
     )
     rc.start()

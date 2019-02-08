@@ -4,12 +4,12 @@ import traceback
 from typing import List
 
 import gevent
-from request_collector.state_db import StateDBSqlite
 from request_collector.store_monitor_request import StoreMonitorRequest
 
 from raiden_libs.gevent_error_handler import register_error_handler
 from raiden_libs.transport import Transport
 from monitoring_service.states import MonitorRequest
+from monitoring_service.database import SharedDatabase
 
 log = logging.getLogger(__name__)
 
@@ -27,7 +27,7 @@ def error_handler(context, exc_info):
 class RequestCollector(gevent.Greenlet):
     def __init__(
         self,
-        state_db: StateDBSqlite,
+        state_db: SharedDatabase,
         transport: Transport,
     ):
         super().__init__()
