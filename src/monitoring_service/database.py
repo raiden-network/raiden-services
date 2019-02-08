@@ -2,6 +2,7 @@ import sqlite3
 from typing import Optional, List
 import dataclasses
 import os
+import json
 
 from eth_utils import is_checksum_address
 
@@ -15,7 +16,23 @@ SCHEMA_FILENAME = os.path.join(
 )
 
 
-class BaseDatabase:
+def convert_hex(raw: bytes) -> int:
+    return int(raw, 16)
+
+
+sqlite3.register_converter('HEX_INT', convert_hex)
+sqlite3.register_converter('JSON', json.loads)
+
+
+def adapt_tuple(t: tuple) -> str:
+    return json.dumps(t)
+
+
+sqlite3.register_adapter(tuple, adapt_tuple)
+
+
+class SharedDatabase:
+    """ DB shared by MS and request collector """
 
     def __init__(self, filename: str):
         self.conn = sqlite3.connect(
@@ -111,7 +128,7 @@ class BaseDatabase:
         return self.conn.execute("SELECT count(*) FROM channel").fetchone()[0]
 
 
-class Database(BaseDatabase):
+class Database(SharedDatabase):
     """ Holds all MS state which can't be quickly regenerated after a crash/shutdown """
 
     def __init__(

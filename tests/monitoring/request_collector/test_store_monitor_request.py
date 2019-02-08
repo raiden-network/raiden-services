@@ -5,14 +5,14 @@ from request_collector.store_monitor_request import StoreMonitorRequest
 def test_request_validation(
         web3,
         get_monitor_request_for_same_channel,
-        state_db_sqlite,
+        ms_database,
         get_random_address,
 ):
     def store_successful(mr):
-        task = StoreMonitorRequest(state_db_sqlite, mr)
+        task = StoreMonitorRequest(ms_database, mr)
         task.run()
         gevent.joinall([task])
-        return state_db_sqlite.monitor_request_count() == 1
+        return ms_database.monitor_request_count() == 1
 
     # invalid signatures
     invalid_sig = '0x' + '0' * 130
@@ -38,10 +38,10 @@ def test_request_validation(
     # must fail because no reward is deposited
     # TODO: enable once we check deposits
     # mr = get_monitor_request_for_same_channel(user=0, reward_amount=1)
-    # task = StoreMonitorRequest(web3, state_db_sqlite, mr)
+    # task = StoreMonitorRequest(web3, ms_database, mr)
     # task.run()
     # gevent.joinall([task])
-    # assert state_db_sqlite.monitor_request_count() == 0
+    # assert ms_database.monitor_request_count() == 0
 
     # everything ok
     mr = get_monitor_request_for_same_channel(user=0)

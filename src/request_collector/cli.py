@@ -10,7 +10,7 @@ from typing import TextIO
 import click
 from eth_utils import is_checksum_address
 from request_collector.server import RequestCollector
-from request_collector.state_db import StateDBSqlite
+from monitoring_service.database import SharedDatabase
 
 from raiden_libs.transport import MatrixTransport
 
@@ -109,7 +109,7 @@ def main(
         monitoring_channel,
     )
 
-    database = StateDBSqlite(state_db)
+    database = SharedDatabase(state_db)
 
     service = None
     try:
