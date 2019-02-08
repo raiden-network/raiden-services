@@ -2,9 +2,11 @@ from dataclasses import dataclass, field  # isort:skip noqa differences between 
 from typing import List, Optional
 
 from eth_utils import decode_hex, to_checksum_address
+import jsonschema
 
 from raiden_contracts.constants import ChannelState, MessageTypeId
 from raiden_libs.utils import eth_recover, pack_data
+from raiden_libs.messages.json_schema import MONITOR_REQUEST_SCHEMA
 
 
 @dataclass
@@ -60,6 +62,23 @@ class MonitorRequest:
     non_closing_signature: str
     reward_amount: int
     reward_proof_signature: str
+
+    @classmethod
+    def deserialize(cls, data):
+        jsonschema.validate(data, MONITOR_REQUEST_SCHEMA)
+        result = cls(
+            data['balance_proof']['channel_identifier'],
+            data['balance_proof']['token_network_address'],
+            data['balance_proof']['chain_id'],
+            data['balance_proof']['balance_hash'],
+            data['balance_proof']['nonce'],
+            data['balance_proof']['additional_hash'],
+            data['balance_proof']['closing_signature'],
+            data['non_closing_signature'],
+            data['reward_proof_signature'],
+            data['reward_amount'],
+        )
+        return result
 
     def packed_balance_proof_data(
         self,

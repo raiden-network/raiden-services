@@ -68,6 +68,9 @@ class BaseDatabase:
         mr = MonitorRequest(chain_id=1, **kwargs)
         return mr
 
+    def monitor_request_count(self) -> int:
+        return self.conn.execute("SELECT count(*) FROM monitor_request").fetchone()[0]
+
 
 class Database(BaseDatabase):
     """ Holds all MS state which can't be quickly regenerated after a crash/shutdown """
