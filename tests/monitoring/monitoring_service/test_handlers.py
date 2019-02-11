@@ -171,14 +171,39 @@ def test_channel_closed_event_handler_closes_existing_channel(
     context: Context,
 ):
     context = setup_state_with_open_channel(context)
+    context.last_known_block = 60
 
-    event2 = ReceiveChannelClosedEvent(
+    event = ReceiveChannelClosedEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
         closing_participant=DEFAULT_PARTICIPANT2,
         block_number=52,
     )
-    channel_closed_event_handler(event2, context)
+    channel_closed_event_handler(event, context)
+
+    # ActionMonitoringTriggeredEvent has been triggered
+    assert len(context.scheduled_events) == 1
+
+    assert context.db.channel_count() == 1
+    assert_channel_state(context, ChannelState.CLOSED)
+
+
+def test_channel_closed_event_handler_ignores_existing_channel_after_timeout(
+    context: Context,
+):
+    context = setup_state_with_open_channel(context)
+    context.last_known_block = 200
+
+    event = ReceiveChannelClosedEvent(
+        token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
+        channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
+        closing_participant=DEFAULT_PARTICIPANT2,
+        block_number=52,
+    )
+    channel_closed_event_handler(event, context)
+
+    # no ActionMonitoringTriggeredEvent has been triggered
+    assert len(context.scheduled_events) == 0
 
     assert context.db.channel_count() == 1
     assert_channel_state(context, ChannelState.CLOSED)
@@ -189,13 +214,13 @@ def test_channel_closed_event_handler_leaves_existing_channel(
 ):
     context = setup_state_with_open_channel(context)
 
-    event2 = ReceiveChannelClosedEvent(
+    event = ReceiveChannelClosedEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
         channel_identifier=4,
         closing_participant=DEFAULT_PARTICIPANT2,
         block_number=52,
     )
-    channel_closed_event_handler(event2, context)
+    channel_closed_event_handler(event, context)
 
     assert context.db.channel_count() == 1
     assert_channel_state(context, ChannelState.OPENED)
@@ -208,14 +233,14 @@ def test_channel_closed_event_handler_trigger_action_monitor_event_with_monitor_
     # add MR to DB
     context.db.upsert_monitor_request(get_signed_monitor_request())
 
-    event2 = ReceiveChannelClosedEvent(
+    event = ReceiveChannelClosedEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
         closing_participant=DEFAULT_PARTICIPANT2,
         block_number=52,
     )
 
-    channel_closed_event_handler(event2, context)
+    channel_closed_event_handler(event, context)
     assert len(context.scheduled_events) == 1
 
 
@@ -224,14 +249,14 @@ def test_channel_closed_event_handler_trigger_action_monitor_event_without_monit
 ):
     context = setup_state_with_open_channel(context)
 
-    event2 = ReceiveChannelClosedEvent(
+    event = ReceiveChannelClosedEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
         closing_participant=DEFAULT_PARTICIPANT2,
         block_number=52,
     )
 
-    channel_closed_event_handler(event2, context)
+    channel_closed_event_handler(event, context)
     assert len(context.scheduled_events) == 1
 
 
@@ -240,7 +265,7 @@ def test_channel_bp_updated_event_handler_sets_update_status_if_not_set(
 ):
     context = setup_state_with_closed_channel(context)
 
-    event3 = ReceiveNonClosingBalanceProofUpdatedEvent(
+    event_bp = ReceiveNonClosingBalanceProofUpdatedEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
         closing_participant=DEFAULT_PARTICIPANT2,
@@ -248,20 +273,20 @@ def test_channel_bp_updated_event_handler_sets_update_status_if_not_set(
         block_number=23,
     )
 
-    channel = context.db.get_channel(event3.token_network_address, event3.channel_identifier)
+    channel = context.db.get_channel(event_bp.token_network_address, event_bp.channel_identifier)
     assert channel
     assert channel.update_status is None
 
-    channel_non_closing_balance_proof_updated_event_handler(event3, context)
+    channel_non_closing_balance_proof_updated_event_handler(event_bp, context)
 
     assert context.db.channel_count() == 1
-    channel = context.db.get_channel(event3.token_network_address, event3.channel_identifier)
+    channel = context.db.get_channel(event_bp.token_network_address, event_bp.channel_identifier)
     assert channel
     assert channel.update_status is not None
     assert channel.update_status.nonce == 2
     assert channel.update_status.update_sender_address == DEFAULT_PARTICIPANT1
 
-    event4 = ReceiveNonClosingBalanceProofUpdatedEvent(
+    event_bp2 = ReceiveNonClosingBalanceProofUpdatedEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
         closing_participant=DEFAULT_PARTICIPANT2,
@@ -269,10 +294,10 @@ def test_channel_bp_updated_event_handler_sets_update_status_if_not_set(
         block_number=53,
     )
 
-    channel_non_closing_balance_proof_updated_event_handler(event4, context)
+    channel_non_closing_balance_proof_updated_event_handler(event_bp2, context)
 
     assert context.db.channel_count() == 1
-    channel = context.db.get_channel(event3.token_network_address, event3.channel_identifier)
+    channel = context.db.get_channel(event_bp.token_network_address, event_bp.channel_identifier)
     assert channel
     assert channel.update_status is not None
     assert channel.update_status.nonce == 5
