@@ -63,8 +63,8 @@ class MonitoringService:
             receiver=self.address,
             msc_address=monitor_contract_address,
         )
-        self.ms_state = self.database.load_state(sync_start_block)
-        self.scheduled_events: List[ScheduledEvent] = list()
+        ms_state = self.database.load_state(sync_start_block)
+        scheduled_events: List[ScheduledEvent] = list()
 
         self.bcl = BlockchainListener(
             web3=self.web3,
@@ -72,9 +72,9 @@ class MonitoringService:
         )
 
         self.context = Context(
-            ms_state=self.ms_state,
+            ms_state=ms_state,
             db=self.database,
-            scheduled_events=self.scheduled_events,
+            scheduled_events=scheduled_events,
             w3=self.web3,
             contract_manager=contract_manager,
             last_known_block=0,
@@ -92,14 +92,17 @@ class MonitoringService:
                 to_block=last_block,
             )
 
-            self.context.ms_state.blockchain_state = new_chain_state
+            if self.context.ms_state.blockchain_state != new_chain_state:
+                self.context.ms_state.blockchain_state = new_chain_state
+                self.context.db.update_state(self.context.ms_state)
+
             for event in events:
                 handle_event(event, self.context)
 
             # check triggered events
             # TODO: create a priority queue for this
             to_remove = []
-            for scheduled_event in self.scheduled_events:
+            for scheduled_event in self.context.scheduled_events:
                 event = scheduled_event.event
 
                 if last_block >= scheduled_event.trigger_block_number:
@@ -107,10 +110,10 @@ class MonitoringService:
                     handle_event(event, self.context)
 
             for d in to_remove:
-                self.scheduled_events.remove(d)
+                self.context.scheduled_events.remove(d)
 
-            if self.scheduled_events:
-                log.info('Scheduled_events', events=self.scheduled_events)
+            if self.context.scheduled_events:
+                log.info('Scheduled_events', events=self.context.scheduled_events)
 
             try:
                 wait_function(self.poll_interval)
