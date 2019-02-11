@@ -2,11 +2,12 @@ from dataclasses import dataclass, field  # isort:skip noqa differences between 
 from typing import Any, Dict, List, Optional
 
 import jsonschema
-from eth_utils import decode_hex, to_checksum_address
+from eth_utils import decode_hex, encode_hex, to_checksum_address
+from web3 import Web3
 
 from raiden_contracts.constants import ChannelState, MessageTypeId
 from raiden_libs.messages.json_schema import MONITOR_REQUEST_SCHEMA
-from raiden_libs.utils import eth_recover, pack_data
+from raiden_libs.utils import eth_recover, eth_sign, pack_data
 
 
 @dataclass
@@ -38,6 +39,52 @@ class BlockchainState:
     monitor_contract_address: str
     latest_known_block: int
     token_network_addresses: List[str] = field(default_factory=list)
+
+
+@dataclass
+class BalanceProof:
+    """ A hashed balance proof with signature """
+    channel_identifier: int
+    token_network_address: str
+    chain_id: int
+
+    balance_hash: str
+    nonce: int
+    additional_hash: str
+    signature: str
+
+    @classmethod
+    def signed_with(cls, *args: Any, priv_key: str, **kwargs: Any) -> 'BalanceProof':
+        """ Create a BP signed with the give priv_key """
+        bp = cls(*args, **kwargs, signature=None)  # type: ignore  # None is temporary
+        bp.signature = encode_hex(eth_sign(priv_key, bp.serialize_bin()))
+        return bp
+
+    @staticmethod
+    def hash_balance(transferred_amount: int, locked_amount: int, locksroot: str) -> str:
+        return encode_hex(Web3.soliditySha3(
+            ['uint256', 'uint256', 'bytes32'],
+            [transferred_amount, locked_amount, locksroot],
+        ))
+
+    def serialize_bin(self, msg_type: MessageTypeId = MessageTypeId.BALANCE_PROOF) -> bytes:
+        return pack_data([
+            'address',
+            'uint256',
+            'uint256',
+            'uint256',
+            'bytes32',
+            'uint256',
+            'bytes32',
+        ], [
+            self.token_network_address,
+            self.chain_id,
+            msg_type.value,
+            self.channel_identifier,
+            decode_hex(self.balance_hash),
+            self.nonce,
+            decode_hex(self.additional_hash),
+        ])
 
 
 @dataclass

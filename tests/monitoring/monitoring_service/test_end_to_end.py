@@ -3,6 +3,7 @@ from web3 import Web3
 
 from monitoring_service.blockchain import query_blockchain_events
 from monitoring_service.service import MonitoringService
+from monitoring_service.states import BalanceProof
 from raiden_contracts.constants import CONTRACT_MONITORING_SERVICE, MonitoringServiceEvent
 from raiden_contracts.contract_manager import ContractManager
 
@@ -71,20 +72,26 @@ def test_e2e(
 
     # each client does a transfer
     c1.open_channel(c2.address)
+    transferred_c1 = 5
     balance_proof_c1 = c1.get_balance_proof(
         c2.address,
         nonce=1,
-        transferred_amount=5,
-        locked_amount=0,
-        locksroot='0x%064x' % 0,
+        balance_hash=BalanceProof.hash_balance(
+            transferred_amount=transferred_c1,
+            locked_amount=0,
+            locksroot='0x%064x' % 0,
+        ),
         additional_hash='0x%064x' % 0,
     )
+    transferred_c2 = 6
     balance_proof_c2 = c2.get_balance_proof(
         c1.address,
         nonce=2,
-        transferred_amount=6,
-        locked_amount=0,
-        locksroot='0x%064x' % 0,
+        balance_hash=BalanceProof.hash_balance(
+            transferred_amount=transferred_c2,
+            locked_amount=0,
+            locksroot='0x%064x' % 0,
+        ),
         additional_hash='0x%064x' % 0,
     )
 
@@ -127,9 +134,9 @@ def test_e2e(
     wait_for_blocks(20)
     c2.settle_channel(
         c1.address,
-        (balance_proof_c2.transferred_amount, balance_proof_c1.transferred_amount),
-        (balance_proof_c2.locked_amount, balance_proof_c1.locked_amount),
-        (balance_proof_c1.locksroot, balance_proof_c1.locksroot),
+        (transferred_c2, transferred_c1),
+        (0, 0),  # locked_amount
+        ('0x%064x' % 0, '0x%064x' % 0),  # locksroot
     )
     # Wait until the ChannelSettled is confirmed
     # Let the MS claim its reward
