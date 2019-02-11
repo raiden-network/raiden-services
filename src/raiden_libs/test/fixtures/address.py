@@ -2,11 +2,9 @@ import random
 from typing import Callable
 
 import pytest
-from eth_utils import denoms, encode_hex, is_address
+from eth_utils import denoms, is_address
 
-from raiden_libs.messages import BalanceProof
-from raiden_libs.types import Address, ChannelIdentifier
-from raiden_libs.utils import UINT64_MAX, UINT256_MAX, private_key_to_address, sha3
+from raiden_libs.utils import UINT256_MAX, private_key_to_address
 
 
 @pytest.fixture
@@ -23,34 +21,6 @@ def get_random_address(get_random_privkey) -> Callable:
     """Returns a random valid ethereum address"""
     def f():
         return private_key_to_address(get_random_privkey())
-    return f
-
-
-@pytest.fixture
-def get_random_bp(get_random_address, get_random_privkey) -> Callable:
-    """Returns a balance proof filled in with a random value"""
-    def f(
-        channel_identifier: ChannelIdentifier = None,
-        contract_address: Address = None,
-    ):
-        contract_address = contract_address or get_random_address()
-        channel_identifier = channel_identifier or ChannelIdentifier(
-            random.randint(0, UINT256_MAX),
-        )
-
-        balance_hash_data = '%d' % random.randint(0, UINT64_MAX)
-        additional_hash_data = '%d' % random.randint(0, UINT64_MAX)
-
-        balance_proof = BalanceProof(
-            channel_identifier,
-            contract_address,
-            balance_hash=encode_hex(sha3(balance_hash_data.encode())),
-            nonce=random.randint(0, UINT64_MAX),
-            additional_hash=encode_hex(sha3(additional_hash_data.encode())),
-            chain_id=1,
-        )
-        return balance_proof
-
     return f
 
 

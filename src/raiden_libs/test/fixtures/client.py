@@ -54,8 +54,6 @@ def generate_dummy_network(generate_raiden_clients):
             transport = DummyTransport(network)
             network.add_transport(client.address, transport)
 
-            client.transport = transport
-
         return network, clients
 
     return f

@@ -9,10 +9,8 @@ from web3.contract import Contract, find_matching_event_abi
 from web3.utils.events import get_event_data
 from web3.utils.filters import construct_event_filter_params
 
-from monitoring_service.states import MonitorRequest
+from monitoring_service.states import BalanceProof, MonitorRequest
 from raiden_contracts.constants import MessageTypeId
-from raiden_libs.messages import BalanceProof, Message
-from raiden_libs.transport import Transport
 from raiden_libs.types import Address, ChannelIdentifier, T_ChannelIdentifier
 from raiden_libs.utils import UINT256_MAX, eth_sign, private_key_to_address
 
@@ -71,7 +69,7 @@ class MockRaidenNode:
         privkey: str,
         token_network_contract: Contract,
         token_contract: Contract,
-        transport: Transport = None,
+        chain_id: int = 1,
     ) -> None:
         self.privkey = privkey
         self.address = private_key_to_address(privkey)
@@ -81,13 +79,8 @@ class MockRaidenNode:
         self.token_network_abi = None
         self.client_registry: Dict[Address, 'MockRaidenNode'] = dict()
         self.web3 = self.contract.web3
-        self._transport = transport
         self.paths_and_fees = None
-
-    def on_message_event(self, message: Message):
-        """This handles messages received over the Transport"""
-        assert isinstance(message, Message)
-        log.error("Ignoring unknown message of type '%s'", (type(message)))
+        self.chain_id = chain_id
 
     @sync_channels
     def open_channel(self, partner_address: Address) -> ChannelIdentifier:
@@ -257,12 +250,13 @@ class MockRaidenNode:
             **kwargs - arguments to BalanceProof constructor
         """
         channel_id = self.partner_to_channel_id[partner_address]
-        bp = BalanceProof(
-            channel_id,
-            self.contract.address,
+        bp = BalanceProof.signed_with(
+            channel_identifier=channel_id,
+            token_network_address=self.contract.address,
+            chain_id=self.chain_id,
+            priv_key=self.privkey,
             **kwargs,
         )
-        bp.signature = encode_hex(eth_sign(self.privkey, bp.serialize_bin()))
         return bp
 
     @assert_channel_existence
@@ -356,13 +350,3 @@ class MockRaidenNode:
             field: channel_info[return_fields.index(field)]
             for field in return_fields
         }
-
-    @property
-    def transport(self):
-        return self._transport
-
-    @transport.setter
-    def transport(self, value: Transport):
-        assert value is not None
-        self._transport = value
-        self._transport.add_message_callback(self.on_message_event)
