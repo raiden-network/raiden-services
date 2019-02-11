@@ -42,7 +42,7 @@ class BlockchainState:
 
 
 @dataclass
-class BalanceProof:
+class HashedBalanceProof:
     """ A hashed balance proof with signature """
     channel_identifier: int
     token_network_address: str
@@ -53,19 +53,44 @@ class BalanceProof:
     additional_hash: str
     signature: str
 
-    @classmethod
-    def signed_with(cls, *args: Any, priv_key: str, **kwargs: Any) -> 'BalanceProof':
-        """ Create a BP signed with the give priv_key """
-        bp = cls(*args, **kwargs, signature=None)  # type: ignore  # None is temporary
-        bp.signature = encode_hex(eth_sign(priv_key, bp.serialize_bin()))
-        return bp
+    def __init__(
+        self,
+        channel_identifier: int,
+        token_network_address: str,
+        chain_id: int,
+        nonce: int,
+        additional_hash: str,
+        balance_hash: str = None,
+        signature: str = None,
+        # these three parameters can be passed instead of `balance_hash`
+        transferred_amount: int = None,
+        locked_amount: int = None,
+        locksroot: str = None,
+        # can be used instead of passing `signature`
+        priv_key: str = None,
+    ) -> None:
+        self.channel_identifier = channel_identifier
+        self.token_network_address = token_network_address
+        self.chain_id = chain_id
+        self.nonce = nonce
+        self.additional_hash = additional_hash
 
-    @staticmethod
-    def hash_balance(transferred_amount: int, locked_amount: int, locksroot: str) -> str:
-        return encode_hex(Web3.soliditySha3(
-            ['uint256', 'uint256', 'bytes32'],
-            [transferred_amount, locked_amount, locksroot],
-        ))
+        if balance_hash is None:
+            assert signature is None
+            balance_hash_data = (transferred_amount, locked_amount, locksroot)
+            assert all(x is not None for x in balance_hash_data)
+            self.balance_hash = encode_hex(Web3.soliditySha3(
+                ['uint256', 'uint256', 'bytes32'],
+                balance_hash_data,
+            ))
+        else:
+            self.balance_hash = balance_hash
+
+        if signature is None:
+            assert priv_key
+            self.signature = encode_hex(eth_sign(priv_key, self.serialize_bin()))
+        else:
+            self.signature = signature
 
     def serialize_bin(self, msg_type: MessageTypeId = MessageTypeId.BALANCE_PROOF) -> bytes:
         return pack_data([

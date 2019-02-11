@@ -9,7 +9,7 @@ from web3.contract import Contract, find_matching_event_abi
 from web3.utils.events import get_event_data
 from web3.utils.filters import construct_event_filter_params
 
-from monitoring_service.states import BalanceProof, MonitorRequest
+from monitoring_service.states import HashedBalanceProof, MonitorRequest
 from raiden_contracts.constants import MessageTypeId
 from raiden_libs.types import Address, ChannelIdentifier, T_ChannelIdentifier
 from raiden_libs.utils import UINT256_MAX, eth_sign, private_key_to_address
@@ -190,7 +190,7 @@ class MockRaidenNode:
         ).transact({'from': self.address})
 
     @assert_channel_existence
-    def close_channel(self, partner_address: Address, balance_proof: BalanceProof):
+    def close_channel(self, partner_address: Address, balance_proof: HashedBalanceProof):
         """Closes an open channel"""
         assert balance_proof is not None
         self.contract.functions.closeChannel(
@@ -243,14 +243,14 @@ class MockRaidenNode:
             ).transact({'from': self.address})
 
     @assert_channel_existence
-    def get_balance_proof(self, partner_address: Address, **kwargs) -> BalanceProof:
+    def get_balance_proof(self, partner_address: Address, **kwargs) -> HashedBalanceProof:
         """Get a signed balance proof for an open channel.
         Parameters:
             partner_address - address of a partner the node has channel open with
-            **kwargs - arguments to BalanceProof constructor
+            **kwargs - arguments to HashedBalanceProof constructor
         """
         channel_id = self.partner_to_channel_id[partner_address]
-        bp = BalanceProof.signed_with(
+        bp = HashedBalanceProof(
             channel_identifier=channel_id,
             token_network_address=self.contract.address,
             chain_id=self.chain_id,
@@ -263,7 +263,7 @@ class MockRaidenNode:
     def get_monitor_request(
         self,
         partner_address: Address,
-        balance_proof: BalanceProof,
+        balance_proof: HashedBalanceProof,
         reward_amount: int,
     ) -> MonitorRequest:
         """Get monitor request message for a given balance proof."""
@@ -289,7 +289,7 @@ class MockRaidenNode:
         return monitor_request
 
     @assert_channel_existence
-    def update_transfer(self, partner_address: Address, balance_proof: BalanceProof):
+    def update_transfer(self, partner_address: Address, balance_proof: HashedBalanceProof):
         """Given a valid signed balance proof, this method calls `updateNonClosingBalanceProof`
         for an open channel
         """
