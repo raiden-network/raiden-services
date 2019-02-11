@@ -8,6 +8,7 @@ from monitoring_service.events import (
     Event,
     ReceiveChannelClosedEvent,
     ReceiveChannelOpenedEvent,
+    ReceiveChannelSettledEvent,
     ReceiveMonitoringNewBalanceProofEvent,
     ReceiveNonClosingBalanceProofUpdatedEvent,
 )
@@ -258,6 +259,38 @@ def test_channel_closed_event_handler_trigger_action_monitor_event_without_monit
 
     channel_closed_event_handler(event, context)
     assert len(context.scheduled_events) == 1
+
+
+def test_channel_settled_event_handler_settles_existing_channel(
+    context: Context,
+):
+    context = setup_state_with_closed_channel(context)
+
+    event = ReceiveChannelSettledEvent(
+        token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
+        channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
+        block_number=52,
+    )
+    channel_settled_event_handler(event, context)
+
+    assert context.db.channel_count() == 1
+    assert_channel_state(context, ChannelState.SETTLED)
+
+
+def test_channel_settled_event_handler_leaves_existing_channel(
+    context: Context,
+):
+    context = setup_state_with_closed_channel(context)
+
+    event = ReceiveChannelSettledEvent(
+        token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
+        channel_identifier=4,
+        block_number=52,
+    )
+    channel_settled_event_handler(event, context)
+
+    assert context.db.channel_count() == 1
+    assert_channel_state(context, ChannelState.CLOSED)
 
 
 def test_channel_bp_updated_event_handler_sets_update_status_if_not_set(
