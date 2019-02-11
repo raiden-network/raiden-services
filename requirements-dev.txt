@@ -22,7 +22,7 @@ ipython
 pdbpp
 psutil
 
-eth-tester[py-evm]==0.1.0b33
+eth-tester[py-evm]==0.1.0b32
 attrs==18.2.0  # needed for travis
 
 # Release
