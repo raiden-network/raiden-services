@@ -95,7 +95,7 @@ def test_e2e(
     # need to wait here till the MS has some time to react
     gevent.sleep()
 
-    assert monitoring_service.ms_state.blockchain_state.token_network_addresses
+    assert monitoring_service.context.ms_state.blockchain_state.token_network_addresses
 
     # c1 asks MS to monitor the channel
     reward_amount = 1
