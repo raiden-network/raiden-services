@@ -71,9 +71,9 @@ def test_close_settle(generate_raiden_clients, wait_for_blocks, custom_token):
     wait_for_blocks(40)
     c1.settle_channel(
         c2.address,
-        (balance_proof_c2.transferred_amount, balance_proof.transferred_amount),
-        (balance_proof_c2.locked_amount, balance_proof.locked_amount),
-        (balance_proof_c2.locksroot, balance_proof.locksroot),
+        (transfer_c2, transfer_c1),
+        (0, 0),  # locked_amount
+        ('0x%064x' % 0, '0x%064x' % 0),  # locksroot
     )
 
     final_balance_c1 = custom_token.functions.balanceOf(c1.address).call()
@@ -108,9 +108,9 @@ def test_client_one_side_settle(generate_raiden_clients, wait_for_blocks, custom
     wait_for_blocks(40)
     c1.settle_channel(
         c2.address,
-        (0, balance_proof.transferred_amount),
-        (0, balance_proof.locked_amount),
-        ('0x%064x' % 0, balance_proof.locksroot),
+        (0, transfer_c1),
+        (0, 0),
+        ('0x%064x' % 0, '0x%064x' % 0),
     )
 
     final_balance_c1 = custom_token.functions.balanceOf(c1.address).call()
