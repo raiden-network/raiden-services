@@ -250,7 +250,7 @@ class MockRaidenNode:
             **kwargs - arguments to HashedBalanceProof constructor
         """
         channel_id = self.partner_to_channel_id[partner_address]
-        bp = HashedBalanceProof(
+        bp = HashedBalanceProof(  # type: ignore  # workaround: mypy complains about priv_key
             channel_identifier=channel_id,
             token_network_address=self.contract.address,
             chain_id=self.chain_id,
