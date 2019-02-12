@@ -70,9 +70,9 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'pathfinding_service=pathfinding_service.cli:main',
-            'monitoring_service=monitoring_service.cli:main',
-            'request_collector=request_collector.cli:main',
+            'pathfinding-service=pathfinding_service.cli:main',
+            'monitoring-service=monitoring_service.cli:main',
+            'request-collector=request_collector.cli:main',
         ],
     },
 )
