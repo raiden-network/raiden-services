@@ -92,9 +92,20 @@ class MonitoringService:
                 to_block=last_block,
             )
 
-            if self.context.ms_state.blockchain_state != new_chain_state:
-                self.context.ms_state.blockchain_state = new_chain_state
+            # If a new token network was found we need to write it to the DB, otherwise
+            # the constraints for new channels will not be constrained. But only update
+            # the network addresses here, all else is done later.
+            token_networks_changed = (
+                self.context.ms_state.blockchain_state.token_network_addresses !=
+                new_chain_state.token_network_addresses
+            )
+            if token_networks_changed:
+                self.context.ms_state.blockchain_state.token_network_addresses = \
+                    new_chain_state.token_network_addresses
                 self.context.db.update_state(self.context.ms_state)
+
+            # Now set the updated chain state to the context, will be stored later
+            self.context.ms_state.blockchain_state = new_chain_state
 
             for event in events:
                 handle_event(event, self.context)
