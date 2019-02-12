@@ -1,18 +1,19 @@
+import json
 import sys
 import traceback
-from binascii import Error as DecodeError
 from typing import Iterable, List, Tuple
 
 import gevent
 import structlog
 from eth_utils import decode_hex, to_checksum_address
+from matrix_client.errors import MatrixRequestError
 from request_collector.store_monitor_request import StoreMonitorRequest
 
 from monitoring_service.database import SharedDatabase
 from monitoring_service.states import MonitorRequest
 from raiden.constants import MONITORING_BROADCASTING_ROOM, Environment
-from raiden.exceptions import InvalidProtocolMessage
-from raiden.messages import RequestMonitoring, SignedMessage, decode as message_from_bytes
+from raiden.exceptions import InvalidProtocolMessage, TransportError
+from raiden.messages import RequestMonitoring, SignedMessage, from_dict as message_from_dict
 from raiden.network.transport.matrix.client import GMatrixClient, Room
 from raiden.network.transport.matrix.utils import (
     join_global_room,
@@ -61,14 +62,25 @@ def setup_matrix(private_key: str, chain_id: int) -> Tuple[GMatrixClient, Room]:
         http_retry_timeout=40,
         http_retry_delay=_http_retry_delay,
     )
-    login_or_register(client, signer=LocalSigner(private_key=decode_hex(private_key)))
 
-    room_name = '_'.join(['raiden', str(chain_id), MONITORING_BROADCASTING_ROOM])
-    monitoring_room = join_global_room(
-        client=client,
-        name=room_name,
-        servers=available_servers,
-    )
+    try:
+        login_or_register(client, signer=LocalSigner(private_key=decode_hex(private_key)))
+    except MatrixRequestError:
+        raise ConnectionError('Could not login/register to matrix.')
+    except ValueError:
+        raise ConnectionError('Could not login/register to matrix.')
+
+    try:
+        room_name = '_'.join(['raiden', str(chain_id), MONITORING_BROADCASTING_ROOM])
+        monitoring_room = join_global_room(
+            client=client,
+            name=room_name,
+            servers=available_servers,
+        )
+    except MatrixRequestError:
+        raise ConnectionError('Could not join monitoring broadcasting room.')
+    except TransportError:
+        raise ConnectionError('Could not join monitoring broadcasting room.')
 
     return client, monitoring_room
 
@@ -88,11 +100,18 @@ class RequestCollector(gevent.Greenlet):
         self.task_list: List[gevent.Greenlet] = []
 
         state = self.state_db.load_state(0)
-        self.client, self.monitoring_room = setup_matrix(
-            private_key=self.private_key,
-            chain_id=state.blockchain_state.chain_id,
-        )
-        self.monitoring_room.add_listener(self._handle_message, 'm.room.message')
+        try:
+            self.client, self.monitoring_room = setup_matrix(
+                private_key=self.private_key,
+                chain_id=state.blockchain_state.chain_id,
+            )
+            self.monitoring_room.add_listener(self._handle_message, 'm.room.message')
+        except ConnectionError as e:
+            log.critical(
+                'Could not connect to broadcasting system.',
+                exc=e,
+            )
+            sys.exit(1)
 
     def _run(self):
         register_error_handler(error_handler)
@@ -144,34 +163,44 @@ class RequestCollector(gevent.Greenlet):
 
         messages: List[SignedMessage] = list()
 
-        if data.startswith('0x'):
+        for line in data.splitlines():
+            line = line.strip()
+            if not line:
+                continue
             try:
-                message = message_from_bytes(decode_hex(data))
-                if not message:
-                    raise InvalidProtocolMessage
-            except (DecodeError, AssertionError) as ex:
+                message_dict = json.loads(line)
+                message = message_from_dict(message_dict)
+            except (UnicodeDecodeError, json.JSONDecodeError) as ex:
                 log.warning(
-                    "Can't parse message binary data",
-                    message_data=data,
+                    "Can't parse message data JSON",
+                    message_data=line,
                     peer_address=to_checksum_address(peer_address),
                     _exc=ex,
                 )
-                return False
+                continue
             except InvalidProtocolMessage as ex:
                 log.warning(
-                    "Received message binary data is not a valid message",
-                    message_data=data,
+                    "Message data JSON are not a valid message",
+                    message_data=line,
                     peer_address=to_checksum_address(peer_address),
                     _exc=ex,
                 )
-                return False
-            else:
-                messages.append(message)
-        else:
-            log.warning(
-                'Received unexpected data',
-                data=data,
-            )
+                continue
+            if not isinstance(message, SignedMessage):
+                log.warning(
+                    'Received invalid message',
+                    message=message,
+                )
+                continue
+            elif message.sender != peer_address:
+                log.warning(
+                    'Message not signed by sender!',
+                    message=message,
+                    signer=message.sender,
+                    peer_address=peer_address,
+                )
+                continue
+            messages.append(message)
 
         if not messages:
             return False
