@@ -19,6 +19,7 @@ from raiden.network.transport.matrix.utils import (
     join_global_room,
     login_or_register,
     make_client,
+    make_room_alias,
     validate_userid_signature,
 )
 from raiden.network.transport.udp import udp_utils
@@ -71,7 +72,7 @@ def setup_matrix(private_key: str, chain_id: int) -> Tuple[GMatrixClient, Room]:
         raise ConnectionError('Could not login/register to matrix.')
 
     try:
-        room_name = '_'.join(['raiden', str(chain_id), MONITORING_BROADCASTING_ROOM])
+        room_name = make_room_alias(chain_id, MONITORING_BROADCASTING_ROOM)
         monitoring_room = join_global_room(
             client=client,
             name=room_name,
