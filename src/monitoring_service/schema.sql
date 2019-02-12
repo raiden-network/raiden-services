@@ -3,15 +3,10 @@ CREATE TABLE blockchain (
     receiver                        CHAR(42),
     token_network_registry_address  CHAR(42),
     monitor_contract_address        CHAR(42),
-    latest_known_block              INT
+    latest_known_block              INT NOT NULL DEFAULT -1
 );
-INSERT INTO blockchain VALUES (
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL
-);
+INSERT INTO blockchain DEFAULT VALUES;
+
 
 CREATE TABLE token_network (
     address                 CHAR(42) PRIMARY KEY
