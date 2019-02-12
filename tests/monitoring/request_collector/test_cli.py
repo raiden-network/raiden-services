@@ -5,8 +5,7 @@ from click.testing import CliRunner
 from request_collector.cli import main
 
 DEFAULT_ARGS = [
-    '--matrix-username', 'TEST',
-    '--matrix-password', 'TEST',
+    '--private-key', '0x' + '1' * 40,
     '--state-db', ':memory:',
 ]
 
