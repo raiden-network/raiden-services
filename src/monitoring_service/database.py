@@ -1,7 +1,7 @@
 import json
 import os
 import sqlite3
-from typing import List, Optional
+from typing import Optional
 
 import dataclasses
 import structlog
@@ -144,15 +144,10 @@ class SharedDatabase:
         is ignored.
         """
         blockchain = self.conn.execute("SELECT * FROM blockchain").fetchone()
-        if blockchain['latest_known_block'] is None:
-            # state has never been saved, initialize a new state
-            token_network_addresses: List[str] = []
-            latest_known_block = sync_start_block - 1
-        else:
-            token_network_addresses = [
-                row[0] for row in self.conn.execute("SELECT address FROM token_network")
-            ]
-            latest_known_block = blockchain['latest_known_block']
+        token_network_addresses = [
+            row[0] for row in self.conn.execute("SELECT address FROM token_network")
+        ]
+        latest_known_block = blockchain['latest_known_block']
 
         chain_state = BlockchainState(
             chain_id=blockchain['chain_id'],

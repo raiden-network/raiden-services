@@ -100,7 +100,6 @@ def test_e2e(
     # c1 asks MS to monitor the channel
     reward_amount = 1
     monitor_request = c1.get_monitor_request(
-        c2.address,
         balance_proof_c2,
         reward_amount,
     )

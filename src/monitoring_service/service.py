@@ -84,50 +84,52 @@ class MonitoringService:
     def start(self, wait_function: Callable = time.sleep) -> None:
         while True:
             last_block = self.web3.eth.blockNumber - self.required_confirmations
-            self.context.last_known_block = last_block
-
-            # BCL return a new state and events related to channel lifecycle
-            new_chain_state, events = self.bcl.get_events(
-                chain_state=self.context.ms_state.blockchain_state,
-                to_block=last_block,
-            )
-
-            # If a new token network was found we need to write it to the DB, otherwise
-            # the constraints for new channels will not be constrained. But only update
-            # the network addresses here, all else is done later.
-            token_networks_changed = (
-                self.context.ms_state.blockchain_state.token_network_addresses !=
-                new_chain_state.token_network_addresses
-            )
-            if token_networks_changed:
-                self.context.ms_state.blockchain_state.token_network_addresses = \
-                    new_chain_state.token_network_addresses
-                self.context.db.update_state(self.context.ms_state)
-
-            # Now set the updated chain state to the context, will be stored later
-            self.context.ms_state.blockchain_state = new_chain_state
-
-            for event in events:
-                handle_event(event, self.context)
-
-            # check triggered events
-            # TODO: create a priority queue for this
-            to_remove = []
-            for scheduled_event in self.context.scheduled_events:
-                event = scheduled_event.event
-
-                if last_block >= scheduled_event.trigger_block_number:
-                    to_remove.append(scheduled_event)
-                    handle_event(event, self.context)
-
-            for d in to_remove:
-                self.context.scheduled_events.remove(d)
-
-            if self.context.scheduled_events:
-                log.info('Scheduled_events', events=self.context.scheduled_events)
+            self._process_new_blocks(last_block)
 
             try:
                 wait_function(self.poll_interval)
             except KeyboardInterrupt:
                 log.info('Shutting down.')
                 sys.exit(0)
+
+    def _process_new_blocks(self, last_block: int) -> None:
+        self.context.last_known_block = last_block
+
+        # BCL return a new state and events related to channel lifecycle
+        new_chain_state, events = self.bcl.get_events(
+            chain_state=self.context.ms_state.blockchain_state,
+            to_block=last_block,
+        )
+
+        # If a new token network was found we need to write it to the DB, otherwise
+        # the constraints for new channels will not be constrained. But only update
+        # the network addresses here, all else is done later.
+        token_networks_changed = (
+            self.context.ms_state.blockchain_state.token_network_addresses !=
+            new_chain_state.token_network_addresses
+        )
+        if token_networks_changed:
+            self.context.ms_state.blockchain_state.token_network_addresses = \
+                new_chain_state.token_network_addresses
+            self.context.db.update_state(self.context.ms_state)
+
+        # Now set the updated chain state to the context, will be stored later
+        self.context.ms_state.blockchain_state = new_chain_state
+        for event in events:
+            handle_event(event, self.context)
+
+        # check triggered events
+        # TODO: create a priority queue for this
+        to_remove = []
+        for scheduled_event in self.context.scheduled_events:
+            event = scheduled_event.event
+
+            if last_block >= scheduled_event.trigger_block_number:
+                to_remove.append(scheduled_event)
+                handle_event(event, self.context)
+
+        for d in to_remove:
+            self.context.scheduled_events.remove(d)
+
+        if self.context.scheduled_events:
+            log.info('Scheduled_events', events=self.context.scheduled_events)

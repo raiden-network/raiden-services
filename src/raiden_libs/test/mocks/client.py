@@ -242,14 +242,21 @@ class MockRaidenNode:
                 locksroot[1],
             ).transact({'from': self.address})
 
-    @assert_channel_existence
-    def get_balance_proof(self, partner_address: Address, **kwargs) -> HashedBalanceProof:
+    def get_balance_proof(
+        self,
+        partner_address: Address = None,
+        channel_id: int = None,
+        **kwargs,
+    ) -> HashedBalanceProof:
         """Get a signed balance proof for an open channel.
         Parameters:
             partner_address - address of a partner the node has channel open with
+            channel_id - used if `partner_address` is None
             **kwargs - arguments to HashedBalanceProof constructor
         """
-        channel_id = self.partner_to_channel_id[partner_address]
+        if partner_address is not None:
+            assert channel_id is None
+            channel_id = self.partner_to_channel_id[partner_address]
         bp = HashedBalanceProof(  # type: ignore  # workaround: mypy complains about priv_key
             channel_identifier=channel_id,
             token_network_address=self.contract.address,
@@ -259,10 +266,8 @@ class MockRaidenNode:
         )
         return bp
 
-    @assert_channel_existence
     def get_monitor_request(
         self,
-        partner_address: Address,
         balance_proof: HashedBalanceProof,
         reward_amount: int,
     ) -> MonitorRequest:
