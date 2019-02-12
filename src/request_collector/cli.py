@@ -1,5 +1,5 @@
-from gevent import monkey  # isort:skip # noqa
-monkey.patch_all()  # isort:skip # noqa
+# from gevent import monkey  # isort:skip # noqa
+# monkey.patch_all()  # isort:skip # noqa
 
 import json
 import logging
@@ -12,7 +12,6 @@ from eth_utils import is_checksum_address
 from request_collector.server import RequestCollector
 
 from monitoring_service.database import SharedDatabase
-from raiden_libs.transport import MatrixTransport
 
 log = logging.getLogger(__name__)
 
@@ -43,26 +42,9 @@ def setup_logging(log_level: str, log_config: TextIO):
 
 @click.command()
 @click.option(
-    '--monitoring-channel',
-    default='#monitor_test:transport01.raiden.network',
-    help='Location of the monitoring channel to connect to',
-)
-@click.option(
-    '--matrix-homeserver',
-    default='https://transport01.raiden.network',
-    help='Matrix username',
-)
-@click.option(
-    '--matrix-username',
-    default=None,
+    '--private-key',
     required=True,
-    help='Matrix username',
-)
-@click.option(
-    '--matrix-password',
-    default=None,
-    required=True,
-    help='Matrix password',
+    help='Private key to use (the address should have enough ETH balance to send transactions)',
 )
 @click.option(
     '--state-db',
@@ -82,10 +64,7 @@ def setup_logging(log_level: str, log_config: TextIO):
     help='Use the given JSON file for logging configuration',
 )
 def main(
-    monitoring_channel: str,
-    matrix_homeserver: str,
-    matrix_username: str,
-    matrix_password: str,
+    private_key: str,
     state_db: str,
     log_level: str,
     log_config: TextIO,
@@ -102,20 +81,13 @@ def main(
 
     log.info("Starting Raiden Monitoring Request Collector")
 
-    transport = MatrixTransport(
-        matrix_homeserver,
-        matrix_username,
-        matrix_password,
-        monitoring_channel,
-    )
-
     database = SharedDatabase(state_db)
 
     service = None
     try:
         service = RequestCollector(
+            private_key=private_key,
             state_db=database,
-            transport=transport,
         )
 
         service.run()

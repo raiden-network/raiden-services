@@ -1,20 +1,39 @@
-import logging
 import sys
 import traceback
-from typing import List
+from binascii import Error as DecodeError
+from typing import Iterable, List, Tuple
 
 import gevent
+import structlog
+from eth_utils import decode_hex, to_checksum_address
 from request_collector.store_monitor_request import StoreMonitorRequest
 
 from monitoring_service.database import SharedDatabase
 from monitoring_service.states import MonitorRequest
+from raiden.constants import MONITORING_BROADCASTING_ROOM, Environment
+from raiden.exceptions import InvalidProtocolMessage
+from raiden.messages import RequestMonitoring, SignedMessage, decode as message_from_bytes
+from raiden.network.transport.matrix.client import GMatrixClient, Room
+from raiden.network.transport.matrix.utils import (
+    join_global_room,
+    login_or_register,
+    make_client,
+    validate_userid_signature,
+)
+from raiden.network.transport.udp import udp_utils
+from raiden.settings import (
+    DEFAULT_MATRIX_KNOWN_SERVERS,
+    DEFAULT_TRANSPORT_MATRIX_RETRY_INTERVAL,
+    DEFAULT_TRANSPORT_RETRIES_BEFORE_BACKOFF,
+)
+from raiden.utils.cli import get_matrix_servers
+from raiden.utils.signer import LocalSigner
 from raiden_libs.gevent_error_handler import register_error_handler
-from raiden_libs.transport import Transport
 
-log = logging.getLogger(__name__)
+log = structlog.get_logger(__name__)
 
 
-def error_handler(context, exc_info):
+def error_handler(_context, exc_info):
     log.critical("Unhandled exception terminating the program")
     traceback.print_exception(
         etype=exc_info[0],
@@ -24,26 +43,54 @@ def error_handler(context, exc_info):
     sys.exit()
 
 
+def setup_matrix(private_key: str) -> Tuple[GMatrixClient, Room]:
+    available_servers_url = DEFAULT_MATRIX_KNOWN_SERVERS[Environment.DEVELOPMENT]
+    available_servers = get_matrix_servers(available_servers_url)
+
+    def _http_retry_delay() -> Iterable[float]:
+        # below constants are defined in raiden.app.App.DEFAULT_CONFIG
+        return udp_utils.timeout_exponential_backoff(
+            DEFAULT_TRANSPORT_RETRIES_BEFORE_BACKOFF,
+            DEFAULT_TRANSPORT_MATRIX_RETRY_INTERVAL / 5,
+            DEFAULT_TRANSPORT_MATRIX_RETRY_INTERVAL,
+        )
+
+    client = make_client(
+        servers=available_servers,
+        http_pool_maxsize=4,
+        http_retry_timeout=40,
+        http_retry_delay=_http_retry_delay,
+    )
+    login_or_register(client, signer=LocalSigner(private_key=decode_hex(private_key)))
+
+    monitoring_room = join_global_room(
+        client=client,
+        name=MONITORING_BROADCASTING_ROOM,
+        servers=available_servers,
+    )
+
+    return client, monitoring_room
+
+
 class RequestCollector(gevent.Greenlet):
     def __init__(
         self,
+        private_key: str,
         state_db: SharedDatabase,
-        transport: Transport,
     ):
         super().__init__()
 
-        assert isinstance(transport, Transport)
-
+        self.private_key = private_key
         self.state_db = state_db
-        self.transport = transport
+
         self.stop_event = gevent.event.Event()
-        self.transport.add_message_callback(lambda message: self.on_message_event(message))
 
         self.task_list: List[gevent.Greenlet] = []
+        self.client, self.monitoring_room = setup_matrix(self.private_key)
+        self.monitoring_room.add_listener(self._handle_message, 'm.room.message')
 
     def _run(self):
         register_error_handler(error_handler)
-        self.transport.start()
 
         # this loop will wait until spawned greenlets complete
         while self.stop_event.is_set() is False:
@@ -56,25 +103,112 @@ class RequestCollector(gevent.Greenlet):
             self.task_list.remove(task)
 
     def stop(self):
-        self.transport.stop()
         self.stop_event.set()
 
-    def on_message_event(self, message):
-        """This handles messages received over the Transport"""
-        log.debug(message)
-        if isinstance(message, MonitorRequest):
+    def _handle_message(self, room, event) -> bool:
+        """ Handle text messages sent to listening rooms """
+        if (
+                event['type'] != 'm.room.message' or
+                event['content']['msgtype'] != 'm.text' or
+                self.stop_event.ready()
+        ):
+            # Ignore non-messages and non-text messages
+            return False
+
+        sender_id = event['sender']
+
+        user = self.client.get_user(sender_id)
+        peer_address = validate_userid_signature(user)
+        if not peer_address:
+            log.debug(
+                'Message from invalid user displayName signature',
+                peer_user=user.user_id,
+                room=room,
+            )
+            return False
+
+        data = event['content']['body']
+        if not isinstance(data, str):
+            log.warning(
+                'Received message body not a string',
+                peer_user=user.user_id,
+                peer_address=to_checksum_address(peer_address),
+                room=room,
+            )
+            return False
+
+        messages: List[SignedMessage] = list()
+
+        if data.startswith('0x'):
+            try:
+                message = message_from_bytes(decode_hex(data))
+                if not message:
+                    raise InvalidProtocolMessage
+            except (DecodeError, AssertionError) as ex:
+                log.warning(
+                    "Can't parse message binary data",
+                    message_data=data,
+                    peer_address=to_checksum_address(peer_address),
+                    _exc=ex,
+                )
+                return False
+            except InvalidProtocolMessage as ex:
+                log.warning(
+                    "Received message binary data is not a valid message",
+                    message_data=data,
+                    peer_address=to_checksum_address(peer_address),
+                    _exc=ex,
+                )
+                return False
+            else:
+                messages.append(message)
+        else:
+            log.warning(
+                'Received unexpected data',
+                data=data,
+            )
+
+        if not messages:
+            return False
+
+        for message in messages:
+            self._receive_message(message)
+
+        return True
+
+    def _receive_message(self, message: SignedMessage):
+        log.debug(
+            'Message received',
+            message=message,
+            sender=to_checksum_address(message.sender),
+        )
+
+        if isinstance(message, RequestMonitoring):
             self.on_monitor_request(message)
         else:
-            log.warn('Ignoring unknown message type %s' % type(message))
+            log.info('Ignoring unknown message type')
 
     def on_monitor_request(
         self,
-        monitor_request: MonitorRequest,
+        request_monitoring: RequestMonitoring,
     ):
         """Called whenever a monitor proof message is received.
         This will spawn a greenlet and store its reference in an internal list.
         Return value of the greenlet is then checked in the main loop."""
-        assert isinstance(monitor_request, MonitorRequest)
+        assert isinstance(request_monitoring, RequestMonitoring)
+
+        monitor_request = MonitorRequest(
+            channel_identifier=request_monitoring.balance_proof.channel_identifier,
+            token_network_address=request_monitoring.balance_proof.token_network_address,
+            chain_id=request_monitoring.balance_proof.chain_id,
+            balance_hash=request_monitoring.balance_proof.balance_hash,
+            nonce=request_monitoring.balance_proof.nonce,
+            additional_hash=request_monitoring.balance_proof.additional_hash,
+            closing_signature=request_monitoring.balance_proof.signature,
+            non_closing_signature=request_monitoring.non_closing_signature,
+            reward_amount=request_monitoring.reward_amount,
+            reward_proof_signature=request_monitoring.signature,
+        )
         self.start_task(
             StoreMonitorRequest(self.state_db, monitor_request),
         )
@@ -82,10 +216,6 @@ class RequestCollector(gevent.Greenlet):
     def start_task(self, task: gevent.Greenlet):
         task.start()
         self.task_list.append(task)
-
-    @property
-    def monitor_requests(self):
-        return self.state_db.get_monitor_requests()
 
     def wait_tasks(self):
         """Wait until all internal tasks are finished"""

@@ -76,7 +76,6 @@ def monitoring_service(
 @pytest.fixture
 def request_collector(
     server_private_key,
-    dummy_transport,
     ms_database,
     web3,
     monitoring_service_contract,
@@ -85,8 +84,8 @@ def request_collector(
     contracts_manager: ContractManager,
 ):
     rc = RequestCollector(
+        private_key=server_private_key,
         state_db=ms_database,
-        transport=dummy_transport,
     )
     rc.start()
     yield rc
