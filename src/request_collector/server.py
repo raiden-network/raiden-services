@@ -43,7 +43,7 @@ def error_handler(_context, exc_info):
     sys.exit()
 
 
-def setup_matrix(private_key: str) -> Tuple[GMatrixClient, Room]:
+def setup_matrix(private_key: str, chain_id: int) -> Tuple[GMatrixClient, Room]:
     available_servers_url = DEFAULT_MATRIX_KNOWN_SERVERS[Environment.DEVELOPMENT]
     available_servers = get_matrix_servers(available_servers_url)
 
@@ -63,9 +63,10 @@ def setup_matrix(private_key: str) -> Tuple[GMatrixClient, Room]:
     )
     login_or_register(client, signer=LocalSigner(private_key=decode_hex(private_key)))
 
+    room_name = '_'.join(['raiden', str(chain_id), MONITORING_BROADCASTING_ROOM])
     monitoring_room = join_global_room(
         client=client,
-        name=MONITORING_BROADCASTING_ROOM,
+        name=room_name,
         servers=available_servers,
     )
 
@@ -84,9 +85,13 @@ class RequestCollector(gevent.Greenlet):
         self.state_db = state_db
 
         self.stop_event = gevent.event.Event()
-
         self.task_list: List[gevent.Greenlet] = []
-        self.client, self.monitoring_room = setup_matrix(self.private_key)
+
+        state = self.state_db.load_state(0)
+        self.client, self.monitoring_room = setup_matrix(
+            private_key=self.private_key,
+            chain_id=state.blockchain_state.chain_id,
+        )
         self.monitoring_room.add_listener(self._handle_message, 'm.room.message')
 
     def _run(self):

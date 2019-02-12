@@ -35,6 +35,7 @@ class Channel:
 
 @dataclass
 class BlockchainState:
+    chain_id: int
     token_network_registry_address: str
     monitor_contract_address: str
     latest_known_block: int

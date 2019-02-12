@@ -136,6 +136,37 @@ class SharedDatabase:
     def channel_count(self) -> int:
         return self.conn.execute("SELECT count(*) FROM channel").fetchone()[0]
 
+    def load_state(self, sync_start_block: int) -> MonitoringServiceState:
+        """ Load MS state from db or return a new empty state if not saved one is present
+
+        An empty state is initialized with `latest_known_block =
+        sync_start_block - 1`. If a saved state is present, `sync_start_block`
+        is ignored.
+        """
+        blockchain = self.conn.execute("SELECT * FROM blockchain").fetchone()
+        if blockchain['latest_known_block'] is None:
+            # state has never been saved, initialize a new state
+            token_network_addresses: List[str] = []
+            latest_known_block = sync_start_block - 1
+        else:
+            token_network_addresses = [
+                row[0] for row in self.conn.execute("SELECT address FROM token_network")
+            ]
+            latest_known_block = blockchain['latest_known_block']
+
+        chain_state = BlockchainState(
+            chain_id=blockchain['chain_id'],
+            token_network_registry_address=blockchain['token_network_registry_address'],
+            monitor_contract_address=blockchain['monitor_contract_address'],
+            latest_known_block=latest_known_block,
+            token_network_addresses=token_network_addresses,
+        )
+        ms_state = MonitoringServiceState(
+            blockchain_state=chain_state,
+            address=blockchain['receiver'],
+        )
+        return ms_state
+
 
 class Database(SharedDatabase):
     """ Holds all MS state which can't be quickly regenerated after a crash/shutdown """
@@ -203,33 +234,3 @@ class Database(SharedDatabase):
                 "INSERT OR REPLACE INTO token_network VALUES (?)",
                 [[address] for address in state.blockchain_state.token_network_addresses],
             )
-
-    def load_state(self, sync_start_block: int) -> MonitoringServiceState:
-        """ Load MS state from db or return a new empty state if not saved one is present
-
-        An empty state is initialized with `latest_known_block =
-        sync_start_block - 1`. If a saved state is present, `sync_start_block`
-        is ignored.
-        """
-        blockchain = self.conn.execute("SELECT * FROM blockchain").fetchone()
-        if blockchain['latest_known_block'] is None:
-            # state has never been saved, initialize a new state
-            token_network_addresses: List[str] = []
-            latest_known_block = sync_start_block - 1
-        else:
-            token_network_addresses = [
-                row[0] for row in self.conn.execute("SELECT address FROM token_network")
-            ]
-            latest_known_block = blockchain['latest_known_block']
-
-        chain_state = BlockchainState(
-            token_network_registry_address=blockchain['token_network_registry_address'],
-            monitor_contract_address=blockchain['monitor_contract_address'],
-            latest_known_block=latest_known_block,
-            token_network_addresses=token_network_addresses,
-        )
-        ms_state = MonitoringServiceState(
-            blockchain_state=chain_state,
-            address=blockchain['receiver'],
-        )
-        return ms_state
