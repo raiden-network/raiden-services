@@ -1,7 +1,7 @@
-git+https://github.com/raiden-network/raiden-contracts.git
-# raiden-contracts==0.8.0
+#git+https://github.com/raiden-network/raiden-contracts.git
+git+https://github.com/raiden-network/raiden.git
 
-git+https://github.com/palango/raiden.git@services-integration
+raiden-contracts==0.10.1
 
 structlog==18.2.0
 colorama==0.3.9
