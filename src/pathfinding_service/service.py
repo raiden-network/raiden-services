@@ -49,13 +49,13 @@ def error_handler(context, exc_info):
 
 class PathfindingService(gevent.Greenlet):
     def __init__(
-        self,
-        web3: Web3,
-        contract_manager: ContractManager,
-        registry_address: Address,
-        sync_start_block: int = 0,
-        required_confirmations: int = 8,
-        poll_interval: int = 10,
+            self,
+            web3: Web3,
+            contract_manager: ContractManager,
+            registry_address: Address,
+            sync_start_block: int = 0,
+            required_confirmations: int = 8,
+            poll_interval: int = 10,
     ):
         """ Creates a new pathfinding service
 

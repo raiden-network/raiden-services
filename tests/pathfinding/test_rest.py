@@ -1,9 +1,9 @@
-import socket
 from typing import List
 
 import pkg_resources
 import requests
 from eth_utils import to_normalized_address
+from pathfinding_service import PathfindingService
 
 from pathfinding_service.api.rest import DEFAULT_MAX_PATHS, ServiceApi
 from pathfinding_service.model import TokenNetwork
@@ -161,13 +161,18 @@ def test_get_paths(
 def test_get_info(
     api_sut: ServiceApi,
     api_url: str,
+    pathfinding_service_full_mock: PathfindingService,
 ):
     url = api_url + '/info'
 
     response = requests.get(url)
     assert response.status_code == 200
     assert response.json() == {
-        'ip': socket.gethostbyname(socket.gethostname()),
+        'price_info': 0,
+        'network_info': {
+            'chain_id': pathfinding_service_full_mock.chain_id,
+            'registry_address': pathfinding_service_full_mock.registry_address,
+        },
         'settings': 'PLACEHOLDER FOR PATHFINDER SETTINGS',
         'version': pkg_resources.require('raiden-services')[0].version,
         'operator': 'PLACEHOLDER FOR PATHFINDER OPERATOR',
