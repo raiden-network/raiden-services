@@ -57,9 +57,10 @@ def test_crash(
     events = [
         [
             ReceiveChannelOpenedEvent(
-                token_network.address,
-                channel_identifier,
-                c1.address, c2.address,
+                token_network_address=token_network.address,
+                channel_identifier=channel_identifier,
+                participant1=c1.address,
+                participant2=c2.address,
                 settle_timeout=20,
                 block_number=0),
         ],
@@ -68,8 +69,8 @@ def test_crash(
         ],
         [
             ActionMonitoringTriggeredEvent(
-                token_network.address,
-                channel_identifier,
+                token_network_address=token_network.address,
+                channel_identifier=channel_identifier,
                 non_closing_participant=c2.address,
             ),
         ],
