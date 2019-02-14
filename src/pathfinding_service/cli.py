@@ -65,6 +65,9 @@ def setup_logging(log_level: str, log_config: TextIO):
         datefmt='%m-%d %H:%M:%S',
     )
 
+    # don't show urllib3.connectionpoool errors
+    logging.getLogger('urllib3.connectionpool').setLevel('ERROR')
+
     if log_config:
         config = json.load(log_config)
         logging.config.dictConfig(config)
