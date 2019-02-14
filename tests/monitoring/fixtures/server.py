@@ -1,5 +1,6 @@
 import json
 import logging
+from typing import List
 
 import pytest
 from eth_account import Account
@@ -37,6 +38,15 @@ def keystore_file(tmp_path) -> str:
         json.dump(keystore_json, fp)
 
     return keystore_file
+
+
+@pytest.fixture
+def default_cli_args(keystore_file) -> List[str]:
+    return [
+        '--keystore-file', keystore_file,
+        '--password', KEYSTORE_PASSWORD,
+        '--state-db', ':memory:',
+    ]
 
 
 @pytest.fixture
