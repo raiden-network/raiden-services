@@ -98,7 +98,6 @@ class RequestCollector(gevent.Greenlet):
         self.state_db = state_db
 
         self.stop_event = gevent.event.Event()
-        self.task_list: List[gevent.Greenlet] = []
 
         state = self.state_db.load_state(0)
         try:
@@ -116,16 +115,6 @@ class RequestCollector(gevent.Greenlet):
 
     def _run(self):
         register_error_handler(error_handler)
-
-        # this loop will wait until spawned greenlets complete
-        while self.stop_event.is_set() is False:
-            tasks = gevent.wait(self.task_list, timeout=5, count=1)
-            if len(tasks) == 0:
-                gevent.sleep(1)
-                continue
-            task = tasks[0]
-            log.info('%s completed (%s)' % (task, task.value))
-            self.task_list.remove(task)
 
     def stop(self):
         self.stop_event.set()
@@ -248,14 +237,3 @@ class RequestCollector(gevent.Greenlet):
             self.state_db.upsert_monitor_request(monitor_request)
         except InvalidSignature:
             log.info('Ignore MR with invalid signature {}'.format(request_monitoring))
-
-    def start_task(self, task: gevent.Greenlet):
-        task.start()
-        self.task_list.append(task)
-
-    def wait_tasks(self):
-        """Wait until all internal tasks are finished"""
-        while True:
-            if len(self.task_list) == 0:
-                return
-            gevent.sleep(1)
