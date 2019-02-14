@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field  # isort:skip noqa differences between python 3.6 and 3.7
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterable, List, Optional
 
 import jsonschema
 from eth_utils import decode_hex, encode_hex, to_checksum_address
@@ -31,6 +31,10 @@ class Channel:
     claim_tx_hash: Optional[str] = None
 
     update_status: Optional[OnChainUpdateStatus] = None
+
+    @property
+    def participants(self) -> Iterable[str]:
+        return (self.participant1, self.participant2)
 
 
 @dataclass

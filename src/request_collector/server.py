@@ -7,7 +7,6 @@ import gevent
 import structlog
 from eth_utils import decode_hex, to_checksum_address
 from matrix_client.errors import MatrixRequestError
-from request_collector.store_monitor_request import StoreMonitorRequest
 
 from monitoring_service.database import SharedDatabase
 from monitoring_service.states import MonitorRequest
@@ -30,6 +29,7 @@ from raiden.settings import (
 )
 from raiden.utils.cli import get_matrix_servers
 from raiden.utils.signer import LocalSigner
+from raiden_libs.exceptions import InvalidSignature
 from raiden_libs.gevent_error_handler import register_error_handler
 
 log = structlog.get_logger(__name__)
@@ -232,21 +232,22 @@ class RequestCollector(gevent.Greenlet):
         Return value of the greenlet is then checked in the main loop."""
         assert isinstance(request_monitoring, RequestMonitoring)
 
-        monitor_request = MonitorRequest(
-            channel_identifier=request_monitoring.balance_proof.channel_identifier,
-            token_network_address=request_monitoring.balance_proof.token_network_address,
-            chain_id=request_monitoring.balance_proof.chain_id,
-            balance_hash=request_monitoring.balance_proof.balance_hash,
-            nonce=request_monitoring.balance_proof.nonce,
-            additional_hash=request_monitoring.balance_proof.additional_hash,
-            closing_signature=request_monitoring.balance_proof.signature,
-            non_closing_signature=request_monitoring.non_closing_signature,
-            reward_amount=request_monitoring.reward_amount,
-            reward_proof_signature=request_monitoring.signature,
-        )
-        self.start_task(
-            StoreMonitorRequest(self.state_db, monitor_request),
-        )
+        try:
+            monitor_request = MonitorRequest(
+                channel_identifier=request_monitoring.balance_proof.channel_identifier,
+                token_network_address=request_monitoring.balance_proof.token_network_address,
+                chain_id=request_monitoring.balance_proof.chain_id,
+                balance_hash=request_monitoring.balance_proof.balance_hash.hex(),
+                nonce=request_monitoring.balance_proof.nonce,
+                additional_hash=request_monitoring.balance_proof.additional_hash.hex(),
+                closing_signature=request_monitoring.balance_proof.signature.hex(),
+                non_closing_signature=request_monitoring.non_closing_signature.hex(),
+                reward_amount=request_monitoring.reward_amount,
+                reward_proof_signature=request_monitoring.signature.hex(),
+            )
+            self.state_db.upsert_monitor_request(monitor_request)
+        except InvalidSignature:
+            log.info('Ignore MR with invalid signature {}'.format(request_monitoring))
 
     def start_task(self, task: gevent.Greenlet):
         task.start()

@@ -79,7 +79,11 @@ def setup_state_with_closed_channel(context: Context) -> Context:
     return context
 
 
-def get_signed_monitor_request(nonce: int = 5) -> MonitorRequest:
+def get_signed_monitor_request(
+    nonce: int = 5,
+    closing_privkey: str = DEFAULT_PRIVATE_KEY1,
+    nonclosing_privkey: str = DEFAULT_PRIVATE_KEY2,
+) -> MonitorRequest:
     bp = HashedBalanceProof(  # type: ignore
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
@@ -87,12 +91,12 @@ def get_signed_monitor_request(nonce: int = 5) -> MonitorRequest:
         balance_hash='',
         nonce=nonce,
         additional_hash='',
-        priv_key=DEFAULT_PRIVATE_KEY1,
+        priv_key=closing_privkey,
     )
     monitor_request = UnsignedMonitorRequest.from_balance_proof(
         bp,
         reward_amount=0,
-    ).sign(DEFAULT_PRIVATE_KEY2)
+    ).sign(nonclosing_privkey)
     return monitor_request
 
 
@@ -490,3 +494,31 @@ def test_mr_available_before_channel_triggers_monitor_call(
 
     # check that the monitor call has been done
     assert context.monitoring_service_contract.functions.monitor.called is True
+
+
+def test_mr_with_unknown_signatures(
+    context: Context,
+    get_random_privkey,
+):
+    """ The signatures are valid but don't belong to the participants.
+    """
+    context = setup_state_with_closed_channel(context)
+
+    def assert_mr_is_ignored(mr):
+        context.db.upsert_monitor_request(mr)
+
+        event = ActionMonitoringTriggeredEvent(
+            token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
+            channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
+            non_closing_participant=DEFAULT_PARTICIPANT2,
+        )
+
+        action_monitoring_triggered_event_handler(event, context)
+        assert not context.monitoring_service_contract.functions.monitor.called
+
+    assert_mr_is_ignored(get_signed_monitor_request(
+        closing_privkey=get_random_privkey(),
+    ))
+    assert_mr_is_ignored(get_signed_monitor_request(
+        nonclosing_privkey=get_random_privkey(),
+    ))
