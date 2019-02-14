@@ -1,5 +1,4 @@
 import logging
-import socket
 from typing import Dict, List, Optional, Tuple
 
 import gevent
@@ -124,17 +123,19 @@ class PathsResource(PathfinderResource):
 
 class InfoResource(PathfinderResource):
     def get(self):
-        ip = socket.gethostbyname(socket.gethostname())
-        # this is the internal IP address, scoped out soon anyway
+        price = 0
         settings = 'PLACEHOLDER FOR PATHFINDER SETTINGS'
-        version = pkg_resources.require('raiden-services')[0].version
         operator = 'PLACEHOLDER FOR PATHFINDER OPERATOR'
         message = 'PLACEHOLDER FOR ADDITIONAL MESSAGE BY THE PFS'
 
         return {
-            'ip': ip,
+            'price_info': price,
+            'network_info': {
+                'chain_id': self.pathfinding_service.chain_id,
+                'registry_address': self.pathfinding_service.registry_address,
+            },
             'settings': settings,
-            'version': version,
+            'version': pkg_resources.require('raiden-services')[0].version,
             'operator': operator,
             'message': message,
         }, 200
