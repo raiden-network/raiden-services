@@ -1,7 +1,6 @@
 from unittest.mock import Mock
 
 import pytest
-from eth_utils import encode_hex
 
 from monitoring_service.events import (
     ActionMonitoringTriggeredEvent,
@@ -24,9 +23,9 @@ from monitoring_service.handlers import (
     monitor_reward_claim_event_handler,
     updated_head_block_event_handler,
 )
-from monitoring_service.states import MonitorRequest
+from monitoring_service.states import HashedBalanceProof, MonitorRequest, UnsignedMonitorRequest
 from raiden_contracts.constants import ChannelState
-from raiden_libs.utils import eth_sign, private_key_to_address
+from raiden_libs.utils import private_key_to_address
 
 DEFAULT_TOKEN_NETWORK_ADDRESS = '0x0000000000000000000000000000000000000000'
 DEFAULT_CHANNEL_IDENTIFIER = 3
@@ -81,27 +80,19 @@ def setup_state_with_closed_channel(context: Context) -> Context:
 
 
 def get_signed_monitor_request(nonce: int = 5) -> MonitorRequest:
-    monitor_request = MonitorRequest(
+    bp = HashedBalanceProof(  # type: ignore
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
         chain_id=1,
         balance_hash='',
         nonce=nonce,
         additional_hash='',
-        closing_signature='',
-        non_closing_signature='',
+        priv_key=DEFAULT_PRIVATE_KEY1,
+    )
+    monitor_request = UnsignedMonitorRequest.from_balance_proof(
+        bp,
         reward_amount=0,
-        reward_proof_signature='',
-    )
-    monitor_request.closing_signature = encode_hex(
-        eth_sign(DEFAULT_PRIVATE_KEY1, monitor_request.packed_balance_proof_data()),
-    )
-    monitor_request.non_closing_signature = encode_hex(
-        eth_sign(DEFAULT_PRIVATE_KEY2, monitor_request.packed_non_closing_data()),
-    )
-    monitor_request.reward_proof_signature = encode_hex(
-        eth_sign(DEFAULT_PRIVATE_KEY2, monitor_request.packed_reward_proof_data()),
-    )
+    ).sign(DEFAULT_PRIVATE_KEY2)
     return monitor_request
 
 

@@ -120,7 +120,7 @@ class MonitoringServiceState:
 
 
 @dataclass
-class MonitorRequest:
+class UnsignedMonitorRequest:
     # balance proof
     channel_identifier: int
     token_network_address: str
@@ -131,27 +131,52 @@ class MonitorRequest:
     additional_hash: str
     closing_signature: str
 
-    # reward infos
-    non_closing_signature: str
+    # reward info
     reward_amount: int
-    reward_proof_signature: str
+
+    # extracted from signature
+    signer: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        self.signer = to_checksum_address(eth_recover(
+            data=self.packed_balance_proof_data(),
+            signature=decode_hex(self.closing_signature),
+        ))
 
     @classmethod
-    def deserialize(cls, data: Dict[str, Any]) -> 'MonitorRequest':
-        jsonschema.validate(data, MONITOR_REQUEST_SCHEMA)
-        result = cls(
-            data['balance_proof']['channel_identifier'],
-            data['balance_proof']['token_network_address'],
-            data['balance_proof']['chain_id'],
-            data['balance_proof']['balance_hash'],
-            data['balance_proof']['nonce'],
-            data['balance_proof']['additional_hash'],
-            data['balance_proof']['closing_signature'],
-            data['non_closing_signature'],
-            data['reward_proof_signature'],
-            data['reward_amount'],
+    def from_balance_proof(
+        cls,
+        balance_proof: HashedBalanceProof,
+        reward_amount: int,
+    ) -> 'UnsignedMonitorRequest':
+        return cls(
+            channel_identifier=balance_proof.channel_identifier,
+            token_network_address=balance_proof.token_network_address,
+            chain_id=balance_proof.chain_id,
+            balance_hash=balance_proof.balance_hash,
+            nonce=balance_proof.nonce,
+            additional_hash=balance_proof.additional_hash,
+            closing_signature=balance_proof.signature,
+            reward_amount=reward_amount,
         )
-        return result
+
+    def sign(self, priv_key: str) -> 'MonitorRequest':
+        return MonitorRequest(
+            channel_identifier=self.channel_identifier,
+            token_network_address=self.token_network_address,
+            chain_id=self.chain_id,
+            balance_hash=self.balance_hash,
+            nonce=self.nonce,
+            additional_hash=self.additional_hash,
+            closing_signature=self.closing_signature,
+            reward_amount=self.reward_amount,
+            reward_proof_signature=encode_hex(
+                eth_sign(priv_key, self.packed_reward_proof_data()),
+            ),
+            non_closing_signature=encode_hex(
+                eth_sign(priv_key, self.packed_non_closing_data()),
+            ),
+        )
 
     def packed_balance_proof_data(
         self,
@@ -197,26 +222,42 @@ class MonitorRequest:
         )
         return balance_proof + decode_hex(self.closing_signature)
 
-    @property
-    def signer(self) -> str:
-        signer = eth_recover(
-            data=self.packed_balance_proof_data(),
-            signature=decode_hex(self.closing_signature),
-        )
-        return to_checksum_address(signer)
 
-    @property
-    def non_closing_signer(self) -> str:
-        signer = eth_recover(
+@dataclass
+class MonitorRequest(UnsignedMonitorRequest):
+
+    # signatures added by non_closing_signer
+    non_closing_signature: str
+    reward_proof_signature: str
+
+    # extracted from signatures
+    non_closing_signer: str = field(init=False)
+    reward_proof_signer: str = field(init=False)
+
+    def __post_init__(self) -> None:
+        super(MonitorRequest, self).__post_init__()
+        self.non_closing_signer = to_checksum_address(eth_recover(
             data=self.packed_non_closing_data(),
             signature=decode_hex(self.non_closing_signature),
-        )
-        return to_checksum_address(signer)
-
-    @property
-    def reward_proof_signer(self) -> str:
-        signer = eth_recover(
+        ))
+        self.reward_proof_signer = to_checksum_address(eth_recover(
             data=self.packed_reward_proof_data(),
             signature=decode_hex(self.reward_proof_signature),
+        ))
+
+    @classmethod
+    def deserialize(cls, data: Dict[str, Any]) -> 'MonitorRequest':
+        jsonschema.validate(data, MONITOR_REQUEST_SCHEMA)
+        result = cls(
+            data['balance_proof']['channel_identifier'],
+            data['balance_proof']['token_network_address'],
+            data['balance_proof']['chain_id'],
+            data['balance_proof']['balance_hash'],
+            data['balance_proof']['nonce'],
+            data['balance_proof']['additional_hash'],
+            data['balance_proof']['closing_signature'],
+            data['non_closing_signature'],
+            data['reward_proof_signature'],
+            data['reward_amount'],
         )
-        return to_checksum_address(signer)
+        return result
