@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import sys
@@ -5,6 +6,7 @@ from typing import Any, Optional
 
 import click
 import structlog
+from eth_account import Account
 from eth_utils import is_checksum_address
 from web3 import HTTPProvider, Web3
 
@@ -55,15 +57,20 @@ def setup_logging(log_level: str) -> None:
 
 @click.command()
 @click.option(
-    '--private-key',
+    '--keystore-file',
     required=True,
-    help='Private key to use (the address should have enough ETH balance to send transactions)',
+    type=click.Path(exists=True, dir_okay=False),
+    help='Path to a keystore file.',
+)
+@click.password_option(
+    '--password',
+    help='Password to unlock the keystore file.',
 )
 @click.option(
     '--eth-rpc',
     default='http://parity.ropsten.ethnodes.brainbot.com:8545',
     type=str,
-    help='Ethereum node RPC URI',
+    help='Ethereum node RPC URI.',
 )
 @click.option(
     '--registry-address',
@@ -104,7 +111,8 @@ def setup_logging(log_level: str) -> None:
     help='path to SQLite3 db which stores the application state',
 )
 def main(
-    private_key: str,
+    keystore_file: str,
+    password: str,
     eth_rpc: str,
     registry_address: Address,
     monitor_contract_address: Address,
@@ -114,6 +122,19 @@ def main(
     state_db: str,
 ) -> None:
     setup_logging(log_level)
+
+    with open(keystore_file, 'r') as keystore:
+        try:
+            private_key = Account.decrypt(
+                keyfile_json=json.load(keystore),
+                password=password,
+            )
+        except ValueError as error:
+            log.critical(
+                'Could not decode keyfile with given password. Please try again.',
+                reason=str(error),
+            )
+            sys.exit(1)
 
     provider = HTTPProvider(eth_rpc)
     web3 = Web3(provider)
