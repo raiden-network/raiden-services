@@ -1,7 +1,9 @@
 import gevent
+import pytest
 from request_collector.store_monitor_request import StoreMonitorRequest
 
 
+@pytest.mark.skip(reason="checking will change soon (will be done in #12)")
 def test_request_validation(
         web3,
         get_monitor_request_for_same_channel,

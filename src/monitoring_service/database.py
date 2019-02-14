@@ -89,7 +89,7 @@ class SharedDatabase:
 
         kwargs = {
             key: val for key, val in zip(row.keys(), row)
-            if key in [f.name for f in dataclasses.fields(MonitorRequest)]
+            if key != 'non_closing_signer'
         }
         mr = MonitorRequest(chain_id=1, **kwargs)
         return mr
