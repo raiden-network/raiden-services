@@ -168,7 +168,8 @@ class BlockchainListener:
         # increment by one, as latest_known_block has been queried last time already
         from_block = chain_state.latest_known_block + 1
 
-        if to_block <= from_block:
+        # Check if the current block was already processed
+        if from_block > to_block:
             return chain_state, []
 
         new_chain_state = deepcopy(chain_state)

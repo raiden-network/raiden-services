@@ -93,3 +93,15 @@ def test_limit_inclusivity_in_query_blockchain_events(
         to_block=current_block_number,
     )
     assert len(events) == 1
+
+    # test that querying just one block works
+    events = query_blockchain_events(
+        web3=web3,
+        contract_manager=contracts_manager,
+        contract_address=token_network_registry_contract.address,
+        contract_name=CONTRACT_TOKEN_NETWORK_REGISTRY,
+        topics=[],
+        from_block=registry_event_block,
+        to_block=registry_event_block,
+    )
+    assert len(events) == 1
