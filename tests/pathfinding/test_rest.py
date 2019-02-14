@@ -3,8 +3,8 @@ from typing import List
 import pkg_resources
 import requests
 from eth_utils import to_normalized_address
-from pathfinding_service import PathfindingService
 
+from pathfinding_service import PathfindingService
 from pathfinding_service.api.rest import DEFAULT_MAX_PATHS, ServiceApi
 from pathfinding_service.model import TokenNetwork
 from raiden_libs.types import Address

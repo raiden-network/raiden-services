@@ -5,9 +5,11 @@ import json
 import logging
 import logging.config
 import os
+import sys
 from typing import TextIO
 
 import click
+from eth_account import Account
 from eth_utils import is_checksum_address
 from request_collector.server import RequestCollector
 
@@ -42,29 +44,35 @@ def setup_logging(log_level: str, log_config: TextIO):
 
 @click.command()
 @click.option(
-    '--private-key',
+    '--keystore-file',
     required=True,
-    help='Private key to use (the address should have enough ETH balance to send transactions)',
+    type=click.Path(exists=True, dir_okay=False),
+    help='Path to a keystore file.',
+)
+@click.password_option(
+    '--password',
+    help='Password to unlock the keystore file.',
 )
 @click.option(
     '--state-db',
     default=os.path.join(click.get_app_dir('raiden-monitoring-service'), 'state.db'),
     type=str,
-    help='state DB to save received balance proofs to',
+    help='State DB to save received balance proofs to.',
 )
 @click.option(
     '--log-level',
     default='INFO',
     type=click.Choice(['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG']),
-    help='Print log messages of this level and more important ones',
+    help='Print log messages of this level and more important ones.',
 )
 @click.option(
     '--log-config',
     type=click.File('r'),
-    help='Use the given JSON file for logging configuration',
+    help='Use the given JSON file for logging configuration.',
 )
 def main(
-    private_key: str,
+    keystore_file: str,
+    password: str,
     state_db: str,
     log_level: str,
     log_config: TextIO,
@@ -78,6 +86,19 @@ def main(
     """
     assert log_config is None
     setup_logging(log_level, log_config)
+
+    with open(keystore_file, 'r') as keystore:
+        try:
+            private_key = Account.decrypt(
+                keyfile_json=json.load(keystore),
+                password=password,
+            )
+        except ValueError as error:
+            log.critical(
+                'Could not decode keyfile with given password. Please try again.',
+                reason=str(error),
+            )
+            sys.exit(1)
 
     log.info("Starting Raiden Monitoring Request Collector")
 
