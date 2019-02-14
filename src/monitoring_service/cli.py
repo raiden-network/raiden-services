@@ -59,7 +59,7 @@ def setup_logging(log_level: str) -> None:
 @click.option(
     '--keystore-file',
     required=True,
-    type=click.Path(exists=True, dir_okay=False),
+    type=click.Path(exists=True, dir_okay=False, readable=True),
     help='Path to a keystore file.',
 )
 @click.password_option(

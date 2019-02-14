@@ -46,7 +46,7 @@ def setup_logging(log_level: str, log_config: TextIO):
 @click.option(
     '--keystore-file',
     required=True,
-    type=click.Path(exists=True, dir_okay=False),
+    type=click.Path(exists=True, dir_okay=False, readable=True),
     help='Path to a keystore file.',
 )
 @click.password_option(
@@ -93,11 +93,8 @@ def main(
                 keyfile_json=json.load(keystore),
                 password=password,
             )
-        except ValueError as error:
-            log.critical(
-                'Could not decode keyfile with given password. Please try again.',
-                reason=str(error),
-            )
+        except ValueError:
+            log.critical('Could not decode keyfile with given password. Please try again.')
             sys.exit(1)
 
     log.info("Starting Raiden Monitoring Request Collector")
