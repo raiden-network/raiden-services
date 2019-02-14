@@ -21,7 +21,12 @@ from monitoring_service.events import (
     ScheduledEvent,
     UpdatedHeadBlockEvent,
 )
-from monitoring_service.states import Channel, MonitoringServiceState, OnChainUpdateStatus
+from monitoring_service.states import (
+    Channel,
+    MonitoringServiceState,
+    MonitorRequest,
+    OnChainUpdateStatus,
+)
 from raiden_contracts.constants import ChannelState
 from raiden_contracts.contract_manager import ContractManager
 
@@ -305,6 +310,21 @@ def updated_head_block_event_handler(event: Event, context: Context) -> None:
     context.db.update_state(context.ms_state)
 
 
+def _is_mr_valid(monitor_request: MonitorRequest, channel: Channel) -> bool:
+    if (
+        monitor_request.signer not in channel.participants or
+        monitor_request.non_closing_signer not in channel.participants
+    ):
+        log.info('MR signed by unknown party')
+        return False
+
+    if monitor_request.signer == monitor_request.non_closing_signer:
+        log.info('MR signed by closing party')
+        return False
+
+    return True
+
+
 def action_monitoring_triggered_event_handler(event: Event, context: Context) -> None:
     assert isinstance(event, ActionMonitoringTriggeredEvent)
     log.info('Triggering channel monitoring')
@@ -322,6 +342,9 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
         channel_id=monitor_request.channel_identifier,
     )
     if channel is None:
+        return
+
+    if not _is_mr_valid(monitor_request, channel):
         return
 
     last_onchain_nonce = 0
