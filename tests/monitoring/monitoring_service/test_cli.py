@@ -20,7 +20,7 @@ DEFAULT_ARGS: List[str] = [
 
 
 def test_success(keystore_file):
-    """ Calling the request_collector with default args should succeed after heavy mocking """
+    """ Calling the monitoring_service with default args should succeed after heavy mocking """
     runner = CliRunner()
     with patch.multiple(**patch_args):
         result = runner.invoke(
@@ -29,6 +29,18 @@ def test_success(keystore_file):
             catch_exceptions=False,
         )
     assert result.exit_code == 0
+
+
+def test_wrong_password(keystore_file):
+    """ Calling the monitoring_service with default args should succeed after heavy mocking """
+    runner = CliRunner()
+    with patch.multiple(**patch_args):
+        result = runner.invoke(
+            main,
+            ['--keystore-file', keystore_file, '--password', 'wrong'],
+            catch_exceptions=False,
+        )
+    assert result.exit_code == 1
 
 
 def test_shutdown(keystore_file):
