@@ -28,6 +28,18 @@ def test_success(keystore_file):
     assert result.exit_code == 0
 
 
+def test_wrong_password(keystore_file):
+    """ Calling the request_collector with default args should succeed after heavy mocking """
+    runner = CliRunner()
+    with patch.multiple(**patch_args):
+        result = runner.invoke(
+            main,
+            ['--keystore-file', keystore_file, '--password', 'wrong'],
+            catch_exceptions=False,
+        )
+    assert result.exit_code == 1
+
+
 def test_shutdown(keystore_file):
     """ Clean shutdown after KeyboardInterrupt """
     runner = CliRunner()
