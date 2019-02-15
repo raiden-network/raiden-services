@@ -1,9 +1,7 @@
-import json
 import os
 import sqlite3
 from typing import Optional
 
-import dataclasses
 import structlog
 from eth_utils import is_checksum_address
 
@@ -27,14 +25,6 @@ def convert_hex(raw: bytes) -> int:
 
 
 sqlite3.register_converter('HEX_INT', convert_hex)
-sqlite3.register_converter('JSON', json.loads)
-
-
-def adapt_tuple(t: tuple) -> str:
-    return json.dumps(t)
-
-
-sqlite3.register_adapter(tuple, adapt_tuple)
 
 
 class SharedDatabase:
@@ -109,8 +99,14 @@ class SharedDatabase:
             channel.closing_participant,
             channel.closing_tx_hash,
             channel.claim_tx_hash,
-            dataclasses.astuple(channel.update_status) if channel.update_status else None,
         ]
+        if channel.update_status:
+            values += [
+                channel.update_status.update_sender_address,
+                hex(channel.update_status.nonce),
+            ]
+        else:
+            values += [None, None]
         with self.conn:
             upsert_sql = "INSERT OR REPLACE INTO channel VALUES ({})".format(
                 ', '.join('?' * len(values)),
@@ -128,10 +124,17 @@ class SharedDatabase:
 
         if row is None:
             return None
-        row = list(row)
-        if row[-1] is not None:
-            row[-1] = OnChainUpdateStatus(*row[-1])
-        return Channel(*row)
+        kwargs = {
+            key: val for key, val in zip(row.keys(), row)
+            if not key.startswith('update_status')
+        }
+        return Channel(
+            update_status=OnChainUpdateStatus(
+                update_sender_address=row['update_status_sender'],
+                nonce=row['update_status_nonce'],
+            ) if row['update_status_nonce'] is not None else None,
+            **kwargs,
+        )
 
     def channel_count(self) -> int:
         return self.conn.execute("SELECT count(*) FROM channel").fetchone()[0]

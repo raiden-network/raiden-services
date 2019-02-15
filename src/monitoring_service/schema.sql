@@ -25,10 +25,13 @@ CREATE TABLE channel (
     closing_participant     CHAR(42),
     closing_tx_hash         CHAR(66),
     claim_tx_hash           CHAR(66),
-    update_status           JSON,
+    update_status_sender    CHAR(42),
+    update_status_nonce     HEX_INT,
     PRIMARY KEY (identifier, token_network_address),
     FOREIGN KEY (token_network_address)
-        REFERENCES token_network(address)
+        REFERENCES token_network(address),
+    -- make sure that all update_status fields are NULL at the same time
+    CHECK ((update_status_sender IS NULL) = (update_status_nonce IS NULL))
 );
 
 CREATE TABLE monitor_request (
