@@ -231,6 +231,7 @@ class RequestCollector(gevent.Greenlet):
                 reward_amount=request_monitoring.reward_amount,
                 reward_proof_signature=request_monitoring.signature.hex(),
             )
-            self.state_db.upsert_monitor_request(monitor_request)
+            with self.state_db.conn:
+                self.state_db.upsert_monitor_request(monitor_request)
         except InvalidSignature:
             log.info('Ignore MR with invalid signature {}'.format(request_monitoring))
