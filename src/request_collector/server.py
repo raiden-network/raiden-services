@@ -97,8 +97,6 @@ class RequestCollector(gevent.Greenlet):
         self.private_key = private_key
         self.state_db = state_db
 
-        self.stop_event = gevent.event.Event()
-
         state = self.state_db.load_state(0)
         try:
             self.client, self.monitoring_room = setup_matrix(
@@ -116,15 +114,17 @@ class RequestCollector(gevent.Greenlet):
     def _run(self):
         register_error_handler(error_handler)
 
+        self.client.start_listener_thread()
+        self.client.sync_thread.get().wait()
+
     def stop(self):
-        self.stop_event.set()
+        self.client.stop_listener_thread()
 
     def _handle_message(self, room, event) -> bool:
         """ Handle text messages sent to listening rooms """
         if (
                 event['type'] != 'm.room.message' or
-                event['content']['msgtype'] != 'm.text' or
-                self.stop_event.ready()
+                event['content']['msgtype'] != 'm.text'
         ):
             # Ignore non-messages and non-text messages
             return False
@@ -233,6 +233,13 @@ class RequestCollector(gevent.Greenlet):
                 non_closing_signature=encode_hex(request_monitoring.non_closing_signature),
                 reward_amount=request_monitoring.reward_amount,
                 reward_proof_signature=encode_hex(request_monitoring.signature),
+            )
+            with self.state_db.conn:
+                self.state_db.upsert_monitor_request(monitor_request)
+
+            log.debug(
+                'Stored new monitor request in database',
+                request=monitor_request,
             )
         except InvalidSignature:
             log.info('Ignore MR with invalid signature {}'.format(request_monitoring))
