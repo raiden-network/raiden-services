@@ -52,11 +52,13 @@ def test_shutdown(keystore_file, default_cli_args):
 def test_log_level(keystore_file, default_cli_args):
     """ Setting of log level via command line switch """
     runner = CliRunner()
-    with patch('request_collector.cli.logging.basicConfig') as basicConfig:
+    with patch.multiple(**patch_args), \
+            patch('request_collector.cli.logging.basicConfig') as basicConfig:
         for log_level in ('CRITICAL', 'WARNING'):
             runner.invoke(
                 main,
                 default_cli_args + ['--log-level', log_level],
+                catch_exceptions=False,
             )
             # pytest already initializes logging, so basicConfig does not have
             # an effect. Use mocking to check that it's called properly.
