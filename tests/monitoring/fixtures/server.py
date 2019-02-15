@@ -50,6 +50,14 @@ def default_cli_args(keystore_file) -> List[str]:
 
 
 @pytest.fixture
+def default_cli_args_ms(default_cli_args) -> List[str]:
+    return default_cli_args + [
+        '--registry-address', '0x' + '1' * 40,
+        '--monitor-contract-address', '0x' + '2' * 40,
+    ]
+
+
+@pytest.fixture
 def ms_database():
     return Database(
         filename=':memory:',
