@@ -5,6 +5,7 @@ import jsonschema
 from eth_utils import decode_hex, encode_hex, to_checksum_address
 from web3 import Web3
 
+from raiden.utils.typing import Address, ChannelID, TokenNetworkAddress
 from raiden_contracts.constants import ChannelState, MessageTypeId
 from raiden_libs.messages.json_schema import MONITOR_REQUEST_SCHEMA
 from raiden_libs.utils import eth_recover, eth_sign, pack_data
@@ -12,20 +13,20 @@ from raiden_libs.utils import eth_recover, eth_sign, pack_data
 
 @dataclass
 class OnChainUpdateStatus:
-    update_sender_address: str
+    update_sender_address: Address
     nonce: int
 
 
 @dataclass
 class Channel:
-    token_network_address: str
-    identifier: int
-    participant1: str
-    participant2: str
+    token_network_address: TokenNetworkAddress
+    identifier: ChannelID
+    participant1: Address
+    participant2: Address
     settle_timeout: int
     state: ChannelState = ChannelState.OPENED
     closing_block: Optional[int] = None
-    closing_participant: Optional[str] = None
+    closing_participant: Optional[Address] = None
 
     closing_tx_hash: Optional[str] = None
     claim_tx_hash: Optional[str] = None
@@ -33,24 +34,24 @@ class Channel:
     update_status: Optional[OnChainUpdateStatus] = None
 
     @property
-    def participants(self) -> Iterable[str]:
+    def participants(self) -> Iterable[Address]:
         return (self.participant1, self.participant2)
 
 
 @dataclass
 class BlockchainState:
     chain_id: int
-    token_network_registry_address: str
-    monitor_contract_address: str
+    token_network_registry_address: Address
+    monitor_contract_address: Address
     latest_known_block: int
-    token_network_addresses: List[str] = field(default_factory=list)
+    token_network_addresses: List[TokenNetworkAddress] = field(default_factory=list)
 
 
 @dataclass
 class HashedBalanceProof:
     """ A hashed balance proof with signature """
-    channel_identifier: int
-    token_network_address: str
+    channel_identifier: ChannelID
+    token_network_address: TokenNetworkAddress
     chain_id: int
 
     balance_hash: str
@@ -60,8 +61,8 @@ class HashedBalanceProof:
 
     def __init__(
         self,
-        channel_identifier: int,
-        token_network_address: str,
+        channel_identifier: ChannelID,
+        token_network_address: TokenNetworkAddress,
         chain_id: int,
         nonce: int,
         additional_hash: str,
@@ -120,14 +121,14 @@ class HashedBalanceProof:
 @dataclass
 class MonitoringServiceState:
     blockchain_state: BlockchainState
-    address: str
+    address: Address
 
 
 @dataclass
 class UnsignedMonitorRequest:
     # balance proof
-    channel_identifier: int
-    token_network_address: str
+    channel_identifier: ChannelID
+    token_network_address: TokenNetworkAddress
     chain_id: int
 
     balance_hash: str
@@ -139,7 +140,7 @@ class UnsignedMonitorRequest:
     reward_amount: int
 
     # extracted from signature
-    signer: str = field(init=False)
+    signer: Address = field(init=False)
 
     def __post_init__(self) -> None:
         self.signer = to_checksum_address(eth_recover(
@@ -235,8 +236,8 @@ class MonitorRequest(UnsignedMonitorRequest):
     reward_proof_signature: str
 
     # extracted from signatures
-    non_closing_signer: str = field(init=False)
-    reward_proof_signer: str = field(init=False)
+    non_closing_signer: Address = field(init=False)
+    reward_proof_signer: Address = field(init=False)
 
     def __post_init__(self) -> None:
         super(MonitorRequest, self).__post_init__()
