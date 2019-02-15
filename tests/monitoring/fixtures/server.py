@@ -112,3 +112,4 @@ def request_collector(
     rc.start()
     yield rc
     rc.stop()
+    rc.join()

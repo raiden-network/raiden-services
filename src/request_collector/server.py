@@ -216,9 +216,6 @@ class RequestCollector(gevent.Greenlet):
         self,
         request_monitoring: RequestMonitoring,
     ):
-        """Called whenever a monitor proof message is received.
-        This will spawn a greenlet and store its reference in an internal list.
-        Return value of the greenlet is then checked in the main loop."""
         assert isinstance(request_monitoring, RequestMonitoring)
 
         try:
