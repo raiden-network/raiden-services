@@ -12,44 +12,44 @@ patch_args = dict(
 )
 
 
-def test_success(keystore_file, default_cli_args):
+def test_success(keystore_file, default_cli_args_ms):
     """ Calling the monitoring_service with default args should succeed after heavy mocking """
     runner = CliRunner()
     with patch.multiple(**patch_args):
         result = runner.invoke(
             main,
-            default_cli_args,
+            default_cli_args_ms,
             catch_exceptions=False,
         )
     assert result.exit_code == 0
 
 
-def test_wrong_password(keystore_file, default_cli_args):
+def test_wrong_password(keystore_file, default_cli_args_ms):
     """ Calling the monitoring_service with default args should succeed after heavy mocking """
     runner = CliRunner()
     with patch.multiple(**patch_args):
         result = runner.invoke(
             main,
-            default_cli_args + ['--password', 'wrong'],
+            default_cli_args_ms + ['--password', 'wrong'],
             catch_exceptions=False,
         )
     assert result.exit_code == 1
 
 
-def test_shutdown(keystore_file, default_cli_args):
+def test_shutdown(keystore_file, default_cli_args_ms):
     """ Clean shutdown after KeyboardInterrupt """
     runner = CliRunner()
     with patch.multiple(**patch_args) as mocks:
         mocks['MonitoringService'].return_value.run.side_effect = KeyboardInterrupt
         result = runner.invoke(
             main,
-            default_cli_args,
+            default_cli_args_ms,
             catch_exceptions=False,
         )
         assert result.exit_code == 0
 
 
-def test_log_level(keystore_file, default_cli_args):
+def test_log_level(keystore_file, default_cli_args_ms):
     """ Setting of log level via command line switch """
     runner = CliRunner()
     with patch.multiple(**patch_args), \
@@ -57,7 +57,7 @@ def test_log_level(keystore_file, default_cli_args):
         for log_level in ('CRITICAL', 'WARNING'):
             runner.invoke(
                 main,
-                default_cli_args + ['--log-level', log_level],
+                default_cli_args_ms + ['--log-level', log_level],
                 catch_exceptions=False,
             )
             # pytest already initializes logging, so basicConfig does not have

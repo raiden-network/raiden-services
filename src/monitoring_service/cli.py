@@ -75,15 +75,15 @@ def setup_logging(log_level: str) -> None:
 @click.option(
     '--registry-address',
     type=str,
+    required=True,
     help='Address of the token network registry',
-    default='0x40a5D15fD98b9a351855D64daa9bc621F400cbc5',
     callback=validate_address,
 )
 @click.option(
     '--monitor-contract-address',
     type=str,
+    required=True,
     help='Address of the token monitor contract',
-    default='0x1111111111111111111111111111111111111111',
     callback=validate_address,
 )
 @click.option(
