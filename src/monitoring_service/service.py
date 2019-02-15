@@ -11,7 +11,7 @@ from monitoring_service.constants import DEFAULT_REQUIRED_CONFIRMATIONS
 from monitoring_service.database import Database
 from monitoring_service.events import Event, ScheduledEvent
 from monitoring_service.handlers import HANDLERS, Context
-from raiden.utils.typing import Address
+from raiden.utils.typing import Address, BlockNumber
 from raiden_contracts.constants import CONTRACT_MONITORING_SERVICE
 from raiden_contracts.contract_manager import ContractManager
 from raiden_libs.utils import private_key_to_address
@@ -34,7 +34,7 @@ class MonitoringService:
         registry_address: Address,
         monitor_contract_address: Address,
         db_filename: str,
-        sync_start_block: int = 0,
+        sync_start_block: BlockNumber = 0,
         required_confirmations: int = DEFAULT_REQUIRED_CONFIRMATIONS,
         poll_interval: int = 5,
     ):
@@ -93,7 +93,7 @@ class MonitoringService:
                 log.info('Shutting down.')
                 sys.exit(0)
 
-    def _process_new_blocks(self, last_block: int) -> None:
+    def _process_new_blocks(self, last_block: BlockNumber) -> None:
         self.context.last_known_block = last_block
 
         # BCL return a new state and events related to channel lifecycle

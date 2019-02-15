@@ -5,7 +5,13 @@ import jsonschema
 from eth_utils import decode_hex, encode_hex, to_checksum_address
 from web3 import Web3
 
-from raiden.utils.typing import Address, ChannelID, TokenNetworkAddress
+from raiden.utils.typing import (
+    Address,
+    BlockNumber,
+    ChannelID,
+    TokenNetworkAddress,
+    TransactionHash,
+)
 from raiden_contracts.constants import ChannelState, MessageTypeId
 from raiden_libs.messages.json_schema import MONITOR_REQUEST_SCHEMA
 from raiden_libs.utils import eth_recover, eth_sign, pack_data
@@ -25,11 +31,11 @@ class Channel:
     participant2: Address
     settle_timeout: int
     state: ChannelState = ChannelState.OPENED
-    closing_block: Optional[int] = None
+    closing_block: Optional[BlockNumber] = None
     closing_participant: Optional[Address] = None
 
-    closing_tx_hash: Optional[str] = None
-    claim_tx_hash: Optional[str] = None
+    closing_tx_hash: Optional[TransactionHash] = None
+    claim_tx_hash: Optional[TransactionHash] = None
 
     update_status: Optional[OnChainUpdateStatus] = None
 
@@ -43,7 +49,7 @@ class BlockchainState:
     chain_id: int
     token_network_registry_address: Address
     monitor_contract_address: Address
-    latest_known_block: int
+    latest_known_block: BlockNumber
     token_network_addresses: List[TokenNetworkAddress] = field(default_factory=list)
 
 

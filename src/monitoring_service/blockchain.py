@@ -19,6 +19,7 @@ from monitoring_service.events import (
     UpdatedHeadBlockEvent,
 )
 from monitoring_service.states import BlockchainState
+from raiden.utils.typing import ABI, Address, BlockNumber
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
     CONTRACT_TOKEN_NETWORK,
@@ -40,7 +41,7 @@ def create_registry_event_topics(contract_manager: ContractManager) -> List:
     return [encode_hex(event_abi_to_log_topic(new_network_abi))]
 
 
-def decode_event(abi: Dict, log_: Dict) -> Dict:
+def decode_event(abi: ABI, log_: Dict) -> Dict:
     """ Helper function to unpack event data using a provided ABI
 
     Args:
@@ -67,11 +68,11 @@ def decode_event(abi: Dict, log_: Dict) -> Dict:
 def query_blockchain_events(
     web3: Web3,
     contract_manager: ContractManager,
-    contract_address: str,
+    contract_address: Address,
     contract_name: str,
     topics: List,
-    from_block: int,
-    to_block: int,
+    from_block: BlockNumber,
+    to_block: BlockNumber,
 ) -> List[Dict]:
     """Returns events emmitted by a contract for a given event name, within a certain range.
 
@@ -114,9 +115,9 @@ class BlockchainListener:
 
     def _get_token_network_registry_events(
             self,
-            registry_address: str,
-            from_block: int,
-            to_block: int,
+            registry_address: Address,
+            from_block: BlockNumber,
+            to_block: BlockNumber,
     ) -> List[Dict]:
         return query_blockchain_events(
             web3=self.w3,
@@ -130,9 +131,9 @@ class BlockchainListener:
 
     def _get_token_networks_events(
             self,
-            network_address: str,
-            from_block: int,
-            to_block: int,
+            network_address: Address,
+            from_block: BlockNumber,
+            to_block: BlockNumber,
     ) -> List[Dict]:
         return query_blockchain_events(
             web3=self.w3,
@@ -146,9 +147,9 @@ class BlockchainListener:
 
     def _get_monitoring_service_events(
             self,
-            monitoring_service_address: str,
-            from_block: int,
-            to_block: int,
+            monitoring_service_address: Address,
+            from_block: BlockNumber,
+            to_block: BlockNumber,
     ) -> List[Dict]:
         return query_blockchain_events(
             web3=self.w3,
@@ -163,7 +164,7 @@ class BlockchainListener:
     def get_events(
         self,
         chain_state: BlockchainState,
-        to_block: int,
+        to_block: BlockNumber,
     ) -> Tuple[BlockchainState, List[Event]]:
         # increment by one, as latest_known_block has been queried last time already
         from_block = chain_state.latest_known_block + 1
