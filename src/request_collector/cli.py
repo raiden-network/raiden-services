@@ -10,7 +10,7 @@ from typing import TextIO
 
 import click
 from eth_account import Account
-from eth_utils import is_checksum_address
+from eth_utils import encode_hex, is_checksum_address
 from request_collector.server import RequestCollector
 
 from monitoring_service.database import SharedDatabase
@@ -104,7 +104,7 @@ def main(
     service = None
     try:
         service = RequestCollector(
-            private_key=private_key,
+            private_key=encode_hex(private_key),
             state_db=database,
         )
 
