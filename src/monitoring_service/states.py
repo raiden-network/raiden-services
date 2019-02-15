@@ -6,9 +6,15 @@ from eth_utils import decode_hex, encode_hex, to_checksum_address
 from web3 import Web3
 
 from raiden.utils.typing import (
+    AdditionalHash,
     Address,
+    BalanceHash,
     BlockNumber,
+    ChainID,
     ChannelID,
+    Nonce,
+    Signature,
+    TokenAmount,
     TokenNetworkAddress,
     TransactionHash,
 )
@@ -46,7 +52,7 @@ class Channel:
 
 @dataclass
 class BlockchainState:
-    chain_id: int
+    chain_id: ChainID
     token_network_registry_address: Address
     monitor_contract_address: Address
     latest_known_block: BlockNumber
@@ -58,22 +64,22 @@ class HashedBalanceProof:
     """ A hashed balance proof with signature """
     channel_identifier: ChannelID
     token_network_address: TokenNetworkAddress
-    chain_id: int
+    chain_id: ChainID
 
-    balance_hash: str
-    nonce: int
-    additional_hash: str
-    signature: str
+    balance_hash: BalanceHash
+    nonce: Nonce
+    additional_hash: AdditionalHash
+    signature: Signature
 
     def __init__(
         self,
         channel_identifier: ChannelID,
         token_network_address: TokenNetworkAddress,
-        chain_id: int,
-        nonce: int,
-        additional_hash: str,
-        balance_hash: str = None,
-        signature: str = None,
+        chain_id: ChainID,
+        nonce: Nonce,
+        additional_hash: AdditionalHash,
+        balance_hash: BalanceHash = None,
+        signature: Signature = None,
         # these three parameters can be passed instead of `balance_hash`
         transferred_amount: int = None,
         locked_amount: int = None,
@@ -135,15 +141,15 @@ class UnsignedMonitorRequest:
     # balance proof
     channel_identifier: ChannelID
     token_network_address: TokenNetworkAddress
-    chain_id: int
+    chain_id: ChainID
 
-    balance_hash: str
-    nonce: int
-    additional_hash: str
-    closing_signature: str
+    balance_hash: BalanceHash
+    nonce: Nonce
+    additional_hash: AdditionalHash
+    closing_signature: Signature
 
     # reward info
-    reward_amount: int
+    reward_amount: TokenAmount
 
     # extracted from signature
     signer: Address = field(init=False)
@@ -158,7 +164,7 @@ class UnsignedMonitorRequest:
     def from_balance_proof(
         cls,
         balance_proof: HashedBalanceProof,
-        reward_amount: int,
+        reward_amount: TokenAmount,
     ) -> 'UnsignedMonitorRequest':
         return cls(
             channel_identifier=balance_proof.channel_identifier,
@@ -238,8 +244,8 @@ class UnsignedMonitorRequest:
 class MonitorRequest(UnsignedMonitorRequest):
 
     # signatures added by non_closing_signer
-    non_closing_signature: str
-    reward_proof_signature: str
+    non_closing_signature: Signature
+    reward_proof_signature: Signature
 
     # extracted from signatures
     non_closing_signer: Address = field(init=False)
