@@ -315,11 +315,11 @@ def _is_mr_valid(monitor_request: MonitorRequest, channel: Channel) -> bool:
         monitor_request.signer not in channel.participants or
         monitor_request.non_closing_signer not in channel.participants
     ):
-        log.info('MR signed by unknown party')
+        log.info('MR signed by unknown party', channel=channel)
         return False
 
     if monitor_request.signer == monitor_request.non_closing_signer:
-        log.info('MR signed by closing party')
+        log.info('MR signed by closing party', channel=channel)
         return False
 
     return True
