@@ -65,6 +65,8 @@ class SharedDatabase:
             channel_id: int,
             non_closing_signer: str,
     ) -> Optional[MonitorRequest]:
+        assert is_checksum_address(token_network_address)
+        assert is_checksum_address(non_closing_signer)
         row = self.conn.execute(
             """
                 SELECT * FROM monitor_request

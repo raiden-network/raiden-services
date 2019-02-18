@@ -253,6 +253,7 @@ class MonitorRequest(UnsignedMonitorRequest):
 
     def __post_init__(self) -> None:
         super(MonitorRequest, self).__post_init__()
+        self.token_network_address = to_checksum_address(self.token_network_address)
         self.non_closing_signer = to_checksum_address(eth_recover(
             data=self.packed_non_closing_data(),
             signature=decode_hex(self.non_closing_signature),
