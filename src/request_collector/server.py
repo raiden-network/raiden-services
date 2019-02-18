@@ -5,7 +5,7 @@ from typing import Iterable, List, Tuple
 
 import gevent
 import structlog
-from eth_utils import decode_hex, to_checksum_address
+from eth_utils import decode_hex, encode_hex, to_checksum_address
 from matrix_client.errors import MatrixRequestError
 
 from monitoring_service.database import SharedDatabase
@@ -218,20 +218,35 @@ class RequestCollector(gevent.Greenlet):
     ):
         assert isinstance(request_monitoring, RequestMonitoring)
 
+        # Convert Raiden's RequestMonitoring object to a MonitorRequest
         try:
             monitor_request = MonitorRequest(
                 channel_identifier=request_monitoring.balance_proof.channel_identifier,
-                token_network_address=request_monitoring.balance_proof.token_network_address,
+                token_network_address=to_checksum_address(
+                    request_monitoring.balance_proof.token_network_address,
+                ),
                 chain_id=request_monitoring.balance_proof.chain_id,
-                balance_hash=request_monitoring.balance_proof.balance_hash.hex(),
+                balance_hash=encode_hex(request_monitoring.balance_proof.balance_hash),
                 nonce=request_monitoring.balance_proof.nonce,
-                additional_hash=request_monitoring.balance_proof.additional_hash.hex(),
-                closing_signature=request_monitoring.balance_proof.signature.hex(),
-                non_closing_signature=request_monitoring.non_closing_signature.hex(),
+                additional_hash=encode_hex(request_monitoring.balance_proof.additional_hash),
+                closing_signature=encode_hex(request_monitoring.balance_proof.signature),
+                non_closing_signature=encode_hex(request_monitoring.non_closing_signature),
                 reward_amount=request_monitoring.reward_amount,
-                reward_proof_signature=request_monitoring.signature.hex(),
+                reward_proof_signature=encode_hex(request_monitoring.signature),
             )
-            with self.state_db.conn:
-                self.state_db.upsert_monitor_request(monitor_request)
         except InvalidSignature:
             log.info('Ignore MR with invalid signature {}'.format(request_monitoring))
+            return
+
+        # Check that received MR is newer by comparing nonces
+        old_mr = self.state_db.get_monitor_request(
+            token_network_address=monitor_request.token_network_address,
+            channel_id=monitor_request.channel_identifier,
+            non_closing_signer=monitor_request.non_closing_signer,
+        )
+        if old_mr and old_mr.nonce >= monitor_request.nonce:
+            log.debug('New MR does not have a newer nonce.')
+            return
+
+        with self.state_db.conn:
+            self.state_db.upsert_monitor_request(monitor_request)

@@ -1,27 +1,37 @@
-from eth_utils import decode_hex
+import pytest
+from eth_utils import decode_hex, to_checksum_address
 
 from raiden.messages import RequestMonitoring, SignedBlindedBalanceProof
 from raiden.tests.utils.messages import make_balance_proof
 from raiden.utils.signer import LocalSigner
 
 
-def test_request_validation(
-        ms_database,
-        get_random_privkey,
-        request_collector,
-):
-    # build a valid RequestMonitoring instance
+@pytest.fixture
+def build_request_monitoring(get_random_privkey):
     signer = LocalSigner(decode_hex(get_random_privkey()))
-    partner_signer = LocalSigner(decode_hex(get_random_privkey()))
-    balance_proof = make_balance_proof(signer=partner_signer, amount=1)
-    partner_signed_balance_proof = SignedBlindedBalanceProof.from_balance_proof_signed_state(
-        balance_proof,
-    )
-    request_monitoring = RequestMonitoring(
-        onchain_balance_proof=partner_signed_balance_proof,
-        reward_amount=55,
-    )
-    request_monitoring.sign(signer)
+    non_closing_signer = LocalSigner(decode_hex(get_random_privkey()))
+
+    def f(amount=1, nonce=1):
+        balance_proof = make_balance_proof(signer=signer, amount=amount, nonce=nonce)
+        partner_signed_balance_proof = SignedBlindedBalanceProof.from_balance_proof_signed_state(
+            balance_proof,
+        )
+        request_monitoring = RequestMonitoring(
+            onchain_balance_proof=partner_signed_balance_proof,
+            reward_amount=55,
+        )
+        request_monitoring.sign(non_closing_signer)
+        request_monitoring.non_closing_signer = to_checksum_address(non_closing_signer.address)
+        return request_monitoring
+    return f
+
+
+def test_invalid_request_signatures(
+    ms_database,
+    build_request_monitoring,
+    request_collector,
+):
+    request_monitoring = build_request_monitoring()
 
     def store_successful(**kwargs):
         rm_dict = request_monitoring.to_dict()
@@ -40,3 +50,31 @@ def test_request_validation(
 
     # success
     assert store_successful()
+
+
+def test_ignore_old_nonce(
+    ms_database,
+    build_request_monitoring,
+    request_collector,
+):
+    def stored_mr_after_proccessing(amount, nonce):
+        request_monitoring = build_request_monitoring(amount=amount, nonce=nonce)
+        request_collector.on_monitor_request(request_monitoring)
+        return ms_database.get_monitor_request(
+            token_network_address=to_checksum_address(
+                request_monitoring.balance_proof.token_network_address,
+            ),
+            channel_id=request_monitoring.balance_proof.channel_identifier,
+            non_closing_signer=request_monitoring.non_closing_signer,
+        )
+
+    # first_write
+    mr = stored_mr_after_proccessing(amount=1, nonce=1)
+    assert mr
+    initial_hash = mr.balance_hash
+
+    # update without increasing nonce must fail
+    assert stored_mr_after_proccessing(amount=2, nonce=1).balance_hash == initial_hash
+
+    # update without higher nonce must succeed
+    assert stored_mr_after_proccessing(amount=2, nonce=2).balance_hash != initial_hash
