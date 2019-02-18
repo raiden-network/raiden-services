@@ -1,6 +1,7 @@
 import json
 import logging
 from typing import List
+from unittest.mock import patch
 
 import pytest
 from eth_account import Account
@@ -113,11 +114,12 @@ def request_collector(
     send_funds,
     contracts_manager: ContractManager,
 ):
-    rc = RequestCollector(
-        private_key=server_private_key,
-        state_db=ms_database,
-    )
-    rc.start()
-    yield rc
-    rc.stop()
-    rc.join()
+    with patch('request_collector.server.MatrixListener'):
+        rc = RequestCollector(
+            private_key=server_private_key,
+            state_db=ms_database,
+        )
+        rc.start()
+        yield rc
+        rc.stop()
+        rc.join()
