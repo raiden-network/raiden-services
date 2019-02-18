@@ -95,6 +95,7 @@ def test_blockchain_listener_nonexistant_contract(
     blockchain_listener.stop()
 
 
+@pytest.mark.skip(reason='Test is flaky for unknown reasons')
 def test_reorg(
     web3: Web3,
     wait_for_blocks,
