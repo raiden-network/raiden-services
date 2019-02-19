@@ -2,7 +2,7 @@ from dataclasses import dataclass, field  # isort:skip noqa differences between 
 from typing import Any, Dict, Iterable, List, Optional
 
 import jsonschema
-from eth_utils import decode_hex, encode_hex, to_checksum_address
+from eth_utils import decode_hex, encode_hex, is_checksum_address, to_checksum_address
 from web3 import Web3
 
 from raiden.utils.typing import (
@@ -253,7 +253,7 @@ class MonitorRequest(UnsignedMonitorRequest):
 
     def __post_init__(self) -> None:
         super(MonitorRequest, self).__post_init__()
-        self.token_network_address = to_checksum_address(self.token_network_address)
+        assert is_checksum_address(self.token_network_address)
         self.non_closing_signer = to_checksum_address(eth_recover(
             data=self.packed_non_closing_data(),
             signature=decode_hex(self.non_closing_signature),
