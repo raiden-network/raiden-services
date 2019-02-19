@@ -7,7 +7,7 @@ from web3 import Web3
 from web3.middleware import construct_sign_and_send_raw_middleware
 
 from monitoring_service.blockchain import BlockchainListener
-from monitoring_service.constants import DEFAULT_REQUIRED_CONFIRMATIONS
+from monitoring_service.constants import DEFAULT_REQUIRED_CONFIRMATIONS, MAX_FILTER_INTERVAL
 from monitoring_service.database import Database
 from monitoring_service.events import Event, ScheduledEvent
 from monitoring_service.handlers import HANDLERS, Context
@@ -84,7 +84,13 @@ class MonitoringService:
 
     def start(self, wait_function: Callable = time.sleep) -> None:
         while True:
-            last_block = self.web3.eth.blockNumber - self.required_confirmations
+            last_confirmed_block = self.web3.eth.blockNumber - self.required_confirmations
+            last_query_interval_block = (
+                self.context.ms_state.blockchain_state.latest_known_block + MAX_FILTER_INTERVAL
+            )
+            # Limit the max number of blocks that is processed per iteration
+            last_block = min(last_confirmed_block, last_query_interval_block)
+
             self._process_new_blocks(last_block)
 
             try:
