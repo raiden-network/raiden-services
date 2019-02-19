@@ -4,13 +4,13 @@ import traceback
 import gevent
 import structlog
 from eth_utils import encode_hex, to_checksum_address
-from request_collector.matrix import MatrixListener
 
 from monitoring_service.database import SharedDatabase
 from monitoring_service.states import MonitorRequest
 from raiden.messages import RequestMonitoring, SignedMessage
 from raiden_libs.exceptions import InvalidSignature
 from raiden_libs.gevent_error_handler import register_error_handler
+from raiden_libs.matrix import MatrixListener
 
 log = structlog.get_logger(__name__)
 
