@@ -81,9 +81,7 @@ class MatrixListener(gevent.Greenlet):
 
         try:
             login_or_register(client, signer=LocalSigner(private_key=decode_hex(self.private_key)))
-        except MatrixRequestError:
-            raise ConnectionError('Could not login/register to matrix.')
-        except ValueError:
+        except (MatrixRequestError, ValueError):
             raise ConnectionError('Could not login/register to matrix.')
 
         try:
@@ -93,9 +91,7 @@ class MatrixListener(gevent.Greenlet):
                 name=room_name,
                 servers=available_servers,
             )
-        except MatrixRequestError:
-            raise ConnectionError('Could not join monitoring broadcasting room.')
-        except TransportError:
+        except (MatrixRequestError, TransportError):
             raise ConnectionError('Could not join monitoring broadcasting room.')
 
         return client, monitoring_room
@@ -137,37 +133,36 @@ class MatrixListener(gevent.Greenlet):
             line = line.strip()
             if not line:
                 continue
+
+            logger = log.bind(peer_address=to_checksum_address(peer_address))
             try:
                 message_dict = json.loads(line)
                 message = message_from_dict(message_dict)
             except (UnicodeDecodeError, json.JSONDecodeError) as ex:
-                log.warning(
+                logger.warning(
                     "Can't parse message data JSON",
                     message_data=line,
-                    peer_address=to_checksum_address(peer_address),
                     _exc=ex,
                 )
                 continue
             except InvalidProtocolMessage as ex:
-                log.warning(
+                logger.warning(
                     "Message data JSON are not a valid message",
                     message_data=line,
-                    peer_address=to_checksum_address(peer_address),
                     _exc=ex,
                 )
                 continue
             if not isinstance(message, SignedMessage):
-                log.warning(
+                logger.warning(
                     'Received invalid message',
                     message=message,
                 )
                 continue
             elif message.sender != peer_address:
-                log.warning(
+                logger.warning(
                     'Message not signed by sender!',
                     message=message,
                     signer=message.sender,
-                    peer_address=peer_address,
                 )
                 continue
             messages.append(message)
