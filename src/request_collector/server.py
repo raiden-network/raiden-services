@@ -53,7 +53,7 @@ class RequestCollector(gevent.Greenlet):
     def _run(self):
         register_error_handler(error_handler)
 
-        self.matrix_listener.start()
+        self.matrix_listener.run()
 
     def stop(self):
         self.matrix_listener.stop()

@@ -112,7 +112,7 @@ def main(
     except (KeyboardInterrupt, SystemExit):
         print('Exiting...')
     finally:
-        log.info('Stopping Pathfinding Service...')
+        log.info('Stopping Request Collector...')
         if service:
             service.stop()
 
