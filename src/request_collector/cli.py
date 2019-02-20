@@ -2,20 +2,19 @@ from gevent import monkey  # isort:skip # noqa
 monkey.patch_all()  # isort:skip # noqa
 
 import json
-import logging
-import logging.config
 import os
 import sys
-from typing import TextIO
 
 import click
+import structlog
 from eth_account import Account
 from eth_utils import encode_hex, is_checksum_address
 from request_collector.server import RequestCollector
 
 from monitoring_service.database import SharedDatabase
+from raiden_libs.logging import setup_logging
 
-log = logging.getLogger(__name__)
+log = structlog.get_logger(__name__)
 
 
 def validate_address(ctx, param, value):
@@ -25,21 +24,6 @@ def validate_address(ctx, param, value):
     if not is_checksum_address(value):
         raise click.BadParameter('not an EIP-55 checksummed address')
     return value
-
-
-def setup_logging(log_level: str, log_config: TextIO):
-    """ Set log level and (optionally) detailed JSON logging config """
-    # import pdb; pdb.set_trace()
-    level = getattr(logging, log_level)
-    logging.basicConfig(
-        level=level,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        datefmt='%m-%d %H:%M:%S',
-    )
-
-    if log_config:
-        config = json.load(log_config)
-        logging.config.dictConfig(config)
 
 
 @click.command()
@@ -63,19 +47,13 @@ def setup_logging(log_level: str, log_config: TextIO):
     '--log-level',
     default='INFO',
     type=click.Choice(['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG']),
-    help='Print log messages of this level and more important ones.',
-)
-@click.option(
-    '--log-config',
-    type=click.File('r'),
-    help='Use the given JSON file for logging configuration.',
+    help='Print log messages of this level and more important ones',
 )
 def main(
     keystore_file: str,
     password: str,
     state_db: str,
     log_level: str,
-    log_config: TextIO,
 ):
     """Console script for request_collector.
 
@@ -84,8 +62,7 @@ def main(
     https://docs.python.org/3.7/library/logging.config.html#logging-config-dictschema
     for a detailed description of the format.
     """
-    assert log_config is None
-    setup_logging(log_level, log_config)
+    setup_logging(log_level)
 
     with open(keystore_file, 'r') as keystore:
         try:

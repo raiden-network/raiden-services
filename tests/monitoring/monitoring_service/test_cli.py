@@ -52,8 +52,7 @@ def test_shutdown(keystore_file, default_cli_args_ms):
 def test_log_level(keystore_file, default_cli_args_ms):
     """ Setting of log level via command line switch """
     runner = CliRunner()
-    with patch.multiple(**patch_args), \
-            patch('request_collector.cli.logging.basicConfig') as basicConfig:
+    with patch.multiple(**patch_args), patch('logging.basicConfig') as basicConfig:
         for log_level in ('CRITICAL', 'WARNING'):
             runner.invoke(
                 main,
