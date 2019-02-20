@@ -1,8 +1,8 @@
-import logging
 from typing import Dict, List, Optional, Tuple
 
 import gevent
 import pkg_resources
+import structlog
 from eth_utils import is_address, is_checksum_address
 from flask import Flask
 from flask_restful import Api, Resource, reqparse
@@ -19,7 +19,7 @@ from pathfinding_service.config import (
 )
 from raiden_libs.types import Address
 
-log = logging.getLogger(__name__)
+log = structlog.get_logger(__name__)
 
 
 class PathfinderResource(Resource):
@@ -162,7 +162,7 @@ class ServiceApi:
         self.rest_server = WSGIServer((host, port), self.flask_app)
         self.server_greenlet = gevent.spawn(self.rest_server.serve_forever)
 
-        log.info(f'Running endpoint at {host}:{port}')
+        log.info('Running endpoint', endpoint=f'{host}:{port}')
 
     def stop(self):
         self.server_greenlet.kill()

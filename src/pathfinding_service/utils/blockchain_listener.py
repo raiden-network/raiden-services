@@ -1,10 +1,10 @@
-import logging
 import sys
 from typing import Callable, Dict, List, Tuple, Union
 
 import gevent
 import gevent.event
 import requests
+import structlog
 from eth_utils import decode_hex, encode_hex, to_checksum_address
 from eth_utils.abi import event_abi_to_log_topic
 from web3 import Web3
@@ -14,7 +14,7 @@ from web3.utils.abi import filter_by_type
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, EVENT_TOKEN_NETWORK_CREATED
 from raiden_contracts.contract_manager import ContractManager
 
-log = logging.getLogger(__name__)
+log = structlog.get_logger(__name__)
 
 
 def create_channel_event_topics() -> List:
@@ -149,7 +149,7 @@ class BlockchainListener(gevent.Greenlet):
 
     def _run(self):
         self.running = True
-        log.info('Starting blockchain polling (interval %ss)', self.poll_interval)
+        log.info('Starting blockchain polling', interval=self.poll_interval)
         while self.running:
             try:
                 self._update()
@@ -159,8 +159,9 @@ class BlockchainListener(gevent.Greenlet):
             except requests.exceptions.ConnectionError:
                 endpoint = self.web3.currentProvider.endpoint_uri
                 log.warning(
-                    'Ethereum node (%s) refused connection. Retrying in %d seconds.' %
-                    (endpoint, self.poll_interval),
+                    'Ethereum node refused connection. Retrying in %d seconds.',
+                    node=endpoint,
+                    interval=self.poll_interval,
                 )
                 gevent.sleep(self.poll_interval)
                 self.is_connected.clear()
@@ -203,10 +204,10 @@ class BlockchainListener(gevent.Greenlet):
                 new_confirmed_head_number,
             )
             log.debug(
-                'Filtering for confirmed events: %s-%s @%d ...',
-                filters_confirmed['from_block'],
-                filters_confirmed['to_block'],
-                current_block,
+                'Filtering for confirmed events',
+                from_block=filters_confirmed['from_block'],
+                to_block=filters_confirmed['to_block'],
+                current_block=current_block,
             )
             # filter the events and run callbacks
             self.filter_events(filters_confirmed, self.confirmed_callbacks)
@@ -223,10 +224,10 @@ class BlockchainListener(gevent.Greenlet):
                 new_unconfirmed_head_number,
             )
             log.debug(
-                'Filtering for unconfirmed events: %s-%s @%d ...',
-                filters_unconfirmed['from_block'],
-                filters_unconfirmed['to_block'],
-                current_block,
+                'Filtering for unconfirmed events',
+                from_block=filters_unconfirmed['from_block'],
+                to_block=filters_unconfirmed['to_block'],
+                current_block=current_block,
             )
             # filter the events and run callbacks
             self.filter_events(filters_unconfirmed, self.unconfirmed_callbacks)
@@ -237,11 +238,14 @@ class BlockchainListener(gevent.Greenlet):
             new_unconfirmed_head_hash = self.web3.eth.getBlock(new_unconfirmed_head_number).hash
             new_confirmed_head_hash = self.web3.eth.getBlock(new_confirmed_head_number).hash
         except AttributeError:
-            log.critical("RPC endpoint didn't return proper info for an existing block "
-                         "(%d,%d)" % (new_unconfirmed_head_number, new_confirmed_head_number))
-            log.critical("It is possible that the blockchain isn't fully synced. "
-                         "This often happens when Parity is run with --fast or --warp sync.")
-            log.critical("Cannot continue - check status of the ethereum node.")
+            log.critical(
+                "RPC endpoint didn't return proper info for an existing block "
+                "It is possible that the blockchain isn't fully synced. "
+                "This often happens when Parity is run with --fast or --warp sync. "
+                "Cannot continue - check status of the ethereum node.",
+                unconfirmed_block_number=new_unconfirmed_head_number,
+                confirmed_block_number=new_confirmed_head_number,
+            )
             sys.exit(1)
 
         self.unconfirmed_head_number = new_unconfirmed_head_number
@@ -273,17 +277,15 @@ class BlockchainListener(gevent.Greenlet):
                     self.contract_manager.get_contract_abi(self.contract_name),
                     raw_event,
                 )
-                log.debug('Received confirmed event: \n%s', decoded_event)
+                log.debug('Received confirmed event', decoded_event=decoded_event)
                 callback(decoded_event)
 
     def _detected_chain_reorg(self, current_block: int):
         log.debug(
-            'Chain reorganization detected. '
-            'Resyncing unconfirmed events (unconfirmed_head=%d) [@%d] '
-            'delta=%d block(s)',
-            self.unconfirmed_head_number,
-            current_block,
-            current_block - self.unconfirmed_head_number,
+            'Chain reorganization detected. Resyncing unconfirmed events.',
+            unconfirmed_block_number=self.unconfirmed_head_number,
+            current_block=current_block,
+            delta=current_block - self.unconfirmed_head_number,
         )
         # here we should probably have a callback or a user-overriden method
         self.unconfirmed_head_number = self.confirmed_head_number
@@ -312,21 +314,19 @@ class BlockchainListener(gevent.Greenlet):
                 current_head_hash = self.web3.eth.getBlock(self.confirmed_head_number).hash
                 if current_head_hash != self.confirmed_head_hash:
                     log.critical(
-                        'Events considered confirmed have been reorganized. '
-                        'Expected block hash %s for block number %d, but got block hash %s. '
-                        "The BlockchainListener's number of required confirmations is %d.",
-                        self.confirmed_head_hash,
-                        self.confirmed_head_number,
-                        current_head_hash,
-                        self.required_confirmations,
+                        'Events considered confirmed have been reorganized.',
+                        expected_hash=self.confirmed_head_hash,
+                        confirmed_block_number=self.confirmed_head_number,
+                        received_hash=current_head_hash,
+                        required_confirmations=self.required_confirmations,
                     )
                     sys.exit(1)  # unreachable as long as confirmation level is set high enough
             except AttributeError:
                 log.critical(
                     'Events considered confirmed have been reorganized. '
-                    'The block %d with hash %s does not exist any more.',
-                    self.confirmed_head_number,
-                    self.confirmed_head_hash,
+                    'The block does not exist any more.',
+                    confirmed_block_number=self.confirmed_head_number,
+                    confirmed_block_hash=self.confirmed_head_hash,
                 )
                 sys.exit(1)  # unreachable as long as confirmation level is set high enough
 

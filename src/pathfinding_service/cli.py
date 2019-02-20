@@ -2,13 +2,10 @@
 from gevent import monkey  # isort:skip # noqa
 monkey.patch_all()  # isort:skip # noqa
 
-import json
-import logging
-import logging.config
 import sys
-from typing import TextIO
 
 import click
+import structlog
 from eth_utils import is_checksum_address
 from requests.exceptions import ConnectionError
 from web3 import HTTPProvider, Web3
@@ -24,9 +21,10 @@ from raiden_contracts.contract_manager import (
     contracts_precompiled_path,
     get_contracts_deployed,
 )
+from raiden_libs.logging import setup_logging
 from raiden_libs.types import Address
 
-log = logging.getLogger(__name__)
+log = structlog.get_logger(__name__)
 contract_manager = ContractManager(contracts_precompiled_path())
 
 DEFAULT_REQUIRED_CONFIRMATIONS = 8  # ~2min with 15s blocks
@@ -54,23 +52,6 @@ def get_default_registry_and_start_block(
     except ValueError:
         log.error('No deployed contracts were found at the default registry')
         sys.exit(1)
-
-
-def setup_logging(log_level: str, log_config: TextIO):
-    """ Set log level and (optionally) detailed JSON logging config """
-    level = getattr(logging, log_level)
-    logging.basicConfig(
-        level=level,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        datefmt='%m-%d %H:%M:%S',
-    )
-
-    # don't show urllib3.connectionpoool errors
-    logging.getLogger('urllib3.connectionpool').setLevel('ERROR')
-
-    if log_config:
-        config = json.load(log_config)
-        logging.config.dictConfig(config)
 
 
 @click.command()
@@ -110,11 +91,6 @@ def setup_logging(log_level: str, log_config: TextIO):
     type=click.Choice(['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG']),
     help='Print log messages of this level and more important ones',
 )
-@click.option(
-    '--log-config',
-    type=click.File('r'),
-    help='Use the given JSON file for logging configuration',
-)
 def main(
     eth_rpc: str,
     registry_address: Address,
@@ -122,7 +98,6 @@ def main(
     confirmations: int,
     host: str,
     log_level: str,
-    log_config: TextIO,
 ):
     """Console script for pathfinding_service.
 
@@ -131,8 +106,7 @@ def main(
     https://docs.python.org/3.7/library/logging.config.html#logging-config-dictschema
     for a detailed description of the format.
     """
-
-    setup_logging(log_level, log_config)
+    setup_logging(log_level)
 
     log.info("Starting Raiden Pathfinding Service")
 

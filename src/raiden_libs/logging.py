@@ -15,6 +15,8 @@ def setup_logging(log_level: str) -> None:
 
     logging.getLogger('web3').setLevel('INFO')
     logging.getLogger('urllib3').setLevel('INFO')
+    # don't show urllib3.connectionpoool errors
+    logging.getLogger('urllib3.connectionpool').setLevel('ERROR')
 
     chain = [
         structlog.stdlib.add_log_level,

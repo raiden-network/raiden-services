@@ -1,7 +1,7 @@
-import logging
 from typing import Any, Dict, List, Tuple
 
 import networkx as nx
+import structlog
 from eth_utils import is_checksum_address
 from networkx import DiGraph
 
@@ -13,7 +13,7 @@ from pathfinding_service.config import (
 from pathfinding_service.model import ChannelView
 from raiden_libs.types import Address, ChannelIdentifier
 
-log = logging.getLogger(__name__)
+log = structlog.get_logger(__name__)
 
 
 class TokenNetwork:
@@ -93,9 +93,8 @@ class TokenNetwork:
                 )
         except KeyError:
             log.error(
-                "Received ChannelNewDeposit event for unknown channel '{}'".format(
-                    channel_identifier,
-                ),
+                "Received ChannelNewDeposit event for unknown channel",
+                channel_identifier=channel_identifier,
             )
 
     def handle_channel_closed_event(self, channel_identifier: ChannelIdentifier):
@@ -112,9 +111,8 @@ class TokenNetwork:
             self.G.remove_edge(participant2, participant1)
         except KeyError:
             log.error(
-                "Received ChannelClosed event for unknown channel '{}'".format(
-                    channel_identifier,
-                ),
+                "Received ChannelClosed event for unknown channel",
+                channel_identifier=channel_identifier,
             )
 
     def handle_channel_balance_update_message(
@@ -141,9 +139,8 @@ class TokenNetwork:
                 )
         except KeyError:
             log.error(
-                "Sender Balance Update for unknown channel '{}'".format(
-                    channel_identifier,
-                ),
+                "Sender Balance Update for unknown channel",
+                channel_identifier=channel_identifier,
             )
 
     @staticmethod
