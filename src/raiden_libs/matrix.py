@@ -1,11 +1,12 @@
 import json
 import sys
-from typing import Callable, Iterable, List, Tuple
+from typing import Callable, Iterable, List, Tuple, Union
 
 import gevent
 import structlog
 from eth_utils import decode_hex, to_checksum_address
 from matrix_client.errors import MatrixRequestError
+from matrix_client.user import User
 
 from raiden.constants import MONITORING_BROADCASTING_ROOM, Environment
 from raiden.exceptions import InvalidProtocolMessage, TransportError
@@ -96,6 +97,22 @@ class MatrixListener(gevent.Greenlet):
 
         return client, monitoring_room
 
+    def _get_user(self, user: Union[User, str]) -> User:
+        """Creates an User from an user_id, if none, or fetch a cached User """
+        user_id: str = getattr(user, 'user_id', user)
+        if self.monitoring_room and user_id in self.monitoring_room._members:
+            duser: User = self.monitoring_room._members[user_id]
+
+            # if handed a User instance with displayname set, update the discovery room cache
+            if getattr(user, 'displayname', None):
+                assert isinstance(user, User)
+                duser.displayname = user.displayname
+            user = duser
+        elif not isinstance(user, User):
+            user = self.client.get_user(user_id)
+
+        return user
+
     def _handle_message(self, room, event) -> bool:
         """ Handle text messages sent to listening rooms """
         if (
@@ -106,9 +123,9 @@ class MatrixListener(gevent.Greenlet):
             return False
 
         sender_id = event['sender']
-
-        user = self.client.get_user(sender_id)
+        user = self._get_user(sender_id)
         peer_address = validate_userid_signature(user)
+
         if not peer_address:
             log.debug(
                 'Message from invalid user displayName signature',
