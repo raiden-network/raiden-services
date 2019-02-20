@@ -88,7 +88,10 @@ class RequestCollector(gevent.Greenlet):
                 reward_proof_signature=encode_hex(request_monitoring.signature),
             )
         except InvalidSignature:
-            log.info('Ignore MR with invalid signature {}'.format(request_monitoring))
+            log.info(
+                'Ignore MR with invalid signature',
+                monitor_request=request_monitoring,
+            )
             return
 
         # Check that received MR is newer by comparing nonces
@@ -98,8 +101,24 @@ class RequestCollector(gevent.Greenlet):
             non_closing_signer=monitor_request.non_closing_signer,
         )
         if old_mr and old_mr.nonce >= monitor_request.nonce:
-            log.debug('New MR does not have a newer nonce.')
+            log.debug(
+                'New MR does not have a newer nonce.',
+                token_network_address=monitor_request.token_network_address,
+                channel_identifier=monitor_request.channel_identifier,
+                received_nonce=monitor_request.nonce,
+                known_nonce=old_mr.nonce,
+            )
             return
+
+        log.debug(
+            'Received new MR',
+            token_network_address=monitor_request.token_network_address,
+            channel_identifier=monitor_request.channel_identifier,
+            nonce=monitor_request.nonce,
+            signer=monitor_request.signer,
+            non_closing_signer=monitor_request.non_closing_signer,
+            reward_signer=monitor_request.reward_proof_signer,
+        )
 
         with self.state_db.conn:
             self.state_db.upsert_monitor_request(monitor_request)
