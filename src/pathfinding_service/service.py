@@ -1,11 +1,10 @@
-import logging
 import sys
 import traceback
 from typing import Dict, List, Optional
 
 import gevent
+import structlog
 from eth_utils import is_checksum_address
-from matrix_client.errors import MatrixRequestError
 from web3 import Web3
 
 from pathfinding_service.model import TokenNetwork
@@ -23,28 +22,21 @@ from raiden_contracts.contract_manager import ContractManager
 from raiden_libs.gevent_error_handler import register_error_handler
 from raiden_libs.types import Address
 
-log = logging.getLogger(__name__)
+log = structlog.get_logger(__name__)
 
 
 def error_handler(context, exc_info):
-    if exc_info[0] == MatrixRequestError:
-        log.error(
-            'Can not connect to the matrix system. Please check your settings. '
-            'Detailed error message: %s', exc_info[1],
-        )
-        sys.exit()
-    else:
-        log.critical(
-            'Unhandled exception. Terminating the program...'
-            'Please report this issue at '
-            'https://github.com/raiden-network/raiden-pathfinding-service/issues',
-        )
-        traceback.print_exception(
-            etype=exc_info[0],
-            value=exc_info[1],
-            tb=exc_info[2],
-        )
-        sys.exit()
+    log.critical(
+        'Unhandled exception. Terminating the program...'
+        'Please report this issue at '
+        'https://github.com/raiden-network/raiden-services/issues',
+    )
+    traceback.print_exception(
+        etype=exc_info[0],
+        value=exc_info[1],
+        tb=exc_info[2],
+    )
+    sys.exit()
 
 
 class PathfindingService(gevent.Greenlet):
@@ -80,9 +72,10 @@ class PathfindingService(gevent.Greenlet):
 
         self.is_running = gevent.event.Event()
 
-        log.info('Starting TokenNetworkRegistry Listener (required confirmations: {})...'.format(
-            self.required_confirmations,
-        ))
+        log.info(
+            'Starting TokenNetworkRegistry Listener',
+            required_confirmations=self.required_confirmations,
+        )
         self.token_network_registry_listener = BlockchainListener(
             web3=web3,
             contract_manager=self.contract_manager,
@@ -93,8 +86,9 @@ class PathfindingService(gevent.Greenlet):
             sync_start_block=self.sync_start_block,
         )
         log.info(
-            f'Listening to token network registry @ {registry_address} '
-            f'from block {sync_start_block}',
+            'Listening to token network registry',
+            registry_address=registry_address,
+            start_block=sync_start_block,
         )
         self._setup_token_networks()
 
@@ -147,7 +141,7 @@ class PathfindingService(gevent.Greenlet):
         elif event_name == ChannelEvent.CLOSED:
             self.handle_channel_closed(event)
         else:
-            log.info('Unhandled event: %s', event_name)
+            log.debug('Unhandled event', event_name=event_name)
 
     def handle_channel_opened(self, event: Dict):
         token_network = self._get_token_network(event['address'])
@@ -155,9 +149,10 @@ class PathfindingService(gevent.Greenlet):
         if token_network is None:
             return
 
-        log.debug('Received ChannelOpened event for token network {}'.format(
-            token_network.address,
-        ))
+        log.info(
+            'Received ChannelOpened event',
+            token_network_address=token_network.address,
+        )
 
         channel_identifier = event['args']['channel_identifier']
         participant1 = event['args']['participant1']
@@ -176,9 +171,10 @@ class PathfindingService(gevent.Greenlet):
         if token_network is None:
             return
 
-        log.debug('Received ChannelNewDeposit event for token network {}'.format(
-            token_network.address,
-        ))
+        log.info(
+            'Received ChannelNewDeposit event',
+            token_network_address=token_network.address,
+        )
 
         channel_identifier = event['args']['channel_identifier']
         participant_address = event['args']['participant']
@@ -196,9 +192,10 @@ class PathfindingService(gevent.Greenlet):
         if token_network is None:
             return
 
-        log.debug('Received ChannelClosed event for token network {}'.format(
-            token_network.address,
-        ))
+        log.info(
+            'Received ChannelClosed event',
+            token_network_address=token_network.address,
+        )
 
         channel_identifier = event['args']['channel_identifier']
 
@@ -213,7 +210,11 @@ class PathfindingService(gevent.Greenlet):
         assert is_checksum_address(token_address)
 
         if not self.follows_token_network(token_network_address):
-            log.info(f'Found token network for token {token_address} @ {token_network_address}')
+            log.info(
+                'Found new token network',
+                token_address=token_address,
+                token_network_address=token_network_address,
+            )
             self.create_token_network_for_address(
                 token_network_address,
                 token_address,
@@ -229,7 +230,7 @@ class PathfindingService(gevent.Greenlet):
         token_network = TokenNetwork(token_network_address, token_address)
         self.token_networks[token_network_address] = token_network
 
-        log.info('Creating token network for %s', token_network_address)
+        log.debug('Creating token network model', token_network_address=token_network_address)
         token_network_listener = BlockchainListener(
             web3=self.web3,
             contract_manager=self.contract_manager,

@@ -123,8 +123,7 @@ def test_shutdown():
 def test_log_level():
     """ Setting of log level via command line switch """
     runner = CliRunner()
-    with patch.multiple(**patch_args), \
-            patch('pathfinding_service.cli.logging.basicConfig') as basicConfig:
+    with patch.multiple(**patch_args), patch('logging.basicConfig') as basicConfig:
         for log_level in ('CRITICAL', 'WARNING'):
             runner.invoke(main, ['--log-level', log_level])
             # pytest already initializes logging, so basicConfig does not have
