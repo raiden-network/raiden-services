@@ -154,8 +154,9 @@ def main(
     )
 
     ms.start()
-    gevent.spawn(check_gas, web3, private_key)
+    gas_check = gevent.spawn(check_gas, web3, private_key)
     ms.start(gevent.sleep)
+    gevent.kill(gas_check, 1)
 
 
 if __name__ == '__main__':

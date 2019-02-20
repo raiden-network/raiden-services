@@ -307,6 +307,7 @@ def pathfinding_service_full_mock(
             web3=web3_mock,
             contract_manager=contracts_manager,
             registry_address=Address('0xB9633dd9a9a71F22C933bF121d7a22008f66B908'),
+            private_key='3a1076bf45ab87712ad64ccb3b10217737f7faacbf2872e88fdd9a537d8fe266'
         )
         pathfinding_service.token_networks = {
             token_network_model.address: token_network_model,
@@ -329,6 +330,7 @@ def pathfinding_service_mocked_listeners(
             web3=web3,
             contract_manager=contracts_manager,
             registry_address=Address(''),
+            private_key='3a1076bf45ab87712ad64ccb3b10217737f7faacbf2872e88fdd9a537d8fe266'
         )
 
         yield pathfinding_service

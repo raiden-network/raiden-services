@@ -5,6 +5,9 @@ from typing import Dict, List, Optional
 import gevent
 import structlog
 from eth_utils import is_checksum_address
+
+from matrix_client.errors import MatrixRequestError
+from raiden.messages import UpdatePFS, SignedMessage
 from web3 import Web3
 
 from pathfinding_service.model import TokenNetwork
@@ -19,7 +22,9 @@ from raiden_contracts.constants import (
     ChannelEvent,
 )
 from raiden_contracts.contract_manager import ContractManager
+from raiden.constants import PATH_FINDING_BROADCASTING_ROOM
 from raiden_libs.gevent_error_handler import register_error_handler
+from raiden_libs.matrix import MatrixListener
 from raiden_libs.types import Address
 
 log = structlog.get_logger(__name__)
@@ -45,6 +50,7 @@ class PathfindingService(gevent.Greenlet):
             web3: Web3,
             contract_manager: ContractManager,
             registry_address: Address,
+            private_key: str,
             sync_start_block: int = 0,
             required_confirmations: int = 8,
             poll_interval: int = 10,
@@ -58,6 +64,7 @@ class PathfindingService(gevent.Greenlet):
             chain_id: The id of the chain the PFS runs on
         """
         super().__init__()
+
         self.web3 = web3
         self.contract_manager = contract_manager
         self.registry_address = registry_address
@@ -65,6 +72,7 @@ class PathfindingService(gevent.Greenlet):
         self.required_confirmations = required_confirmations
         self.poll_interval = poll_interval
         self.chain_id = int(web3.net.version)
+        self.private_key = private_key
 
         self.is_running = gevent.event.Event()
         self.token_networks: Dict[Address, TokenNetwork] = {}
@@ -92,6 +100,20 @@ class PathfindingService(gevent.Greenlet):
         )
         self._setup_token_networks()
 
+        try:
+            self.matrix_listener = MatrixListener(
+                private_key=private_key,
+                chain_id=self.chain_id,
+                callback=self.handle_message,
+                service_room_suffix=PATH_FINDING_BROADCASTING_ROOM
+            )
+        except ConnectionError as e:
+            log.critical(
+                'Could not connect to broadcasting system.',
+                exc=e,
+            )
+            sys.exit(1)
+
     def _setup_token_networks(self):
         self.token_network_registry_listener.add_confirmed_listener(
             create_registry_event_topics(self.contract_manager),
@@ -100,16 +122,18 @@ class PathfindingService(gevent.Greenlet):
 
     def _run(self):
         register_error_handler(error_handler)
-
+        self.matrix_listener.run()
         self.token_network_registry_listener.start()
-
         self.is_running.wait()
 
     def stop(self):
+        print("pfs should stop")
         self.token_network_registry_listener.stop()
         for task in self.token_network_listeners:
             task.stop()
         self.is_running.set()
+        self.matrix_listener.stop()
+        self.matrix_listener.join()
 
     def follows_token_network(self, token_network_address: Address) -> bool:
         """ Checks if a token network is followed by the pathfinding service. """
@@ -253,3 +277,13 @@ class PathfindingService(gevent.Greenlet):
         )
         token_network_listener.start()
         self.token_network_listeners.append(token_network_listener)
+
+    def handle_message(self, message: SignedMessage):
+        if isinstance(message, UpdatePFS):
+            self.on_pfs_update(message)
+            ## TODO validate message
+        else:
+            log.info('Ignoring unknown message type')
+
+    def on_pfs_update(self, message, UpdatePFS):
+        print(f"das ist die message: {message}")

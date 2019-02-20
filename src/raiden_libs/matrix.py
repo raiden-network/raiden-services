@@ -8,7 +8,7 @@ from eth_utils import decode_hex, to_checksum_address
 from matrix_client.errors import MatrixRequestError
 from matrix_client.user import User
 
-from raiden.constants import MONITORING_BROADCASTING_ROOM, Environment
+from raiden.constants import Environment
 from raiden.exceptions import InvalidProtocolMessage, TransportError
 from raiden.messages import SignedMessage, from_dict as message_from_dict
 from raiden.network.transport.matrix.client import GMatrixClient, Room
@@ -37,6 +37,7 @@ class MatrixListener(gevent.Greenlet):
         private_key: str,
         chain_id: int,
         callback: Callable,
+        service_room_suffix: str,
     ) -> None:
         super().__init__()
 
@@ -45,7 +46,7 @@ class MatrixListener(gevent.Greenlet):
         self.callback = callback
 
         try:
-            self.client, self.monitoring_room = self.setup_matrix()
+            self.client, self.monitoring_room = self.setup_matrix(service_room_suffix)
             self.monitoring_room.add_listener(self._handle_message, 'm.room.message')
         except ConnectionError as e:
             log.critical(
@@ -56,12 +57,12 @@ class MatrixListener(gevent.Greenlet):
 
     def _run(self):
         self.client.start_listener_thread()
-        self.client.sync_thread.get().wait()
+        self.client.sync_thread.get()
 
     def stop(self):
         self.client.stop_listener_thread()
 
-    def setup_matrix(self) -> Tuple[GMatrixClient, Room]:
+    def setup_matrix(self, service_room_suffix) -> Tuple[GMatrixClient, Room]:
         available_servers_url = DEFAULT_MATRIX_KNOWN_SERVERS[Environment.DEVELOPMENT]
         available_servers = get_matrix_servers(available_servers_url)
 
@@ -86,7 +87,7 @@ class MatrixListener(gevent.Greenlet):
             raise ConnectionError('Could not login/register to matrix.')
 
         try:
-            room_name = make_room_alias(self.chain_id, MONITORING_BROADCASTING_ROOM)
+            room_name = make_room_alias(self.chain_id, service_room_suffix)
             monitoring_room = join_global_room(
                 client=client,
                 name=room_name,
