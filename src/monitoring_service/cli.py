@@ -122,7 +122,6 @@ def main(
         required_confirmations=confirmations,
         db_filename=state_db,
     )
-
     ms.start()
 
 

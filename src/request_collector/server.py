@@ -7,6 +7,7 @@ from eth_utils import encode_hex, to_checksum_address
 
 from monitoring_service.database import SharedDatabase
 from monitoring_service.states import MonitorRequest
+from raiden.constants import MONITORING_BROADCASTING_ROOM
 from raiden.messages import RequestMonitoring, SignedMessage
 from raiden_libs.exceptions import InvalidSignature
 from raiden_libs.gevent_error_handler import register_error_handler
@@ -42,6 +43,7 @@ class RequestCollector(gevent.Greenlet):
                 private_key=private_key,
                 chain_id=state.blockchain_state.chain_id,
                 callback=self.handle_message,
+                service_room_suffix=MONITORING_BROADCASTING_ROOM,
             )
         except ConnectionError as e:
             log.critical(
@@ -52,8 +54,7 @@ class RequestCollector(gevent.Greenlet):
 
     def _run(self):
         register_error_handler(error_handler)
-
-        self.matrix_listener.run()
+        self.matrix_listener.start()
 
     def stop(self):
         self.matrix_listener.stop()
