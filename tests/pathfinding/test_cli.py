@@ -1,5 +1,4 @@
 import logging
-import os
 from unittest.mock import DEFAULT, Mock, patch
 
 from click.testing import CliRunner
@@ -131,24 +130,3 @@ def test_log_level():
             assert logging.getLevelName(
                 basicConfig.call_args[1]['level'] == log_level,
             )
-
-
-def test_log_config(tmp_path):
-    """ Detailed setting of logging via config file """
-    conf_filename = os.path.join(tmp_path, 'log-conf.json')
-    with open(conf_filename, 'w') as f:
-        f.write("""{
-            "version": 1,
-            "loggers": {
-                "web3": {
-                    "level": "ERROR"
-                }
-            }
-        }""")
-    runner = CliRunner()
-    with patch.multiple(**patch_args) as mocks:
-        mocks['get_default_registry_and_start_block'].return_value = Mock(), Mock()
-        runner.invoke(main, ['--log-config', conf_filename], catch_exceptions=False)
-        assert logging.getLevelName(
-            logging.getLogger('web3').getEffectiveLevel(),
-        ) == 'ERROR'
