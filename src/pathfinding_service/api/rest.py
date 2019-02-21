@@ -79,7 +79,7 @@ class PathsResource(PathfinderResource):
         return None
 
     # url parameters are used because json bodies for GET requests are uncommon
-    def get(self, token_network_address: str):
+    def post(self, token_network_address: str):
         token_network_error = self._validate_token_network_argument(token_network_address)
         if token_network_error is not None:
             return token_network_error
