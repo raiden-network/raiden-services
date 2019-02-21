@@ -127,10 +127,6 @@ class PathfindingService(gevent.Greenlet):
         else:
             return self.token_networks[token_network_address]
 
-    def _check_chain_id(self, received_chain_id: int):
-        if not received_chain_id == self.chain_id:
-            raise ValueError('Chain id does not match')
-
     def handle_channel_event(self, event: Dict):
         event_name = event['event']
 
