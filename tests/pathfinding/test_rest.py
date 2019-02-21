@@ -23,57 +23,45 @@ def test_get_paths_validation(
     target_address: str,
     token_network_model: TokenNetwork,
 ):
-    base_url = api_url + f'/{token_network_model.address}/paths'
+    url = api_url + f'/{token_network_model.address}/paths'
+    default_params = {
+        'from': initiator_address,
+        'to': target_address,
+        'value': 5,
+        'max_paths': 3,
+    }
 
-    url = base_url
-    response = requests.get(url)
+    def get_path(**kwargs):
+        params = default_params.copy()
+        params.update(kwargs)
+        response = requests.post(url, data=params)
+        assert response.status_code == 400
+        return response
+
+    response = requests.post(url)
     assert response.status_code == 400
     assert response.json()['errors'].startswith('Required parameters:')
 
-    url = base_url + '?from=notanaddress&to={}&value=5&max_paths=3'.format(target_address)
-    response = requests.get(url)
-    assert response.status_code == 400
+    response = get_path(**{'from': 'notanaddress'})
     assert response.json()['errors'] == 'Invalid initiator address: notanaddress'
 
-    url = base_url + '?from={}&to=notanaddress&value=5&max_paths=3'.format(initiator_address)
-    response = requests.get(url)
-    assert response.status_code == 400
+    response = get_path(to='notanaddress')
     assert response.json()['errors'] == 'Invalid target address: notanaddress'
 
-    url = base_url + '?from={}&to={}&value=5&max_paths=3'.format(
-        to_normalized_address(initiator_address),
-        target_address,
-    )
-    response = requests.get(url)
-    assert response.status_code == 400
+    response = get_path(**{'from': to_normalized_address(initiator_address)})
     assert response.json()['errors'] == 'Initiator address not checksummed: {}'.format(
         to_normalized_address(initiator_address),
     )
 
-    url = base_url + '?from={}&to={}&value=5&max_paths=3'.format(
-        initiator_address,
-        to_normalized_address(target_address),
-    )
-    response = requests.get(url)
-    assert response.status_code == 400
+    response = get_path(to=to_normalized_address(target_address))
     assert response.json()['errors'] == 'Target address not checksummed: {}'.format(
         to_normalized_address(target_address),
     )
 
-    url = base_url + '?from={}&to={}&value=-10&max_paths=3'.format(
-        initiator_address,
-        target_address,
-    )
-    response = requests.get(url)
-    assert response.status_code == 400
+    response = get_path(value=-10)
     assert response.json()['errors'] == 'Payment value must be non-negative: -10'
 
-    url = base_url + '?from={}&to={}&value=10&max_paths=-1'.format(
-        initiator_address,
-        target_address,
-    )
-    response = requests.get(url)
-    assert response.status_code == 400
+    response = get_path(max_paths=-1)
     assert response.json()['errors'] == 'Number of paths must be positive: -1'
 
 
@@ -82,26 +70,26 @@ def test_get_paths_path_validation(
     api_url: str,
 ):
     url = api_url + '/1234abc/paths'
-    response = requests.get(url)
+    response = requests.post(url)
     assert response.status_code == 400
     assert response.json()['errors'] == 'Invalid token network address: 1234abc'
 
     url = api_url + '/df173a5173c3d0ae5ba11dae84470c5d3f1a8413/paths'
-    response = requests.get(url)
+    response = requests.post(url)
     assert response.status_code == 400
     assert response.json()['errors'] == 'Token network address not checksummed: {}'.format(
         'df173a5173c3d0ae5ba11dae84470c5d3f1a8413',
     )
 
     url = api_url + '/0xdf173a5173c3d0ae5ba11dae84470c5d3f1a8413/paths'
-    response = requests.get(url)
+    response = requests.post(url)
     assert response.status_code == 400
     assert response.json()['errors'] == 'Token network address not checksummed: {}'.format(
         '0xdf173a5173c3d0ae5ba11dae84470c5d3f1a8413',
     )
 
     url = api_url + '/0x0000000000000000000000000000000000000000/paths'
-    response = requests.get(url)
+    response = requests.post(url)
     assert response.status_code == 400
     assert response.json()['errors'] == 'Unsupported token network: {}'.format(
         '0x0000000000000000000000000000000000000000',
@@ -114,14 +102,15 @@ def test_get_paths(
     addresses: List[Address],
     token_network_model: TokenNetwork,
 ):
-    base_url = api_url + f'/{token_network_model.address}/paths'
+    url = api_url + f'/{token_network_model.address}/paths'
 
-    url = base_url + '?from={}&to={}&value=10&max_paths={}'.format(
-        addresses[0],
-        addresses[2],
-        DEFAULT_MAX_PATHS,
-    )
-    response = requests.get(url)
+    data = {
+        'from': addresses[0],
+        'to': addresses[2],
+        'value': 10,
+        'max_paths': DEFAULT_MAX_PATHS,
+    }
+    response = requests.post(url, data=data)
     assert response.status_code == 200
     paths = response.json()['result']
     assert len(paths) == 2
@@ -137,19 +126,22 @@ def test_get_paths(
     ]
 
     # check default value for num_path
-    url = base_url + '?from={}&to={}&value=10'.format(
-        addresses[0],
-        addresses[2],
-    )
-    default_response = requests.get(url)
+    data = {
+        'from': addresses[0],
+        'to': addresses[2],
+        'value': 10,
+    }
+    default_response = requests.post(url, data=data)
     assert default_response.json()['result'] == response.json()['result']
 
     # there is no connection between 0 and 5, this should return an error
-    url = base_url + '?from={}&to={}&value=10&max_paths=3'.format(
-        addresses[0],
-        addresses[5],
-    )
-    response = requests.get(url)
+    data = {
+        'from': addresses[0],
+        'to': addresses[5],
+        'value': 10,
+        'max_paths': 3,
+    }
+    response = requests.post(url, data=data)
     assert response.status_code == 400
     assert response.json()['errors'].startswith('No suitable path found for transfer from')
 
