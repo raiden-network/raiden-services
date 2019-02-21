@@ -31,7 +31,7 @@ def test_get_paths_validation(
         'max_paths': 3,
     }
 
-    def get_path(**kwargs):
+    def request_path_with(**kwargs):
         params = default_params.copy()
         params.update(kwargs)
         response = requests.post(url, data=params)
@@ -42,26 +42,26 @@ def test_get_paths_validation(
     assert response.status_code == 400
     assert response.json()['errors'].startswith('Required parameters:')
 
-    response = get_path(**{'from': 'notanaddress'})
+    response = request_path_with(**{'from': 'notanaddress'})
     assert response.json()['errors'] == 'Invalid initiator address: notanaddress'
 
-    response = get_path(to='notanaddress')
+    response = request_path_with(to='notanaddress')
     assert response.json()['errors'] == 'Invalid target address: notanaddress'
 
-    response = get_path(**{'from': to_normalized_address(initiator_address)})
+    response = request_path_with(**{'from': to_normalized_address(initiator_address)})
     assert response.json()['errors'] == 'Initiator address not checksummed: {}'.format(
         to_normalized_address(initiator_address),
     )
 
-    response = get_path(to=to_normalized_address(target_address))
+    response = request_path_with(to=to_normalized_address(target_address))
     assert response.json()['errors'] == 'Target address not checksummed: {}'.format(
         to_normalized_address(target_address),
     )
 
-    response = get_path(value=-10)
+    response = request_path_with(value=-10)
     assert response.json()['errors'] == 'Payment value must be non-negative: -10'
 
-    response = get_path(max_paths=-1)
+    response = request_path_with(max_paths=-1)
     assert response.json()['errors'] == 'Number of paths must be positive: -1'
 
 
