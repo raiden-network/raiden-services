@@ -141,7 +141,7 @@ class PathfindingService(gevent.Greenlet):
         elif event_name == ChannelEvent.CLOSED:
             self.handle_channel_closed(event)
         else:
-            log.debug('Unhandled event', event_name=event_name)
+            log.debug('Unhandled event', evt=event)
 
     def handle_channel_opened(self, event: Dict):
         token_network = self._get_token_network(event['address'])
@@ -149,15 +149,20 @@ class PathfindingService(gevent.Greenlet):
         if token_network is None:
             return
 
-        log.info(
-            'Received ChannelOpened event',
-            token_network_address=token_network.address,
-        )
-
         channel_identifier = event['args']['channel_identifier']
         participant1 = event['args']['participant1']
         participant2 = event['args']['participant2']
         settle_timeout = event['args']['settle_timeout']
+
+        log.info(
+            'Received ChannelOpened event',
+            token_network_address=token_network.address,
+            channel_identifier=channel_identifier,
+            participant1=participant1,
+            participant2=participant2,
+            settle_timeout=settle_timeout,
+        )
+
         token_network.handle_channel_opened_event(
             channel_identifier,
             participant1,
@@ -171,14 +176,17 @@ class PathfindingService(gevent.Greenlet):
         if token_network is None:
             return
 
-        log.info(
-            'Received ChannelNewDeposit event',
-            token_network_address=token_network.address,
-        )
-
         channel_identifier = event['args']['channel_identifier']
         participant_address = event['args']['participant']
         total_deposit = event['args']['total_deposit']
+
+        log.info(
+            'Received ChannelNewDeposit event',
+            token_network_address=token_network.address,
+            channel_identifier=channel_identifier,
+            participant=participant_address,
+            total_deposit=total_deposit,
+        )
 
         token_network.handle_channel_new_deposit_event(
             channel_identifier,
@@ -192,12 +200,13 @@ class PathfindingService(gevent.Greenlet):
         if token_network is None:
             return
 
+        channel_identifier = event['args']['channel_identifier']
+
         log.info(
             'Received ChannelClosed event',
             token_network_address=token_network.address,
+            channel_identifier=channel_identifier,
         )
-
-        channel_identifier = event['args']['channel_identifier']
 
         token_network.handle_channel_closed_event(channel_identifier)
 
