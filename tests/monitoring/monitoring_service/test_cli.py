@@ -3,13 +3,20 @@ from unittest.mock import DEFAULT, patch
 
 from click.testing import CliRunner
 
-from monitoring_service.cli import main
+from monitoring_service.cli import check_gas_reserve, main
 
 patch_args = dict(
     target='monitoring_service.cli',
     MonitoringService=DEFAULT,
     HTTPProvider=DEFAULT,
 )
+
+
+def test_account_check(web3, capsys):
+    private_key = '0F951D6EAF7685D420AACCA3900127E669892FE5CA6C8E4C572A59B0609AAE6B'
+    check_gas_reserve(web3, private_key)
+    out = capsys.readouterr().out
+    assert 'Your account\'s balance is below the estimated gas reserve of' in out
 
 
 def test_success(keystore_file, default_cli_args_ms):
