@@ -16,13 +16,16 @@ patch_args = dict(
 )
 
 
-def test_bad_eth_client(caplog):
+def test_bad_eth_client(log):
     """ Giving a bad `eth-rpc` value should yield a concise error message """
     runner = CliRunner()
     with patch('pathfinding_service.cli.PathfindingService'):
         result = runner.invoke(main, ['--eth-rpc', 'http://localhost:12345'])
     assert result.exit_code == 1
-    assert 'Can not connect to the Ethereum client' in caplog.records[0].getMessage()
+    assert log.has(
+        'Can not connect to the Ethereum client. Please check that it is running '
+        'and that your settings are correct.',
+    )
 
 
 def test_success():

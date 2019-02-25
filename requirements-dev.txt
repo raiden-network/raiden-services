@@ -16,6 +16,7 @@ mypy==0.660
 pytest>=4.0.1
 pytest-runner
 pytest-cov
+pytest-structlog==0.1
 coverage>=4.5.2
 
 ipython
