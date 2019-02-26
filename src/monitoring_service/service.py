@@ -57,7 +57,7 @@ class MonitoringService:
         db_filename: str,
         sync_start_block: BlockNumber = 0,
         required_confirmations: int = DEFAULT_REQUIRED_CONFIRMATIONS,
-        poll_interval: int = 1,
+        poll_interval: float = 1,
     ):
         self.web3 = web3
         self.contract_manager = contract_manager

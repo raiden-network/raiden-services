@@ -10,6 +10,8 @@ from web3.utils.events import get_event_data
 from web3.utils.filters import construct_event_filter_params
 
 from monitoring_service.states import HashedBalanceProof, MonitorRequest, UnsignedMonitorRequest
+from raiden.messages import RequestMonitoring, SignedBlindedBalanceProof
+from raiden.utils.signer import LocalSigner
 from raiden_contracts.constants import MessageTypeId
 from raiden_libs.types import Address, ChannelIdentifier, T_ChannelIdentifier
 from raiden_libs.utils import UINT256_MAX, eth_sign, private_key_to_address
@@ -283,6 +285,31 @@ class MockRaidenNode:
             closing_signature=balance_proof.signature,
             reward_amount=reward_amount,
         ).sign(self.privkey)
+
+    def get_request_monitoring(
+        self,
+        balance_proof: HashedBalanceProof,
+        reward_amount: int,
+    ) -> RequestMonitoring:
+        """Get RequestMonitoring (as sent by the client) message for a given balance proof."""
+        assert balance_proof.signature
+
+        non_closing_signer = LocalSigner(decode_hex(self.privkey))
+        partner_signed_balance_proof = SignedBlindedBalanceProof(
+            channel_identifier=balance_proof.channel_identifier,
+            token_network_address=decode_hex(balance_proof.token_network_address),
+            nonce=balance_proof.nonce,
+            additional_hash=decode_hex(balance_proof.additional_hash),
+            chain_id=balance_proof.chain_id,
+            signature=decode_hex(balance_proof.signature),
+            balance_hash=decode_hex(balance_proof.balance_hash),
+        )
+        request_monitoring = RequestMonitoring(
+            onchain_balance_proof=partner_signed_balance_proof,
+            reward_amount=reward_amount,
+        )
+        request_monitoring.sign(non_closing_signer)
+        return request_monitoring
 
     @assert_channel_existence
     def update_transfer(self, partner_address: Address, balance_proof: HashedBalanceProof):
