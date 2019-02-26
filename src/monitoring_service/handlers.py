@@ -356,7 +356,6 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
         monitor_request.nonce > last_onchain_nonce
     )
     if call_monitor:
-        # FIXME: don't monitor when closer is MR signer
         try:
             tx_hash = context.monitoring_service_contract.functions.monitor(
                 monitor_request.signer,
