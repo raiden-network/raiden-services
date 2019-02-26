@@ -121,6 +121,8 @@ class PathsResource(PathfinderResource):
 
 
 class InfoResource(PathfinderResource):
+    version = pkg_resources.get_distribution('raiden-services').version
+
     def get(self):
         price = 0
         settings = 'PLACEHOLDER FOR PATHFINDER SETTINGS'
@@ -134,7 +136,7 @@ class InfoResource(PathfinderResource):
                 'registry_address': self.pathfinding_service.registry_address,
             },
             'settings': settings,
-            'version': pkg_resources.require('raiden-services')[0].version,
+            'version': self.version,
             'operator': operator,
             'message': message,
         }, 200
