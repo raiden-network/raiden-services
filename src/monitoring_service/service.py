@@ -115,8 +115,7 @@ class MonitoringService:
             # check gas reserve
             do_gas_reserve_check = (
                 check_account_gas_reserve and
-                last_confirmed_block % DEFAULT_GAS_CHECK_BLOCKS == 0 and
-                self.last_gas_check_block < last_confirmed_block
+                last_confirmed_block >= self.last_gas_check_block + DEFAULT_GAS_CHECK_BLOCKS
             )
             if do_gas_reserve_check:
                 check_gas_reserve(self.web3, self.private_key)
