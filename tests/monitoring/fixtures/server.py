@@ -79,6 +79,7 @@ def monitoring_service(
     contracts_manager: ContractManager,
     service_registry,
     custom_token,
+    ms_database,
 ):
     # register MS in ServiceRegistry
     ms_address = private_key_to_address(server_private_key)
@@ -98,9 +99,11 @@ def monitoring_service(
         registry_address=token_network_registry_contract.address,
         monitor_contract_address=monitoring_service_contract.address,
         required_confirmations=1,  # for faster tests
-        poll_interval=1,  # for faster tests
+        poll_interval=0.01,  # for faster tests
         db_filename=':memory:',
     )
+    # We need a shared db between MS and RC so the MS can use MR saved by the RC
+    ms.context.db = ms_database
     return ms
 
 

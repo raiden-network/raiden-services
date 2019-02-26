@@ -1,4 +1,5 @@
 import gevent
+from request_collector.server import RequestCollector
 from web3 import Web3
 
 from monitoring_service.blockchain import query_blockchain_events
@@ -34,6 +35,7 @@ def test_e2e(
     custom_token,
     service_registry,
     monitoring_service: MonitoringService,
+    request_collector: RequestCollector,
     contracts_manager,
 ):
     """Test complete message lifecycle
@@ -99,33 +101,24 @@ def test_e2e(
 
     # c1 asks MS to monitor the channel
     reward_amount = 1
-    monitor_request = c1.get_monitor_request(
+    request_monitoring = c1.get_request_monitoring(
         balance_proof_c2,
         reward_amount,
     )
-    # TODO: this should be done with help of the request receiver
-    monitoring_service.database.upsert_monitor_request(monitor_request)
-
-    # wait for channel open event to be processed by the MS
-    wait_for_blocks(1)
-    gevent.sleep(0)
-
-    # request_collector.transport.receive_fake_data(monitor_request.serialize_full())
-    # gevent.sleep(1)
-    # assert (channel_id, c1.address) in monitoring_service.monitor_requests
+    request_collector.on_monitor_request(request_monitoring)
 
     # c2 closes the channel
     c2.close_channel(c1.address, balance_proof_c1)
-    # Wait one block until the ChannelClosed event is confirmed and handled
-    # by the MS
+    # Wait until the MS reacts, which it does after giving the client some time
+    # to update the channel itself.
     wait_for_blocks(5)  # 30% of 15 blocks
     # Now give the monitoring service a chance to submit the missing BP
-    gevent.sleep(1)
+    gevent.sleep(0.1)
 
     assert [e.event for e in query()] == [MonitoringServiceEvent.NEW_BALANCE_PROOF_RECEIVED.value]
 
     # wait for settle timeout
-    wait_for_blocks(20)
+    wait_for_blocks(15)
     c2.settle_channel(
         c1.address,
         (transferred_c2, transferred_c1),
@@ -134,7 +127,7 @@ def test_e2e(
     )
     # Wait until the ChannelSettled is confirmed
     # Let the MS claim its reward
-    gevent.sleep(1)
+    gevent.sleep(0.1)
     assert [e.event for e in query()] == [
         MonitoringServiceEvent.NEW_BALANCE_PROOF_RECEIVED.value,
         MonitoringServiceEvent.REWARD_CLAIMED.value,
