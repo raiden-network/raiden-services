@@ -4,48 +4,18 @@ import sys
 from typing import Any, Optional
 
 import click
-import gevent
 import structlog
 from eth_account import Account
 from eth_utils import is_checksum_address
 from web3 import HTTPProvider, Web3
 
-from monitoring_service.constants import (
-    DEFAULT_GAS_BUFFER_FACTOR,
-    DEFAULT_GAS_CHECK_WAIT,
-    DEFAULT_REQUIRED_CONFIRMATIONS,
-)
+from monitoring_service.constants import DEFAULT_REQUIRED_CONFIRMATIONS
 from monitoring_service.service import MonitoringService
-from raiden_contracts.constants import GAS_REQUIRED_FOR_MS_MONITOR
 from raiden_contracts.contract_manager import ContractManager, contracts_precompiled_path
 from raiden_libs.logging import setup_logging
 from raiden_libs.types import Address
-from raiden_libs.utils import private_key_to_address
-
 
 log = structlog.get_logger(__name__)
-
-
-def check_gas_reserve(web3: Web3, private_key: str) -> None:
-    """ Check periodically for gas reserve in the account """
-    gas_price = web3.eth.gasPrice
-    gas_limit = GAS_REQUIRED_FOR_MS_MONITOR
-    estimated_required_balance = gas_limit * gas_price * DEFAULT_GAS_BUFFER_FACTOR
-    estimated_required_balance_eth = Web3.fromWei(estimated_required_balance, 'ether')
-    current_balance = web3.eth.getBalance(private_key_to_address(private_key))
-    if current_balance < estimated_required_balance:
-        log.error(
-            "Your account's balance is below the estimated gas reserve of "
-            f"{estimated_required_balance_eth} Eth. You will be be unable "
-            "to perform on-chain transactions and cannot monitor any channels. "
-            "Please add funds to your account as soon as possible.",
-        )
-
-
-def check_gas(web3: Web3, private_key: str) -> None:
-    while True:
-        check_gas_reserve(web3, private_key)
-        gevent.sleep(DEFAULT_GAS_CHECK_WAIT)
 
 
 def validate_address(_ctx: Any, _param: Any, value: Optional[str]) -> Optional[str]:
@@ -110,7 +80,7 @@ def validate_address(_ctx: Any, _param: Any, value: Optional[str]) -> Optional[s
     '--state-db',
     default=os.path.join(click.get_app_dir('raiden-monitoring-service'), 'state.db'),
     type=str,
-    help='path to SQLite3 db which stores the application state',
+    help='Path to SQLite3 db which stores the application state',
 )
 def main(
     keystore_file: str,
@@ -154,8 +124,6 @@ def main(
     )
 
     ms.start()
-    gevent.spawn(check_gas, web3, private_key)
-    ms.start(gevent.sleep)
 
 
 if __name__ == '__main__':

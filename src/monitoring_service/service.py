@@ -7,16 +7,37 @@ from web3 import Web3
 from web3.middleware import construct_sign_and_send_raw_middleware
 
 from monitoring_service.blockchain import BlockchainListener
-from monitoring_service.constants import DEFAULT_REQUIRED_CONFIRMATIONS, MAX_FILTER_INTERVAL
+from monitoring_service.constants import (
+    DEFAULT_GAS_BUFFER_FACTOR,
+    DEFAULT_GAS_CHECK_BLOCKS,
+    DEFAULT_REQUIRED_CONFIRMATIONS,
+    MAX_FILTER_INTERVAL,
+)
 from monitoring_service.database import Database
 from monitoring_service.events import Event, ScheduledEvent
 from monitoring_service.handlers import HANDLERS, Context
 from raiden.utils.typing import Address, BlockNumber
-from raiden_contracts.constants import CONTRACT_MONITORING_SERVICE
+from raiden_contracts.constants import CONTRACT_MONITORING_SERVICE, GAS_REQUIRED_FOR_MS_MONITOR
 from raiden_contracts.contract_manager import ContractManager
 from raiden_libs.utils import private_key_to_address
 
 log = structlog.get_logger(__name__)
+
+
+def check_gas_reserve(web3: Web3, private_key: str) -> None:
+    """ Check periodically for gas reserve in the account """
+    gas_price = web3.eth.gasPrice
+    gas_limit = GAS_REQUIRED_FOR_MS_MONITOR
+    estimated_required_balance = gas_limit * gas_price * DEFAULT_GAS_BUFFER_FACTOR
+    estimated_required_balance_eth = Web3.fromWei(estimated_required_balance, 'ether')
+    current_balance = web3.eth.getBalance(private_key_to_address(private_key))
+    if current_balance < estimated_required_balance:
+        log.error(
+            "Your account's balance is below the estimated gas reserve of "
+            f"{estimated_required_balance_eth} Eth. You will be be unable "
+            "to perform on-chain transactions and cannot monitor any channels. "
+            "Please add funds to your account as soon as possible.",
+        )
 
 
 def handle_event(event: Event, context: Context) -> None:
@@ -36,7 +57,7 @@ class MonitoringService:
         db_filename: str,
         sync_start_block: BlockNumber = 0,
         required_confirmations: int = DEFAULT_REQUIRED_CONFIRMATIONS,
-        poll_interval: int = 5,
+        poll_interval: int = 1,
     ):
         self.web3 = web3
         self.contract_manager = contract_manager
@@ -44,6 +65,7 @@ class MonitoringService:
         self.address = private_key_to_address(private_key)
         self.required_confirmations = required_confirmations
         self.poll_interval = poll_interval
+        self.last_gas_check_block = 0
 
         web3.middleware_stack.add(
             construct_sign_and_send_raw_middleware(private_key),
@@ -82,9 +104,24 @@ class MonitoringService:
             monitoring_service_contract=monitoring_contract,
         )
 
-    def start(self, wait_function: Callable = time.sleep) -> None:
+    def start(
+        self,
+        wait_function: Callable = time.sleep,
+        check_account_gas_reserve: bool = True,
+    ) -> None:
         while True:
             last_confirmed_block = self.web3.eth.blockNumber - self.required_confirmations
+
+            # check gas reserve
+            do_gas_reserve_check = (
+                check_account_gas_reserve and
+                last_confirmed_block % DEFAULT_GAS_CHECK_BLOCKS == 0 and
+                self.last_gas_check_block < last_confirmed_block
+            )
+            if do_gas_reserve_check:
+                check_gas_reserve(self.web3, self.private_key)
+                self.last_gas_check_block = last_confirmed_block
+
             last_query_interval_block = (
                 self.context.ms_state.blockchain_state.latest_known_block + MAX_FILTER_INTERVAL
             )

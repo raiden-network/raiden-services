@@ -3,7 +3,8 @@ from unittest.mock import DEFAULT, patch
 
 from click.testing import CliRunner
 
-from monitoring_service.cli import check_gas_reserve, main
+from monitoring_service.cli import main
+from monitoring_service.service import check_gas_reserve
 
 patch_args = dict(
     target='monitoring_service.cli',
