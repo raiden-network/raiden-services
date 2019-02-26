@@ -1,6 +1,4 @@
-from .contracts import *  # noqa
 from .signing import *  # noqa
-from .private_key import *  # noqa
 from raiden_libs.types import ChannelIdentifier, T_ChannelIdentifier
 
 
