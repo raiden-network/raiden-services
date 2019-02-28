@@ -16,11 +16,14 @@ patch_args = dict(
 )
 
 
-def test_bad_eth_client(log):
+def test_bad_eth_client(log, default_cli_args):
     """ Giving a bad `eth-rpc` value should yield a concise error message """
     runner = CliRunner()
     with patch('pathfinding_service.cli.PathfindingService'):
-        result = runner.invoke(main, ['--eth-rpc', 'http://localhost:12345'])
+        result = runner.invoke(
+            main,
+            default_cli_args + ['--eth-rpc', 'http://localhost:12345'],
+        )
     assert result.exit_code == 1
     assert log.has(
         'Can not connect to the Ethereum client. Please check that it is running '
@@ -28,30 +31,39 @@ def test_bad_eth_client(log):
     )
 
 
-def test_success():
+def test_success(default_cli_args):
     """ Calling the pathfinding_service with default args should succeed after heavy mocking """
     runner = CliRunner()
     with patch.multiple(**patch_args) as mocks:
         mocks['get_default_registry_and_start_block'].return_value = Mock(), Mock()
-        result = runner.invoke(main, [])
+        result = runner.invoke(
+            main,
+            default_cli_args,
+        )
     assert result.exit_code == 0
 
 
-def test_eth_rpc():
+def test_eth_rpc(default_cli_args):
     """ The `eth-rpc` parameter must reach the `HTTPProvider` """
     runner = CliRunner()
     eth_rpc = 'example.com:1234'
     with patch('pathfinding_service.cli.HTTPProvider') as provider:
-        runner.invoke(main, ['--eth-rpc', eth_rpc])
+        runner.invoke(
+            main,
+            default_cli_args + ['--eth-rpc', eth_rpc],
+        )
         provider.assert_called_with(eth_rpc)
 
 
-def test_registry_address():
+def test_registry_address(default_cli_args):
     """ The `registry_address` parameter must reach the `PathfindingService` """
     runner = CliRunner()
     with patch.multiple(**patch_args) as mocks:
         address = Web3.toChecksumAddress('0x' + '1' * 40)
-        result = runner.invoke(main, ['--registry-address', address])
+        result = runner.invoke(
+            main,
+            default_cli_args + ['--registry-address', address],
+        )
         assert result.exit_code == 0
         assert mocks['PathfindingService'].call_args[1]['registry_address'] == address
 
@@ -66,7 +78,7 @@ def test_registry_address():
     fails_on_registry_check('0x' + '1' * 39)  # not 40 digits
 
 
-def test_start_block():
+def test_start_block(default_cli_args):
     """ The `start_block` parameter must reach the `PathfindingService`
 
     We also have to pass a registry address, because `start_block` is
@@ -77,27 +89,32 @@ def test_start_block():
         mocks['get_default_registry_and_start_block'].return_value = Mock(), Mock()
         start_block = 10
         address = Web3.toChecksumAddress('0x' + '1' * 40)
-        result = runner.invoke(main, [
-            '--registry-address', address, '--start-block', str(start_block)],
+        result = runner.invoke(
+            main,
+            default_cli_args + [
+                '--registry-address', address, '--start-block', str(start_block)],
         )
         assert result.exit_code == 0
         assert mocks['PathfindingService'].call_args[1]['sync_start_block'] == start_block
 
 
-def test_confirmations():
+def test_confirmations(default_cli_args):
     """ The `confirmations` parameter must reach the `PathfindingService` """
     runner = CliRunner()
     with patch.multiple(**patch_args) as mocks:
         mocks['get_default_registry_and_start_block'].return_value = Mock(), Mock()
         confirmations = 77
-        result = runner.invoke(main, [
-            '--confirmations', str(confirmations)], catch_exceptions=False,
+        result = runner.invoke(
+            main,
+            default_cli_args + [
+                '--confirmations', str(confirmations)],
+            catch_exceptions=False,
         )
         assert result.exit_code == 0
         assert mocks['PathfindingService'].call_args[1]['required_confirmations'] == confirmations
 
 
-def test_default_registry(token_network_registry_contract):
+def test_default_registry():
     """ We can fall back to a default registry if none if specified """
     net_version = 3
     contracts_version = '0.3._'
@@ -109,25 +126,32 @@ def test_default_registry(token_network_registry_contract):
     assert block_number > 0
 
 
-def test_shutdown():
+def test_shutdown(default_cli_args):
     """ Clean shutdown after KeyboardInterrupt """
     runner = CliRunner()
     with patch.multiple(**patch_args) as mocks:
         mocks['get_default_registry_and_start_block'].return_value = Mock(), Mock()
         mocks['PathfindingService'].return_value.run.side_effect = KeyboardInterrupt
-        result = runner.invoke(main, [], catch_exceptions=False)
+        result = runner.invoke(
+            main,
+            default_cli_args,
+            catch_exceptions=False,
+        )
         assert result.exit_code == 0
         assert 'Exiting' in result.output
         assert mocks['PathfindingService'].return_value.stop.called
         assert mocks['ServiceApi'].return_value.stop.called
 
 
-def test_log_level():
+def test_log_level(default_cli_args):
     """ Setting of log level via command line switch """
     runner = CliRunner()
     with patch.multiple(**patch_args), patch('logging.basicConfig') as basicConfig:
         for log_level in ('CRITICAL', 'WARNING'):
-            runner.invoke(main, ['--log-level', log_level])
+            runner.invoke(
+                main,
+                default_cli_args + ['--log-level', log_level],
+            )
             # pytest already initializes logging, so basicConfig does not have
             # an effect. Use mocking to check that it's called properly.
             assert logging.getLevelName(

@@ -1,5 +1,7 @@
+import gc
 from typing import List
 
+import gevent
 import pkg_resources
 import requests
 from eth_utils import to_normalized_address
@@ -64,6 +66,11 @@ def test_get_paths_validation(
     response = request_path_with(max_paths=-1)
     assert response.json()['errors'] == 'Number of paths must be positive: -1'
 
+# kill all running greenlets
+    gevent.killall(
+        [obj for obj in gc.get_objects() if isinstance(obj, gevent.Greenlet)],
+    )
+
 
 def test_get_paths_path_validation(
     api_sut: ServiceApi,
@@ -93,6 +100,10 @@ def test_get_paths_path_validation(
     assert response.status_code == 400
     assert response.json()['errors'] == 'Unsupported token network: {}'.format(
         '0x0000000000000000000000000000000000000000',
+    )
+    # killen aller greenlets
+    gevent.killall(
+        [obj for obj in gc.get_objects() if isinstance(obj, gevent.Greenlet)],
     )
 
 
@@ -145,6 +156,11 @@ def test_get_paths(
     assert response.status_code == 400
     assert response.json()['errors'].startswith('No suitable path found for transfer from')
 
+    # killen aller greenlets
+    gevent.killall(
+        [obj for obj in gc.get_objects() if isinstance(obj, gevent.Greenlet)],
+    )
+
 
 #
 # tests for /info endpoint
@@ -170,3 +186,7 @@ def test_get_info(
         'operator': 'PLACEHOLDER FOR PATHFINDER OPERATOR',
         'message': 'PLACEHOLDER FOR ADDITIONAL MESSAGE BY THE PFS',
     }
+    # killen aller greenlets
+    gevent.killall(
+        [obj for obj in gc.get_objects() if isinstance(obj, gevent.Greenlet)],
+    )

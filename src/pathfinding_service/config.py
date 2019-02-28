@@ -13,3 +13,5 @@ DEFAULT_MAX_PATHS: int = 5  # number of paths return when no `max_path` argument
 DEFAULT_REVEAL_TIMEOUT: int = 50
 
 DEFAULT_SETTLE_TO_REVEAL_TIMEOUT_RATIO = 2
+
+DEFAULT_POLL_INTERVALL = 10

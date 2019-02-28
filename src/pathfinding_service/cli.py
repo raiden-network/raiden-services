@@ -2,10 +2,12 @@
 from gevent import monkey  # isort:skip # noqa
 monkey.patch_all()  # isort:skip # noqa
 
+import json
 import sys
 
 import click
 import structlog
+from eth_account import Account
 from eth_utils import is_checksum_address
 from requests.exceptions import ConnectionError
 from web3 import HTTPProvider, Web3
@@ -13,7 +15,7 @@ from web3.middleware import geth_poa_middleware
 
 from pathfinding_service import PathfindingService
 from pathfinding_service.api.rest import ServiceApi
-from pathfinding_service.config import DEFAULT_API_HOST
+from pathfinding_service.config import DEFAULT_API_HOST, DEFAULT_POLL_INTERVALL
 from pathfinding_service.middleware import http_retry_with_backoff_middleware
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY
 from raiden_contracts.contract_manager import (
@@ -56,6 +58,16 @@ def get_default_registry_and_start_block(
 
 @click.command()
 @click.option(
+    '--keystore-file',
+    required=True,
+    type=click.Path(exists=True, dir_okay=False, readable=True),
+    help='Path to a keystore file.',
+)
+@click.password_option(
+    '--password',
+    help='Password to unlock the keystore file.',
+)
+@click.option(
     '--eth-rpc',
     default='http://localhost:8545',
     type=str,
@@ -92,6 +104,8 @@ def get_default_registry_and_start_block(
     help='Print log messages of this level and more important ones',
 )
 def main(
+    keystore_file: str,
+    password: str,
     eth_rpc: str,
     registry_address: Address,
     start_block: int,
@@ -113,6 +127,18 @@ def main(
     contracts_version = '0.3._'  # FIXME: update this to latest contracts
     log.info(f'Using contracts version: {contracts_version}')
 
+    with open(keystore_file, 'r') as keystore:
+        try:
+            private_key = Account.decrypt(
+                keyfile_json=json.load(keystore),
+                password=password,
+            )
+        except ValueError as error:
+            log.critical(
+                'Could not decode keyfile with given password. Please try again.',
+                reason=str(error),
+            )
+            sys.exit(1)
     try:
         log.info(f'Starting Web3 client for node at {eth_rpc}')
         provider = HTTPProvider(eth_rpc)
@@ -150,6 +176,8 @@ def main(
             registry_address=registry_address,
             sync_start_block=start_block,
             required_confirmations=confirmations,
+            private_key=private_key,
+            poll_interval=DEFAULT_POLL_INTERVALL,
         )
 
         api = ServiceApi(service)

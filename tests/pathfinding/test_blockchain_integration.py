@@ -38,12 +38,13 @@ def test_pfs_with_mocked_client(
         registry_address=token_network_registry_contract.address,
         required_confirmations=1,
         poll_interval=0,
+        private_key='3a1076bf45ab87712ad64ccb3b10217737f7faacbf2872e88fdd9a537d8fe266',
     )
 
     # greenlet needs to be started and context switched to
     pfs.start()
     wait_for_blocks(1)
-    gevent.sleep(0)
+    gevent.sleep(1)
 
     # there should be one token network registered
     assert len(pfs.token_networks) == 1
@@ -71,7 +72,6 @@ def test_pfs_with_mocked_client(
         clients[p1_index].deposit_to_channel(clients[p2_index].address, p1_deposit)
         clients[p2_index].deposit_to_channel(clients[p1_index].address, p2_deposit)
         gevent.sleep()
-
     wait_for_blocks(1)
     gevent.sleep(0)
 

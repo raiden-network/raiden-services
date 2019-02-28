@@ -91,7 +91,6 @@ def test_e2e(
         locksroot='0x%064x' % 0,
         additional_hash='0x%064x' % 0,
     )
-
     ms_greenlet = gevent.spawn(monitoring_service.start, gevent.sleep)
 
     # need to wait here till the MS has some time to react

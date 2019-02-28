@@ -1,8 +1,10 @@
+import json
 import random
 from typing import Callable, Generator, List
 from unittest.mock import Mock, patch
 
 import pytest
+from eth_account import Account
 from tests.pathfinding.config import NUMBER_OF_CHANNELS
 from tests.pathfinding.mocks.blockchain_listener import BlockchainListenerMock
 from web3 import Web3
@@ -12,6 +14,9 @@ from pathfinding_service.model.token_network import TokenNetwork
 from raiden_contracts.contract_manager import ContractManager
 from raiden_libs.types import Address, ChannelIdentifier
 from raiden_libs.utils import private_key_to_address
+
+KEYSTORE_FILE_NAME = 'keystore.txt'
+KEYSTORE_PASSWORD = 'password'
 
 
 @pytest.fixture
@@ -307,12 +312,14 @@ def pathfinding_service_full_mock(
             web3=web3_mock,
             contract_manager=contracts_manager,
             registry_address=Address('0xB9633dd9a9a71F22C933bF121d7a22008f66B908'),
+            private_key='3a1076bf45ab87712ad64ccb3b10217737f7faacbf2872e88fdd9a537d8fe266',
         )
         pathfinding_service.token_networks = {
             token_network_model.address: token_network_model,
         }
 
         yield pathfinding_service
+        pathfinding_service.stop()
 
 
 @pytest.fixture
@@ -329,6 +336,30 @@ def pathfinding_service_mocked_listeners(
             web3=web3,
             contract_manager=contracts_manager,
             registry_address=Address(''),
+            private_key='3a1076bf45ab87712ad64ccb3b10217737f7faacbf2872e88fdd9a537d8fe266',
         )
 
         yield pathfinding_service
+
+
+@pytest.fixture
+def keystore_file(tmp_path) -> str:
+    keystore_file = tmp_path / KEYSTORE_FILE_NAME
+
+    account = Account.create()
+    keystore_json = Account.encrypt(
+        private_key=account.privateKey,
+        password=KEYSTORE_PASSWORD,
+    )
+    with open(keystore_file, 'w') as fp:
+        json.dump(keystore_json, fp)
+
+    return keystore_file
+
+
+@pytest.fixture
+def default_cli_args(keystore_file) -> List[str]:
+    return [
+        '--keystore-file', keystore_file,
+        '--password', KEYSTORE_PASSWORD,
+    ]
