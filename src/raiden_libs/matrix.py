@@ -10,7 +10,7 @@ from matrix_client.user import User
 
 from raiden.constants import Environment
 from raiden.exceptions import InvalidProtocolMessage, TransportError
-from raiden.messages import SignedMessage, from_dict as message_from_dict
+from raiden.messages import Message, RequestMonitoring, SignedMessage, UpdatePFS
 from raiden.network.transport.matrix.client import GMatrixClient, Room
 from raiden.network.transport.matrix.utils import (
     join_global_room,
@@ -29,6 +29,25 @@ from raiden.utils.cli import get_matrix_servers
 from raiden.utils.signer import LocalSigner
 
 log = structlog.get_logger(__name__)
+
+
+SERVICE_MESSAGES = (UpdatePFS, RequestMonitoring)
+CLASSNAME_TO_CLASS = {klass.__name__: klass for klass in SERVICE_MESSAGES}
+
+
+def message_from_dict(data: dict) -> Message:
+    try:
+        klass = CLASSNAME_TO_CLASS[data['type']]
+    except KeyError:
+        if 'type' in data:
+            raise InvalidProtocolMessage(
+                'Invalid message type (data["type"] = {})'.format(data['type']),
+            ) from None
+        else:
+            raise InvalidProtocolMessage(
+                'Invalid message data. Can not find the data type',
+            ) from None
+    return klass.from_dict(data)
 
 
 class MatrixListener(gevent.Greenlet):
