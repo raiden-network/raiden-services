@@ -10,9 +10,10 @@ from monitoring_service.states import (
     OnChainUpdateStatus,
     UnsignedMonitorRequest,
 )
+from raiden.constants import UINT64_MAX, UINT256_MAX
 from raiden_contracts.constants import ChannelState
 from raiden_libs.types import ChannelIdentifier
-from raiden_libs.utils import UINT64_MAX, UINT256_MAX, private_key_to_address, sha3
+from raiden_libs.utils import private_key_to_address, sha3
 
 
 @pytest.fixture
