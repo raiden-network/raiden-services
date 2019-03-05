@@ -46,7 +46,7 @@ def test_shutdown(keystore_file, default_cli_args):
         )
         assert result.exit_code == 0
         assert 'Exiting' in result.output
-        assert mocks['RequestCollector'].return_value.stop.called
+        assert mocks['RequestCollector'].return_value.listen_forever.called
 
 
 def test_log_level(keystore_file, default_cli_args):

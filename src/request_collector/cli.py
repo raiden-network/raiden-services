@@ -78,21 +78,12 @@ def main(
 
     database = SharedDatabase(state_db)
 
-    service = None
-    try:
-        service = RequestCollector(
-            private_key=encode_hex(private_key),
-            state_db=database,
-        )
+    RequestCollector(
+        private_key=encode_hex(private_key),
+        state_db=database,
+    ).listen_forever()
 
-        service.run()
-    except (KeyboardInterrupt, SystemExit):
-        print('Exiting...')
-    finally:
-        log.info('Stopping Request Collector...')
-        if service:
-            service.stop()
-
+    print('Exiting...')
     return 0
 
 
