@@ -74,6 +74,9 @@ class MatrixListener(gevent.Greenlet):
             )
             sys.exit(1)
 
+    def listen_forever(self):
+        self.client.listen_forever()
+
     def _run(self):
         self.client.start_listener_thread()
         self.client.sync_thread.get()

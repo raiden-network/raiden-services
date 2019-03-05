@@ -52,6 +52,9 @@ class RequestCollector(gevent.Greenlet):
             )
             sys.exit(1)
 
+    def listen_forever(self):
+        self.matrix_listener.listen_forever()
+
     def _run(self):
         register_error_handler(error_handler)
         self.matrix_listener.start()
