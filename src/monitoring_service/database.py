@@ -69,7 +69,9 @@ class SharedDatabase:
         assert is_checksum_address(non_closing_signer)
         row = self.conn.execute(
             """
-                SELECT * FROM monitor_request
+                SELECT *,
+                    (SELECT chain_id FROM blockchain) As chain_id
+                FROM monitor_request
                 WHERE channel_identifier = ?
                   AND token_network_address = ?
                   AND non_closing_signer = ?
@@ -83,7 +85,7 @@ class SharedDatabase:
             key: val for key, val in zip(row.keys(), row)
             if key != 'non_closing_signer'
         }
-        mr = MonitorRequest(chain_id=1, **kwargs)
+        mr = MonitorRequest(**kwargs)
         return mr
 
     def monitor_request_count(self) -> int:
