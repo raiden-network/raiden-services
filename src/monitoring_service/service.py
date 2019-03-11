@@ -161,30 +161,24 @@ class MonitoringService:
         for event in events:
             handle_event(event, self.context)
 
-        # check triggered events
-        # TODO: create a priority queue for this
-        events_to_remove = []
-        for scheduled_event in self.context.scheduled_events:
+        # check triggered events and trigger the correct ones
+        for scheduled_event in self.context.scheduled_events.copy():
             event = scheduled_event.event
 
             if last_block >= scheduled_event.trigger_block_number:
-                events_to_remove.append(scheduled_event)
+                self.context.scheduled_events.remove(scheduled_event)
                 handle_event(event, self.context)
-
-        for event in events_to_remove:
-            self.context.scheduled_events.remove(event)
 
         if self.context.scheduled_events:
             log.debug('Scheduled_events', events=self.context.scheduled_events)
 
         # check pending transactions
         # this is done here so we don't have to block waiting for receipts in the state machine
-        hash_to_remove = []
-        for tx_hash in self.context.waiting_transactions:
+        for tx_hash in self.context.waiting_transactions.copy():
             receipt = self.web3.eth.getTransactionReceipt(tx_hash)
 
             if receipt is not None:
-                hash_to_remove.append(tx_hash)
+                self.context.waiting_transactions.remove(tx_hash)
 
                 if receipt['status'] == 1:
                     log.info(
@@ -198,6 +192,3 @@ class MonitoringService:
                         transaction_hash=tx_hash,
                         receipt=receipt,
                     )
-
-        for tx_hash in hash_to_remove:
-            self.context.waiting_transactions.remove(tx_hash)
