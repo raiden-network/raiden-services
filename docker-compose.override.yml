@@ -1,0 +1,44 @@
+# For development. Start the desired services with
+# docker-compose up service1 service2
+version: '3.4'
+
+x-defaults: &defaults
+  restart: "no"
+  volumes:
+    - ~/services-dev/state:/state
+    - ~/.ethereum/keystore:/keystore
+    - ~/raiden-services:/pfs  # use development code
+
+services:
+  pfs-ropsten:
+    << : *defaults
+    ports:
+      - 6001:6000
+
+  pfs-rinkeby:
+    << : *defaults
+    ports:
+      - 6002:6000
+
+  pfs-kovan:
+    << : *defaults
+    ports:
+      - 6003:6000
+
+  ms-ropsten:
+    << : *defaults
+
+  ms-rinkeby:
+    << : *defaults
+
+  ms-kovan:
+    << : *defaults
+
+  msrc-ropsten:
+    << : *defaults
+
+  msrc-rinkeby:
+    << : *defaults
+
+  msrc-kovan:
+    << : *defaults
