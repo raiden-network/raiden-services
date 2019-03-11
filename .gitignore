@@ -112,3 +112,7 @@ venv.bak/
 
 # databases
 *.db
+
+# ignore data created when deploying services
+deployment/state/
+deployment/data

@@ -1,0 +1,28 @@
+debug = false
+
+logLevel = "INFO"
+defaultEntryPoints = ["https","http"]
+
+[entryPoints]
+  [entryPoints.http]
+    address = ":80"
+    [entryPoints.http.redirect]
+      entryPoint = "https"
+  [entryPoints.https]
+    address = ":443"
+    [entryPoints.https.tls]
+
+[retry]
+
+[docker]
+  watch = true
+  exposedbydefault = false
+
+[acme]
+  email = "contact@raiden.network"
+  storage = "/data/acme.json"
+  entryPoint = "https"
+  OnHostRule = true
+
+  [acme.httpChallenge]
+    entryPoint = "http"

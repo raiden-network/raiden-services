@@ -132,7 +132,7 @@ def main(
             private_key = Account.decrypt(
                 keyfile_json=json.load(keystore),
                 password=password,
-            )
+            ).hex()
         except ValueError as error:
             log.critical(
                 'Could not decode keyfile with given password. Please try again.',
