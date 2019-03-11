@@ -65,7 +65,7 @@ def build(branch, container_names, source, deployment, **kw):
             _print(f'docker down: {name}')
             subprocess.check_output(["docker-compose", "stop", name])
         _print('docker up')
-        subprocess.check_output(["docker-compose", "up", "-d"])
+        subprocess.check_output(["docker-compose", "-f", "docker-compose.yml", "up", "-d"])
     except Exception as e:
         _print(str(e))
         return False
