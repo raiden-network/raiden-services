@@ -1,6 +1,6 @@
 import sys
 import time
-from typing import Callable, List
+from typing import Callable
 
 import structlog
 from web3 import Web3
@@ -14,7 +14,7 @@ from monitoring_service.constants import (
     MAX_FILTER_INTERVAL,
 )
 from monitoring_service.database import Database
-from monitoring_service.events import Event, ScheduledEvent
+from monitoring_service.events import Event
 from monitoring_service.handlers import HANDLERS, Context
 from raiden.utils.typing import Address, BlockNumber
 from raiden_contracts.constants import CONTRACT_MONITORING_SERVICE, GAS_REQUIRED_FOR_MS_MONITOR
@@ -87,7 +87,6 @@ class MonitoringService:
             msc_address=monitor_contract_address,
         )
         ms_state = self.database.load_state(sync_start_block)
-        scheduled_events: List[ScheduledEvent] = list()
 
         self.bcl = BlockchainListener(
             web3=self.web3,
@@ -97,7 +96,8 @@ class MonitoringService:
         self.context = Context(
             ms_state=ms_state,
             db=self.database,
-            scheduled_events=scheduled_events,
+            scheduled_events=list(),
+            waiting_transactions=list(),
             w3=self.web3,
             contract_manager=contract_manager,
             last_known_block=0,
@@ -163,16 +163,41 @@ class MonitoringService:
 
         # check triggered events
         # TODO: create a priority queue for this
-        to_remove = []
+        events_to_remove = []
         for scheduled_event in self.context.scheduled_events:
             event = scheduled_event.event
 
             if last_block >= scheduled_event.trigger_block_number:
-                to_remove.append(scheduled_event)
+                events_to_remove.append(scheduled_event)
                 handle_event(event, self.context)
 
-        for d in to_remove:
-            self.context.scheduled_events.remove(d)
+        for event in events_to_remove:
+            self.context.scheduled_events.remove(event)
 
         if self.context.scheduled_events:
-            log.info('Scheduled_events', events=self.context.scheduled_events)
+            log.debug('Scheduled_events', events=self.context.scheduled_events)
+
+        # check pending transactions
+        # this is done here so we don't have to block waiting for receipts in the state machine
+        hash_to_remove = []
+        for tx_hash in self.context.waiting_transactions:
+            receipt = self.web3.eth.getTransactionReceipt(tx_hash)
+
+            if receipt is not None:
+                hash_to_remove.append(tx_hash)
+
+                if receipt['status'] == 1:
+                    log.info(
+                        'Transaction was mined successfully',
+                        transaction_hash=tx_hash,
+                        receipt=receipt,
+                    )
+                else:
+                    log.error(
+                        'Transaction was not mined successfully',
+                        transaction_hash=tx_hash,
+                        receipt=receipt,
+                    )
+
+        for tx_hash in hash_to_remove:
+            self.context.waiting_transactions.remove(tx_hash)

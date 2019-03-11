@@ -38,6 +38,7 @@ class Context:
     ms_state: MonitoringServiceState
     db: Database
     scheduled_events: List[ScheduledEvent]
+    waiting_transactions: List[str]
     w3: Web3
     contract_manager: ContractManager
     last_known_block: int
@@ -387,12 +388,15 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
             ).transact({'from': context.ms_state.address})
 
             log.info(
-                'Calling `monitor` on channel',
+                'Sent transaction calling `monitor` for channel',
                 token_network_address=channel.token_network_address,
                 channel_identifier=channel.identifier,
                 transaction_hash=encode_hex(tx_hash),
             )
             assert tx_hash is not None
+
+            # Add tx hash to list of waiting transactions
+            context.waiting_transactions.append(encode_hex(tx_hash))
 
             channel.closing_tx_hash = tx_hash
             context.db.upsert_channel(channel)
@@ -440,12 +444,15 @@ def action_claim_reward_triggered_event_handler(event: Event, context: Context) 
             ).transact({'from': context.ms_state.address})
 
             log.info(
-                'Calling `claimReward` on channel',
+                'Sent transaction calling `claimReward` for channel',
                 token_network_address=channel.token_network_address,
                 channel_identifier=channel.identifier,
                 transaction_hash=encode_hex(tx_hash),
             )
             assert tx_hash is not None
+
+            # Add tx hash to list of waiting transactions
+            context.waiting_transactions.append(encode_hex(tx_hash))
 
             channel.claim_tx_hash = tx_hash
             context.db.upsert_channel(channel)
