@@ -1,0 +1,56 @@
+version: '3'
+
+services:
+  pfs-ropsten:
+    build: ../raiden-services
+    restart: always
+    environment:
+      - PFS_ETH_RPC=http://geth.ropsten.ethnodes.brainbot.com:8545
+      - PFS_HOST=0.0.0.0
+    labels:
+      - "traefik.enable=true"
+      - "traefik.frontend.rule=Host: pfs-ropsten.services-dev.raiden.network"
+
+  pfs-rinkeby:
+    build: ../raiden-services
+    restart: always
+    environment:
+      - PFS_ETH_RPC=http://geth.rinkeby.ethnodes.brainbot.com:8545
+      - PFS_HOST=0.0.0.0
+    labels:
+      - "traefik.enable=true"
+      - "traefik.frontend.rule=Host: pfs-rinkeby.services-dev.raiden.network"
+
+  pfs-kovan:
+    build: ../raiden-services
+    restart: always
+    environment:
+      - PFS_ETH_RPC=http://parity.kovan.ethnodes.brainbot.com:8545
+      - PFS_HOST=0.0.0.0
+    labels:
+      - "traefik.enable=true"
+      - "traefik.frontend.rule=Host: pfs-kovan.services-dev.raiden.network"
+
+  builder:
+    build: ./builder
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /data:/data
+      - /root/.ssh:/root/.ssh:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.frontend.rule=Host: services-dev.raiden.network"
+
+  traefik:
+    image: traefik:1.7
+    restart: always
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./config/traefik:/etc/traefik
+      - ./data/traefik:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - pfs-ropsten
+      - builder
