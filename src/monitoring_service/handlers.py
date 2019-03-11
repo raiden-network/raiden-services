@@ -70,59 +70,63 @@ def channel_closed_event_handler(event: Event, context: Context) -> None:
         event.channel_identifier,
     )
 
-    if channel:
-        log.info(
-            'Channel closed, triggering monitoring check',
+    if channel is None:
+        log.error(
+            'Channel not in database',
+            token_network_address=event.token_network_address,
+            identifier=event.channel_identifier,
+        )
+        return
+
+    log.info(
+        'Channel closed, triggering monitoring check',
+        token_network_address=event.token_network_address,
+        identifier=channel.identifier,
+    )
+
+    # check if the settle timeout is already over
+    # this is important when starting up the MS
+    settle_period_end_block = event.block_number + channel.settle_timeout
+    settle_period_over = (
+        settle_period_end_block < context.last_known_block
+    )
+    if not settle_period_over:
+        # trigger the monitoring action event handler, this will check if a
+        # valid MR is avilable.
+        # This enables the client to send a late MR
+        # also see https://github.com/raiden-network/raiden-services/issues/29
+        if channel.participant1 == event.closing_participant:
+            non_closing_participant = channel.participant2
+        else:
+            non_closing_participant = channel.participant1
+        e = ActionMonitoringTriggeredEvent(
+            token_network_address=channel.token_network_address,
+            channel_identifier=channel.identifier,
+            non_closing_participant=non_closing_participant,
+        )
+        client_update_period: int = round(
+            channel.settle_timeout * RATIO_OF_SETTLE_TIMEOUT_BEFORE_MONITOR,
+        )
+        trigger_block = event.block_number + client_update_period
+        context.scheduled_events.append(
+            ScheduledEvent(
+                trigger_block_number=trigger_block,
+                event=cast(Event, e),
+            ),
+        )
+    else:
+        log.warning(
+            'Settle period timeout is in the past, skipping',
             token_network_address=event.token_network_address,
             identifier=channel.identifier,
+            settle_period_end_block=settle_period_end_block,
+            known_block=context.last_known_block,
         )
 
-        # check if the settle timeout is already over
-        # this is important when starting up the MS
-        settle_period_end_block = event.block_number + channel.settle_timeout
-        settle_period_over = (
-            settle_period_end_block < context.last_known_block
-        )
-        if not settle_period_over:
-            # trigger the monitoring action event handler, this will check if a
-            # valid MR is avilable.
-            # This enables the client to send a late MR
-            # also see https://github.com/raiden-network/raiden-services/issues/29
-            if channel.participant1 == event.closing_participant:
-                non_closing_participant = channel.participant2
-            else:
-                non_closing_participant = channel.participant1
-            e = ActionMonitoringTriggeredEvent(
-                token_network_address=channel.token_network_address,
-                channel_identifier=channel.identifier,
-                non_closing_participant=non_closing_participant,
-            )
-            client_update_period: int = round(
-                channel.settle_timeout * RATIO_OF_SETTLE_TIMEOUT_BEFORE_MONITOR,
-            )
-            trigger_block = event.block_number + client_update_period
-            context.scheduled_events.append(
-                ScheduledEvent(
-                    trigger_block_number=trigger_block,
-                    event=cast(Event, e),
-                ),
-            )
-        else:
-            log.warning(
-                'Settle period timeout is in the past, skipping',
-                token_network_address=event.token_network_address,
-                identifier=channel.identifier,
-                settle_period_end_block=settle_period_end_block,
-                known_block=context.last_known_block,
-            )
-
-        channel.state = ChannelState.CLOSED
-        channel.closing_block = event.block_number
-        channel.closing_participant = event.closing_participant
-        context.db.upsert_channel(channel)
-    else:
-        log.error('Channel not in database')
-        # FIXME: this is a bad error
+    channel.state = ChannelState.CLOSED
+    channel.closing_block = event.block_number
+    channel.closing_participant = event.closing_participant
+    context.db.upsert_channel(channel)
 
 
 def channel_non_closing_balance_proof_updated_event_handler(
@@ -135,65 +139,69 @@ def channel_non_closing_balance_proof_updated_event_handler(
         event.channel_identifier,
     )
 
-    if channel:
-        log.info(
-            'Received update event for channel',
+    if channel is None:
+        log.error(
+            'Channel not in database',
             token_network_address=event.token_network_address,
             identifier=event.channel_identifier,
         )
+        return
 
-        if event.closing_participant == channel.participant1:
-            non_closing_participant = channel.participant2
-        elif event.closing_participant == channel.participant2:
-            non_closing_participant = channel.participant1
-        else:
+    log.info(
+        'Received update event for channel',
+        token_network_address=event.token_network_address,
+        identifier=event.channel_identifier,
+    )
+
+    if event.closing_participant == channel.participant1:
+        non_closing_participant = channel.participant2
+    elif event.closing_participant == channel.participant2:
+        non_closing_participant = channel.participant1
+    else:
+        log.error(
+            'Update event contains invalid closing participant',
+            participant1=channel.participant1,
+            participant2=channel.participant2,
+            closing_participant=event.closing_participant,
+        )
+        return
+
+    # check for known update calls and update accordingly
+    if channel.update_status is None:
+        log.info(
+            'Creating channel update state',
+            token_network_address=channel.token_network_address,
+            channel_identifier=channel.identifier,
+            new_nonce=event.nonce,
+        )
+
+        channel.update_status = OnChainUpdateStatus(
+            update_sender_address=non_closing_participant,
+            nonce=event.nonce,
+        )
+
+        context.db.upsert_channel(channel)
+    else:
+        # nonce not bigger, should never happen as it is checked in the contract
+        if event.nonce <= channel.update_status.nonce:
             log.error(
-                'Update event contains invalid closing participant',
-                participant1=channel.participant1,
-                participant2=channel.participant2,
-                closing_participant=event.closing_participant,
+                'updateNonClosingBalanceProof nonce smaller than the known one, ignoring.',
+                know_nonce=channel.update_status.nonce,
+                received_nonce=event.nonce,
             )
             return
 
-        # check for known update calls and update accordingly
-        if channel.update_status is None:
-            log.info(
-                'Creating channel update state',
-                token_network_address=channel.token_network_address,
-                channel_identifier=channel.identifier,
-                new_nonce=event.nonce,
-            )
+        log.info(
+            'Updating channel update state',
+            token_network_address=channel.token_network_address,
+            channel_identifier=channel.identifier,
+            new_nonce=event.nonce,
+        )
+        # update channel status
+        channel.update_status.nonce = event.nonce
+        channel.update_status.update_sender_address = non_closing_participant
 
-            channel.update_status = OnChainUpdateStatus(
-                update_sender_address=non_closing_participant,
-                nonce=event.nonce,
-            )
-
-            context.db.upsert_channel(channel)
-        else:
-            # nonce not bigger, should never happen as it is checked in the contract
-            if event.nonce <= channel.update_status.nonce:
-                log.error(
-                    'updateNonClosingBalanceProof nonce smaller than the known one, ignoring.',
-                    know_nonce=channel.update_status.nonce,
-                    received_nonce=event.nonce,
-                )
-                return
-
-            log.info(
-                'Updating channel update state',
-                token_network_address=channel.token_network_address,
-                channel_identifier=channel.identifier,
-                new_nonce=event.nonce,
-            )
-            # update channel status
-            channel.update_status.nonce = event.nonce
-            channel.update_status.update_sender_address = non_closing_participant
-
-            context.db.upsert_channel(channel)
-    else:
-        log.error('Channel not in database')
-        # FIXME: this is a bad error
+        context.db.upsert_channel(channel)
 
 
 def channel_settled_event_handler(event: Event, context: Context) -> None:
@@ -205,18 +213,22 @@ def channel_settled_event_handler(event: Event, context: Context) -> None:
         event.channel_identifier,
     )
 
-    if channel:
-        log.info(
-            'Received settle event for channel',
+    if channel is None:
+        log.error(
+            'Channel not in database',
             token_network_address=event.token_network_address,
             identifier=event.channel_identifier,
         )
+        return
 
-        channel.state = ChannelState.SETTLED
-        context.db.upsert_channel(channel)
-    else:
-        log.error('Channel not in database')
-        # FIXME: this is a bad error
+    log.info(
+        'Received settle event for channel',
+        token_network_address=event.token_network_address,
+        identifier=event.channel_identifier,
+    )
+
+    channel.state = ChannelState.SETTLED
+    context.db.upsert_channel(channel)
 
 
 def monitor_new_balance_proof_event_handler(event: Event, context: Context) -> None:
@@ -226,76 +238,80 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context) -> N
         event.channel_identifier,
     )
 
-    if channel:
-        log.info(
-            'Received MSC NewBalanceProof event',
+    if channel is None:
+        log.error(
+            'Channel not in database',
             token_network_address=event.token_network_address,
             identifier=event.channel_identifier,
-            evt=event,
+        )
+        return
+
+    log.info(
+        'Received MSC NewBalanceProof event',
+        token_network_address=event.token_network_address,
+        identifier=event.channel_identifier,
+        evt=event,
+    )
+
+    # check for known monitor calls and update accordingly
+    update_status = channel.update_status
+    if update_status is None:
+        log.info(
+            'Creating channel update state',
+            token_network_address=channel.token_network_address,
+            channel_identifier=channel.identifier,
+            new_nonce=event.nonce,
+            new_sender=event.ms_address,
         )
 
-        # check for known monitor calls and update accordingly
-        update_status = channel.update_status
-        if update_status is None:
-            log.info(
-                'Creating channel update state',
-                token_network_address=channel.token_network_address,
-                channel_identifier=channel.identifier,
-                new_nonce=event.nonce,
-                new_sender=event.ms_address,
-            )
+        channel.update_status = OnChainUpdateStatus(
+            update_sender_address=event.ms_address,
+            nonce=event.nonce,
+        )
 
-            channel.update_status = OnChainUpdateStatus(
-                update_sender_address=event.ms_address,
-                nonce=event.nonce,
-            )
-
-            context.db.upsert_channel(channel)
-        else:
-            # nonce not bigger, should never happen as it is checked in the contract
-            if event.nonce < update_status.nonce:
-                log.error(
-                    'MSC NewBalanceProof nonce smaller than the known one, ignoring.',
-                    know_nonce=update_status.nonce,
-                    received_nonce=event.nonce,
-                )
-                return
-
-            log.info(
-                'Updating channel update state',
-                token_network_address=channel.token_network_address,
-                channel_identifier=channel.identifier,
-                new_nonce=event.nonce,
-                new_sender=event.ms_address,
-            )
-            # update channel status
-            update_status.nonce = event.nonce
-            update_status.update_sender_address = event.ms_address
-
-            context.db.upsert_channel(channel)
-
-        # check if this was our update, if so schedule the call
-        # of `claimReward`
-        # it will be checked there that our update was the latest one
-        if event.ms_address == context.ms_state.address:
-            # trigger the claim reward action by an event
-            e = ActionClaimRewardTriggeredEvent(
-                token_network_address=channel.token_network_address,
-                channel_identifier=channel.identifier,
-                non_closing_participant=event.raiden_node_address,
-            )
-
-            assert channel.closing_block is not None, 'closing_block not set'
-            trigger_block: int = channel.closing_block + channel.settle_timeout + 5
-            context.scheduled_events.append(
-                ScheduledEvent(
-                    trigger_block_number=trigger_block,
-                    event=cast(Event, e),
-                ),
-            )
+        context.db.upsert_channel(channel)
     else:
-        log.error('Channel not in database')
-        # FIXME: this is a bad error
+        # nonce not bigger, should never happen as it is checked in the contract
+        if event.nonce < update_status.nonce:
+            log.error(
+                'MSC NewBalanceProof nonce smaller than the known one, ignoring.',
+                know_nonce=update_status.nonce,
+                received_nonce=event.nonce,
+            )
+            return
+
+        log.info(
+            'Updating channel update state',
+            token_network_address=channel.token_network_address,
+            channel_identifier=channel.identifier,
+            new_nonce=event.nonce,
+            new_sender=event.ms_address,
+        )
+        # update channel status
+        update_status.nonce = event.nonce
+        update_status.update_sender_address = event.ms_address
+
+        context.db.upsert_channel(channel)
+
+    # check if this was our update, if so schedule the call
+    # of `claimReward`
+    # it will be checked there that our update was the latest one
+    if event.ms_address == context.ms_state.address:
+        # trigger the claim reward action by an event
+        e = ActionClaimRewardTriggeredEvent(
+            token_network_address=channel.token_network_address,
+            channel_identifier=channel.identifier,
+            non_closing_participant=event.raiden_node_address,
+        )
+
+        assert channel.closing_block is not None, 'closing_block not set'
+        trigger_block: int = channel.closing_block + channel.settle_timeout + 5
+        context.scheduled_events.append(
+            ScheduledEvent(
+                trigger_block_number=trigger_block,
+                event=cast(Event, e),
+            ),
+        )
 
 
 def monitor_reward_claim_event_handler(event: Event, context: Context) -> None:
