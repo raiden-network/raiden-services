@@ -108,7 +108,6 @@ def context(ms_database):
         ms_state=ms_database.load_state(sync_start_block=0),
         db=ms_database,
         scheduled_events=[],
-        waiting_transactions=[],
         w3=Mock(),
         contract_manager=Mock(),
         last_known_block=0,

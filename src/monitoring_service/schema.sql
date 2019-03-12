@@ -52,3 +52,7 @@ CREATE TABLE monitor_request (
     --FOREIGN KEY (channel_identifier, token_network_address)
     --    REFERENCES channels(channel_identifier, token_network_address) ON DELETE CASCADE
 );
+
+CREATE TABLE waiting_transactions (
+    transaction_hash        CHAR(66)    NOT NULL
+);

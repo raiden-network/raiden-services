@@ -1,6 +1,6 @@
 import os
 import sqlite3
-from typing import Optional
+from typing import List, Optional
 
 import structlog
 from eth_utils import is_checksum_address
@@ -142,6 +142,25 @@ class SharedDatabase:
 
     def channel_count(self) -> int:
         return self.conn.execute("SELECT count(*) FROM channel").fetchone()[0]
+
+    def get_waiting_transactions(self) -> List[str]:
+        return [
+            row[0] for row in self.conn.execute(
+                "SELECT transaction_hash FROM waiting_transactions",
+            )
+        ]
+
+    def add_waiting_transaction(self, waiting_tx_hash: str) -> None:
+        self.conn.execute(
+            "INSERT OR REPLACE INTO waiting_transactions VALUES (?)",
+            [waiting_tx_hash],
+        )
+
+    def remove_waiting_transaction(self, tx_hash: str) -> None:
+        self.conn.execute(
+            "DELETE FROM waiting_transactions WHERE transaction_hash = ?",
+            [tx_hash],
+        )
 
     def load_state(self, sync_start_block: int) -> MonitoringServiceState:
         """ Load MS state from db or return a new empty state if not saved one is present

@@ -41,7 +41,6 @@ class Context:
     ms_state: MonitoringServiceState
     db: Database
     scheduled_events: List[ScheduledEvent]
-    waiting_transactions: List[str]
     w3: Web3
     contract_manager: ContractManager
     last_known_block: int
@@ -404,7 +403,7 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
             assert tx_hash is not None
 
             # Add tx hash to list of waiting transactions
-            context.waiting_transactions.append(encode_hex(tx_hash))
+            context.db.add_waiting_transaction(encode_hex(tx_hash))
 
             channel.closing_tx_hash = tx_hash
             context.db.upsert_channel(channel)
@@ -460,7 +459,7 @@ def action_claim_reward_triggered_event_handler(event: Event, context: Context) 
             assert tx_hash is not None
 
             # Add tx hash to list of waiting transactions
-            context.waiting_transactions.append(encode_hex(tx_hash))
+            context.db.add_waiting_transaction(encode_hex(tx_hash))
 
             channel.claim_tx_hash = tx_hash
             context.db.upsert_channel(channel)
