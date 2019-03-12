@@ -97,7 +97,6 @@ class MonitoringService:
             ms_state=ms_state,
             db=self.database,
             scheduled_events=list(),
-            waiting_transactions=list(),
             w3=self.web3,
             contract_manager=contract_manager,
             last_known_block=0,
@@ -174,11 +173,11 @@ class MonitoringService:
 
         # check pending transactions
         # this is done here so we don't have to block waiting for receipts in the state machine
-        for tx_hash in self.context.waiting_transactions.copy():
+        for tx_hash in self.context.db.get_waiting_transactions():
             receipt = self.web3.eth.getTransactionReceipt(tx_hash)
 
             if receipt is not None:
-                self.context.waiting_transactions.remove(tx_hash)
+                self.context.db.remove_waiting_transaction(tx_hash)
 
                 if receipt['status'] == 1:
                     log.info(
