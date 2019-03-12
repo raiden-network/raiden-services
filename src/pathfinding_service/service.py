@@ -283,4 +283,4 @@ class PathfindingService(gevent.Greenlet):
             log.info('Ignoring unknown message type')
 
     def on_pfs_update(self, message: UpdatePFS):
-        print(f"This is the message: {message}")
+        log.info('Received message', **message.to_dict())
