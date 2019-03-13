@@ -55,6 +55,7 @@ def default_cli_args_ms(default_cli_args) -> List[str]:
     return default_cli_args + [
         '--registry-address', '0x' + '1' * 40,
         '--monitor-contract-address', '0x' + '2' * 40,
+        '--user-deposit-contract-address', '0x' + '3' * 40,
     ]
 
 
@@ -74,6 +75,7 @@ def monitoring_service(
     server_private_key,
     web3,
     monitoring_service_contract,
+    user_deposit_contract,
     token_network_registry_contract,
     send_funds,
     contracts_manager: ContractManager,
@@ -98,6 +100,7 @@ def monitoring_service(
         private_key=server_private_key,
         registry_address=token_network_registry_contract.address,
         monitor_contract_address=monitoring_service_contract.address,
+        user_deposit_contract_address=user_deposit_contract.address,
         required_confirmations=1,  # for faster tests
         poll_interval=0.01,  # for faster tests
         db_filename=':memory:',

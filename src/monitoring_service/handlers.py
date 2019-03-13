@@ -6,7 +6,10 @@ from eth_utils import encode_hex
 from web3 import Web3
 from web3.contract import Contract
 
-from monitoring_service.constants import RATIO_OF_SETTLE_TIMEOUT_BEFORE_MONITOR
+from monitoring_service.constants import (
+    DEFAULT_PAYMENT_RISK_FAKTOR,
+    RATIO_OF_SETTLE_TIMEOUT_BEFORE_MONITOR,
+)
 from monitoring_service.database import Database
 from monitoring_service.events import (
     ActionClaimRewardTriggeredEvent,
@@ -43,6 +46,7 @@ class Context:
     contract_manager: ContractManager
     last_known_block: int
     monitoring_service_contract: Contract
+    user_deposit_contract: Contract
 
 
 def channel_opened_event_handler(event: Event, context: Context) -> None:
@@ -368,9 +372,13 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
     if channel.update_status:
         last_onchain_nonce = channel.update_status.nonce
 
+    user_address = monitor_request.non_closing_signer
+    user_deposit = context.user_deposit_contract.functions.effectiveBalance(user_address).call()
+
     call_monitor = (
         channel.closing_tx_hash is None and
-        monitor_request.nonce > last_onchain_nonce
+        monitor_request.nonce > last_onchain_nonce and
+        user_deposit >= monitor_request.reward_amount * DEFAULT_PAYMENT_RISK_FAKTOR
     )
     if call_monitor:
         try:

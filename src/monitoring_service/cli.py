@@ -59,6 +59,13 @@ def validate_address(_ctx: Any, _param: Any, value: Optional[str]) -> Optional[s
     callback=validate_address,
 )
 @click.option(
+    '--user-deposit-contract-address',
+    type=str,
+    required=True,
+    help='Address of the token monitor contract',
+    callback=validate_address,
+)
+@click.option(
     '--start-block',
     default=0,
     type=click.IntRange(min=0),
@@ -88,6 +95,7 @@ def main(
     eth_rpc: str,
     registry_address: Address,
     monitor_contract_address: Address,
+    user_deposit_contract_address: Address,
     start_block: int,
     confirmations: int,
     log_level: str,
@@ -118,6 +126,7 @@ def main(
         private_key=private_key,
         registry_address=registry_address,
         monitor_contract_address=monitor_contract_address,
+        user_deposit_contract_address=user_deposit_contract_address,
         sync_start_block=start_block,
         required_confirmations=confirmations,
         db_filename=state_db,
