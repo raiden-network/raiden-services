@@ -151,16 +151,18 @@ class SharedDatabase:
         ]
 
     def add_waiting_transaction(self, waiting_tx_hash: str) -> None:
-        self.conn.execute(
-            "INSERT OR REPLACE INTO waiting_transactions VALUES (?)",
-            [waiting_tx_hash],
-        )
+        with self.conn:
+            self.conn.execute(
+                "INSERT INTO waiting_transactions VALUES (?)",
+                [waiting_tx_hash],
+            )
 
     def remove_waiting_transaction(self, tx_hash: str) -> None:
-        self.conn.execute(
-            "DELETE FROM waiting_transactions WHERE transaction_hash = ?",
-            [tx_hash],
-        )
+        with self.conn:
+            self.conn.execute(
+                "DELETE FROM waiting_transactions WHERE transaction_hash = ?",
+                [tx_hash],
+            )
 
     def load_state(self, sync_start_block: int) -> MonitoringServiceState:
         """ Load MS state from db or return a new empty state if not saved one is present
