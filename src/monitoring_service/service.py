@@ -108,7 +108,6 @@ class MonitoringService:
         self.context = Context(
             ms_state=ms_state,
             db=self.database,
-            scheduled_events=list(),
             w3=self.web3,
             contract_manager=contract_manager,
             last_known_block=0,
@@ -174,15 +173,14 @@ class MonitoringService:
             handle_event(event, self.context)
 
         # check triggered events and trigger the correct ones
-        for scheduled_event in self.context.scheduled_events.copy():
+        triggered_events = self.context.db.get_scheduled_events(max_trigger_block=last_block)
+        for scheduled_event in triggered_events:
             event = scheduled_event.event
 
-            if last_block >= scheduled_event.trigger_block_number:
-                self.context.scheduled_events.remove(scheduled_event)
-                handle_event(event, self.context)
+            handle_event(event, self.context)
+            self.context.db.remove_scheduled_event(scheduled_event)
 
-        if self.context.scheduled_events:
-            log.debug('Scheduled_events', events=self.context.scheduled_events)
+        log.debug('Scheduled events', num_events=self.context.db.scheduled_event_count())
 
         # check pending transactions
         # this is done here so we don't have to block waiting for receipts in the state machine
