@@ -107,7 +107,6 @@ def context(ms_database):
     return Context(
         ms_state=ms_database.load_state(sync_start_block=0),
         db=ms_database,
-        scheduled_events=[],
         w3=Mock(),
         contract_manager=Mock(),
         last_known_block=0,
@@ -181,7 +180,7 @@ def test_channel_closed_event_handler_closes_existing_channel(
     channel_closed_event_handler(event, context)
 
     # ActionMonitoringTriggeredEvent has been triggered
-    assert len(context.scheduled_events) == 1
+    assert context.db.scheduled_event_count() == 1
 
     assert context.db.channel_count() == 1
     assert_channel_state(context, ChannelState.CLOSED)
@@ -202,7 +201,7 @@ def test_channel_closed_event_handler_ignores_existing_channel_after_timeout(
     channel_closed_event_handler(event, context)
 
     # no ActionMonitoringTriggeredEvent has been triggered
-    assert len(context.scheduled_events) == 0
+    assert context.db.scheduled_event_count() == 0
 
     assert context.db.channel_count() == 1
     assert_channel_state(context, ChannelState.CLOSED)
@@ -240,7 +239,7 @@ def test_channel_closed_event_handler_trigger_action_monitor_event_with_monitor_
     )
 
     channel_closed_event_handler(event, context)
-    assert len(context.scheduled_events) == 1
+    assert context.db.scheduled_event_count() == 1
 
 
 def test_channel_closed_event_handler_trigger_action_monitor_event_without_monitor_request(
@@ -256,7 +255,7 @@ def test_channel_closed_event_handler_trigger_action_monitor_event_without_monit
     )
 
     channel_closed_event_handler(event, context)
-    assert len(context.scheduled_events) == 1
+    assert context.db.scheduled_event_count() == 1
 
 
 def test_channel_settled_event_handler_settles_existing_channel(

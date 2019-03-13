@@ -1,5 +1,5 @@
 from dataclasses import dataclass  # isort:skip noqa differences between local and travis
-from typing import List, cast
+from typing import cast
 
 import structlog
 from eth_utils import encode_hex
@@ -40,7 +40,6 @@ log = structlog.get_logger(__name__)
 class Context:
     ms_state: MonitoringServiceState
     db: Database
-    scheduled_events: List[ScheduledEvent]
     w3: Web3
     contract_manager: ContractManager
     last_known_block: int
@@ -112,7 +111,7 @@ def channel_closed_event_handler(event: Event, context: Context) -> None:
             channel.settle_timeout * RATIO_OF_SETTLE_TIMEOUT_BEFORE_MONITOR,
         )
         trigger_block = event.block_number + client_update_period
-        context.scheduled_events.append(
+        context.db.upsert_scheduled_event(
             ScheduledEvent(
                 trigger_block_number=trigger_block,
                 event=cast(Event, e),
@@ -310,7 +309,7 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context) -> N
 
         assert channel.closing_block is not None, 'closing_block not set'
         trigger_block: int = channel.closing_block + channel.settle_timeout + 5
-        context.scheduled_events.append(
+        context.db.upsert_scheduled_event(
             ScheduledEvent(
                 trigger_block_number=trigger_block,
                 event=cast(Event, e),

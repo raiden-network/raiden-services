@@ -1,10 +1,15 @@
 import os
 import sqlite3
-from typing import List, Optional
+from typing import List, Optional, Union, cast
 
 import structlog
 from eth_utils import is_checksum_address
 
+from monitoring_service.events import (
+    ActionClaimRewardTriggeredEvent,
+    ActionMonitoringTriggeredEvent,
+    ScheduledEvent,
+)
 from monitoring_service.states import (
     BlockchainState,
     Channel,
@@ -13,11 +18,20 @@ from monitoring_service.states import (
     OnChainUpdateStatus,
 )
 
+SubEvent = Union[ActionMonitoringTriggeredEvent, ActionClaimRewardTriggeredEvent]
+
 log = structlog.get_logger(__name__)
 SCHEMA_FILENAME = os.path.join(
     os.path.dirname(os.path.realpath(__file__)),
     'schema.sql',
 )
+EVENT_ID_TYPE_MAP = {
+    0: ActionMonitoringTriggeredEvent,
+    1: ActionClaimRewardTriggeredEvent,
+}
+EVENT_TYPE_ID_MAP = {
+    v: k for k, v in EVENT_ID_TYPE_MAP.items()
+}
 
 
 def convert_hex(raw: bytes) -> int:
@@ -142,6 +156,73 @@ class SharedDatabase:
 
     def channel_count(self) -> int:
         return self.conn.execute("SELECT count(*) FROM channel").fetchone()[0]
+
+    def upsert_scheduled_event(self, event: ScheduledEvent) -> None:
+        contained_event: SubEvent = cast(SubEvent, event.event)
+        values = [
+            hex(event.trigger_block_number),
+            EVENT_TYPE_ID_MAP[type(contained_event)],
+            contained_event.token_network_address,
+            hex(contained_event.channel_identifier),
+            contained_event.non_closing_participant,
+        ]
+        with self.conn:
+            upsert_sql = "INSERT OR REPLACE INTO scheduled_events VALUES ({})".format(
+                ', '.join('?' * len(values)),
+            )
+            self.conn.execute(upsert_sql, values)
+
+    def get_scheduled_events(
+            self,
+            max_trigger_block: int,
+    ) -> List[ScheduledEvent]:
+        rows = self.conn.execute(
+            """
+                SELECT * FROM scheduled_events
+                WHERE trigger_block_number <= ?
+            """,
+            [hex(max_trigger_block)],
+        ).fetchall()
+
+        def create_scheduled_event(row: sqlite3.Row) -> ScheduledEvent:
+            klass = EVENT_ID_TYPE_MAP[row['event_type']]
+            sub_event = klass(
+                row['token_network_address'],
+                row['channel_identifier'],
+                row['non_closing_participant'],
+            )
+
+            return ScheduledEvent(
+                trigger_block_number=row['trigger_block_number'],
+                event=sub_event,
+            )
+
+        return [
+            create_scheduled_event(row) for row in rows
+        ]
+
+    def remove_scheduled_event(self, event: ScheduledEvent) -> None:
+        contained_event: SubEvent = cast(SubEvent, event.event)
+        values = [
+            hex(event.trigger_block_number),
+            contained_event.token_network_address,
+            hex(contained_event.channel_identifier),
+            contained_event.non_closing_participant,
+        ]
+        with self.conn:
+            self.conn.execute(
+                """
+                    DELETE FROM scheduled_events
+                    WHERE trigger_block_number = ?
+                        AND token_network_address = ?
+                        AND channel_identifier = ?
+                        AND non_closing_participant =?
+                """,
+                values,
+            )
+
+    def scheduled_event_count(self) -> int:
+        return self.conn.execute("SELECT count(*) FROM scheduled_events").fetchone()[0]
 
     def get_waiting_transactions(self) -> List[str]:
         return [
