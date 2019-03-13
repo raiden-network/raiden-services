@@ -17,6 +17,7 @@ from monitoring_service.states import (
     MonitorRequest,
     OnChainUpdateStatus,
 )
+from raiden.utils.typing import Address, BlockNumber, ChannelID, TokenNetworkAddress
 
 SubEvent = Union[ActionMonitoringTriggeredEvent, ActionClaimRewardTriggeredEvent]
 
@@ -172,10 +173,7 @@ class SharedDatabase:
         )
         self.conn.execute(upsert_sql, values)
 
-    def get_scheduled_events(
-            self,
-            max_trigger_block: int,
-    ) -> List[ScheduledEvent]:
+    def get_scheduled_events(self, max_trigger_block: BlockNumber) -> List[ScheduledEvent]:
         rows = self.conn.execute(
             """
                 SELECT * FROM scheduled_events
