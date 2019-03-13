@@ -33,6 +33,7 @@ DEFAULT_PRIVATE_KEY1 = '0x' + '1' * 64
 DEFAULT_PRIVATE_KEY2 = '0x' + '2' * 64
 DEFAULT_PARTICIPANT1 = private_key_to_address(DEFAULT_PRIVATE_KEY1)
 DEFAULT_PARTICIPANT2 = private_key_to_address(DEFAULT_PRIVATE_KEY2)
+DEFAULT_REWARD_AMOUNT = 0
 DEFAULT_SETTLE_TIMEOUT = 100
 
 
@@ -81,6 +82,7 @@ def setup_state_with_closed_channel(context: Context) -> Context:
 
 def get_signed_monitor_request(
     nonce: int = 5,
+    reward_amount: int = DEFAULT_REWARD_AMOUNT,
     closing_privkey: str = DEFAULT_PRIVATE_KEY1,
     nonclosing_privkey: str = DEFAULT_PRIVATE_KEY2,
 ) -> MonitorRequest:
@@ -95,7 +97,7 @@ def get_signed_monitor_request(
     )
     monitor_request = UnsignedMonitorRequest.from_balance_proof(
         bp,
-        reward_amount=0,
+        reward_amount=reward_amount,
     ).sign(nonclosing_privkey)
     return monitor_request
 
@@ -111,6 +113,7 @@ def context(ms_database):
         contract_manager=Mock(),
         last_known_block=0,
         monitoring_service_contract=Mock(),
+        user_deposit_contract=Mock(),
     )
 
 
@@ -423,53 +426,72 @@ def test_action_monitoring_triggered_event_handler_does_not_trigger_monitor_call
     assert channel.closing_tx_hash is None
 
 
-def test_action_monitoring_triggered_event_handler_does_trigger_monitor_call(  # noqa
+def test_action_monitoring_triggered_event_handler_with_sufficient_balance_does_trigger_monitor_call(  # noqa
     context: Context,
 ):
-    """ Tests that `monitor` is called when the ActionMonitoringTriggeredEvent is triggered
+    """ Tests that `monitor` is called when the ActionMonitoringTriggeredEvent is triggered and
+    user has sufficient balance in user deposit contract
 
     Also a test for https://github.com/raiden-network/raiden-services/issues/29 , as the MR
     is sent after the channel has been closed.
     """
     context = setup_state_with_closed_channel(context)
 
-    event_new_bp = ReceiveMonitoringNewBalanceProofEvent(
-        token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
-        channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
-        reward_amount=1,
-        nonce=5,
-        ms_address='C',
-        raiden_node_address=DEFAULT_PARTICIPANT2,
-        block_number=23,
-    )
+    context.db.upsert_monitor_request(get_signed_monitor_request(nonce=6, reward_amount=10))
 
-    channel = context.db.get_channel(
-        event_new_bp.token_network_address,
-        event_new_bp.channel_identifier,
-    )
-    assert channel
-    assert channel.update_status is None
-
-    monitor_new_balance_proof_event_handler(event_new_bp, context)
-
-    # add MR to DB, with nonce being larger than in event_new_bp
-    context.db.upsert_monitor_request(get_signed_monitor_request(nonce=6))
-
-    event4 = ActionMonitoringTriggeredEvent(
+    trigger_event = ActionMonitoringTriggeredEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
         non_closing_participant=DEFAULT_PARTICIPANT2,
     )
 
-    channel = context.db.get_channel(event4.token_network_address, event4.channel_identifier)
+    channel = context.db.get_channel(
+        trigger_event.token_network_address,
+        trigger_event.channel_identifier,
+    )
     assert channel
-    assert channel.update_status is not None
     assert channel.closing_tx_hash is None
 
-    action_monitoring_triggered_event_handler(event4, context)
+    context.user_deposit_contract.functions.effectiveBalance(
+        DEFAULT_PARTICIPANT2,
+    ).call.return_value = 21
+    action_monitoring_triggered_event_handler(trigger_event, context)
 
     # check that the monitor call has been done
     assert context.monitoring_service_contract.functions.monitor.called is True
+
+def test_action_monitoring_triggered_event_handler_without_sufficient_balance_doesnt_trigger_monitor_call(  # noqa
+    context: Context,
+):
+    """ Tests that `monitor` is not called when user has insufficient balance in user deposit contract
+
+    Also a test for https://github.com/raiden-network/raiden-services/issues/29 , as the MR
+    is sent after the channel has been closed.
+    """
+    context = setup_state_with_closed_channel(context)
+
+    context.db.upsert_monitor_request(get_signed_monitor_request(nonce=6, reward_amount=10))
+
+    trigger_event = ActionMonitoringTriggeredEvent(
+        token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
+        channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
+        non_closing_participant=DEFAULT_PARTICIPANT2,
+    )
+
+    channel = context.db.get_channel(
+        trigger_event.token_network_address,
+        trigger_event.channel_identifier,
+    )
+    assert channel
+    assert channel.closing_tx_hash is None
+
+    context.user_deposit_contract.functions.effectiveBalance(
+        DEFAULT_PARTICIPANT2,
+    ).call.return_value = 0
+    action_monitoring_triggered_event_handler(trigger_event, context)
+
+    # check that the monitor call has been done
+    assert context.monitoring_service_contract.functions.monitor.called is False
 
 
 def test_mr_available_before_channel_triggers_monitor_call(
@@ -491,6 +513,9 @@ def test_mr_available_before_channel_triggers_monitor_call(
         non_closing_participant=DEFAULT_PARTICIPANT2,
     )
 
+    context.user_deposit_contract.functions.effectiveBalance(
+        DEFAULT_PARTICIPANT2,
+    ).call.return_value = 100
     action_monitoring_triggered_event_handler(event, context)
 
     # check that the monitor call has been done

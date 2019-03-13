@@ -30,6 +30,7 @@ def test_crash(
     server_private_key,
     token_network_registry_contract,
     monitoring_service_contract,
+    user_deposit_contract,
     get_random_address,
     tmpdir,
     generate_raiden_clients,
@@ -87,6 +88,7 @@ def test_crash(
             registry_address=token_network_registry_contract.address,
             monitor_contract_address=monitoring_service_contract.address,
             db_filename=os.path.join(tmpdir, filename),
+            user_deposit_contract_address=user_deposit_contract.address,
         )
         ms.bcl = MockBlockchainListener(events)  # type: ignore
         msc = Mock()
