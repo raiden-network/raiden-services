@@ -57,3 +57,8 @@ class InsufficientServicePayment(BadIOU):
 class IOUAlreadyClaimed(BadIOU):
     error_code = 2106
     msg = 'The IOU is already claimed. Please start new session with different `expiration_block`.'
+
+
+class UseThisIOU(BadIOU):
+    error_code = 2106
+    msg = 'Please increase the amount of the existing IOU instead of creating a new one.'

@@ -55,15 +55,22 @@ class PFSDatabase:
             ) VALUES (:sender, :amount, :expiration_block, :signature, :claimed)
         """, iou_dict)
 
-    def get_iou(self, sender: Address, expiration_block: int) -> Optional[IOU]:
-        row = self.conn.execute(
-            """
-                SELECT *
-                FROM iou
-                WHERE sender = ? AND expiration_block = ?
-            """,
-            [sender, expiration_block],
-        ).fetchone()
+    def get_iou(
+        self,
+        sender: Address,
+        expiration_block: int = None,
+        claimed: bool = None,
+    ) -> Optional[IOU]:
+        query = "SELECT * FROM iou WHERE sender = ?"
+        args: list = [sender]
+        if expiration_block is not None:
+            query += " AND expiration_block = ?"
+            args.append(expiration_block)
+        if claimed is not None:
+            query += " AND claimed = ?"
+            args.append(claimed)
+
+        row = self.conn.execute(query, args).fetchone()
         if row is None:
             return None
 
