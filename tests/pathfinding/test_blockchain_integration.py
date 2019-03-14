@@ -37,6 +37,7 @@ def test_pfs_with_mocked_client(
         contract_manager=contracts_manager,
         registry_address=token_network_registry_contract.address,
         required_confirmations=1,
+        db_filename=':memory:',
         poll_interval=0,
         private_key='3a1076bf45ab87712ad64ccb3b10217737f7faacbf2872e88fdd9a537d8fe266',
     )

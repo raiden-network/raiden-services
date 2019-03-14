@@ -4,22 +4,35 @@ import gevent
 import pkg_resources
 import structlog
 from eth_utils import is_address, is_checksum_address
-from flask import Flask
+from flask import Flask, request
 from flask_restful import Api, Resource, reqparse
 from gevent import Greenlet
 from gevent.pywsgi import WSGIServer
 from networkx.exception import NetworkXNoPath
 
+import pathfinding_service.exceptions as exceptions
 from pathfinding_service import PathfindingService
 from pathfinding_service.config import (
     API_PATH,
     DEFAULT_API_HOST,
     DEFAULT_API_PORT,
     DEFAULT_MAX_PATHS,
+    MIN_IOU_EXPIRY,
 )
+from pathfinding_service.model import IOU
 from raiden_libs.types import Address
 
 log = structlog.get_logger(__name__)
+
+
+class ApiWithErrorHandler(Api):
+
+    def handle_error(self, e):
+        return self.make_response({
+            'errors': e.msg,
+            'error_code': e.error_code,
+            'error_details': e.error_details,
+        }, e.http_code)
 
 
 class PathfinderResource(Resource):
@@ -99,6 +112,11 @@ class PathsResource(PathfinderResource):
         if error is not None:
             return error
 
+        json = request.get_json()
+        if not json:
+            raise exceptions.ApiException('JSON payload expected')
+        process_payment(json.get('iou'), self.pathfinding_service)
+
         token_network = self.pathfinding_service.token_networks.get(
             Address(token_network_address),
         )
@@ -118,6 +136,45 @@ class PathsResource(PathfinderResource):
             )}, 400
 
         return {'result': paths}, 200
+
+
+def process_payment(iou_dict, pathfinding_service):
+    if pathfinding_service.service_fee == 0:
+        return
+    if iou_dict is None:
+        raise exceptions.MissingIOU
+
+    print(iou_dict)
+    iou, errors = IOU.Schema().load(iou_dict)
+    if errors:
+        raise exceptions.InvalidRequest(**errors)
+    if iou.receiver != pathfinding_service.address:
+        raise exceptions.WrongIOURecipient(expected=pathfinding_service.address)
+    if not iou.is_signature_valid():
+        raise exceptions.InvalidIOUSignature
+
+    # TODO:
+    # * does sender have other IOUs?
+    # * is IOU unclaimed?
+    # * is deposit large enough?
+
+    last_iou = pathfinding_service.database.get_iou(
+        iou.sender,
+        iou.expiration_block,
+    )
+    if last_iou:
+        expected_amount = last_iou['amount'] + pathfinding_service.service_fee
+    else:
+        min_expiry = pathfinding_service.web3.eth.blockNumber + MIN_IOU_EXPIRY
+        if iou.expiration_block < min_expiry:
+            raise exceptions.IOUExpiredTooEarly(min_expiry=min_expiry)
+        expected_amount = pathfinding_service.service_fee
+    if iou.amount < expected_amount:
+        raise exceptions.InsufficientServicePayment(expected_amount=expected_amount)
+
+    pathfinding_service.database.upsert_iou(
+        IOU.Schema().dump(iou)[0],
+    )
 
 
 class InfoResource(PathfinderResource):
@@ -145,9 +202,10 @@ class InfoResource(PathfinderResource):
 class ServiceApi:
     def __init__(self, pathfinding_service: PathfindingService):
         self.flask_app = Flask(__name__)
-        self.api = Api(self.flask_app)
+        self.api = ApiWithErrorHandler(self.flask_app)
         self.rest_server: WSGIServer = None
         self.server_greenlet: Greenlet = None
+        self.pathfinding_service = pathfinding_service
 
         resources: List[Tuple[str, Resource, Dict]] = [
             ('/<token_network_address>/paths', PathsResource, {}),
