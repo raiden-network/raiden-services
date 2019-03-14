@@ -108,26 +108,21 @@ def channel_closed_event_handler(event: Event, context: Context) -> None:
         )
         trigger_block = event.block_number + client_update_period
 
-        # Check if the event is already scheduled, this might happen on a restart of the MS
-        scheduled_event = context.db.get_specific_scheduled_event(
-            max_trigger_block=trigger_block,
+        triggered_event = ActionMonitoringTriggeredEvent(
             token_network_address=channel.token_network_address,
             channel_identifier=channel.identifier,
             non_closing_participant=non_closing_participant,
         )
 
-        if scheduled_event is None:
-            triggered_event = ActionMonitoringTriggeredEvent(
-                token_network_address=channel.token_network_address,
-                channel_identifier=channel.identifier,
-                non_closing_participant=non_closing_participant,
-            )
-            context.db.upsert_scheduled_event(
-                ScheduledEvent(
-                    trigger_block_number=trigger_block,
-                    event=cast(Event, triggered_event),
-                ),
-            )
+        # Add scheduled event if it not exists yet
+        # If the event is already scheduled (e.g. after a restart) the DB takes care that
+        # it is only stored once
+        context.db.upsert_scheduled_event(
+            ScheduledEvent(
+                trigger_block_number=trigger_block,
+                event=cast(Event, triggered_event),
+            ),
+        )
     else:
         log.warning(
             'Settle period timeout is in the past, skipping',
@@ -314,28 +309,22 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context) -> N
         assert channel.closing_block is not None, 'closing_block not set'
         trigger_block: int = channel.closing_block + channel.settle_timeout + 5
 
-        # Check if the event is already scheduled, this might happen on a restart of the MS
-        scheduled_event = context.db.get_specific_scheduled_event(
-            max_trigger_block=trigger_block,
+        # trigger the claim reward action by an event
+        e = ActionClaimRewardTriggeredEvent(
             token_network_address=channel.token_network_address,
             channel_identifier=channel.identifier,
             non_closing_participant=event.raiden_node_address,
         )
 
-        if scheduled_event is None:
-            # trigger the claim reward action by an event
-            e = ActionClaimRewardTriggeredEvent(
-                token_network_address=channel.token_network_address,
-                channel_identifier=channel.identifier,
-                non_closing_participant=event.raiden_node_address,
-            )
-
-            context.db.upsert_scheduled_event(
-                ScheduledEvent(
-                    trigger_block_number=trigger_block,
-                    event=cast(Event, e),
-                ),
-            )
+        # Add scheduled event if it not exists yet
+        # If the event is already scheduled (e.g. after a restart) the DB takes care that
+        # it is only stored once
+        context.db.upsert_scheduled_event(
+            ScheduledEvent(
+                trigger_block_number=trigger_block,
+                event=cast(Event, e),
+            ),
+        )
 
 
 def monitor_reward_claim_event_handler(event: Event, context: Context) -> None:
