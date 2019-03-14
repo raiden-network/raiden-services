@@ -51,8 +51,8 @@ class PFSDatabase:
         iou_dict = IOU.Schema(strict=True).dump(iou)[0]
         self.conn.execute("""
             INSERT OR REPLACE INTO iou (
-                sender, amount, expiration_block, signature
-            ) VALUES (:sender, :amount, :expiration_block, :signature)
+                sender, amount, expiration_block, signature, claimed
+            ) VALUES (:sender, :amount, :expiration_block, :signature, :claimed)
         """, iou_dict)
 
     def get_iou(self, sender: Address, expiration_block: int) -> Optional[IOU]:

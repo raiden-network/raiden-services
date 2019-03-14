@@ -1,4 +1,4 @@
-from typing import ClassVar, Type
+from typing import ClassVar, Optional, Type
 
 import marshmallow
 from eth_abi import encode_single
@@ -24,6 +24,7 @@ from raiden_libs.utils import eth_recover
 #     amount: TokenAmount
 #     expiration_block: BlockNumber
 #     signature: Signature
+#     claimed: bool
 #     Schema: ClassVar[Type[marshmallow.Schema]]
 
 #     def is_signature_valid(self):
@@ -46,6 +47,7 @@ class IOU:
     amount: int
     expiration_block: int
     signature: str
+    claimed: Optional[bool] = None
     Schema: ClassVar[Type[marshmallow.Schema]]
 
     def is_signature_valid(self):

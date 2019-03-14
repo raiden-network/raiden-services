@@ -52,3 +52,8 @@ class InvalidIOUSignature(BadIOU):
 class InsufficientServicePayment(BadIOU):
     error_code = 2105
     msg = 'The provided payment is lower than service fee'
+
+
+class IOUAlreadyClaimed(BadIOU):
+    error_code = 2106
+    msg = 'The IOU is already claimed. Please start new session with different `expiration_block`.'

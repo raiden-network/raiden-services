@@ -144,7 +144,6 @@ def process_payment(iou_dict, pathfinding_service):
     if iou_dict is None:
         raise exceptions.MissingIOU
 
-    print(iou_dict)
     iou, errors = IOU.Schema().load(iou_dict)
     if errors:
         raise exceptions.InvalidRequest(**errors)
@@ -155,7 +154,6 @@ def process_payment(iou_dict, pathfinding_service):
 
     # TODO:
     # * does sender have other IOUs?
-    # * is IOU unclaimed?
     # * is deposit large enough?
 
     last_iou = pathfinding_service.database.get_iou(
@@ -163,8 +161,13 @@ def process_payment(iou_dict, pathfinding_service):
         iou.expiration_block,
     )
     if last_iou:
+        if last_iou.claimed:
+            raise exceptions.IOUAlreadyClaimed
+        else:
+            iou.claimed = False
         expected_amount = last_iou.amount + pathfinding_service.service_fee
     else:
+        iou.claimed = False
         min_expiry = pathfinding_service.web3.eth.blockNumber + MIN_IOU_EXPIRY
         if iou.expiration_block < min_expiry:
             raise exceptions.IOUExpiredTooEarly(min_expiry=min_expiry)
