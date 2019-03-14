@@ -185,8 +185,8 @@ class SharedDatabase:
         ).fetchall()
 
         def create_scheduled_event(row: sqlite3.Row) -> ScheduledEvent:
-            klass = EVENT_ID_TYPE_MAP[row['event_type']]
-            sub_event = klass(
+            event_type = EVENT_ID_TYPE_MAP[row['event_type']]
+            sub_event = event_type(
                 row['token_network_address'],
                 row['channel_identifier'],
                 row['non_closing_participant'],
