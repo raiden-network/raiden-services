@@ -37,7 +37,27 @@ def test_scheduled_events(ms_database):
     assert len(ms_database.get_scheduled_events(23)) == 1
     assert len(ms_database.get_scheduled_events(24)) == 2
 
+    ms_database.upsert_scheduled_event(event=event1)
+    assert ms_database.scheduled_event_count() == 2
+
+    assert len(ms_database.get_scheduled_events(22)) == 0
+    assert len(ms_database.get_scheduled_events(23)) == 1
+    assert len(ms_database.get_scheduled_events(24)) == 2
+
     ms_database.remove_scheduled_event(event2)
     assert len(ms_database.get_scheduled_events(22)) == 0
     assert len(ms_database.get_scheduled_events(23)) == 1
     assert len(ms_database.get_scheduled_events(24)) == 1
+
+
+def test_waiting_transactions(ms_database):
+    assert ms_database.get_waiting_transactions() == []
+
+    ms_database.add_waiting_transaction('0xA')
+    assert ms_database.get_waiting_transactions() == ['0xA']
+
+    ms_database.add_waiting_transaction('0xB')
+    assert ms_database.get_waiting_transactions() == ['0xA', '0xB']
+
+    ms_database.remove_waiting_transaction('0xA')
+    assert ms_database.get_waiting_transactions() == ['0xB']

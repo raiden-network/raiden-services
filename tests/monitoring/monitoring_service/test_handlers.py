@@ -186,6 +186,30 @@ def test_channel_closed_event_handler_closes_existing_channel(
     assert_channel_state(context, ChannelState.CLOSED)
 
 
+def test_channel_closed_event_handler_idempotency(
+    context: Context,
+):
+    context = setup_state_with_open_channel(context)
+    context.last_known_block = 60
+
+    event = ReceiveChannelClosedEvent(
+        token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
+        channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
+        closing_participant=DEFAULT_PARTICIPANT2,
+        block_number=52,
+    )
+    channel_closed_event_handler(event, context)
+
+    # ActionMonitoringTriggeredEvent has been triggered
+    assert context.db.scheduled_event_count() == 1
+    assert context.db.channel_count() == 1
+    assert_channel_state(context, ChannelState.CLOSED)
+
+    # run handler again, check idempotency
+    channel_closed_event_handler(event, context)
+    assert context.db.scheduled_event_count() == 1
+
+
 def test_channel_closed_event_handler_ignores_existing_channel_after_timeout(
     context: Context,
 ):
@@ -339,7 +363,7 @@ def test_monitor_new_balance_proof_event_handler_sets_update_status(
 ):
     context = setup_state_with_closed_channel(context)
 
-    event3 = ReceiveMonitoringNewBalanceProofEvent(
+    new_balance_event = ReceiveMonitoringNewBalanceProofEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
         reward_amount=1,
@@ -349,20 +373,26 @@ def test_monitor_new_balance_proof_event_handler_sets_update_status(
         block_number=23,
     )
 
-    channel = context.db.get_channel(event3.token_network_address, event3.channel_identifier)
+    channel = context.db.get_channel(
+        new_balance_event.token_network_address,
+        new_balance_event.channel_identifier,
+    )
     assert channel
     assert channel.update_status is None
 
-    monitor_new_balance_proof_event_handler(event3, context)
+    monitor_new_balance_proof_event_handler(new_balance_event, context)
 
     assert context.db.channel_count() == 1
-    channel = context.db.get_channel(event3.token_network_address, event3.channel_identifier)
+    channel = context.db.get_channel(
+        new_balance_event.token_network_address,
+        new_balance_event.channel_identifier,
+    )
     assert channel
     assert channel.update_status is not None
     assert channel.update_status.nonce == 2
     assert channel.update_status.update_sender_address == 'C'
 
-    event4 = ReceiveMonitoringNewBalanceProofEvent(
+    new_balance_event2 = ReceiveMonitoringNewBalanceProofEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
         reward_amount=1,
@@ -372,14 +402,66 @@ def test_monitor_new_balance_proof_event_handler_sets_update_status(
         block_number=23,
     )
 
-    monitor_new_balance_proof_event_handler(event4, context)
+    monitor_new_balance_proof_event_handler(new_balance_event2, context)
 
     assert context.db.channel_count() == 1
-    channel = context.db.get_channel(event3.token_network_address, event3.channel_identifier)
+    channel = context.db.get_channel(
+        new_balance_event.token_network_address,
+        new_balance_event.channel_identifier,
+    )
     assert channel
     assert channel.update_status is not None
     assert channel.update_status.nonce == 5
     assert channel.update_status.update_sender_address == 'D'
+
+
+def test_monitor_new_balance_proof_event_handler_idempotency(
+    context: Context,
+):
+    context = setup_state_with_closed_channel(context)
+
+    new_balance_event = ReceiveMonitoringNewBalanceProofEvent(
+        token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
+        channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
+        reward_amount=1,
+        nonce=2,
+        ms_address='C',
+        raiden_node_address=DEFAULT_PARTICIPANT2,
+        block_number=23,
+    )
+
+    channel = context.db.get_channel(
+        new_balance_event.token_network_address,
+        new_balance_event.channel_identifier,
+    )
+    assert channel
+    assert channel.update_status is None
+
+    monitor_new_balance_proof_event_handler(new_balance_event, context)
+
+    assert context.db.scheduled_event_count() == 1
+    assert context.db.channel_count() == 1
+    channel = context.db.get_channel(
+        new_balance_event.token_network_address,
+        new_balance_event.channel_identifier,
+    )
+    assert channel
+    assert channel.update_status is not None
+    assert channel.update_status.nonce == 2
+    assert channel.update_status.update_sender_address == 'C'
+
+    monitor_new_balance_proof_event_handler(new_balance_event, context)
+
+    assert context.db.scheduled_event_count() == 1
+    assert context.db.channel_count() == 1
+    channel = context.db.get_channel(
+        new_balance_event.token_network_address,
+        new_balance_event.channel_identifier,
+    )
+    assert channel
+    assert channel.update_status is not None
+    assert channel.update_status.nonce == 2
+    assert channel.update_status.update_sender_address == 'C'
 
 
 def test_action_monitoring_triggered_event_handler_does_not_trigger_monitor_call_when_nonce_to_small(  # noqa

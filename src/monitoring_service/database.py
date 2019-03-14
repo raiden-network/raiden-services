@@ -17,7 +17,7 @@ from monitoring_service.states import (
     MonitorRequest,
     OnChainUpdateStatus,
 )
-from raiden.utils.typing import Address, BlockNumber, ChannelID, TokenNetworkAddress
+from raiden.utils.typing import BlockNumber
 
 SubEvent = Union[ActionMonitoringTriggeredEvent, ActionClaimRewardTriggeredEvent]
 
