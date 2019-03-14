@@ -1,8 +1,10 @@
 import os
 import sqlite3
+from typing import Optional
 
 import structlog
 
+from pathfinding_service.model import IOU
 from raiden_libs.types import Address
 
 log = structlog.get_logger(__name__)
@@ -45,14 +47,15 @@ class PFSDatabase:
                 with open(SCHEMA_FILENAME) as schema_file:
                     self.conn.executescript(schema_file.read())
 
-    def upsert_iou(self, iou: dict):
+    def upsert_iou(self, iou: IOU):
+        iou_dict = IOU.Schema(strict=True).dump(iou)[0]
         self.conn.execute("""
             INSERT OR REPLACE INTO iou (
                 sender, amount, expiration_block, signature
             ) VALUES (:sender, :amount, :expiration_block, :signature)
-        """, iou)
+        """, iou_dict)
 
-    def get_iou(self, sender: Address, expiration_block: int):
+    def get_iou(self, sender: Address, expiration_block: int) -> Optional[IOU]:
         row = self.conn.execute(
             """
                 SELECT *
@@ -64,6 +67,5 @@ class PFSDatabase:
         if row is None:
             return None
 
-        iou = dict(zip(row.keys(), row))
-        iou['receiver'] = self.pfs_address
-        return iou
+        iou_dict = dict(zip(row.keys(), row))
+        return IOU(receiver=self.pfs_address, **iou_dict)  # type: ignore
