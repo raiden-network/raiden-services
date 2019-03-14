@@ -15,3 +15,7 @@ DEFAULT_REVEAL_TIMEOUT: int = 50
 DEFAULT_SETTLE_TO_REVEAL_TIMEOUT_RATIO = 2
 
 DEFAULT_POLL_INTERVALL = 10
+
+# When a new IOU session is started, this is the minimum number of blocks
+# between the current block and `expiration_block`.
+MIN_IOU_EXPIRY = 1000

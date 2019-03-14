@@ -7,6 +7,7 @@ import structlog
 from eth_utils import is_checksum_address
 from web3 import Web3
 
+from pathfinding_service.database import PFSDatabase
 from pathfinding_service.model import TokenNetwork
 from pathfinding_service.utils.blockchain_listener import (
     BlockchainListener,
@@ -24,6 +25,7 @@ from raiden_contracts.contract_manager import ContractManager
 from raiden_libs.gevent_error_handler import register_error_handler
 from raiden_libs.matrix import MatrixListener
 from raiden_libs.types import Address
+from raiden_libs.utils import private_key_to_address
 
 log = structlog.get_logger(__name__)
 
@@ -49,9 +51,11 @@ class PathfindingService(gevent.Greenlet):
             contract_manager: ContractManager,
             registry_address: Address,
             private_key: str,
+            db_filename: str,
             sync_start_block: int = 0,
             required_confirmations: int = 8,
             poll_interval: int = 10,
+            service_fee: int = 0,
     ):
         """ Creates a new pathfinding service
 
@@ -71,10 +75,16 @@ class PathfindingService(gevent.Greenlet):
         self.poll_interval = poll_interval
         self.chain_id = int(web3.net.version)
         self.private_key = private_key
+        self.address = private_key_to_address(private_key)
+        self.service_fee = service_fee
 
         self.is_running = gevent.event.Event()
         self.token_networks: Dict[Address, TokenNetwork] = {}
         self.token_network_listeners: List[BlockchainListener] = []
+        self.database = PFSDatabase(
+            filename=db_filename,
+            pfs_address=self.address,
+        )
 
         self.is_running = gevent.event.Event()
 

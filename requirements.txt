@@ -24,3 +24,5 @@ networkx==2.1
 requests==2.20.0
 
 jsonschema==2.6.0
+marshmallow-dataclass==0.5
+#marshmallow-dataclass==6.0.0b7

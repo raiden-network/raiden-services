@@ -6,10 +6,13 @@ import pkg_resources
 import requests
 from eth_utils import to_normalized_address
 
+import pathfinding_service.exceptions as exceptions
 from pathfinding_service import PathfindingService
 from pathfinding_service.api.rest import DEFAULT_MAX_PATHS, ServiceApi
 from pathfinding_service.model import TokenNetwork
 from raiden_libs.types import Address
+
+from .test_payment import make_iou
 
 ID_12 = 12
 ID_123 = 123
@@ -24,6 +27,7 @@ def test_get_paths_validation(
     initiator_address: str,
     target_address: str,
     token_network_model: TokenNetwork,
+    get_random_privkey,
 ):
     url = api_url + f'/{token_network_model.address}/paths'
     default_params = {
@@ -33,11 +37,11 @@ def test_get_paths_validation(
         'max_paths': 3,
     }
 
-    def request_path_with(**kwargs):
+    def request_path_with(status_code=400, **kwargs):
         params = default_params.copy()
         params.update(kwargs)
-        response = requests.post(url, data=params)
-        assert response.status_code == 400
+        response = requests.post(url, json=params)
+        assert response.status_code == status_code, response.json()
         return response
 
     response = requests.post(url)
@@ -66,7 +70,18 @@ def test_get_paths_validation(
     response = request_path_with(max_paths=-1)
     assert response.json()['errors'] == 'Number of paths must be positive: -1'
 
-# kill all running greenlets
+    # Exemplary test for payment errors. Different errors are serialized the
+    # same way in the rest API. Checking for specific errors is tested in
+    # payment_tests.
+    api_sut.pathfinding_service.service_fee = 1
+    response = request_path_with()
+    assert response.json()['error_code'] == exceptions.MissingIOU.error_code
+
+    # with successful payment
+    iou = make_iou(get_random_privkey(), api_sut.pathfinding_service.address)
+    response = request_path_with(iou=iou, status_code=200)
+
+    # kill all running greenlets
     gevent.killall(
         [obj for obj in gc.get_objects() if isinstance(obj, gevent.Greenlet)],
     )
@@ -121,7 +136,7 @@ def test_get_paths(
         'value': 10,
         'max_paths': DEFAULT_MAX_PATHS,
     }
-    response = requests.post(url, data=data)
+    response = requests.post(url, json=data)
     assert response.status_code == 200
     paths = response.json()['result']
     assert len(paths) == 1
@@ -138,7 +153,7 @@ def test_get_paths(
         'to': addresses[2],
         'value': 10,
     }
-    default_response = requests.post(url, data=data)
+    default_response = requests.post(url, json=data)
     assert default_response.json()['result'] == response.json()['result']
 
     # there is no connection between 0 and 5, this should return an error
@@ -148,7 +163,7 @@ def test_get_paths(
         'value': 10,
         'max_paths': 3,
     }
-    response = requests.post(url, data=data)
+    response = requests.post(url, json=data)
     assert response.status_code == 400
     assert response.json()['errors'].startswith('No suitable path found for transfer from')
 
