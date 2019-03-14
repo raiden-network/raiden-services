@@ -401,11 +401,12 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
             )
             assert tx_hash is not None
 
-            # Add tx hash to list of waiting transactions
-            context.db.add_waiting_transaction(encode_hex(tx_hash))
+            with context.db.conn:
+                # Add tx hash to list of waiting transactions
+                context.db.add_waiting_transaction(encode_hex(tx_hash))
 
-            channel.closing_tx_hash = tx_hash
-            context.db.upsert_channel(channel)
+                channel.closing_tx_hash = tx_hash
+                context.db.upsert_channel(channel)
         except Exception as e:
             log.error('Sending tx failed', exc_info=True, err=e)
 
@@ -457,11 +458,12 @@ def action_claim_reward_triggered_event_handler(event: Event, context: Context) 
             )
             assert tx_hash is not None
 
-            # Add tx hash to list of waiting transactions
-            context.db.add_waiting_transaction(encode_hex(tx_hash))
+            with context.db.conn:
+                # Add tx hash to list of waiting transactions
+                context.db.add_waiting_transaction(encode_hex(tx_hash))
 
-            channel.claim_tx_hash = tx_hash
-            context.db.upsert_channel(channel)
+                channel.claim_tx_hash = tx_hash
+                context.db.upsert_channel(channel)
         except Exception as e:
             log.error('Sending tx failed', exc_info=True, err=e)
 
