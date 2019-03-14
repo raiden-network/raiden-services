@@ -30,6 +30,7 @@ def test_load_and_save_iou(
 ):
     pfs = pathfinding_service_mocked_listeners
     iou = IOU(**make_iou(get_random_privkey(), pfs.address))  # type: ignore
+    iou.claimed = False
     pfs.database.upsert_iou(iou)
     stored_iou = pfs.database.get_iou(iou.sender, iou.expiration_block)
     assert stored_iou == iou
@@ -83,8 +84,20 @@ def test_process_payment(
 ):
     pfs = pathfinding_service_mocked_listeners
     pfs.service_fee = 1
-    iou = make_iou(get_random_privkey(), pfs.address)
+    priv_key = get_random_privkey()
+    iou = make_iou(priv_key, pfs.address, amount=1)
     process_payment(iou, pfs)
 
+    # The same payment can't be reused
     with pytest.raises(exceptions.InsufficientServicePayment):
+        process_payment(iou, pfs)
+
+    # Increasing the amount makes the payment work again
+    iou = make_iou(priv_key, pfs.address, amount=2)
+    process_payment(iou, pfs)
+
+    # Complain if the IOU has been claimed
+    iou = make_iou(priv_key, pfs.address, amount=3)
+    pfs.database.conn.execute("UPDATE iou SET claimed=1")
+    with pytest.raises(exceptions.IOUAlreadyClaimed):
         process_payment(iou, pfs)
