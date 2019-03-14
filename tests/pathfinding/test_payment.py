@@ -96,6 +96,11 @@ def test_process_payment(
     iou = make_iou(priv_key, pfs.address, amount=2)
     process_payment(iou, pfs)
 
+    # Make sure the client does not create new sessions unnecessarily
+    iou = make_iou(priv_key, pfs.address, expiration_block=20000)
+    with pytest.raises(exceptions.UseThisIOU):
+        process_payment(iou, pfs)
+
     # Complain if the IOU has been claimed
     iou = make_iou(priv_key, pfs.address, amount=3)
     pfs.database.conn.execute("UPDATE iou SET claimed=1")

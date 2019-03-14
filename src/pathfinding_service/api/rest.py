@@ -144,6 +144,7 @@ def process_payment(iou_dict, pathfinding_service):
     if iou_dict is None:
         raise exceptions.MissingIOU
 
+    # Basic IOU validity checks
     iou, errors = IOU.Schema().load(iou_dict)
     if errors:
         raise exceptions.InvalidRequest(**errors)
@@ -152,22 +153,24 @@ def process_payment(iou_dict, pathfinding_service):
     if not iou.is_signature_valid():
         raise exceptions.InvalidIOUSignature
 
-    # TODO:
-    # * does sender have other IOUs?
-    # * is deposit large enough?
-
-    last_iou = pathfinding_service.database.get_iou(
-        iou.sender,
-        iou.expiration_block,
+    # Compare with known IOU
+    active_iou = pathfinding_service.database.get_iou(
+        sender=iou.sender,
+        claimed=False,
     )
-    if last_iou:
-        if last_iou.claimed:
-            raise exceptions.IOUAlreadyClaimed
-        else:
-            iou.claimed = False
-        expected_amount = last_iou.amount + pathfinding_service.service_fee
+    if active_iou:
+        if active_iou.expiration_block != iou.expiration_block:
+            raise exceptions.UseThisIOU(iou=active_iou)
+
+        expected_amount = active_iou.amount + pathfinding_service.service_fee
     else:
-        iou.claimed = False
+        if pathfinding_service.database.get_iou(
+            sender=iou.sender,
+            expiration_block=iou.expiration_block,
+            claimed=True,
+        ):
+            raise exceptions.IOUAlreadyClaimed
+
         min_expiry = pathfinding_service.web3.eth.blockNumber + MIN_IOU_EXPIRY
         if iou.expiration_block < min_expiry:
             raise exceptions.IOUExpiredTooEarly(min_expiry=min_expiry)
@@ -175,6 +178,10 @@ def process_payment(iou_dict, pathfinding_service):
     if iou.amount < expected_amount:
         raise exceptions.InsufficientServicePayment(expected_amount=expected_amount)
 
+    # TODO: deposit large enough?
+
+    # Save latest IOU
+    iou.claimed = False
     pathfinding_service.database.upsert_iou(
         IOU.Schema().dump(iou)[0],
     )
