@@ -65,5 +65,7 @@ CREATE TABLE scheduled_events (
     channel_identifier      HEX_INT     NOT NULL,
     non_closing_participant CHAR(42)    NOT NULL,
 
-    PRIMARY KEY (trigger_block_number, channel_identifier, token_network_address)
+    PRIMARY KEY (trigger_block_number, event_type, token_network_address, channel_identifier, non_closing_participant),
+    FOREIGN KEY (token_network_address)
+        REFERENCES token_network(address)
 );
