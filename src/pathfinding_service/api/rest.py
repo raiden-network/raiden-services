@@ -163,7 +163,7 @@ def process_payment(iou_dict, pathfinding_service):
         iou.expiration_block,
     )
     if last_iou:
-        expected_amount = last_iou['amount'] + pathfinding_service.service_fee
+        expected_amount = last_iou.amount + pathfinding_service.service_fee
     else:
         min_expiry = pathfinding_service.web3.eth.blockNumber + MIN_IOU_EXPIRY
         if iou.expiration_block < min_expiry:
