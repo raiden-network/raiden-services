@@ -51,6 +51,7 @@ class SharedDatabase:
             f'file:{filename}?mode={mode}',
             detect_types=sqlite3.PARSE_DECLTYPES,
             uri=True,
+            isolation_level=None,  # Disable sqlite3 module’s implicit transaction management
         )
         self.conn.row_factory = sqlite3.Row
         self.conn.execute("PRAGMA foreign_keys = ON")
@@ -125,11 +126,11 @@ class SharedDatabase:
             ]
         else:
             values += [None, None]
-        with self.conn:
-            upsert_sql = "INSERT OR REPLACE INTO channel VALUES ({})".format(
-                ', '.join('?' * len(values)),
-            )
-            self.conn.execute(upsert_sql, values)
+
+        upsert_sql = "INSERT OR REPLACE INTO channel VALUES ({})".format(
+            ', '.join('?' * len(values)),
+        )
+        self.conn.execute(upsert_sql, values)
 
     def get_channel(self, token_network_address: str, channel_id: int) -> Optional[Channel]:
         row = self.conn.execute(
@@ -166,11 +167,10 @@ class SharedDatabase:
             hex(contained_event.channel_identifier),
             contained_event.non_closing_participant,
         ]
-        with self.conn:
-            upsert_sql = "INSERT OR REPLACE INTO scheduled_events VALUES ({})".format(
-                ', '.join('?' * len(values)),
-            )
-            self.conn.execute(upsert_sql, values)
+        upsert_sql = "INSERT OR REPLACE INTO scheduled_events VALUES ({})".format(
+            ', '.join('?' * len(values)),
+        )
+        self.conn.execute(upsert_sql, values)
 
     def get_scheduled_events(
             self,
@@ -209,17 +209,16 @@ class SharedDatabase:
             hex(contained_event.channel_identifier),
             contained_event.non_closing_participant,
         ]
-        with self.conn:
-            self.conn.execute(
-                """
-                    DELETE FROM scheduled_events
-                    WHERE trigger_block_number = ?
-                        AND token_network_address = ?
-                        AND channel_identifier = ?
-                        AND non_closing_participant =?
-                """,
-                values,
-            )
+        self.conn.execute(
+            """
+                DELETE FROM scheduled_events
+                WHERE trigger_block_number = ?
+                    AND token_network_address = ?
+                    AND channel_identifier = ?
+                    AND non_closing_participant =?
+            """,
+            values,
+        )
 
     def scheduled_event_count(self) -> int:
         return self.conn.execute("SELECT count(*) FROM scheduled_events").fetchone()[0]
@@ -232,18 +231,16 @@ class SharedDatabase:
         ]
 
     def add_waiting_transaction(self, waiting_tx_hash: str) -> None:
-        with self.conn:
-            self.conn.execute(
-                "INSERT INTO waiting_transactions VALUES (?)",
-                [waiting_tx_hash],
-            )
+        self.conn.execute(
+            "INSERT INTO waiting_transactions VALUES (?)",
+            [waiting_tx_hash],
+        )
 
     def remove_waiting_transaction(self, tx_hash: str) -> None:
-        with self.conn:
-            self.conn.execute(
-                "DELETE FROM waiting_transactions WHERE transaction_hash = ?",
-                [tx_hash],
-            )
+        self.conn.execute(
+            "DELETE FROM waiting_transactions WHERE transaction_hash = ?",
+            [tx_hash],
+        )
 
     def load_state(self, sync_start_block: int) -> MonitoringServiceState:
         """ Load MS state from db or return a new empty state if not saved one is present
@@ -315,26 +312,24 @@ class Database(SharedDatabase):
             for name, old, new in zip(old_settings.keys(), old_settings, settings):
                 assert old == new, f'DB was created with {name}={old}, got {new}!'
         else:
-            with self.conn:
-                # create db schema
-                with open(SCHEMA_FILENAME) as schema_file:
-                    self.conn.executescript(schema_file.read())
-                self.conn.execute("""
-                    UPDATE blockchain
-                    SET chain_id = ?,
-                        monitor_contract_address = ?,
-                        token_network_registry_address = ?,
-                        receiver = ?;
-                """, settings)
+            # create db schema
+            with open(SCHEMA_FILENAME) as schema_file:
+                self.conn.executescript(schema_file.read())
+            self.conn.execute("""
+                UPDATE blockchain
+                SET chain_id = ?,
+                    monitor_contract_address = ?,
+                    token_network_registry_address = ?,
+                    receiver = ?;
+            """, settings)
 
     def update_state(self, state: MonitoringServiceState) -> None:
-        with self.conn:
-            self.conn.execute(
-                "UPDATE blockchain SET latest_known_block = ?",
-                [state.blockchain_state.latest_known_block],
-            )
-            # assumes that token_networks are not removed
-            self.conn.executemany(
-                "INSERT OR REPLACE INTO token_network VALUES (?)",
-                [[address] for address in state.blockchain_state.token_network_addresses],
-            )
+        self.conn.execute(
+            "UPDATE blockchain SET latest_known_block = ?",
+            [state.blockchain_state.latest_known_block],
+        )
+        # assumes that token_networks are not removed
+        self.conn.executemany(
+            "INSERT OR REPLACE INTO token_network VALUES (?)",
+            [[address] for address in state.blockchain_state.token_network_addresses],
+        )
