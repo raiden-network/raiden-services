@@ -3,6 +3,7 @@ from gevent import monkey  # isort:skip # noqa
 monkey.patch_all()  # isort:skip # noqa
 
 import json
+import os
 import sys
 
 import click
@@ -103,6 +104,18 @@ def get_default_registry_and_start_block(
     type=click.Choice(['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG']),
     help='Print log messages of this level and more important ones',
 )
+@click.option(
+    '--state-db',
+    default=os.path.join(click.get_app_dir('raiden-monitoring-service'), 'state.db'),
+    type=str,
+    help='Path to SQLite3 db which stores the application state',
+)
+@click.option(
+    '--service-fee',
+    default=0,
+    type=click.IntRange(min=0),
+    help='Service fee which is required before processing requests',
+)
 def main(
     keystore_file: str,
     password: str,
@@ -112,6 +125,8 @@ def main(
     confirmations: int,
     host: str,
     log_level: str,
+    state_db: str,
+    service_fee: int,
 ):
     """Console script for pathfinding_service.
 
@@ -178,6 +193,8 @@ def main(
             required_confirmations=confirmations,
             private_key=private_key,
             poll_interval=DEFAULT_POLL_INTERVALL,
+            db_filename=state_db,
+            service_fee=service_fee,
         )
 
         api = ServiceApi(service)

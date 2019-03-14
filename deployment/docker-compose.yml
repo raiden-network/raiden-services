@@ -14,6 +14,7 @@ services:
     build: ../
     environment:
       - PFS_ETH_RPC=http://geth.ropsten.ethnodes.brainbot.com:8545
+      - PFS_STATE_DB=/state/pfs-ropsten.db
     labels:
       - "traefik.enable=true"
       - "traefik.frontend.rule=Host: pfs-ropsten.services-dev.raiden.network"
@@ -22,6 +23,7 @@ services:
     << : *defaults
     environment:
       - PFS_ETH_RPC=http://geth.rinkeby.ethnodes.brainbot.com:8545
+      - PFS_STATE_DB=/state/pfs-rinkeby.db
     labels:
       - "traefik.enable=true"
       - "traefik.frontend.rule=Host: pfs-rinkeby.services-dev.raiden.network"
@@ -30,6 +32,7 @@ services:
     << : *defaults
     environment:
       - PFS_ETH_RPC=http://parity.kovan.ethnodes.brainbot.com:8545
+      - PFS_STATE_DB=/state/pfs-kovan.db
     labels:
       - "traefik.enable=true"
       - "traefik.frontend.rule=Host: pfs-kovan.services-dev.raiden.network"
