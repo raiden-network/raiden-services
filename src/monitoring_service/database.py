@@ -240,12 +240,8 @@ class SharedDatabase:
             [tx_hash],
         )
 
-    def load_state(self, sync_start_block: int) -> MonitoringServiceState:
+    def load_state(self) -> MonitoringServiceState:
         """ Load MS state from db or return a new empty state if not saved one is present
-
-        An empty state is initialized with `latest_known_block =
-        sync_start_block - 1`. If a saved state is present, `sync_start_block`
-        is ignored.
         """
         blockchain = self.conn.execute("SELECT * FROM blockchain").fetchone()
         token_network_addresses = [

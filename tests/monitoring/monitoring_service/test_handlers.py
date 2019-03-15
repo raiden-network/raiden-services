@@ -105,7 +105,7 @@ def get_signed_monitor_request(
 @pytest.fixture
 def context(ms_database):
     return Context(
-        ms_state=ms_database.load_state(sync_start_block=0),
+        ms_state=ms_database.load_state(),
         db=ms_database,
         w3=Mock(),
         contract_manager=Mock(),

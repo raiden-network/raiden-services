@@ -98,7 +98,7 @@ class MonitoringService:
             receiver=self.address,
             msc_address=monitor_contract_address,
         )
-        ms_state = self.database.load_state(sync_start_block)
+        ms_state = self.database.load_state()
 
         self.bcl = BlockchainListener(
             web3=self.web3,
