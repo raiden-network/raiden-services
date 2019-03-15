@@ -75,4 +75,4 @@ class PFSDatabase:
             return None
 
         iou_dict = dict(zip(row.keys(), row))
-        return IOU(receiver=self.pfs_address, **iou_dict)  # type: ignore
+        return IOU(receiver=self.pfs_address, **iou_dict)

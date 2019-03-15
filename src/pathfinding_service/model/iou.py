@@ -1,9 +1,10 @@
 from typing import ClassVar, Optional, Type
 
 import marshmallow
+from dataclasses import dataclass
 from eth_abi import encode_single
 from eth_utils import decode_hex
-from marshmallow_dataclass import dataclass
+from marshmallow_dataclass import add_schema
 from web3 import Web3
 
 from raiden_libs.exceptions import InvalidSignature
@@ -40,6 +41,7 @@ from raiden_libs.utils import eth_recover
 #             return False
 
 
+@add_schema
 @dataclass
 class IOU:
     sender: str
