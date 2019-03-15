@@ -17,10 +17,23 @@ class ApiException(Exception):
         return f'{self.__class__.__name__}({self.error_details})'
 
 
+# ### Generic Service Exceptions 20xx ###
+
+
 class InvalidRequest(ApiException):
     """Request arguments failed schema validation"""
     error_code = 2000
     msg = 'Request parameter failed validation. See `error_details`.'
+
+
+class InvalidSignature(ApiException):
+    error_code = 2001
+    msg = 'The signature did not match the signed content'
+
+
+class RequestOutdated(ApiException):
+    error_code = 2002
+    msg = 'The request contains too old timestamps or nonces'
 
 
 # ### BadIOU 21xx ###
@@ -44,18 +57,13 @@ class IOUExpiredTooEarly(BadIOU):
     msg = 'Please use a higher `expiration_block`'
 
 
-class InvalidIOUSignature(BadIOU):
-    error_code = 2104
-    msg = 'The signature did not match the IOU content'
-
-
 class InsufficientServicePayment(BadIOU):
-    error_code = 2105
+    error_code = 2104
     msg = 'The provided payment is lower than service fee'
 
 
 class IOUAlreadyClaimed(BadIOU):
-    error_code = 2106
+    error_code = 2105
     msg = 'The IOU is already claimed. Please start new session with different `expiration_block`.'
 
 

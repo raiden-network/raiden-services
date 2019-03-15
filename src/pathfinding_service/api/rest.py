@@ -1,14 +1,19 @@
-from typing import Dict, List, Optional, Tuple
+from datetime import datetime, timedelta
+from typing import ClassVar, Dict, List, Optional, Tuple, Type
 
 import gevent
+import marshmallow
 import pkg_resources
 import structlog
-from eth_utils import is_address, is_checksum_address
+from dataclasses import dataclass, field
+from eth_utils import is_address, is_checksum_address, to_checksum_address
 from flask import Flask, request
 from flask_restful import Api, Resource, reqparse
 from gevent import Greenlet
 from gevent.pywsgi import WSGIServer
+from marshmallow_dataclass import add_schema
 from networkx.exception import NetworkXNoPath
+from web3 import Web3
 
 import pathfinding_service.exceptions as exceptions
 from pathfinding_service import PathfindingService
@@ -20,7 +25,11 @@ from pathfinding_service.config import (
     MIN_IOU_EXPIRY,
 )
 from pathfinding_service.model import IOU
+from raiden.utils.typing import Signature, TokenNetworkAddress
+from raiden_libs.exceptions import InvalidSignature
+from raiden_libs.marshmallow import HexedBytes
 from raiden_libs.types import Address
+from raiden_libs.utils import eth_recover
 
 log = structlog.get_logger(__name__)
 
@@ -151,7 +160,7 @@ def process_payment(iou_dict, pathfinding_service):
     if iou.receiver != pathfinding_service.address:
         raise exceptions.WrongIOURecipient(expected=pathfinding_service.address)
     if not iou.is_signature_valid():
-        raise exceptions.InvalidIOUSignature
+        raise exceptions.InvalidSignature
 
     # Compare with known IOU
     active_iou = pathfinding_service.database.get_iou(
@@ -183,6 +192,55 @@ def process_payment(iou_dict, pathfinding_service):
     # Save latest IOU
     iou.claimed = False
     pathfinding_service.database.upsert_iou(iou)
+
+
+@add_schema
+@dataclass
+class IOURequest:
+    """A HTTP request to IOUResource"""
+    sender: Address
+    receiver: Address
+    timestamp: datetime
+    timestamp_str: str = field(metadata={
+        "marshmallow_field": marshmallow.fields.String(load_from='timestamp'),
+    })
+    signature: Signature = field(metadata={"marshmallow_field": HexedBytes()})
+    Schema: ClassVar[Type[marshmallow.Schema]]
+
+    def is_signature_valid(self):
+        packed_data = (
+            Web3.toBytes(hexstr=self.sender) +
+            Web3.toBytes(hexstr=self.receiver) +
+            Web3.toBytes(text=self.timestamp_str)
+        )
+        try:
+            recovered_address = eth_recover(packed_data, self.signature)
+        except InvalidSignature:
+            return False
+        return to_checksum_address(recovered_address) == to_checksum_address(self.sender)
+
+
+class IOUResource(PathfinderResource):
+
+    def get(self, token_network_address: TokenNetworkAddress):
+        iou_request, errors = IOURequest.Schema().load(request.args)
+        if errors:
+            raise exceptions.InvalidRequest(**errors)
+        if not iou_request.is_signature_valid():
+            raise exceptions.InvalidSignature
+        if iou_request.timestamp < datetime.utcnow() - timedelta(hours=1):
+            raise exceptions.RequestOutdated
+
+        last_iou = self.pathfinding_service.database.get_iou(
+            sender=iou_request.sender,
+            claimed=False,
+        )
+        if last_iou:
+            last_iou = IOU.Schema(strict=True, exclude=['claimed']).dump(last_iou)[0]
+
+        return {
+            'last_iou': last_iou,
+        }, 200
 
 
 class InfoResource(PathfinderResource):
@@ -217,6 +275,7 @@ class ServiceApi:
 
         resources: List[Tuple[str, Resource, Dict]] = [
             ('/<token_network_address>/paths', PathsResource, {}),
+            ('/<token_network_address>/payment/iou', IOUResource, {}),
             ('/info', InfoResource, {}),
         ]
 

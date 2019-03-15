@@ -70,7 +70,7 @@ def test_process_payment_errors(
     # bad signature
     iou = make_iou(get_random_privkey(), pfs.address)
     iou['signature'] = hex(int(iou['signature'], 16) + 1)
-    with pytest.raises(exceptions.InvalidIOUSignature):
+    with pytest.raises(exceptions.InvalidSignature):
         process_payment(iou, pfs)
 
     # payment too low
