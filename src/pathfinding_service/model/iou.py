@@ -3,24 +3,15 @@ from typing import ClassVar, Optional, Type
 import marshmallow
 from dataclasses import dataclass, field
 from eth_abi import encode_single
-from eth_utils import decode_hex, encode_hex
+from eth_utils import to_checksum_address
 from marshmallow_dataclass import add_schema
 from web3 import Web3
 
 from raiden.utils.typing import BlockNumber, Signature, TokenAmount
 from raiden_libs.exceptions import InvalidSignature
+from raiden_libs.marshmallow import HexedBytes
 from raiden_libs.types import Address
 from raiden_libs.utils import eth_recover
-
-
-class HexedBytes(marshmallow.fields.Field):
-    """ Use `bytes` in the dataclass, serialize to hex encoding"""
-
-    def _serialize(self, value, attr, obj):
-        return encode_hex(value)
-
-    def _deserialize(self, value, attr, data):
-        return decode_hex(value)
 
 
 @add_schema
@@ -42,6 +33,7 @@ class IOU:
             encode_single('uint256', self.expiration_block)
         )
         try:
-            return eth_recover(packed_data, self.signature) == self.sender
+            recovered_address = eth_recover(packed_data, self.signature)
         except InvalidSignature:
             return False
+        return to_checksum_address(recovered_address) == to_checksum_address(self.sender)
