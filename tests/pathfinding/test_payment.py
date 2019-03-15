@@ -29,7 +29,7 @@ def test_load_and_save_iou(
     get_random_privkey,
 ):
     pfs = pathfinding_service_mocked_listeners
-    iou = IOU(**make_iou(get_random_privkey(), pfs.address))  # type: ignore
+    iou = IOU(**make_iou(get_random_privkey(), pfs.address))
     iou.claimed = False
     pfs.database.upsert_iou(iou)
     stored_iou = pfs.database.get_iou(iou.sender, iou.expiration_block)
