@@ -37,7 +37,7 @@ class RequestCollector(gevent.Greenlet):
         self.private_key = private_key
         self.state_db = state_db
 
-        state = self.state_db.load_state(0)
+        state = self.state_db.load_state()
         try:
             self.matrix_listener = MatrixListener(
                 private_key=private_key,
