@@ -46,7 +46,7 @@ class SharedDatabase:
     """ DB shared by MS and request collector """
 
     def __init__(self, filename: str, allow_create: bool = False):
-        log.info('Opening database at ' + filename)
+        log.info('Opening database', filename=filename)
         mode = 'rwc' if allow_create else 'rw'
         self.conn = sqlite3.connect(
             f'file:{filename}?mode={mode}',
