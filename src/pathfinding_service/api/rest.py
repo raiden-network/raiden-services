@@ -182,9 +182,7 @@ def process_payment(iou_dict, pathfinding_service):
 
     # Save latest IOU
     iou.claimed = False
-    pathfinding_service.database.upsert_iou(
-        IOU.Schema().dump(iou)[0],
-    )
+    pathfinding_service.database.upsert_iou(iou)
 
 
 class InfoResource(PathfinderResource):

@@ -1,4 +1,5 @@
 import pytest
+from eth_utils import encode_hex
 
 import pathfinding_service.exceptions as exceptions
 from pathfinding_service.api.rest import process_payment
@@ -14,13 +15,13 @@ def make_iou(sender_priv_key, receiver, amount=1, expiration_block=10000) -> dic
         'amount': amount,
         'expiration_block': expiration_block,
     }
-    iou['signature'] = sign_one_to_n_iou(
+    iou['signature'] = encode_hex(sign_one_to_n_iou(
         privatekey=sender_priv_key,
         sender=iou['sender'],
         receiver=receiver,
         amount=amount,
         expiration=expiration_block,
-    ).hex()
+    ))
     return iou
 
 
@@ -29,7 +30,8 @@ def test_load_and_save_iou(
     get_random_privkey,
 ):
     pfs = pathfinding_service_mocked_listeners
-    iou = IOU(**make_iou(get_random_privkey(), pfs.address))
+    iou_dict = make_iou(get_random_privkey(), pfs.address)
+    iou = IOU.Schema().load(iou_dict)[0]
     iou.claimed = False
     pfs.database.upsert_iou(iou)
     stored_iou = pfs.database.get_iou(iou.sender, iou.expiration_block)
