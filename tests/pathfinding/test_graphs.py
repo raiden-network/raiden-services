@@ -25,7 +25,7 @@ def test_edge_weight(addresses):
         dict(view=view),
     ) == 1
 
-
+#@pytest.mark.skip
 def test_routing_benchmark(
     token_network_model: TokenNetwork,
     populate_token_network_random: None,

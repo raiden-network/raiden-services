@@ -183,13 +183,25 @@ def populate_token_network_random(
         token_network_model.handle_channel_balance_update_message(
             channel_id,
             address1,
+            address2,
+            updating_nonce=1,
+            other_nonce=1,
+            updating_capacity=deposit1,
+            other_capacity=deposit2,
             reveal_timeout=2,
         )
+        print(channel_id_int, NUMBER_OF_CHANNELS)
         token_network_model.handle_channel_balance_update_message(
             channel_id,
             address2,
+            address1,
+            updating_nonce=1,
+            other_nonce=1,
+            updating_capacity=10,
+            other_capacity=10,
             reveal_timeout=2,
         )
+        print("finished")
 
 
 @pytest.fixture

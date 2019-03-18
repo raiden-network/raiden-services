@@ -23,6 +23,7 @@ class ChannelView:
         settle_timeout: int,
         deposit: int = 0,
         reveal_timeout: int = DEFAULT_REVEAL_TIMEOUT,
+        balance_update_nonce: int = 0,
     ):
         assert is_checksum_address(participant1)
         assert is_checksum_address(participant2)
@@ -31,45 +32,33 @@ class ChannelView:
         self.partner = participant2
 
         self._deposit = deposit
-        self._transferred_amount = 0
-        self._received_amount = 0
-        self._locked_amount = 0
         self._capacity = deposit
         self.state = ChannelView.State.OPEN
         self.channel_id = channel_id
         self.settle_timeout = settle_timeout
         self.reveal_timeout = reveal_timeout
+        self.balance_update_nonce = balance_update_nonce
 
     def update_capacity(
         self,
-        nonce: int = None,
+        nonce: int = 0,
+        capacity: int = None,
+        reveal_timeout: int = None,
         deposit: int = None,
-        transferred_amount: int = None,
-        received_amount: int = None,
-        locked_amount: int = None,
     ):
+        self.balance_update_nonce = nonce
+        self._capacity = capacity
+        if reveal_timeout is not None:
+            self.reveal_timeout = reveal_timeout
+        # FIXME: think about edge cases
         if deposit is not None:
             self._deposit = deposit
-
-        self._capacity = self.deposit - (
-            self.transferred_amount + self.locked_amount
-        ) + self.received_amount
+            if self._capacity is not None:
+                self._capacity += deposit
 
     @property
     def deposit(self) -> int:
         return self._deposit
-
-    @property
-    def transferred_amount(self) -> int:
-        return self._transferred_amount
-
-    @property
-    def received_amount(self) -> int:
-        return self._received_amount
-
-    @property
-    def locked_amount(self) -> int:
-        return self._locked_amount
 
     @property
     def capacity(self) -> int:

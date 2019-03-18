@@ -4,7 +4,7 @@ from typing import Dict, List, Optional
 
 import gevent
 import structlog
-from eth_utils import is_checksum_address
+from eth_utils import is_checksum_address, encode_hex
 from web3 import Web3
 
 from pathfinding_service.model import TokenNetwork
@@ -278,9 +278,60 @@ class PathfindingService(gevent.Greenlet):
     def handle_message(self, message: SignedMessage):
         if isinstance(message, UpdatePFS):
             self.on_pfs_update(message)
-            # TODO validate message
         else:
             log.info('Ignoring unknown message type')
 
     def on_pfs_update(self, message: UpdatePFS):
-        log.info('Received message', **message.to_dict())
+        log.info(
+            'Received Balance Update',
+            token_network_address=self.token_network.address,
+            channel_identifier=self.channel_identifier,
+        )
+
+        assert is_checksum_address(message.updating_participant)
+        assert is_checksum_address(message.other_participant)
+
+        # check if chain_id matches
+        if message.chain_id != self.chain_id:
+            log.info(
+                'Received balance update with unknown chain id',
+                chain_id=message.chain_id,
+            )
+            return
+
+        # check if token network exists
+        token_network = self._get_token_network(message.token_network_address)
+        if token_network is None:
+            log.info(
+                'Received balance update with unknown token network',
+                token_network_address=message.token_network_address,
+            )
+            return
+
+        # check if channel exists
+        if message.channel_identifier not in token_network.channel_id_to_addresses:
+            log.info(
+                'Received balance update with unknown channel_id in token network',
+                channel_id=message.channel_identifier,
+                token_network_address=message.token_network_address,
+            )
+            return
+
+        # TODO: check signature of message
+
+        # check values max int 256 TODO: get constants
+        if not 0 < message.updating_capacity < 2 ^ 256:
+            return
+        if not 0 < message.other_capacity < 2 ^ 256:
+            return
+
+        token_network.handle_channel_balance_update_message(
+            channel_identifier=message.channel_identifier,
+            updating_participant=message.updating_participant,
+            other_participant=message.other_participant,
+            updating_nonce=message.updating_nonce,
+            other_nonce=message.other_nonce,
+            updating_capacity=message.updating_capacity,
+            other_capacity=message.other_capacity,
+            reveal_timeout=message.reveal_timeout,
+        )
