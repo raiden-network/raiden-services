@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, Callable, List, Optional, Union
+from typing import Callable, List, Optional, Union
 
 from coincurve import PrivateKey, PublicKey
 from eth_utils import (
@@ -154,11 +154,6 @@ def eth_recover(data: bytes, signature: bytes, hasher: Hasher = eth_sign_sha3) -
         DeprecationWarning,
     )
     return address_from_signature(data=data, signature=signature, hasher=hasher)
-
-
-def eth_verify(data: Any, signature: bytes, hasher: Hasher = eth_sign_sha3) -> Address:
-    """ Recover signature from data, which can be a list of values to be packed """
-    return eth_recover(data=keccak256(data, hasher=hasher), signature=signature, hasher=None)
 
 
 def pack_data(abi_types: List, values: List) -> bytes:
