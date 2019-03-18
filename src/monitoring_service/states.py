@@ -2,9 +2,11 @@ from dataclasses import dataclass, field  # isort:skip noqa differences between 
 from typing import Any, Dict, Iterable, List, Optional
 
 import jsonschema
-from eth_utils import decode_hex, encode_hex, is_checksum_address, to_checksum_address
+from eth_utils import decode_hex, encode_hex, is_checksum_address, to_bytes, to_checksum_address
 from web3 import Web3
 
+from raiden.utils.signer import LocalSigner, recover
+from raiden.utils.signing import pack_data
 from raiden.utils.typing import (
     AdditionalHash,
     Address,
@@ -20,7 +22,6 @@ from raiden.utils.typing import (
 )
 from raiden_contracts.constants import ChannelState, MessageTypeId
 from raiden_libs.messages.json_schema import MONITOR_REQUEST_SCHEMA
-from raiden_libs.utils import eth_recover, eth_sign, pack_data
 
 
 @dataclass
@@ -106,7 +107,8 @@ class HashedBalanceProof:
 
         if signature is None:
             assert priv_key
-            self.signature = encode_hex(eth_sign(priv_key, self.serialize_bin()))
+            signer = LocalSigner(private_key=to_bytes(hexstr=priv_key))
+            self.signature = encode_hex(signer.sign(self.serialize_bin()))
         else:
             self.signature = signature
 
@@ -155,7 +157,7 @@ class UnsignedMonitorRequest:
     signer: Address = field(init=False)
 
     def __post_init__(self) -> None:
-        self.signer = to_checksum_address(eth_recover(
+        self.signer = to_checksum_address(recover(
             data=self.packed_balance_proof_data(),
             signature=decode_hex(self.closing_signature),
         ))
@@ -178,6 +180,7 @@ class UnsignedMonitorRequest:
         )
 
     def sign(self, priv_key: str) -> 'MonitorRequest':
+        signer = LocalSigner(private_key=to_bytes(hexstr=priv_key))
         return MonitorRequest(
             channel_identifier=self.channel_identifier,
             token_network_address=self.token_network_address,
@@ -188,10 +191,10 @@ class UnsignedMonitorRequest:
             closing_signature=self.closing_signature,
             reward_amount=self.reward_amount,
             reward_proof_signature=encode_hex(
-                eth_sign(priv_key, self.packed_reward_proof_data()),
+                signer.sign(self.packed_reward_proof_data()),
             ),
             non_closing_signature=encode_hex(
-                eth_sign(priv_key, self.packed_non_closing_data()),
+                signer.sign(self.packed_non_closing_data()),
             ),
         )
 
@@ -254,11 +257,11 @@ class MonitorRequest(UnsignedMonitorRequest):
     def __post_init__(self) -> None:
         super(MonitorRequest, self).__post_init__()
         assert is_checksum_address(self.token_network_address)
-        self.non_closing_signer = to_checksum_address(eth_recover(
+        self.non_closing_signer = to_checksum_address(recover(
             data=self.packed_non_closing_data(),
             signature=decode_hex(self.non_closing_signature),
         ))
-        self.reward_proof_signer = to_checksum_address(eth_recover(
+        self.reward_proof_signer = to_checksum_address(recover(
             data=self.packed_reward_proof_data(),
             signature=decode_hex(self.reward_proof_signature),
         ))
