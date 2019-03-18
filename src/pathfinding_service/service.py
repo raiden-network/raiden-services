@@ -4,7 +4,7 @@ from typing import Dict, List, Optional
 
 import gevent
 import structlog
-from eth_utils import is_checksum_address, encode_hex
+from eth_utils import is_checksum_address
 from web3 import Web3
 
 from pathfinding_service.model import TokenNetwork

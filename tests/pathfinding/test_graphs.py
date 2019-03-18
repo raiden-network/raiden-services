@@ -25,7 +25,7 @@ def test_edge_weight(addresses):
         dict(view=view),
     ) == 1
 
-#@pytest.mark.skip
+
 def test_routing_benchmark(
     token_network_model: TokenNetwork,
     populate_token_network_random: None,
@@ -64,11 +64,9 @@ def test_routing_simple(
     view10: ChannelView = token_network_model.G[addresses[1]][addresses[0]]['view']
 
     assert view01.deposit == 100
-    assert view01.transferred_amount == 0
-    assert view01.locked_amount == 0
     assert isclose(view01.relative_fee, DEFAULT_PERCENTAGE_FEE)
-    assert view01.capacity == 100
-    assert view10.capacity == 50
+    assert view01.capacity == 90
+    assert view10.capacity == 60
 
     # 0->2->3 is the shortest path
     paths = token_network_model.get_paths(
@@ -101,13 +99,9 @@ def test_routing_result_order(
         max_paths=5,
         hop_bias=1,
     )
-    # 5 paths requested, but only 3 are available
-    assert len(paths) == 2
+    # 5 paths requested, but only 1 is available
+    assert len(paths) == 1
     assert paths[0] == {
-        'path': [addresses[0], addresses[2]],
-        'estimated_fee': 0,
-    }
-    assert paths[1] == {
         'path': [addresses[0], addresses[1], addresses[2]],
         'estimated_fee': 0,
     }

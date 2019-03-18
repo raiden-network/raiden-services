@@ -23,7 +23,6 @@ class ChannelView:
         settle_timeout: int,
         deposit: int = 0,
         reveal_timeout: int = DEFAULT_REVEAL_TIMEOUT,
-        balance_update_nonce: int = 0,
     ):
         assert is_checksum_address(participant1)
         assert is_checksum_address(participant2)
@@ -37,12 +36,13 @@ class ChannelView:
         self.channel_id = channel_id
         self.settle_timeout = settle_timeout
         self.reveal_timeout = reveal_timeout
-        self.balance_update_nonce = balance_update_nonce
+        self.balance_update_nonce = 0
 
+    # TODO: define another function update_deposit
     def update_capacity(
         self,
         nonce: int = 0,
-        capacity: int = None,
+        capacity: int = 0,
         reveal_timeout: int = None,
         deposit: int = None,
     ):

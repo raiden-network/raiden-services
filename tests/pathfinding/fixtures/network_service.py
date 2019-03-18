@@ -181,27 +181,25 @@ def populate_token_network_random(
             deposit2,
         )
         token_network_model.handle_channel_balance_update_message(
-            channel_id,
-            address1,
-            address2,
+            channel_identifier=channel_id,
+            updating_participant=address1,
+            other_participant=address2,
             updating_nonce=1,
             other_nonce=1,
             updating_capacity=deposit1,
             other_capacity=deposit2,
             reveal_timeout=2,
         )
-        print(channel_id_int, NUMBER_OF_CHANNELS)
         token_network_model.handle_channel_balance_update_message(
-            channel_id,
-            address2,
-            address1,
-            updating_nonce=1,
+            channel_identifier=channel_id,
+            updating_participant=address2,
+            other_participant=address1,
+            updating_nonce=2,
             other_nonce=1,
-            updating_capacity=10,
-            other_capacity=10,
+            updating_capacity=deposit1,
+            other_capacity=deposit2,
             reveal_timeout=2,
         )
-        print("finished")
 
 
 @pytest.fixture
@@ -216,12 +214,12 @@ def populate_token_network() -> Callable:
         for channel_id, (
             p1_index,
             p1_deposit,
-            _p1_transferred_amount,
+            p1_transferred_amount,
             _p1_fee,
             p1_reveal_timeout,
             p2_index,
             p2_deposit,
-            _p2_transferred_amount,
+            p2_transferred_amount,
             _p2_fee,
             p2_reveal_timeout,
             settle_timeout,
@@ -243,15 +241,34 @@ def populate_token_network() -> Callable:
                 addresses[p2_index],
                 p2_deposit,
             )
+
+            p1_capacity = (
+                p1_deposit - p1_transferred_amount + p2_transferred_amount
+            )
+
+            p2_capacity = (
+                p2_deposit - p2_transferred_amount + p1_transferred_amount
+            )
+
             token_network.handle_channel_balance_update_message(
-                ChannelIdentifier(channel_id),
-                addresses[p1_index],
-                p1_reveal_timeout,
+                channel_identifier=ChannelIdentifier(channel_id),
+                updating_participant=addresses[p1_index],
+                other_participant=addresses[p2_index],
+                updating_nonce=1,
+                other_nonce=1,
+                updating_capacity=p1_capacity,
+                other_capacity=p2_capacity,
+                reveal_timeout=p1_reveal_timeout,
             )
             token_network.handle_channel_balance_update_message(
-                ChannelIdentifier(channel_id),
-                addresses[p2_index],
-                p2_reveal_timeout,
+                channel_identifier=ChannelIdentifier(channel_id),
+                updating_participant=addresses[p2_index],
+                other_participant=addresses[p1_index],
+                updating_nonce=2,
+                other_nonce=1,
+                updating_capacity=p2_capacity,
+                other_capacity=p1_capacity,
+                reveal_timeout=p2_reveal_timeout,
             )
 
     return populate_token_network

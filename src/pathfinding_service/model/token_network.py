@@ -57,8 +57,7 @@ class TokenNetwork:
             participant2=participant2,
             settle_timeout=settle_timeout,
             deposit=0,
-            balance_update_nonce=0,
-            )
+        )
 
         view2 = ChannelView(
             channel_id=channel_identifier,
@@ -66,8 +65,7 @@ class TokenNetwork:
             participant1=participant1,
             settle_timeout=settle_timeout,
             deposit=0,
-            balance_update_nonce=0,
-            )
+        )
 
         self.G.add_edge(participant1, participant2, view=view1)
         self.G.add_edge(participant2, participant1, view=view2)
@@ -157,17 +155,31 @@ class TokenNetwork:
 
         # Check nonces of the balance update against current state
         if (
-                updating_nonce <= channel_view_to_partner.balance_update_nonce and
-                other_nonce <= channel_view_from_partner.balance_update_nonce
+            updating_nonce <= channel_view_to_partner.balance_update_nonce and
+            other_nonce <= channel_view_from_partner.balance_update_nonce
         ):
             log.debug(
                 "Balance Update already received",
+                channel_identifier=channel_identifier,
+                updating_participant=updating_participant,
+                other_participant=other_participant,
+                updating_nonce=updating_nonce,
+                other_nonce=other_nonce,
+                updating_capacity=updating_capacity,
+                other_capacity=other_capacity,
+                reveal_timeout=reveal_timeout,
             )
             return
 
-        # Call function update_capacity
-        channel_view_to_partner.update_capacity(updating_nonce, updating_capacity, reveal_timeout)
-        channel_view_from_partner.update_capacity(other_nonce, other_capacity)
+        channel_view_to_partner.update_capacity(
+            nonce=updating_nonce,
+            capacity=updating_capacity,
+            reveal_timeout=reveal_timeout,
+        )
+        channel_view_from_partner.update_capacity(
+            nonce=other_nonce,
+            capacity=other_capacity,
+        )
 
     @staticmethod
     def edge_weight(
@@ -221,13 +233,10 @@ class TokenNetwork:
             all_paths = nx.shortest_simple_paths(self.G, source, target, weight='weight')
             try:
                 # skip duplicates and invalid paths
-                print("before here")
-                #print(len(all_paths))
                 path = next(
                     path for path in all_paths
                     if self.check_path_constraints(value, path) and path not in paths
                 )
-                print(f"Path {path}")
             except StopIteration:
                 break
             # update visited penalty dict
@@ -236,7 +245,6 @@ class TokenNetwork:
                 visited[channel_id] = visited.get(channel_id, 0) + diversity_penalty
 
             paths.append(path)
-            print(_, len(paths), max_paths)
             if len(paths) >= max_paths:
                 break
         result = []
