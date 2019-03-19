@@ -29,6 +29,7 @@ class PFSDatabase:
         self.conn = sqlite3.connect(
             filename,
             detect_types=sqlite3.PARSE_DECLTYPES,
+            isolation_level=None,  # Disable sqlite3 module’s implicit transaction management
         )
         self.conn.row_factory = sqlite3.Row
         self.conn.execute("PRAGMA foreign_keys = ON")

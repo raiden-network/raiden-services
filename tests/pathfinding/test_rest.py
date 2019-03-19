@@ -235,10 +235,10 @@ def test_get_iou(
         ))
         return params
 
-    # Request withou IOU in database
+    # Request without IOU in database
     params = make_params(datetime.utcnow())
     response = requests.get(url, params=params)
-    assert response.status_code == 200, response.json()
+    assert response.status_code == 404, response.json()
     assert response.json() == {'last_iou': None}
 
     # Add IOU to database
