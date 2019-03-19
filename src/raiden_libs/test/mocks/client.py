@@ -3,7 +3,7 @@ import logging
 from functools import wraps
 from typing import Dict
 
-from eth_utils import decode_hex, encode_hex, is_checksum_address, is_same_address, to_bytes
+from eth_utils import decode_hex, encode_hex, is_checksum_address, is_same_address
 from web3 import Web3
 from web3.contract import Contract, find_matching_event_abi
 from web3.utils.events import get_event_data
@@ -317,10 +317,10 @@ class MockRaidenNode:
         """Given a valid signed balance proof, this method calls `updateNonClosingBalanceProof`
         for an open channel
         """
-        signer = LocalSigner(to_bytes(hexstr=self.privkey))
+        local_signer = LocalSigner(decode_hex(self.privkey))
         serialized = balance_proof.serialize_bin(msg_type=MessageTypeId.BALANCE_PROOF_UPDATE)
         non_closing_data = serialized + decode_hex(balance_proof.signature)
-        non_closing_signature = encode_hex(signer.sign(non_closing_data))
+        non_closing_signature = encode_hex(local_signer.sign(non_closing_data))
         self.contract.functions.updateNonClosingBalanceProof(
             self.partner_to_channel_id[partner_address],
             partner_address,

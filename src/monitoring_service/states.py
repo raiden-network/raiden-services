@@ -2,7 +2,7 @@ from dataclasses import dataclass, field  # isort:skip noqa differences between 
 from typing import Any, Dict, Iterable, List, Optional
 
 import jsonschema
-from eth_utils import decode_hex, encode_hex, is_checksum_address, to_bytes, to_checksum_address
+from eth_utils import decode_hex, encode_hex, is_checksum_address, to_checksum_address
 from web3 import Web3
 
 from raiden.utils.signer import LocalSigner, recover
@@ -107,8 +107,8 @@ class HashedBalanceProof:
 
         if signature is None:
             assert priv_key
-            signer = LocalSigner(private_key=to_bytes(hexstr=priv_key))
-            self.signature = encode_hex(signer.sign(self.serialize_bin()))
+            local_signer = LocalSigner(private_key=decode_hex(priv_key))
+            self.signature = encode_hex(local_signer.sign(self.serialize_bin()))
         else:
             self.signature = signature
 
@@ -180,7 +180,7 @@ class UnsignedMonitorRequest:
         )
 
     def sign(self, priv_key: str) -> 'MonitorRequest':
-        signer = LocalSigner(private_key=to_bytes(hexstr=priv_key))
+        local_signer = LocalSigner(private_key=decode_hex(priv_key))
         return MonitorRequest(
             channel_identifier=self.channel_identifier,
             token_network_address=self.token_network_address,
@@ -191,10 +191,10 @@ class UnsignedMonitorRequest:
             closing_signature=self.closing_signature,
             reward_amount=self.reward_amount,
             reward_proof_signature=encode_hex(
-                signer.sign(self.packed_reward_proof_data()),
+                local_signer.sign(self.packed_reward_proof_data()),
             ),
             non_closing_signature=encode_hex(
-                signer.sign(self.packed_non_closing_data()),
+                local_signer.sign(self.packed_non_closing_data()),
             ),
         )
 
