@@ -25,6 +25,7 @@ from monitoring_service.handlers import (
 )
 from monitoring_service.states import HashedBalanceProof, MonitorRequest, UnsignedMonitorRequest
 from raiden_contracts.constants import ChannelState
+from raiden_contracts.tests.utils import get_random_privkey
 from raiden_libs.utils import private_key_to_address
 
 DEFAULT_TOKEN_NETWORK_ADDRESS = '0x0000000000000000000000000000000000000000'
@@ -604,7 +605,6 @@ def test_mr_available_before_channel_triggers_monitor_call(
 
 def test_mr_with_unknown_signatures(
     context: Context,
-    get_random_privkey,
 ):
     """ The signatures are valid but don't belong to the participants.
     """

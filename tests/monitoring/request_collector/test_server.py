@@ -4,10 +4,11 @@ from eth_utils import decode_hex, to_checksum_address
 from raiden.messages import RequestMonitoring, SignedBlindedBalanceProof
 from raiden.tests.utils.messages import make_balance_proof
 from raiden.utils.signer import LocalSigner
+from raiden_contracts.tests.utils import get_random_privkey
 
 
 @pytest.fixture
-def build_request_monitoring(get_random_privkey):
+def build_request_monitoring():
     signer = LocalSigner(decode_hex(get_random_privkey()))
     non_closing_signer = LocalSigner(decode_hex(get_random_privkey()))
 
