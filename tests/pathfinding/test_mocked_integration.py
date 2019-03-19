@@ -48,12 +48,12 @@ def test_pfs_with_mocked_events(
     for index, (
         p1_index,
         p1_deposit,
-        p1_transferred_amount,
+        p1_capacity,
         _p1_fee,
         p1_reveal_timeout,
         p2_index,
         p2_deposit,
-        p2_transferred_amount,
+        p2_capacity,
         _p2_fee,
         p2_reveal_timeout,
         settle_timeout,
@@ -89,13 +89,6 @@ def test_pfs_with_mocked_events(
             ),
         ))
 
-        p1_capacity = (
-            p1_deposit - p1_transferred_amount + p2_transferred_amount
-        )
-
-        p2_capacity = (
-            p2_deposit - p2_transferred_amount + p1_transferred_amount
-        )
         token_network.handle_channel_balance_update_message(
             channel_identifier=ChannelIdentifier(index),
             updating_participant=addresses[p1_index],
@@ -123,12 +116,12 @@ def test_pfs_with_mocked_events(
     for index, (
         p1_index,
         p1_deposit,
-        _p1_transferred_amount,
+        _p1_capacity,
         _p1_fee,
         _p1_reveal_timeout,
         p2_index,
         p2_deposit,
-        _p2_transferred_amount,
+        _p2_capacity,
         _p2_fee,
         _p2_reveal_timeout,
         _settle_timeout,
@@ -160,12 +153,12 @@ def test_pfs_with_mocked_events(
     for index, (
         p1_index,
         _p1_deposit,
-        _p1_transferred_amount,
+        _p1_capacity,
         _p1_fee,
         _p1_reveal_timeout,
         _p2_index,
         _p2_deposit,
-        _p2_transferred_amount,
+        _p2_capacity,
         _p2_fee,
         _p2_reveal_timeout,
         _settle_timeout,
