@@ -56,14 +56,16 @@ class TokenNetwork:
             participant1=participant1,
             participant2=participant2,
             settle_timeout=settle_timeout,
-            deposit=0)
+            deposit=0,
+        )
 
         view2 = ChannelView(
             channel_id=channel_identifier,
             participant2=participant2,
             participant1=participant1,
             settle_timeout=settle_timeout,
-            deposit=0)
+            deposit=0,
+        )
 
         self.G.add_edge(participant1, participant2, view=view1)
         self.G.add_edge(participant2, participant1, view=view2)
@@ -118,30 +120,66 @@ class TokenNetwork:
     def handle_channel_balance_update_message(
         self,
         channel_identifier: ChannelIdentifier,
-        sender: Address,
+        updating_participant: Address,
+        other_participant: Address,
+        updating_nonce: int,
+        other_nonce: int,
+        updating_capacity: int,
+        other_capacity: int,
         reveal_timeout: int,
     ):
-        """ Sends Balance Update to PFS including the reveal timeout
-        - actual balance still missing """
+        """ Sends Balance Update to PFS including the reveal timeout """
 
-        assert is_checksum_address(sender)
-
+        # Get the channel views from the perspective of the updating participant
         try:
             participant1, participant2 = self.channel_id_to_addresses[channel_identifier]
-
-            if sender == participant1:
-                self.G[participant1][participant2]['view'].reveal_timeout = reveal_timeout
-            elif sender == participant2:
-                self.G[participant2][participant1]['view'].reveal_timeout = reveal_timeout
+            if updating_participant == participant1:
+                assert other_participant == participant2
+                channel_view_to_partner = self.G[participant1][participant2]['view']
+                channel_view_from_partner = self.G[participant2][participant1]['view']
+            elif updating_participant == participant2:
+                assert other_participant == participant1
+                channel_view_to_partner = self.G[participant2][participant1]['view']
+                channel_view_from_partner = self.G[participant1][participant2]['view']
             else:
                 log.error(
                     "Sender in Channel Balance Update does not fit the internal channel",
                 )
+                return
         except KeyError:
             log.error(
                 "Sender Balance Update for unknown channel",
                 channel_identifier=channel_identifier,
             )
+            return
+
+        # Check nonces of the balance update against current state
+        if (
+            updating_nonce <= channel_view_to_partner.balance_update_nonce and
+            other_nonce <= channel_view_from_partner.balance_update_nonce
+        ):
+            log.debug(
+                "Balance Update already received",
+                channel_identifier=channel_identifier,
+                updating_participant=updating_participant,
+                other_participant=other_participant,
+                updating_nonce=updating_nonce,
+                other_nonce=other_nonce,
+                updating_capacity=updating_capacity,
+                other_capacity=other_capacity,
+                reveal_timeout=reveal_timeout,
+            )
+            return
+
+        channel_view_to_partner.update_capacity(
+            nonce=updating_nonce,
+            capacity=updating_capacity,
+            reveal_timeout=reveal_timeout,
+        )
+        channel_view_from_partner.update_capacity(
+            nonce=other_nonce,
+            capacity=other_capacity,
+        )
 
     @staticmethod
     def edge_weight(
@@ -201,7 +239,6 @@ class TokenNetwork:
                 )
             except StopIteration:
                 break
-
             # update visited penalty dict
             for node1, node2 in zip(path[:-1], path[1:]):
                 channel_id = self.G[node1][node2]['view'].channel_id
@@ -210,8 +247,8 @@ class TokenNetwork:
             paths.append(path)
             if len(paths) >= max_paths:
                 break
-
         result = []
+
         for path in paths:
             fee = 0
             for node1, node2 in zip(path[:-1], path[1:]):
@@ -221,5 +258,4 @@ class TokenNetwork:
                 path=path,
                 estimated_fee=0,
             ))
-
         return result

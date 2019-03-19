@@ -48,12 +48,12 @@ def test_pfs_with_mocked_events(
     for index, (
         p1_index,
         p1_deposit,
-        _p1_transferred_amount,
+        p1_transferred_amount,
         _p1_fee,
         p1_reveal_timeout,
         p2_index,
         p2_deposit,
-        _p2_transferred_amount,
+        p2_transferred_amount,
         _p2_fee,
         p2_reveal_timeout,
         settle_timeout,
@@ -88,14 +88,32 @@ def test_pfs_with_mocked_events(
                 total_deposit=p2_deposit,
             ),
         ))
+
+        p1_capacity = (
+            p1_deposit - p1_transferred_amount + p2_transferred_amount
+        )
+
+        p2_capacity = (
+            p2_deposit - p2_transferred_amount + p1_transferred_amount
+        )
         token_network.handle_channel_balance_update_message(
-            ChannelIdentifier(index),
-            sender=addresses[p1_index],
+            channel_identifier=ChannelIdentifier(index),
+            updating_participant=addresses[p1_index],
+            other_participant=addresses[p2_index],
+            updating_nonce=1,
+            other_nonce=1,
+            updating_capacity=p1_capacity,
+            other_capacity=p2_capacity,
             reveal_timeout=p1_reveal_timeout,
         )
         token_network.handle_channel_balance_update_message(
-            ChannelIdentifier(index),
-            sender=addresses[p2_index],
+            channel_identifier=ChannelIdentifier(index),
+            updating_participant=addresses[p2_index],
+            other_participant=addresses[p1_index],
+            updating_nonce=2,
+            other_nonce=1,
+            updating_capacity=p2_capacity,
+            other_capacity=p1_capacity,
             reveal_timeout=p2_reveal_timeout,
         )
 
@@ -125,24 +143,18 @@ def test_pfs_with_mocked_events(
         assert view1.deposit == p1_deposit
         assert view2.deposit == p2_deposit
 
-    # check pathfinding without respecting transferred amounts
+    # check pathfinding with respecting transferred amounts
     # channel 2 <-> 3 has settle_timeout 3, so path is not eligible
+    # channel 0 <-> 2 has no capacity
     paths = token_network.get_paths(addresses[0], addresses[3], 10, 5)
-    assert len(paths) == 2
+    assert len(paths) == 1
     assert paths[0]['path'] == [addresses[0], addresses[1], addresses[4], addresses[3]]
-    assert paths[1]['path'] == [
-        addresses[0],
-        addresses[2],
-        addresses[1],
-        addresses[4],
-        addresses[3],
-    ]
 
-    # check pathfinding without having enough capacity on 2 <-> 0
+    # check pathfinding without having enough capacity on 2 <-> 1 and not on 2 <-> 3 <-> 4 <-> 1
     # so only 1 path is provided
     paths2 = token_network.get_paths(addresses[2], addresses[1], 85, 5)
     assert len(paths2) == 1
-    assert paths2[0]['path'] == [addresses[2], addresses[1]]
+    assert paths2[0]['path'] == [addresses[2], addresses[0], addresses[1]]
 
     # wow close all channels
     for index, (
