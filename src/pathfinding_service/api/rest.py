@@ -26,11 +26,11 @@ from pathfinding_service.config import (
     MIN_IOU_EXPIRY,
 )
 from pathfinding_service.model import IOU
+from raiden.exceptions import InvalidSignature
+from raiden.utils.signer import recover
 from raiden.utils.typing import Signature, TokenNetworkAddress
-from raiden_libs.exceptions import InvalidSignature
 from raiden_libs.marshmallow import HexedBytes
 from raiden_libs.types import Address
-from raiden_libs.utils import eth_recover
 
 log = structlog.get_logger(__name__)
 
@@ -216,7 +216,7 @@ class IOURequest:
             Web3.toBytes(text=self.timestamp_str)
         )
         try:
-            recovered_address = eth_recover(packed_data, self.signature)
+            recovered_address = recover(packed_data, self.signature)
         except InvalidSignature:
             return False
         return is_same_address(recovered_address, self.sender)
