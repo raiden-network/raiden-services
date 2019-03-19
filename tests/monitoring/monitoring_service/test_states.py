@@ -13,7 +13,7 @@ from monitoring_service.states import (
 from raiden.constants import UINT64_MAX, UINT256_MAX
 from raiden_contracts.constants import ChannelState
 from raiden_libs.types import ChannelIdentifier
-from raiden_libs.utils import private_key_to_address, sha3
+from raiden_libs.utils import keccak, private_key_to_address
 
 
 @pytest.fixture
@@ -50,9 +50,9 @@ def get_random_monitor_request(get_random_address, get_random_private_key, get_r
         balance_hash_data = '%d' % random.randint(0, UINT64_MAX)
         additional_hash_data = '%d' % random.randint(0, UINT64_MAX)
 
-        balance_hash = encode_hex(sha3(balance_hash_data.encode()))
+        balance_hash = encode_hex((balance_hash_data.encode()))
         nonce = random.randint(0, UINT64_MAX)
-        additional_hash = encode_hex(sha3(additional_hash_data.encode()))
+        additional_hash = encode_hex(keccak(additional_hash_data.encode()))
         chain_id = 1
 
         privkey = get_random_private_key()
