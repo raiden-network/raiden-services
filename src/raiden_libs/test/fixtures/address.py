@@ -1,27 +1,7 @@
-import random
-from typing import Callable
-
 import pytest
 from eth_utils import denoms, is_address
 
-from raiden_libs.utils import UINT256_MAX, private_key_to_address
-
-
-@pytest.fixture
-def get_random_privkey() -> Callable:
-    """Returns a random private key"""
-    return lambda: "0x%064x" % random.randint(
-        1,
-        UINT256_MAX,
-    )
-
-
-@pytest.fixture
-def get_random_address(get_random_privkey) -> Callable:
-    """Returns a random valid ethereum address"""
-    def f():
-        return private_key_to_address(get_random_privkey())
-    return f
+from raiden_libs.utils import private_key_to_address
 
 
 @pytest.fixture(scope='session')

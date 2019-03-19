@@ -21,7 +21,6 @@ def test_pfs_with_mocked_client(
     token_network_registry_contract,
     channel_descriptions_case_1: List,
     generate_raiden_clients,
-    get_random_address,
     wait_for_blocks,
 ):
     """ Instantiates some MockClients and the PathfindingService.

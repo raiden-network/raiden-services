@@ -31,7 +31,6 @@ def test_crash(
     token_network_registry_contract,
     monitoring_service_contract,
     user_deposit_contract,
-    get_random_address,
     tmpdir,
     generate_raiden_clients,
     token_network,

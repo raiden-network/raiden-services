@@ -12,25 +12,9 @@ from monitoring_service.states import (
 )
 from raiden.constants import UINT64_MAX, UINT256_MAX
 from raiden_contracts.constants import ChannelState
+from raiden_contracts.tests.utils import get_random_address, get_random_privkey
 from raiden_libs.types import ChannelIdentifier
 from raiden_libs.utils import keccak, private_key_to_address
-
-
-@pytest.fixture
-def get_random_private_key() -> Callable:
-    """Returns a function returning a random private key"""
-    return lambda: "0x%064x" % random.randint(
-        1,
-        UINT256_MAX,
-    )
-
-
-@pytest.fixture
-def get_random_address(get_random_private_key) -> Callable:
-    """Returns a function returning a random valid ethereum address"""
-    def f():
-        return private_key_to_address(get_random_private_key())
-    return f
 
 
 @pytest.fixture
@@ -42,7 +26,7 @@ def get_random_identifier() -> Callable:
 
 
 @pytest.fixture
-def get_random_monitor_request(get_random_address, get_random_private_key, get_random_identifier):
+def get_random_monitor_request(get_random_identifier):
     def f():
         contract_address = get_random_address()
         channel_identifier = get_random_identifier()
@@ -55,8 +39,8 @@ def get_random_monitor_request(get_random_address, get_random_private_key, get_r
         additional_hash = encode_hex(keccak(additional_hash_data.encode()))
         chain_id = 1
 
-        privkey = get_random_private_key()
-        privkey_non_closing = get_random_private_key()
+        privkey = get_random_privkey()
+        privkey_non_closing = get_random_privkey()
 
         bp = HashedBalanceProof(  # type: ignore
             channel_identifier=channel_identifier,
@@ -94,7 +78,7 @@ def test_save_and_load_mr(get_random_monitor_request, ms_database):
     assert loaded_request == request
 
 
-def test_save_and_load_channel(ms_database, get_random_address):
+def test_save_and_load_channel(ms_database):
     token_network_address = get_random_address()
     ms_database.conn.execute(
         "INSERT INTO token_network (address) VALUES (?)",

@@ -1,5 +1,6 @@
 import pytest
 
+from raiden_contracts.tests.utils import get_random_privkey
 from raiden_libs.test.mocks.client import MockRaidenNode
 
 
@@ -13,7 +14,6 @@ def client_registry():
 def generate_raiden_client(
         token_network,
         custom_token,
-        get_random_privkey,
         client_registry,
         send_funds,
         ethereum_tester,
