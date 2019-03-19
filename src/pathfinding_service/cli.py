@@ -18,12 +18,13 @@ from pathfinding_service import PathfindingService
 from pathfinding_service.api.rest import ServiceApi
 from pathfinding_service.config import DEFAULT_API_HOST, DEFAULT_POLL_INTERVALL
 from pathfinding_service.middleware import http_retry_with_backoff_middleware
-from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY
+from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
 from raiden_contracts.contract_manager import (
     ContractManager,
     contracts_precompiled_path,
     get_contracts_deployed,
 )
+from raiden_libs.contract_info import START_BLOCK_ID, get_contract_addresses_and_start_block
 from raiden_libs.logging import setup_logging
 from raiden_libs.types import Address
 
@@ -40,21 +41,6 @@ def validate_address(ctx, param, value):
     if not is_checksum_address(value):
         raise click.BadParameter('not an EIP-55 checksummed address')
     return value
-
-
-def get_default_registry_and_start_block(
-    net_version: int,
-    contracts_version: str,
-):
-    try:
-        contract_data = get_contracts_deployed(net_version, contracts_version)
-        token_network_registry_info = contract_data['contracts'][CONTRACT_TOKEN_NETWORK_REGISTRY]
-        registry_address = token_network_registry_info['address']
-        start_block = max(0, token_network_registry_info['block_number'] - 100)
-        return registry_address, start_block
-    except ValueError:
-        log.error('No deployed contracts were found at the default registry')
-        sys.exit(1)
 
 
 @click.command()
@@ -78,6 +64,12 @@ def get_default_registry_and_start_block(
     '--registry-address',
     type=str,
     help='Address of the token network registry',
+    callback=validate_address,
+)
+@click.option(
+    '--user-deposit-contract-address',
+    type=str,
+    help='Address of the token monitor contract',
     callback=validate_address,
 )
 @click.option(
@@ -121,6 +113,7 @@ def main(
     password: str,
     eth_rpc: str,
     registry_address: Address,
+    user_deposit_contract_address: Address,
     start_block: int,
     confirmations: int,
     host: str,
@@ -175,10 +168,24 @@ def main(
         http_retry_with_backoff_middleware,
     )
 
-    if registry_address is None:
-        registry_address, start_block = get_default_registry_and_start_block(
-            net_version,
-            contracts_version,
+    contract_infos = get_contract_addresses_and_start_block(
+        chain_id=net_version,
+        contracts_version=contracts_version,
+        token_network_registry_address=registry_address,
+        monitor_contract_address='0x' + '1' * 40,  # This is never used
+        user_deposit_contract_address=user_deposit_contract_address,
+        start_block=start_block,
+    )
+
+    if contract_infos is None:
+        log.critical('Could not find correct contracts to use. Please check your configuration')
+        sys.exit(1)
+    else:
+        log.info(
+            'Contract information',
+            registry_address=contract_infos[CONTRACT_TOKEN_NETWORK_REGISTRY],
+            user_deposit_contract_address=contract_infos[CONTRACT_USER_DEPOSIT],
+            sync_start_block=contract_infos[START_BLOCK_ID],
         )
 
     service = None
@@ -188,8 +195,8 @@ def main(
         service = PathfindingService(
             web3=web3,
             contract_manager=contract_manager,
-            registry_address=registry_address,
-            sync_start_block=start_block,
+            registry_address=contract_infos[CONTRACT_TOKEN_NETWORK_REGISTRY],
+            sync_start_block=contract_infos[START_BLOCK_ID],
             required_confirmations=confirmations,
             private_key=private_key,
             poll_interval=DEFAULT_POLL_INTERVALL,
