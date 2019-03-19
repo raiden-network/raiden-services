@@ -68,7 +68,7 @@ def test_routing_simple(
     assert view01.capacity == 90
     assert view10.capacity == 60
 
-    # 0->2->3 is the shortest path
+    # 0->2->3 is the shortest path, but has no capacity, so 0->1->4->3 is used
     paths = token_network_model.get_paths(
         addresses[0],
         addresses[3],
