@@ -5,14 +5,20 @@ from click.testing import CliRunner
 from eth_utils import is_checksum_address
 from web3 import Web3
 
-from pathfinding_service.cli import get_default_registry_and_start_block, main
+from pathfinding_service.cli import main
+from raiden_contracts.constants import (
+    CONTRACT_MONITORING_SERVICE,
+    CONTRACT_TOKEN_NETWORK_REGISTRY,
+    CONTRACT_USER_DEPOSIT,
+)
+from raiden_libs.contract_info import START_BLOCK_ID, get_contract_addresses_and_start_block
 
 patch_args = dict(
     target='pathfinding_service.cli',
     PathfindingService=DEFAULT,
     ServiceApi=DEFAULT,
     HTTPProvider=DEFAULT,
-    get_default_registry_and_start_block=DEFAULT,
+    get_contract_addresses_and_start_block=DEFAULT,
 )
 
 
@@ -35,7 +41,12 @@ def test_success(default_cli_args):
     """ Calling the pathfinding_service with default args should succeed after heavy mocking """
     runner = CliRunner()
     with patch.multiple(**patch_args) as mocks:
-        mocks['get_default_registry_and_start_block'].return_value = Mock(), Mock()
+        mocks['get_contract_addresses_and_start_block'].return_value = {
+            CONTRACT_TOKEN_NETWORK_REGISTRY: '0xde1fAa1385403f05C20a8ca5a0D5106163A35B6e',
+            CONTRACT_MONITORING_SERVICE: '0x58c73CabCFB3c55B420E3F60a4b06098e9D1960E',
+            CONTRACT_USER_DEPOSIT: '0x85F2c5eA50861DF5eA2EBd3651fAB091e14B849C',
+            START_BLOCK_ID: 5235346 + 50,
+        }
         result = runner.invoke(
             main,
             default_cli_args,
