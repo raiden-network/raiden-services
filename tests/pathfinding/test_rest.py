@@ -5,14 +5,16 @@ from typing import List
 import gevent
 import pkg_resources
 import requests
-from eth_utils import encode_hex, to_normalized_address
+from eth_utils import decode_hex, encode_hex, to_normalized_address
 
 import pathfinding_service.exceptions as exceptions
 from pathfinding_service import PathfindingService
 from pathfinding_service.api.rest import DEFAULT_MAX_PATHS, ServiceApi
 from pathfinding_service.model import IOU, TokenNetwork
+from raiden.utils.signer import LocalSigner
+from raiden.utils.signing import pack_data
 from raiden_libs.types import Address
-from raiden_libs.utils import eth_sign, pack_data, private_key_to_address
+from raiden_libs.utils import private_key_to_address
 
 from .test_payment import make_iou
 
@@ -226,8 +228,8 @@ def test_get_iou(
             'receiver': api_sut.pathfinding_service.address,
             'timestamp': timestamp.isoformat(),
         }
-        params['signature'] = encode_hex(eth_sign(
-            privkey,
+        local_signer = LocalSigner(private_key=decode_hex(privkey))
+        params['signature'] = encode_hex(local_signer.sign(
             pack_data(
                 ['address', 'address', 'string'],
                 [params['sender'], params['receiver'], params['timestamp']],

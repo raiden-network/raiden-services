@@ -3,12 +3,13 @@ from eth_utils import encode_hex
 
 import pathfinding_service.exceptions as exceptions
 from pathfinding_service.api.rest import process_payment
+from pathfinding_service.config import MIN_IOU_EXPIRY
 from pathfinding_service.model import IOU
 from raiden_contracts.utils import sign_one_to_n_iou
 from raiden_libs.utils import private_key_to_address
 
 
-def make_iou(sender_priv_key, receiver, amount=1, expiration_block=10000) -> dict:
+def make_iou(sender_priv_key, receiver, amount=1, expiration_block=MIN_IOU_EXPIRY + 100) -> dict:
     iou = {
         'sender': private_key_to_address(sender_priv_key),
         'receiver': receiver,

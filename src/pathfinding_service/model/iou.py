@@ -7,11 +7,11 @@ from eth_utils import is_same_address
 from marshmallow_dataclass import add_schema
 from web3 import Web3
 
+from raiden.exceptions import InvalidSignature
+from raiden.utils.signer import recover
 from raiden.utils.typing import BlockNumber, Signature, TokenAmount
-from raiden_libs.exceptions import InvalidSignature
 from raiden_libs.marshmallow import HexedBytes
 from raiden_libs.types import Address
-from raiden_libs.utils import eth_recover
 
 
 @add_schema
@@ -33,7 +33,7 @@ class IOU:
             encode_single('uint256', self.expiration_block)
         )
         try:
-            recovered_address = eth_recover(packed_data, self.signature)
+            recovered_address = recover(packed_data, self.signature)
         except InvalidSignature:
             return False
         return is_same_address(recovered_address, self.sender)
