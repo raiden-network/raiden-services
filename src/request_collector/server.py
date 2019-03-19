@@ -8,8 +8,8 @@ from eth_utils import encode_hex, to_checksum_address
 from monitoring_service.database import SharedDatabase
 from monitoring_service.states import MonitorRequest
 from raiden.constants import MONITORING_BROADCASTING_ROOM
-from raiden.messages import RequestMonitoring, SignedMessage
 from raiden.exceptions import InvalidSignature
+from raiden.messages import RequestMonitoring, SignedMessage
 from raiden_libs.gevent_error_handler import register_error_handler
 from raiden_libs.matrix import MatrixListener
 
