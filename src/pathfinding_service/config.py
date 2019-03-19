@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 API_PATH: str = '/api/v1'
 DEFAULT_API_HOST: str = 'localhost'
 DEFAULT_API_PORT: int = 6000
@@ -18,4 +20,6 @@ DEFAULT_POLL_INTERVALL = 10
 
 # When a new IOU session is started, this is the minimum number of blocks
 # between the current block and `expiration_block`.
-MIN_IOU_EXPIRY = 1000
+MIN_IOU_EXPIRY: int = 7 * 24 * 60 * 4
+
+MAX_AGE_OF_IOU_REQUESTS: timedelta = timedelta(hours=1)

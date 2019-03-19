@@ -3,7 +3,7 @@ from typing import ClassVar, Optional, Type
 import marshmallow
 from dataclasses import dataclass, field
 from eth_abi import encode_single
-from eth_utils import to_checksum_address
+from eth_utils import is_same_address
 from marshmallow_dataclass import add_schema
 from web3 import Web3
 
@@ -36,4 +36,4 @@ class IOU:
             recovered_address = eth_recover(packed_data, self.signature)
         except InvalidSignature:
             return False
-        return to_checksum_address(recovered_address) == to_checksum_address(self.sender)
+        return is_same_address(recovered_address, self.sender)

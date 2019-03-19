@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import ClassVar, Dict, List, Optional, Tuple, Type
 
 import gevent
@@ -6,7 +6,7 @@ import marshmallow
 import pkg_resources
 import structlog
 from dataclasses import dataclass, field
-from eth_utils import is_address, is_checksum_address, to_checksum_address
+from eth_utils import is_address, is_checksum_address, is_same_address
 from flask import Flask, request
 from flask_restful import Api, Resource, reqparse
 from gevent import Greenlet
@@ -22,6 +22,7 @@ from pathfinding_service.config import (
     DEFAULT_API_HOST,
     DEFAULT_API_PORT,
     DEFAULT_MAX_PATHS,
+    MAX_AGE_OF_IOU_REQUESTS,
     MIN_IOU_EXPIRY,
 )
 from pathfinding_service.model import IOU
@@ -147,7 +148,7 @@ class PathsResource(PathfinderResource):
         return {'result': paths}, 200
 
 
-def process_payment(iou_dict, pathfinding_service):
+def process_payment(iou_dict: dict, pathfinding_service: PathfindingService):
     if pathfinding_service.service_fee == 0:
         return
     if iou_dict is None:
@@ -173,11 +174,12 @@ def process_payment(iou_dict, pathfinding_service):
 
         expected_amount = active_iou.amount + pathfinding_service.service_fee
     else:
-        if pathfinding_service.database.get_iou(
+        claimed_iou = pathfinding_service.database.get_iou(
             sender=iou.sender,
             expiration_block=iou.expiration_block,
             claimed=True,
-        ):
+        )
+        if claimed_iou:
             raise exceptions.IOUAlreadyClaimed
 
         min_expiry = pathfinding_service.web3.eth.blockNumber + MIN_IOU_EXPIRY
@@ -217,7 +219,7 @@ class IOURequest:
             recovered_address = eth_recover(packed_data, self.signature)
         except InvalidSignature:
             return False
-        return to_checksum_address(recovered_address) == to_checksum_address(self.sender)
+        return is_same_address(recovered_address, self.sender)
 
 
 class IOUResource(PathfinderResource):
@@ -228,7 +230,7 @@ class IOUResource(PathfinderResource):
             raise exceptions.InvalidRequest(**errors)
         if not iou_request.is_signature_valid():
             raise exceptions.InvalidSignature
-        if iou_request.timestamp < datetime.utcnow() - timedelta(hours=1):
+        if iou_request.timestamp < datetime.utcnow() - MAX_AGE_OF_IOU_REQUESTS:
             raise exceptions.RequestOutdated
 
         last_iou = self.pathfinding_service.database.get_iou(
@@ -237,10 +239,13 @@ class IOUResource(PathfinderResource):
         )
         if last_iou:
             last_iou = IOU.Schema(strict=True, exclude=['claimed']).dump(last_iou)[0]
-
-        return {
-            'last_iou': last_iou,
-        }, 200
+            return {
+                'last_iou': last_iou,
+            }, 200
+        else:
+            return {
+                'last_iou': None,
+            }, 404
 
 
 class InfoResource(PathfinderResource):
