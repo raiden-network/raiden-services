@@ -5,6 +5,7 @@ import pathfinding_service.exceptions as exceptions
 from pathfinding_service.api.rest import process_payment
 from pathfinding_service.config import MIN_IOU_EXPIRY
 from pathfinding_service.model import IOU
+from raiden_contracts.tests.utils import get_random_address, get_random_privkey
 from raiden_contracts.utils import sign_one_to_n_iou
 from raiden_libs.utils import private_key_to_address
 
@@ -26,10 +27,7 @@ def make_iou(sender_priv_key, receiver, amount=1, expiration_block=MIN_IOU_EXPIR
     return iou
 
 
-def test_load_and_save_iou(
-    pathfinding_service_mocked_listeners,
-    get_random_privkey,
-):
+def test_load_and_save_iou(pathfinding_service_mocked_listeners):
     pfs = pathfinding_service_mocked_listeners
     iou_dict = make_iou(get_random_privkey(), pfs.address)
     iou = IOU.Schema().load(iou_dict)[0]
@@ -39,12 +37,7 @@ def test_load_and_save_iou(
     assert stored_iou == iou
 
 
-def test_process_payment_errors(
-    pathfinding_service_mocked_listeners,
-    get_random_privkey,
-    get_random_address,
-    web3,
-):
+def test_process_payment_errors(pathfinding_service_mocked_listeners, web3):
     pfs = pathfinding_service_mocked_listeners
     pfs.service_fee = 1
 
@@ -81,10 +74,7 @@ def test_process_payment_errors(
         process_payment(iou, pfs)
 
 
-def test_process_payment(
-    pathfinding_service_mocked_listeners,
-    get_random_privkey,
-):
+def test_process_payment(pathfinding_service_mocked_listeners):
     pfs = pathfinding_service_mocked_listeners
     pfs.service_fee = 1
     priv_key = get_random_privkey()
