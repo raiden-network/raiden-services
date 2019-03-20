@@ -3,6 +3,7 @@ from unittest.mock import Mock
 import pytest
 
 from monitoring_service.events import (
+    ActionClaimRewardTriggeredEvent,
     ActionMonitoringTriggeredEvent,
     Event,
     ReceiveChannelClosedEvent,
@@ -23,7 +24,12 @@ from monitoring_service.handlers import (
     monitor_reward_claim_event_handler,
     updated_head_block_event_handler,
 )
-from monitoring_service.states import HashedBalanceProof, MonitorRequest, UnsignedMonitorRequest
+from monitoring_service.states import (
+    HashedBalanceProof,
+    MonitorRequest,
+    OnChainUpdateStatus,
+    UnsignedMonitorRequest,
+)
 from raiden_contracts.constants import ChannelState
 from raiden_contracts.tests.utils import get_random_privkey
 from raiden_libs.utils import private_key_to_address
@@ -541,6 +547,7 @@ def test_action_monitoring_triggered_event_handler_with_sufficient_balance_does_
     # check that the monitor call has been done
     assert context.monitoring_service_contract.functions.monitor.called is True
 
+
 def test_action_monitoring_triggered_event_handler_without_sufficient_balance_doesnt_trigger_monitor_call(  # noqa
     context: Context,
 ):
@@ -628,3 +635,111 @@ def test_mr_with_unknown_signatures(
     assert_mr_is_ignored(get_signed_monitor_request(
         nonclosing_privkey=get_random_privkey(),
     ))
+
+
+def test_action_claim_reward_triggered_event_handler_does_trigger_claim_call(  # noqa
+    context: Context,
+):
+    """ Tests that `claimReward` is called when the ActionMonitoringTriggeredEvent is triggered and
+    user has sufficient balance in user deposit contract
+    """
+    context = setup_state_with_closed_channel(context)
+
+    context.db.upsert_monitor_request(get_signed_monitor_request(nonce=6, reward_amount=10))
+
+    trigger_event = ActionClaimRewardTriggeredEvent(
+        token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
+        channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
+        non_closing_participant=DEFAULT_PARTICIPANT2,
+    )
+
+    channel = context.db.get_channel(
+        trigger_event.token_network_address,
+        trigger_event.channel_identifier,
+    )
+    assert channel
+    assert channel.claim_tx_hash is None
+
+    # Set update state
+    channel.update_status = OnChainUpdateStatus(
+        update_sender_address=context.ms_state.address,
+        nonce=6,
+    )
+    context.db.upsert_channel(channel)
+
+    action_claim_reward_triggered_event_handler(trigger_event, context)
+
+    # check that the monitor call has been done
+    assert context.monitoring_service_contract.functions.claimReward.called is True
+
+
+def test_action_claim_reward_triggered_event_handler_without_reward_doesnt_trigger_claim_call(  # noqa
+    context: Context,
+):
+    """ Tests that `claimReward` is called when the ActionMonitoringTriggeredEvent is triggered and
+    user has sufficient balance in user deposit contract
+    """
+    context = setup_state_with_closed_channel(context)
+
+    context.db.upsert_monitor_request(get_signed_monitor_request(nonce=6, reward_amount=0))
+
+    trigger_event = ActionClaimRewardTriggeredEvent(
+        token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
+        channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
+        non_closing_participant=DEFAULT_PARTICIPANT2,
+    )
+
+    channel = context.db.get_channel(
+        trigger_event.token_network_address,
+        trigger_event.channel_identifier,
+    )
+    assert channel
+    assert channel.claim_tx_hash is None
+
+    # Set update state
+    channel.update_status = OnChainUpdateStatus(
+        update_sender_address=context.ms_state.address,
+        nonce=6,
+    )
+    context.db.upsert_channel(channel)
+
+    action_claim_reward_triggered_event_handler(trigger_event, context)
+
+    # check that the monitor call has been done
+    assert context.monitoring_service_contract.functions.claimReward.called is False
+
+
+def test_action_claim_reward_triggered_event_handler_without_update_state_doesnt_trigger_claim_call(  # noqa
+    context: Context,
+):
+    """ Tests that `claimReward` is called when the ActionMonitoringTriggeredEvent is triggered and
+    user has sufficient balance in user deposit contract
+    """
+    context = setup_state_with_closed_channel(context)
+
+    context.db.upsert_monitor_request(get_signed_monitor_request(nonce=6, reward_amount=0))
+
+    trigger_event = ActionClaimRewardTriggeredEvent(
+        token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
+        channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
+        non_closing_participant=DEFAULT_PARTICIPANT2,
+    )
+
+    channel = context.db.get_channel(
+        trigger_event.token_network_address,
+        trigger_event.channel_identifier,
+    )
+    assert channel
+    assert channel.claim_tx_hash is None
+
+    # Set update state
+    channel.update_status = OnChainUpdateStatus(
+        update_sender_address='0x' + '1' * 40,
+        nonce=6,
+    )
+    context.db.upsert_channel(channel)
+
+    action_claim_reward_triggered_event_handler(trigger_event, context)
+
+    # check that the monitor call has been done
+    assert context.monitoring_service_contract.functions.claimReward.called is False

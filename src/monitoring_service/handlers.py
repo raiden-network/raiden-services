@@ -441,7 +441,7 @@ def action_claim_reward_triggered_event_handler(event: Event, context: Context) 
         return
 
     # check that the latest update was ours and that we didn't send a transaction yet
-    send_claim = (
+    can_claim = (
         channel is not None and
         channel.claim_tx_hash is None and
         channel.update_status is not None and
@@ -449,9 +449,19 @@ def action_claim_reward_triggered_event_handler(event: Event, context: Context) 
     )
     log.info(
         'Checking if eligible for reward',
-        reward_available=send_claim,
+        reward_available=can_claim,
     )
-    if send_claim:
+
+    # check if claiming will produce a reward
+    has_reward = monitor_request.reward_amount > 0
+    if not has_reward:
+        log.warning(
+            'MonitorRequest has no reward. Skipping reward claim.',
+            reward_amount=monitor_request.reward_amount,
+            monitor_request=monitor_request,
+        )
+
+    if can_claim and has_reward:
         try:
             tx_hash = context.monitoring_service_contract.functions.claimReward(
                 monitor_request.channel_identifier,
