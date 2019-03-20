@@ -48,6 +48,7 @@ def handle_event(event: Event, context: Context) -> None:
     log.debug('Processing event', event_=event)
     handler: Callable = HANDLERS[type(event)]
     handler(event, context)
+    log.debug('Processed event', num_scheduled_events=context.db.scheduled_event_count())
 
 
 class MonitoringService:
@@ -179,8 +180,6 @@ class MonitoringService:
 
             handle_event(event, self.context)
             self.context.db.remove_scheduled_event(scheduled_event)
-
-        log.debug('Scheduled events', num_events=self.context.db.scheduled_event_count())
 
         # check pending transactions
         # this is done here so we don't have to block waiting for receipts in the state machine
