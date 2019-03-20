@@ -114,7 +114,7 @@ class RequestCollector(gevent.Greenlet):
             )
             return
 
-        log.debug(
+        log.info(
             'Received new MR',
             token_network_address=monitor_request.token_network_address,
             channel_identifier=monitor_request.channel_identifier,
@@ -122,6 +122,7 @@ class RequestCollector(gevent.Greenlet):
             signer=monitor_request.signer,
             non_closing_signer=monitor_request.non_closing_signer,
             reward_signer=monitor_request.reward_proof_signer,
+            reward_amound=monitor_request.reward_amount,
         )
 
         with self.state_db.conn:
