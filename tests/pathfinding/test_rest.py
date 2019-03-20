@@ -13,6 +13,7 @@ from pathfinding_service.api.rest import DEFAULT_MAX_PATHS, ServiceApi
 from pathfinding_service.model import IOU, TokenNetwork
 from raiden.utils.signer import LocalSigner
 from raiden.utils.signing import pack_data
+from raiden_contracts.tests.utils import get_random_privkey
 from raiden_libs.types import Address
 from raiden_libs.utils import private_key_to_address
 
@@ -31,7 +32,6 @@ def test_get_paths_validation(
     initiator_address: str,
     target_address: str,
     token_network_model: TokenNetwork,
-    get_random_privkey,
 ):
     url = api_url + f'/{token_network_model.address}/paths'
     default_params = {
@@ -216,7 +216,6 @@ def test_get_iou(
     api_url: str,
     pathfinding_service_full_mock: PathfindingService,
     token_network_model: TokenNetwork,
-    get_random_privkey,
 ):
     privkey = get_random_privkey()
     sender = private_key_to_address(privkey)
