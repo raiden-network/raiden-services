@@ -175,7 +175,6 @@ def main(
         monitor_contract_address='0x' + '1' * 40,
         user_deposit_contract_address=user_deposit_contract_address,
         start_block=start_block,
-        start_block_safety_margin=0
     )
 
     if contract_infos is None:

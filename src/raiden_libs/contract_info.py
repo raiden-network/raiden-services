@@ -11,14 +11,12 @@ from raiden_contracts.constants import (
 from raiden_contracts.contract_manager import get_contracts_deployed
 
 log = structlog.get_logger(__name__)
-START_BLOCK_SAFETY_MARGIN = 100
 START_BLOCK_ID = 'block'
 
 
 def get_deployment_infos(
     chain_id: ChainID,
     contracts_version: str = None,
-    start_block_safety_margin: int = START_BLOCK_SAFETY_MARGIN,
 ) -> Dict[str, Any]:
     try:
         core_contract_data = get_contracts_deployed(
@@ -40,7 +38,7 @@ def get_deployment_infos(
                 token_network_registry_info['block_number'],
                 monitor_contract_info['block_number'],
                 user_deposit_contract_info['block_number'],
-            ) - start_block_safety_margin,
+            ),
         )
         return {
             CONTRACT_TOKEN_NETWORK_REGISTRY: token_network_registry_info['address'],
@@ -62,7 +60,6 @@ def get_deployment_infos(
 def get_contract_addresses_and_start_block(
     chain_id: ChainID,
     contracts_version: str = None,
-    start_block_safety_margin: int = START_BLOCK_SAFETY_MARGIN,
     token_network_registry_address: Address = None,
     monitor_contract_address: Address = None,
     user_deposit_contract_address: Address = None,
@@ -75,7 +72,6 @@ def get_contract_addresses_and_start_block(
     Args:
         chain_id: The chain id to look for deployed contracts.
         contracts_version: The version of the contracts to use.
-        start_block_safety_margin: The safety margin of the start block
         token_network_registry_address: Address to overwrite the predeployed token network
             registry.
         monitor_contract_address: Address to overwrite the predeployed monitor contract.
@@ -87,7 +83,7 @@ def get_contract_addresses_and_start_block(
         or `None` if the contracts aren't deployed for the given configurations and not all
         options have been supplied.
     """
-    data = get_deployment_infos(chain_id, contracts_version, start_block_safety_margin)
+    data = get_deployment_infos(chain_id, contracts_version)
 
     # overwrite defaults with user settings
     if token_network_registry_address:
