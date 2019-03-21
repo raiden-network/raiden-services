@@ -26,7 +26,7 @@ def test_contract_info_changed_safety_margin():
     infos = get_contract_addresses_and_start_block(
         chain_id=DEFAULT_CHAIN_ID,
         contracts_version=DEFAULT_VERSION,
-        start_block_safety_margin=50
+        start_block_safety_margin=50,
     )
     assert infos is not None
     assert infos[CONTRACT_TOKEN_NETWORK_REGISTRY] == '0xde1fAa1385403f05C20a8ca5a0D5106163A35B6e'

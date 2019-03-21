@@ -1,9 +1,8 @@
 import logging
-from unittest.mock import DEFAULT, Mock, patch
+from unittest.mock import DEFAULT, patch, MagicMock
 
 from click.testing import CliRunner
-from eth_utils import is_checksum_address
-from web3 import Web3
+from eth_utils import to_checksum_address
 
 from pathfinding_service.cli import main
 from raiden_contracts.constants import (
@@ -11,15 +10,24 @@ from raiden_contracts.constants import (
     CONTRACT_TOKEN_NETWORK_REGISTRY,
     CONTRACT_USER_DEPOSIT,
 )
-from raiden_libs.contract_info import START_BLOCK_ID, get_contract_addresses_and_start_block
+from raiden_libs.contract_info import START_BLOCK_ID
 
-patch_args = dict(
-    target='pathfinding_service.cli',
-    PathfindingService=DEFAULT,
-    ServiceApi=DEFAULT,
-    HTTPProvider=DEFAULT,
-    get_contract_addresses_and_start_block=DEFAULT,
-)
+patch_args = {
+    'target': 'pathfinding_service.cli',
+    'PathfindingService': DEFAULT,
+    'ServiceApi': DEFAULT,
+    'HTTPProvider': DEFAULT,
+}
+
+patch_info_args = {
+    'target': 'raiden_libs.contract_info',
+    'get_deployment_infos': MagicMock(return_value={
+        CONTRACT_TOKEN_NETWORK_REGISTRY: '0xde1fAa1385403f05C20a8ca5a0D5106163A35B6e',
+        CONTRACT_MONITORING_SERVICE: '0x58c73CabCFB3c55B420E3F60a4b06098e9D1960E',
+        CONTRACT_USER_DEPOSIT: '0x85F2c5eA50861DF5eA2EBd3651fAB091e14B849C',
+        START_BLOCK_ID: 5235346,
+    }),
+}
 
 
 def test_bad_eth_client(log, default_cli_args):
@@ -40,13 +48,7 @@ def test_bad_eth_client(log, default_cli_args):
 def test_success(default_cli_args):
     """ Calling the pathfinding_service with default args should succeed after heavy mocking """
     runner = CliRunner()
-    with patch.multiple(**patch_args) as mocks:
-        mocks['get_contract_addresses_and_start_block'].return_value = {
-            CONTRACT_TOKEN_NETWORK_REGISTRY: '0xde1fAa1385403f05C20a8ca5a0D5106163A35B6e',
-            CONTRACT_MONITORING_SERVICE: '0x58c73CabCFB3c55B420E3F60a4b06098e9D1960E',
-            CONTRACT_USER_DEPOSIT: '0x85F2c5eA50861DF5eA2EBd3651fAB091e14B849C',
-            START_BLOCK_ID: 5235346 + 50,
-        }
+    with patch.multiple(**patch_args), patch.multiple(**patch_info_args):
         result = runner.invoke(
             main,
             default_cli_args,
@@ -69,8 +71,8 @@ def test_eth_rpc(default_cli_args):
 def test_registry_address(default_cli_args):
     """ The `registry_address` parameter must reach the `PathfindingService` """
     runner = CliRunner()
-    with patch.multiple(**patch_args) as mocks:
-        address = Web3.toChecksumAddress('0x' + '1' * 40)
+    with patch.multiple(**patch_args) as mocks, patch.multiple(**patch_info_args):
+        address = to_checksum_address('0x' + '1' * 40)
         result = runner.invoke(
             main,
             default_cli_args + ['--registry-address', address],
@@ -96,14 +98,16 @@ def test_start_block(default_cli_args):
     overwritten with a default when no registry has been specified.
     """
     runner = CliRunner()
-    with patch.multiple(**patch_args) as mocks:
-        mocks['get_default_registry_and_start_block'].return_value = Mock(), Mock()
+    with patch.multiple(**patch_args) as mocks, patch.multiple(**patch_info_args):
         start_block = 10
-        address = Web3.toChecksumAddress('0x' + '1' * 40)
+        address = to_checksum_address('0x' + '1' * 40)
+        address2 = to_checksum_address('0x' + '2' * 40)
         result = runner.invoke(
             main,
             default_cli_args + [
-                '--registry-address', address, '--start-block', str(start_block)],
+                '--registry-address', address,
+                '--user-deposit-contract-address', address2,
+                '--start-block', str(start_block)],
         )
         assert result.exit_code == 0
         assert mocks['PathfindingService'].call_args[1]['sync_start_block'] == start_block
@@ -112,8 +116,7 @@ def test_start_block(default_cli_args):
 def test_confirmations(default_cli_args):
     """ The `confirmations` parameter must reach the `PathfindingService` """
     runner = CliRunner()
-    with patch.multiple(**patch_args) as mocks:
-        mocks['get_default_registry_and_start_block'].return_value = Mock(), Mock()
+    with patch.multiple(**patch_args) as mocks, patch.multiple(**patch_info_args):
         confirmations = 77
         result = runner.invoke(
             main,
@@ -125,23 +128,10 @@ def test_confirmations(default_cli_args):
         assert mocks['PathfindingService'].call_args[1]['required_confirmations'] == confirmations
 
 
-def test_default_registry():
-    """ We can fall back to a default registry if none if specified """
-    net_version = 3
-    contracts_version = '0.3._'
-    registry_address, block_number = get_default_registry_and_start_block(
-        net_version,
-        contracts_version,
-    )
-    assert is_checksum_address(registry_address)
-    assert block_number > 0
-
-
 def test_shutdown(default_cli_args):
     """ Clean shutdown after KeyboardInterrupt """
     runner = CliRunner()
-    with patch.multiple(**patch_args) as mocks:
-        mocks['get_default_registry_and_start_block'].return_value = Mock(), Mock()
+    with patch.multiple(**patch_args) as mocks, patch.multiple(**patch_info_args):
         mocks['PathfindingService'].return_value.run.side_effect = KeyboardInterrupt
         result = runner.invoke(
             main,

@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Dict, Optional, Any
 
 import structlog
 
@@ -15,40 +15,11 @@ START_BLOCK_SAFETY_MARGIN = 100
 START_BLOCK_ID = 'block'
 
 
-def get_contract_addresses_and_start_block(
+def get_deployment_infos(
     chain_id: ChainID,
     contracts_version: str = None,
     start_block_safety_margin: int = START_BLOCK_SAFETY_MARGIN,
-    token_network_registry_address: Address = None,
-    monitor_contract_address: Address = None,
-    user_deposit_contract_address: Address = None,
-    start_block: BlockNumber = 0,
-) -> Optional[Dict]:
-    """ Returns contract addresses and start query block for a given chain and contracts version.
-
-    The default contracts can be overwritten by the additional parameters.
-
-    Args:
-        chain_id: The chain id to look for deployed contracts.
-        contracts_version: The versaion of the contracts to use.
-        start_block_safety_margin: The safety margin of the start block
-        token_network_registry_address: Address to overwrite the predeployed token network
-            registry.
-        monitor_contract_address: Address to overwrite the predeployed monitor contract.
-        user_deposit_contract_address: Address to overwrite the predeployed user deposit
-            contract.
-        start_block: Start block to use when all addresses are overwritten.
-
-    Returns: A dictionary with the contract addresses and start block for the given information,
-        or `None` if the contracts aren't deployed for the given configurations and not all
-        options have been supplied.
-    """
-    all_addresses_given = all([
-        token_network_registry_address,
-        monitor_contract_address,
-        user_deposit_contract_address,
-    ])
-    given_start_block = max(0, start_block)
+) -> Dict[str, Any]:
     try:
         core_contract_data = get_contracts_deployed(
             chain_id=chain_id,
@@ -63,10 +34,6 @@ def get_contract_addresses_and_start_block(
         monitor_contract_info = service_contract_data['contracts'][CONTRACT_MONITORING_SERVICE]
         user_deposit_contract_info = service_contract_data['contracts'][CONTRACT_USER_DEPOSIT]
 
-        registry_address = token_network_registry_address or token_network_registry_info['address']
-        monitor_address = monitor_contract_address or monitor_contract_info['address']
-        udc_address = user_deposit_contract_address or user_deposit_contract_info['address']
-
         contracts_start_block = max(
             0,
             min(
@@ -76,20 +43,72 @@ def get_contract_addresses_and_start_block(
             ) - start_block_safety_margin,
         )
         return {
-            CONTRACT_TOKEN_NETWORK_REGISTRY: registry_address,
-            CONTRACT_MONITORING_SERVICE: monitor_address,
-            CONTRACT_USER_DEPOSIT: udc_address,
-            START_BLOCK_ID: given_start_block if all_addresses_given else contracts_start_block,
+            CONTRACT_TOKEN_NETWORK_REGISTRY: token_network_registry_info['address'],
+            CONTRACT_MONITORING_SERVICE: monitor_contract_info['address'],
+            CONTRACT_USER_DEPOSIT: user_deposit_contract_info['address'],
+            START_BLOCK_ID: contracts_start_block,
         }
     except ValueError:
         log.info('No deployed contracts were found at the default registry')
 
-        if all_addresses_given:
-            return {
-                CONTRACT_TOKEN_NETWORK_REGISTRY: token_network_registry_address,
-                CONTRACT_MONITORING_SERVICE: monitor_contract_address,
-                CONTRACT_USER_DEPOSIT: user_deposit_contract_address,
-                START_BLOCK_ID: given_start_block,
-            }
-        else:
-            return None
+        return {
+            CONTRACT_TOKEN_NETWORK_REGISTRY: None,
+            CONTRACT_MONITORING_SERVICE: None,
+            CONTRACT_USER_DEPOSIT: None,
+            START_BLOCK_ID: 0,
+        }
+
+
+def get_contract_addresses_and_start_block(
+    chain_id: ChainID,
+    contracts_version: str = None,
+    start_block_safety_margin: int = START_BLOCK_SAFETY_MARGIN,
+    token_network_registry_address: Address = None,
+    monitor_contract_address: Address = None,
+    user_deposit_contract_address: Address = None,
+    start_block: BlockNumber = 0,
+) -> Optional[Dict[str, Any]]:
+    """ Returns contract addresses and start query block for a given chain and contracts version.
+
+    The default contracts can be overwritten by the additional parameters.
+
+    Args:
+        chain_id: The chain id to look for deployed contracts.
+        contracts_version: The version of the contracts to use.
+        start_block_safety_margin: The safety margin of the start block
+        token_network_registry_address: Address to overwrite the predeployed token network
+            registry.
+        monitor_contract_address: Address to overwrite the predeployed monitor contract.
+        user_deposit_contract_address: Address to overwrite the predeployed user deposit
+            contract.
+        start_block: Start block to use when all addresses are overwritten.
+
+    Returns: A dictionary with the contract addresses and start block for the given information,
+        or `None` if the contracts aren't deployed for the given configurations and not all
+        options have been supplied.
+    """
+    data = get_deployment_infos(chain_id, contracts_version, start_block_safety_margin)
+
+    # overwrite defaults with user settings
+    if token_network_registry_address:
+        data[CONTRACT_TOKEN_NETWORK_REGISTRY] = token_network_registry_address
+    if monitor_contract_address:
+        data[CONTRACT_MONITORING_SERVICE] = monitor_contract_address
+    if user_deposit_contract_address:
+        data[CONTRACT_USER_DEPOSIT] = user_deposit_contract_address
+
+    # Overwrite start block when all contracts have been overwritten
+    all_addresses_given = all([
+        token_network_registry_address,
+        monitor_contract_address,
+        user_deposit_contract_address,
+    ])
+    if all_addresses_given:
+        data[START_BLOCK_ID] = start_block
+
+    # Return infos when all contracts are set, otherwise `None`
+    all_addresses_set = all(v is not None for v in data.values())
+    if all_addresses_set:
+        return data
+    else:
+        return None
