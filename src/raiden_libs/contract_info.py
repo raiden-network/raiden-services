@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Any
+from typing import Any, Dict, Optional
 
 import structlog
 
@@ -28,7 +28,7 @@ def get_deployment_infos(
             version=contracts_version,
             services=True,
         )
-        token_network_registry_info = core_contract_data['contracts'][CONTRACT_TOKEN_NETWORK_REGISTRY]
+        token_network_registry_info = core_contract_data['contracts'][CONTRACT_TOKEN_NETWORK_REGISTRY]  # noqa
         monitor_contract_info = service_contract_data['contracts'][CONTRACT_MONITORING_SERVICE]
         user_deposit_contract_info = service_contract_data['contracts'][CONTRACT_USER_DEPOSIT]
 

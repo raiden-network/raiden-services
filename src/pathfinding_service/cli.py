@@ -19,10 +19,7 @@ from pathfinding_service.api.rest import ServiceApi
 from pathfinding_service.config import DEFAULT_API_HOST, DEFAULT_POLL_INTERVALL
 from pathfinding_service.middleware import http_retry_with_backoff_middleware
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
-from raiden_contracts.contract_manager import (
-    ContractManager,
-    contracts_precompiled_path,
-)
+from raiden_contracts.contract_manager import ContractManager, contracts_precompiled_path
 from raiden_libs.contract_info import START_BLOCK_ID, get_contract_addresses_and_start_block
 from raiden_libs.logging import setup_logging
 from raiden_libs.types import Address
