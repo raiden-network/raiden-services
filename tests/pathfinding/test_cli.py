@@ -1,5 +1,5 @@
 import logging
-from unittest.mock import DEFAULT, patch, MagicMock
+from unittest.mock import DEFAULT, MagicMock, patch
 
 from click.testing import CliRunner
 from eth_utils import to_checksum_address
