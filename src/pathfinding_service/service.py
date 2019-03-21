@@ -294,8 +294,8 @@ class PathfindingService(gevent.Greenlet):
     def on_pfs_update(self, message: UpdatePFS):
         log.info(
             'Received Balance Update',
-            token_network_address=self.token_network.address,
-            channel_identifier=self.channel_identifier,
+            token_network_address=message.token_network_address,
+            channel_identifier=message.channel_identifier,
         )
 
         assert is_checksum_address(message.updating_participant)
