@@ -22,7 +22,6 @@ from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT
 from raiden_contracts.contract_manager import (
     ContractManager,
     contracts_precompiled_path,
-    get_contracts_deployed,
 )
 from raiden_libs.contract_info import START_BLOCK_ID, get_contract_addresses_and_start_block
 from raiden_libs.logging import setup_logging
@@ -98,7 +97,7 @@ def validate_address(ctx, param, value):
 )
 @click.option(
     '--state-db',
-    default=os.path.join(click.get_app_dir('raiden-monitoring-service'), 'state.db'),
+    default=os.path.join(click.get_app_dir('raiden-pathfinding-service'), 'state.db'),
     type=str,
     help='Path to SQLite3 db which stores the application state',
 )
@@ -132,7 +131,7 @@ def main(
 
     log.info("Starting Raiden Pathfinding Service")
 
-    contracts_version = '0.3._'  # FIXME: update this to latest contracts
+    contracts_version = '0.10.1'
     log.info(f'Using contracts version: {contracts_version}')
 
     with open(keystore_file, 'r') as keystore:
@@ -172,9 +171,11 @@ def main(
         chain_id=net_version,
         contracts_version=contracts_version,
         token_network_registry_address=registry_address,
-        monitor_contract_address='0x' + '1' * 40,  # This is never used
+        # necessary so that the overwrite logic works properly
+        monitor_contract_address='0x' + '1' * 40,
         user_deposit_contract_address=user_deposit_contract_address,
         start_block=start_block,
+        start_block_safety_margin=0
     )
 
     if contract_infos is None:
