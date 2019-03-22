@@ -19,7 +19,7 @@ KEYSTORE_FILE_NAME = 'keystore.txt'
 KEYSTORE_PASSWORD = 'password'
 
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def channel_descriptions_case_1() -> List:
     """ Creates a network with some edge cases.
 
@@ -202,7 +202,7 @@ def populate_token_network_random(
         )
 
 
-@pytest.fixture
+@pytest.fixture(scope='session')
 def populate_token_network() -> Callable:
     def populate_token_network(
         token_network: TokenNetwork,
@@ -325,7 +325,8 @@ def pathfinding_service_full_mock(
     contracts_manager: ContractManager,
     token_network_model: TokenNetwork,
 ) -> Generator[PathfindingService, None, None]:
-    with patch('pathfinding_service.service.BlockchainListener', new=Mock):
+    with patch('pathfinding_service.service.BlockchainListener', new=Mock), \
+            patch('pathfinding_service.service.MatrixListener', new=Mock):
         web3_mock = Mock()
         web3_mock.net.version = '1'
         web3_mock.eth.blockNumber = 1
@@ -351,10 +352,8 @@ def pathfinding_service_mocked_listeners(
     web3: Web3,
 ) -> Generator[PathfindingService, None, None]:
     """ Returns a PathfindingService with mocked blockchain listeners. """
-    with patch(
-        'pathfinding_service.service.BlockchainListener',
-        new=BlockchainListenerMock,
-    ):
+    with patch('pathfinding_service.service.BlockchainListener', new=BlockchainListenerMock), \
+            patch('pathfinding_service.service.MatrixListener', new=Mock):
         pathfinding_service = PathfindingService(
             web3=web3,
             contract_manager=contracts_manager,
