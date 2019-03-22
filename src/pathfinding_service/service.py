@@ -86,8 +86,6 @@ class PathfindingService(gevent.Greenlet):
             pfs_address=self.address,
         )
 
-        self.is_running = gevent.event.Event()
-
         log.info(
             'Starting TokenNetworkRegistry Listener',
             required_confirmations=self.required_confirmations,
