@@ -1,10 +1,9 @@
-import json
 import random
 from typing import Callable, Generator, List
 from unittest.mock import Mock, patch
 
 import pytest
-from eth_account import Account
+from tests.libs.fixtures import KEYSTORE_PASSWORD
 from tests.pathfinding.config import NUMBER_OF_CHANNELS
 from tests.pathfinding.mocks.blockchain_listener import BlockchainListenerMock
 from web3 import Web3
@@ -14,9 +13,6 @@ from pathfinding_service.model.token_network import TokenNetwork
 from raiden_contracts.contract_manager import ContractManager
 from raiden_libs.types import Address, ChannelIdentifier
 from raiden_libs.utils import private_key_to_address
-
-KEYSTORE_FILE_NAME = 'keystore.txt'
-KEYSTORE_PASSWORD = 'password'
 
 
 @pytest.fixture(scope='session')
@@ -363,21 +359,6 @@ def pathfinding_service_mocked_listeners(
         )
 
         yield pathfinding_service
-
-
-@pytest.fixture
-def keystore_file(tmp_path) -> str:
-    keystore_file = tmp_path / KEYSTORE_FILE_NAME
-
-    account = Account.create()
-    keystore_json = Account.encrypt(
-        private_key=account.privateKey,
-        password=KEYSTORE_PASSWORD,
-    )
-    with open(keystore_file, 'w') as fp:
-        json.dump(keystore_json, fp)
-
-    return keystore_file
 
 
 @pytest.fixture
