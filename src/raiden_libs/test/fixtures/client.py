@@ -1,23 +1,20 @@
+from typing import Dict
+
 import pytest
 
 from raiden_contracts.tests.utils import get_random_privkey
 from raiden_libs.test.mocks.client import MockRaidenNode
-
-
-@pytest.fixture
-def client_registry():
-    """map: address => client"""
-    return {}
+from raiden_libs.types import Address
 
 
 @pytest.fixture
 def generate_raiden_client(
         token_network,
         custom_token,
-        client_registry,
         send_funds,
         ethereum_tester,
 ):
+    client_registry: Dict[Address, MockRaidenNode] = {}
     """Factory function to create a new Raiden client. The client has some funds
     allocated by default and has no open channels."""
     def f():
