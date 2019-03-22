@@ -4,11 +4,6 @@ from pathfinding_service.model.token_network import TokenNetwork
 from raiden_contracts.contract_manager import ContractManager, contracts_precompiled_path
 
 
-@pytest.fixture
-def contract_deployer_address(faucet_address) -> str:
-    return faucet_address
-
-
 @pytest.fixture(scope='session')
 def contracts_manager():
     return ContractManager(contracts_precompiled_path())
