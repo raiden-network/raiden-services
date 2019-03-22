@@ -3,8 +3,8 @@ monkey.patch_all()  # isort:skip # noqa
 
 import gc
 
-import pytest
 import gevent
+import pytest
 
 
 def _get_running_greenlets():

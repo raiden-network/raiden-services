@@ -9,10 +9,5 @@ def contracts_manager():
 
 
 @pytest.fixture
-def contract_deployer_address(faucet_address):
-    return faucet_address
-
-
-@pytest.fixture
 def monitoring_service_contract(monitoring_service_external):
     return monitoring_service_external

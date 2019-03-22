@@ -3,15 +3,17 @@ import logging
 import gevent
 import pytest
 from eth_tester import EthereumTester, PyEVMBackend
-from eth_utils import denoms
 from web3 import Web3
 from web3.providers.eth_tester import EthereumTesterProvider
 
-from raiden_libs.types import Address
+from raiden_contracts.tests.utils.constants import (
+    FAUCET_ADDRESS,
+    FAUCET_ALLOWANCE,
+    FAUCET_PRIVATE_KEY,
+)
 
 DEFAULT_TIMEOUT = 5
 DEFAULT_RETRY_INTERVAL = 3
-FAUCET_ALLOWANCE = 100 * denoms.ether
 INITIAL_TOKEN_SUPPLY = 200000000000
 
 log = logging.getLogger(__name__)
@@ -37,8 +39,6 @@ def patch_genesis_gas_limit():
 @pytest.fixture(scope='session')
 def web3(
         patch_genesis_gas_limit,
-        faucet_private_key: str,
-        faucet_address: Address,
         ethereum_tester,
 ):
     """Returns an initialized Web3 instance"""
@@ -47,12 +47,12 @@ def web3(
     web3.eth.estimateGas = lambda txn: 5_500_000
 
     # add faucet account to tester
-    ethereum_tester.add_account(faucet_private_key)
+    ethereum_tester.add_account(FAUCET_PRIVATE_KEY)
 
     # make faucet rich
     ethereum_tester.send_transaction({
         'from': ethereum_tester.get_accounts()[0],
-        'to': faucet_address,
+        'to': FAUCET_ADDRESS,
         'gas': 21000,
         'value': FAUCET_ALLOWANCE,
     })
