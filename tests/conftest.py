@@ -1,4 +1,6 @@
-from gevent import monkey  # isort:skip # noqa
+from gevent import monkey, config  # isort:skip # noqa
+# there were some issues with the 'thread' resolver, remove it from the options
+config.resolver = ['dnspython', 'ares', 'block'] # noqa
 monkey.patch_all()  # isort:skip # noqa
 
 import gc
