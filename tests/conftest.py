@@ -6,6 +6,8 @@ import gc
 import gevent
 import pytest
 
+from .libs.fixtures import *  # noqa
+
 
 def _get_running_greenlets():
     return [

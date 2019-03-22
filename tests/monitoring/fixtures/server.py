@@ -1,11 +1,10 @@
-import json
 import logging
 from typing import List
 from unittest.mock import patch
 
 import pytest
-from eth_account import Account
 from request_collector.server import RequestCollector
+from tests.libs.fixtures import KEYSTORE_PASSWORD
 
 from monitoring_service.database import Database
 from monitoring_service.service import MonitoringService
@@ -16,8 +15,6 @@ from raiden_libs.utils import private_key_to_address
 log = logging.getLogger(__name__)
 
 TEST_POLL_INTERVAL = 0.001
-KEYSTORE_FILE_NAME = 'keystore.txt'
-KEYSTORE_PASSWORD = 'password'
 
 
 @pytest.fixture
@@ -25,21 +22,6 @@ def server_private_key(ethereum_tester):
     key = get_random_privkey()
     ethereum_tester.add_account(key)
     return key
-
-
-@pytest.fixture
-def keystore_file(tmp_path) -> str:
-    keystore_file = tmp_path / KEYSTORE_FILE_NAME
-
-    account = Account.create()
-    keystore_json = Account.encrypt(
-        private_key=account.privateKey,
-        password=KEYSTORE_PASSWORD,
-    )
-    with open(keystore_file, 'w') as fp:
-        json.dump(keystore_json, fp)
-
-    return keystore_file
 
 
 @pytest.fixture

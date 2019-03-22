@@ -47,29 +47,13 @@ def get_free_port(address: str, initial_port: int):
 
 
 @pytest.fixture(scope='session')
-def api_schema() -> str:
-    return 'http'
+def free_port() -> int:
+    return next(get_free_port('localhost', DEFAULT_API_PORT))
 
 
 @pytest.fixture(scope='session')
-def api_port() -> int:
-    return DEFAULT_API_PORT
-
-
-@pytest.fixture(scope='session')
-def port_generator(request):
-    """ count generator used to get a unique port number. """
-    return get_free_port('localhost', DEFAULT_API_PORT)
-
-
-@pytest.fixture
-def free_port(port_generator: Iterator[int]) -> int:
-    return next(port_generator)
-
-
-@pytest.fixture
-def api_url(api_schema: str, free_port: int) -> str:
-    return '{}://localhost:{}{}'.format(api_schema, free_port, API_PATH)
+def api_url(free_port: int) -> str:
+    return 'http://localhost:{}{}'.format(free_port, API_PATH)
 
 
 @pytest.fixture
