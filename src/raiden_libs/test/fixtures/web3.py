@@ -44,6 +44,7 @@ def web3(
     """Returns an initialized Web3 instance"""
     provider = EthereumTesterProvider(ethereum_tester)
     web3 = Web3(provider)
+    web3.eth.estimateGas = lambda txn: 5_500_000
 
     # add faucet account to tester
     ethereum_tester.add_account(faucet_private_key)
