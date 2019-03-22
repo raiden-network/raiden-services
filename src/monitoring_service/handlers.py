@@ -45,6 +45,7 @@ class Context:
     last_known_block: int
     monitoring_service_contract: Contract
     user_deposit_contract: Contract
+    min_reward: int
 
 
 def channel_opened_event_handler(event: Event, context: Context) -> None:
@@ -383,10 +384,18 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
     user_address = monitor_request.non_closing_signer
     user_deposit = context.user_deposit_contract.functions.effectiveBalance(user_address).call()
 
+    if monitor_request.reward_amount < context.min_reward:
+        log.info(
+            'Monitor request not executed due to insufficient reward amount',
+            monitor_request=monitor_request,
+            min_reward=context.min_reward,
+        )
+
     call_monitor = (
         channel.closing_tx_hash is None and
         monitor_request.nonce > last_onchain_nonce and
-        user_deposit >= monitor_request.reward_amount * DEFAULT_PAYMENT_RISK_FAKTOR
+        user_deposit >= monitor_request.reward_amount * DEFAULT_PAYMENT_RISK_FAKTOR and
+        monitor_request.reward_amount >= context.min_reward
     )
     if call_monitor:
         try:

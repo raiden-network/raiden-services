@@ -92,6 +92,12 @@ def validate_address(_ctx: Any, _param: Any, value: Optional[str]) -> Optional[s
     type=str,
     help='Path to SQLite3 db which stores the application state',
 )
+@click.option(
+    '--min-reward',
+    default=0,
+    type=click.IntRange(min=0),
+    help='Minimum reward which is required before processing requests',
+)
 def main(
     keystore_file: str,
     password: str,
@@ -103,6 +109,7 @@ def main(
     confirmations: int,
     log_level: str,
     state_db: str,
+    min_reward: int,
 ) -> None:
     setup_logging(log_level)
 
@@ -153,6 +160,7 @@ def main(
         sync_start_block=contract_infos[START_BLOCK_ID],
         required_confirmations=confirmations,
         db_filename=state_db,
+        min_reward=min_reward,
     )
     ms.start()
 
