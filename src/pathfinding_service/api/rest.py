@@ -1,7 +1,6 @@
 from datetime import datetime
 from typing import ClassVar, Dict, List, Optional, Tuple, Type
 
-import gevent
 import marshmallow
 import pkg_resources
 import structlog
@@ -9,7 +8,6 @@ from dataclasses import dataclass, field
 from eth_utils import is_address, is_checksum_address, is_same_address
 from flask import Flask, request
 from flask_restful import Api, Resource, reqparse
-from gevent import Greenlet
 from gevent.pywsgi import WSGIServer
 from marshmallow_dataclass import add_schema
 from networkx.exception import NetworkXNoPath
@@ -275,7 +273,6 @@ class ServiceApi:
         self.flask_app = Flask(__name__)
         self.api = ApiWithErrorHandler(self.flask_app)
         self.rest_server: WSGIServer = None
-        self.server_greenlet: Greenlet = None
         self.pathfinding_service = pathfinding_service
 
         resources: List[Tuple[str, Resource, Dict]] = [
@@ -291,9 +288,9 @@ class ServiceApi:
 
     def run(self, host: str = DEFAULT_API_HOST, port: int = DEFAULT_API_PORT):
         self.rest_server = WSGIServer((host, port), self.flask_app)
-        self.server_greenlet = gevent.spawn(self.rest_server.serve_forever)
+        self.rest_server.start()
 
         log.info('Running endpoint', endpoint=f'{host}:{port}')
 
     def stop(self):
-        self.server_greenlet.kill()
+        self.rest_server.stop()

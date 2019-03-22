@@ -61,6 +61,6 @@ def no_greenlets_left():
 
 
 @pytest.fixture(autouse=True)
-def unregsiter_error_handler():
+def unregister_error_handler():
     from raiden_libs.gevent_error_handler import unregister_error_handler
     unregister_error_handler()
