@@ -1,10 +1,14 @@
+import json
 import logging
 
 import gevent
 import pytest
+from eth_account import Account
+from tests.constants import KEYSTORE_FILE_NAME, KEYSTORE_PASSWORD
 from web3 import Web3
 from web3.providers.eth_tester import EthereumTesterProvider
 
+from raiden_contracts.contract_manager import ContractManager, contracts_precompiled_path
 from raiden_contracts.tests.utils.constants import (
     FAUCET_ADDRESS,
     FAUCET_ALLOWANCE,
@@ -45,3 +49,24 @@ def wait_for_blocks(web3):
         web3.testing.mine(n)
         gevent.sleep()
     return wait_for_blocks
+
+
+@pytest.fixture(scope='session')
+def contracts_manager():
+    """Overwrites the contracts_manager from raiden_contracts to use compiled contracts """
+    return ContractManager(contracts_precompiled_path())
+
+
+@pytest.fixture
+def keystore_file(tmp_path) -> str:
+    keystore_file = tmp_path / KEYSTORE_FILE_NAME
+
+    account = Account.create()
+    keystore_json = Account.encrypt(
+        private_key=account.privateKey,
+        password=KEYSTORE_PASSWORD,
+    )
+    with open(keystore_file, 'w') as fp:
+        json.dump(keystore_json, fp)
+
+    return keystore_file

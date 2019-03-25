@@ -7,8 +7,7 @@ import gevent
 import pytest
 
 from raiden_contracts.tests.fixtures import *  # noqa
-from raiden_libs.test.fixtures.client import *  # noqa
-from raiden_libs.test.fixtures.web3 import *  # noqa
+
 from .libs.fixtures import *  # noqa
 
 

@@ -3,8 +3,9 @@ from typing import Dict
 import pytest
 
 from raiden_contracts.tests.utils import get_random_privkey
-from raiden_libs.test.mocks.client import MockRaidenNode
 from raiden_libs.types import Address
+
+from ..mocks.client import MockRaidenNode
 
 
 @pytest.fixture
