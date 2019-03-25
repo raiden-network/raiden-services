@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import pytest
 from request_collector.server import RequestCollector
-from tests.libs.fixtures import KEYSTORE_PASSWORD
+from tests.constants import KEYSTORE_PASSWORD
 
 from monitoring_service.database import Database
 from monitoring_service.service import MonitoringService
