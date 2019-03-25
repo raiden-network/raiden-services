@@ -23,6 +23,7 @@ def test_pfs_with_mocked_client(
     channel_descriptions_case_1: List,
     generate_raiden_clients,
     wait_for_blocks,
+    user_deposit_contract,
 ):
     """ Instantiates some MockClients and the PathfindingService.
 
@@ -37,6 +38,7 @@ def test_pfs_with_mocked_client(
             web3=web3,
             contract_manager=contracts_manager,
             registry_address=token_network_registry_contract.address,
+            user_deposit_contract_address=user_deposit_contract.address,
             required_confirmations=1,
             db_filename=':memory:',
             poll_interval=0,

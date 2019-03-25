@@ -195,6 +195,7 @@ def main(
             web3=web3,
             contract_manager=contract_manager,
             registry_address=contract_infos[CONTRACT_TOKEN_NETWORK_REGISTRY],
+            user_deposit_contract_address=contract_infos[CONTRACT_USER_DEPOSIT],
             sync_start_block=contract_infos[START_BLOCK_ID],
             required_confirmations=confirmations,
             private_key=private_key,

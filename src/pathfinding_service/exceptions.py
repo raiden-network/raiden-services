@@ -70,3 +70,8 @@ class IOUAlreadyClaimed(BadIOU):
 class UseThisIOU(BadIOU):
     error_code = 2106
     msg = 'Please increase the amount of the existing IOU instead of creating a new one.'
+
+
+class DepositTooLow(BadIOU):
+    error_code = 2107
+    msg = 'Not enough deposit in UserDeposit contract.'
