@@ -40,7 +40,7 @@ DEFAULT_PRIVATE_KEY1 = '0x' + '1' * 64
 DEFAULT_PRIVATE_KEY2 = '0x' + '2' * 64
 DEFAULT_PARTICIPANT1 = private_key_to_address(DEFAULT_PRIVATE_KEY1)
 DEFAULT_PARTICIPANT2 = private_key_to_address(DEFAULT_PRIVATE_KEY2)
-DEFAULT_REWARD_AMOUNT = 0
+DEFAULT_REWARD_AMOUNT = 1
 DEFAULT_SETTLE_TIMEOUT = 100
 
 
@@ -119,6 +119,7 @@ def context(ms_database):
         last_known_block=0,
         monitoring_service_contract=Mock(),
         user_deposit_contract=Mock(),
+        min_reward=1,
     )
 
 
@@ -546,6 +547,38 @@ def test_action_monitoring_triggered_event_handler_with_sufficient_balance_does_
 
     # check that the monitor call has been done
     assert context.monitoring_service_contract.functions.monitor.called is True
+
+
+def test_action_monitoring_triggered_event_handler_with_insufficient_reward_amount_does_not_trigger_monitor_call(  # noqa
+        context: Context,
+):
+    """ Tests that `monitor` is not called when the ActionMonitoringTriggeredEvent is triggered but
+    the monitor request shows an insufficient reward amount
+    """
+    context = setup_state_with_closed_channel(context)
+
+    context.db.upsert_monitor_request(get_signed_monitor_request(nonce=6, reward_amount=0))
+
+    trigger_event = ActionMonitoringTriggeredEvent(
+        token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
+        channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
+        non_closing_participant=DEFAULT_PARTICIPANT2,
+    )
+
+    channel = context.db.get_channel(
+        trigger_event.token_network_address,
+        trigger_event.channel_identifier,
+    )
+    assert channel
+    assert channel.closing_tx_hash is None
+
+    context.user_deposit_contract.functions.effectiveBalance(
+        DEFAULT_PARTICIPANT2,
+    ).call.return_value = 21
+    action_monitoring_triggered_event_handler(trigger_event, context)
+
+    # check that the monitor call has been done
+    assert context.monitoring_service_contract.functions.monitor.called is False
 
 
 def test_action_monitoring_triggered_event_handler_without_sufficient_balance_doesnt_trigger_monitor_call(  # noqa

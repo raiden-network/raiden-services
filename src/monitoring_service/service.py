@@ -64,6 +64,7 @@ class MonitoringService:
         sync_start_block: BlockNumber = 0,
         required_confirmations: int = DEFAULT_REQUIRED_CONFIRMATIONS,
         poll_interval: float = 1,
+        min_reward: int = 0,
     ):
         self.web3 = web3
         self.contract_manager = contract_manager
@@ -114,6 +115,7 @@ class MonitoringService:
             last_known_block=0,
             monitoring_service_contract=monitoring_contract,
             user_deposit_contract=user_deposit_contract,
+            min_reward=min_reward,
         )
 
     def start(
