@@ -117,6 +117,19 @@ class TokenNetwork:
                 channel_identifier=channel_identifier,
             )
 
+    def get_channel_views_for_partner(
+            self,
+            channel_identifier: ChannelIdentifier,
+            updating_participant: Address,
+            other_participant: Address,
+    ) -> Tuple[ChannelView, ChannelView]:
+
+        # Get the channel views from the perspective of the updating participant
+        channel_view_to_partner = self.G[updating_participant][other_participant]['view']
+        channel_view_from_partner = self.G[other_participant][updating_participant]['view']
+
+        return channel_view_to_partner, channel_view_from_partner
+
     def handle_channel_balance_update_message(
         self,
         channel_identifier: ChannelIdentifier,
@@ -128,49 +141,13 @@ class TokenNetwork:
         other_capacity: int,
         reveal_timeout: int,
     ):
-        """ Sends Balance Update to PFS including the reveal timeout """
-
-        # Get the channel views from the perspective of the updating participant
-        try:
-            participant1, participant2 = self.channel_id_to_addresses[channel_identifier]
-            if updating_participant == participant1:
-                assert other_participant == participant2
-                channel_view_to_partner = self.G[participant1][participant2]['view']
-                channel_view_from_partner = self.G[participant2][participant1]['view']
-            elif updating_participant == participant2:
-                assert other_participant == participant1
-                channel_view_to_partner = self.G[participant2][participant1]['view']
-                channel_view_from_partner = self.G[participant1][participant2]['view']
-            else:
-                log.error(
-                    "Sender in Channel Balance Update does not fit the internal channel",
-                )
-                return
-        except KeyError:
-            log.error(
-                "Sender Balance Update for unknown channel",
-                channel_identifier=channel_identifier,
-            )
-            return
-
-        # Check nonces of the balance update against current state
-        if (
-            updating_nonce <= channel_view_to_partner.balance_update_nonce and
-            other_nonce <= channel_view_from_partner.balance_update_nonce
-        ):
-            log.debug(
-                "Balance Update already received",
-                channel_identifier=channel_identifier,
-                updating_participant=updating_participant,
-                other_participant=other_participant,
-                updating_nonce=updating_nonce,
-                other_nonce=other_nonce,
-                updating_capacity=updating_capacity,
-                other_capacity=other_capacity,
-                reveal_timeout=reveal_timeout,
-            )
-            return
-
+        """ Sends Capacity Update to PFS including the reveal timeout """
+        channel_view_to_partner, channel_view_from_partner = self.get_channel_views_for_partner(
+            channel_identifier=channel_identifier,
+            updating_participant=updating_participant,
+            other_participant=other_participant,
+        )
+        # FIXME: Add updating only minimum if capacity updates conflict
         channel_view_to_partner.update_capacity(
             nonce=updating_nonce,
             capacity=updating_capacity,

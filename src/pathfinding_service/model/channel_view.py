@@ -36,7 +36,7 @@ class ChannelView:
         self.channel_id = channel_id
         self.settle_timeout = settle_timeout
         self.reveal_timeout = reveal_timeout
-        self.balance_update_nonce = 0
+        self.update_nonce = 0
 
     # TODO: define another function update_deposit
     def update_capacity(
@@ -46,7 +46,7 @@ class ChannelView:
         reveal_timeout: int = None,
         deposit: int = None,
     ):
-        self.balance_update_nonce = nonce
+        self.update_nonce = nonce
         self._capacity = capacity
         if reveal_timeout is not None:
             self.reveal_timeout = reveal_timeout

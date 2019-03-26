@@ -1,6 +1,10 @@
 from typing import Any, Dict, Optional
 
 
+class InvalidCapacityUpdate(Exception):
+    """Exception for incoming messages"""
+
+
 class ApiException(Exception):
     """An exception that can be returned via the REST API"""
     msg: str = 'Unknown Error'
