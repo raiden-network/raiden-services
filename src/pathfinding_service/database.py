@@ -26,6 +26,8 @@ class PFSDatabase:
 
     def __init__(self, filename: str, pfs_address: Address):
         log.info('Opening database at ' + filename)
+        if filename != ':memory:':
+            os.makedirs(os.path.dirname(filename), exist_ok=True)
         self.conn = sqlite3.connect(
             filename,
             detect_types=sqlite3.PARSE_DECLTYPES,
