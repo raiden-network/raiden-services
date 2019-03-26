@@ -1,2 +1,4 @@
 include README.md
 include CHANGELOG.md
+include src/pathfinding_service/schema.sql
+include src/monitoring_service/schema.sql
