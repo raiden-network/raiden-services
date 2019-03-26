@@ -256,7 +256,7 @@ class BlockchainListener:
                 events.append(ReceiveMonitoringRewardClaimedEvent(
                     ms_address=event['args']['ms_address'],
                     amount=event['args']['amount'],
-                    reward_identifier=event['args']['reward_identifier'],
+                    reward_identifier=encode_hex(event['args']['reward_identifier']),
                     block_number=block_number,
                 ))
 
