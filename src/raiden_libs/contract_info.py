@@ -8,7 +8,7 @@ from raiden_contracts.constants import (
     CONTRACT_TOKEN_NETWORK_REGISTRY,
     CONTRACT_USER_DEPOSIT,
 )
-from raiden_contracts.contract_manager import get_contracts_deployed
+from raiden_contracts.contract_manager import get_contracts_deployment_info
 
 log = structlog.get_logger(__name__)
 START_BLOCK_ID = 'block'
@@ -19,18 +19,13 @@ def get_deployment_infos(
     contracts_version: str = None,
 ) -> Dict[str, Any]:
     try:
-        core_contract_data = get_contracts_deployed(
+        contract_data = get_contracts_deployment_info(
             chain_id=chain_id,
             version=contracts_version,
         )
-        service_contract_data = get_contracts_deployed(
-            chain_id=chain_id,
-            version=contracts_version,
-            services=True,
-        )
-        token_network_registry_info = core_contract_data['contracts'][CONTRACT_TOKEN_NETWORK_REGISTRY]  # noqa
-        monitor_contract_info = service_contract_data['contracts'][CONTRACT_MONITORING_SERVICE]
-        user_deposit_contract_info = service_contract_data['contracts'][CONTRACT_USER_DEPOSIT]
+        token_network_registry_info = contract_data['contracts'][CONTRACT_TOKEN_NETWORK_REGISTRY]  # noqa
+        monitor_contract_info = contract_data['contracts'][CONTRACT_MONITORING_SERVICE]
+        user_deposit_contract_info = contract_data['contracts'][CONTRACT_USER_DEPOSIT]
 
         contracts_start_block = max(
             0,
