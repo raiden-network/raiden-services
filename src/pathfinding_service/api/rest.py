@@ -22,6 +22,7 @@ from pathfinding_service.config import (
     DEFAULT_MAX_PATHS,
     MAX_AGE_OF_IOU_REQUESTS,
     MIN_IOU_EXPIRY,
+    UDC_SECURITY_MARGIN_FACTOR,
 )
 from pathfinding_service.model import IOU
 from raiden.exceptions import InvalidSignature
@@ -187,7 +188,12 @@ def process_payment(iou_dict: dict, pathfinding_service: PathfindingService):
     if iou.amount < expected_amount:
         raise exceptions.InsufficientServicePayment(expected_amount=expected_amount)
 
-    # TODO: deposit large enough?
+    # Check client's deposit in UserDeposit contract
+    udc = pathfinding_service.user_deposit_contract
+    udc_balance = udc.functions.effectiveBalance(iou.sender).call()
+    required_deposit = round(expected_amount * UDC_SECURITY_MARGIN_FACTOR)
+    if udc_balance < required_deposit:
+        raise exceptions.DepositTooLow(required_deposit=required_deposit)
 
     # Save latest IOU
     iou.claimed = False

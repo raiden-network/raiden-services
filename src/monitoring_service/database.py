@@ -47,6 +47,8 @@ class SharedDatabase:
 
     def __init__(self, filename: str, allow_create: bool = False):
         log.info('Opening database', filename=filename)
+        if filename != ':memory:' and os.path.dirname(filename):
+            os.makedirs(os.path.dirname(filename), exist_ok=True)
         mode = 'rwc' if allow_create else 'rw'
         self.conn = sqlite3.connect(
             f'file:{filename}?mode={mode}',

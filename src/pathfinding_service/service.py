@@ -20,6 +20,7 @@ from raiden.messages import SignedMessage, UpdatePFS
 from raiden_contracts.constants import (
     CONTRACT_TOKEN_NETWORK,
     CONTRACT_TOKEN_NETWORK_REGISTRY,
+    CONTRACT_USER_DEPOSIT,
     ChannelEvent,
 )
 from raiden_contracts.contract_manager import ContractManager
@@ -53,6 +54,7 @@ class PathfindingService(gevent.Greenlet):
             registry_address: Address,
             private_key: str,
             db_filename: str,
+            user_deposit_contract_address: Address,
             sync_start_block: int = 0,
             required_confirmations: int = 8,
             poll_interval: int = 10,
@@ -85,6 +87,12 @@ class PathfindingService(gevent.Greenlet):
         self.database = PFSDatabase(
             filename=db_filename,
             pfs_address=self.address,
+        )
+        self.user_deposit_contract = web3.eth.contract(
+            abi=self.contract_manager.get_contract_abi(
+                CONTRACT_USER_DEPOSIT,
+            ),
+            address=user_deposit_contract_address,
         )
 
         log.info(

@@ -7,6 +7,7 @@ from tests.constants import KEYSTORE_PASSWORD
 from tests.pathfinding.config import NUMBER_OF_CHANNELS
 from tests.pathfinding.mocks.blockchain_listener import BlockchainListenerMock
 from web3 import Web3
+from web3.contract import Contract
 
 from pathfinding_service import PathfindingService
 from pathfinding_service.model.token_network import TokenNetwork
@@ -331,12 +332,15 @@ def pathfinding_service_full_mock(
             web3=web3_mock,
             contract_manager=contracts_manager,
             registry_address=Address('0xB9633dd9a9a71F22C933bF121d7a22008f66B908'),
+            user_deposit_contract_address=Address('0x' + '1' * 20),
             private_key='3a1076bf45ab87712ad64ccb3b10217737f7faacbf2872e88fdd9a537d8fe266',
             db_filename=':memory:',
         )
         pathfinding_service.token_networks = {
             token_network_model.address: token_network_model,
         }
+        mock_udc = pathfinding_service.user_deposit_contract
+        mock_udc.functions.effectiveBalance.return_value.call.return_value = 10000
 
         yield pathfinding_service
         pathfinding_service.stop()
@@ -346,6 +350,7 @@ def pathfinding_service_full_mock(
 def pathfinding_service_mocked_listeners(
     contracts_manager: ContractManager,
     web3: Web3,
+    user_deposit_contract: Contract,
 ) -> Generator[PathfindingService, None, None]:
     """ Returns a PathfindingService with mocked blockchain listeners. """
     with patch('pathfinding_service.service.BlockchainListener', new=BlockchainListenerMock), \
@@ -354,6 +359,7 @@ def pathfinding_service_mocked_listeners(
             web3=web3,
             contract_manager=contracts_manager,
             registry_address=Address(''),
+            user_deposit_contract_address=user_deposit_contract.address,
             private_key='3a1076bf45ab87712ad64ccb3b10217737f7faacbf2872e88fdd9a537d8fe266',
             db_filename=':memory:',
         )

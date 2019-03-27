@@ -122,7 +122,7 @@ class RequestCollector(gevent.Greenlet):
             signer=monitor_request.signer,
             non_closing_signer=monitor_request.non_closing_signer,
             reward_signer=monitor_request.reward_proof_signer,
-            reward_amound=monitor_request.reward_amount,
+            reward_amount=monitor_request.reward_amount,
         )
 
         with self.state_db.conn:

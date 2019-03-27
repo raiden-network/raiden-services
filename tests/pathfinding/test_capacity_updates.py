@@ -33,7 +33,7 @@ DEFAULT_TOKEN_NETWORK_ADDRESS_BYTES = TokenNetworkAddress(
 DEFAULT_TOKEN_ADDRESS = Address('0x44Ac22fd9672cC559Ab171603D474cEA8a2D7b4D')
 
 
-def get_UpdatePFS_message(
+def get_updatepfs_message(
         chain_identifier: ChainID = 1,
         channel_identifier: ChannelID = 0,
         token_network_address: TokenNetworkAddress = DEFAULT_TOKEN_NETWORK_ADDRESS_BYTES,
@@ -68,7 +68,7 @@ def test_pfs_rejects_capacity_update_with_wrong_chain_id(
     pathfinding_service_mocked_listeners: PathfindingService,
 ):
 
-    message = get_UpdatePFS_message(
+    message = get_updatepfs_message(
         chain_identifier=ChainID(121212),
         updating_participant=addresses[0],
         other_participant=addresses[1],
@@ -93,7 +93,7 @@ def test_pfs_rejects_capacity_update_with_wrong_token_network_address(
     pathfinding_service_mocked_listeners.token_networks[
         token_network.address] = token_network
 
-    message = get_UpdatePFS_message(
+    message = get_updatepfs_message(
         token_network_address=TokenNetworkAddress(decode_hex('0x' + '1' * 40)),
         updating_participant=addresses[0],
         other_participant=addresses[1],
@@ -131,7 +131,7 @@ def test_pfs_rejects_capacity_update_with_wrong_channel_identifier(
         addresses[1],
     )
 
-    message = get_UpdatePFS_message(
+    message = get_updatepfs_message(
         channel_identifier=ChannelID(35),
         updating_participant=addresses[0],
         other_participant=addresses[1],
@@ -181,7 +181,7 @@ def test_pfs_rejects_capacity_update_with_impossible_updating_capacity(
         addresses[1],
     )
 
-    message = get_UpdatePFS_message(
+    message = get_updatepfs_message(
         updating_participant=addresses[0],
         other_participant=addresses[1],
         updating_capacity=TokenAmount(UINT256_MAX + 1),
@@ -231,7 +231,7 @@ def test_pfs_rejects_capacity_update_with_impossible_other_capacity(
         addresses[1],
     )
 
-    message = get_UpdatePFS_message(
+    message = get_updatepfs_message(
         updating_participant=addresses[0],
         other_participant=addresses[1],
         other_capacity=TokenAmount(UINT256_MAX + 1),
@@ -281,7 +281,7 @@ def test_pfs_rejects_capacity_update_with_wrong_updating_participant(
         addresses[1],
     )
 
-    message = get_UpdatePFS_message(
+    message = get_updatepfs_message(
         updating_participant=addresses[2],
         other_participant=addresses[1],
     )
@@ -330,7 +330,7 @@ def test_pfs_rejects_capacity_update_with_wrong_other_participant(
         addresses[1],
     )
 
-    message = get_UpdatePFS_message(
+    message = get_updatepfs_message(
         updating_participant=addresses[0],
         other_participant=addresses[2],
     )
@@ -379,7 +379,7 @@ def test_pfs_rejects_capacity_update_with_wrong_nonces(
         addresses[1],
     )
 
-    message = get_UpdatePFS_message(
+    message = get_updatepfs_message(
         updating_participant=addresses[0],
         other_participant=addresses[1],
     )

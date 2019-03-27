@@ -64,7 +64,7 @@ class ReceiveMonitoringNewBalanceProofEvent(Event):
 class ReceiveMonitoringRewardClaimedEvent(Event):
     ms_address: Address
     amount: TokenAmount
-    reward_identifier: int
+    reward_identifier: str
     block_number: BlockNumber
 
 
