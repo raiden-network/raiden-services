@@ -1,5 +1,5 @@
 #git+https://github.com/raiden-network/raiden-contracts.git
-git+https://github.com/raiden-network/raiden.git@f7fdcf786dbe270523bec214e43c825cc520889e
+git+https://github.com/raiden-network/raiden.git@2b2b205f2c2bec64ed74b06dc2aeb7aa0503dbb6
 
 raiden-contracts==0.15.0
 
@@ -14,7 +14,7 @@ eth-utils==1.2.1
 eth-abi==1.2.0
 eth-account==0.3.0
 py_ecc==1.4.3
-py-solc==3.1.0
+py-solc==3.2.0
 rlp==1.0.2
 
 flask==1.0.2

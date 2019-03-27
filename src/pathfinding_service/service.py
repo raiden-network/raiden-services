@@ -4,17 +4,18 @@ from typing import Dict, List, Optional
 
 import gevent
 import structlog
-from eth_utils import is_checksum_address
+from eth_utils import is_checksum_address, to_checksum_address
 from web3 import Web3
 
 from pathfinding_service.database import PFSDatabase
+from pathfinding_service.exceptions import InvalidCapacityUpdate
 from pathfinding_service.model import TokenNetwork
 from pathfinding_service.utils.blockchain_listener import (
     BlockchainListener,
     create_channel_event_topics,
     create_registry_event_topics,
 )
-from raiden.constants import PATH_FINDING_BROADCASTING_ROOM
+from raiden.constants import PATH_FINDING_BROADCASTING_ROOM, UINT256_MAX
 from raiden.messages import SignedMessage, UpdatePFS
 from raiden_contracts.constants import (
     CONTRACT_TOKEN_NETWORK,
@@ -158,7 +159,6 @@ class PathfindingService(gevent.Greenlet):
         """ Returns the `TokenNetwork` for the given address or `None` for unknown networks. """
 
         assert is_checksum_address(token_network_address)
-
         if not self.follows_token_network(token_network_address):
             return None
         else:
@@ -293,56 +293,88 @@ class PathfindingService(gevent.Greenlet):
 
     def handle_message(self, message: SignedMessage):
         if isinstance(message, UpdatePFS):
-            self.on_pfs_update(message)
+            try:
+                self.on_pfs_update(message)
+            except InvalidCapacityUpdate as x:
+                log.info(
+                    str(x),
+                    chain_id=message.canonical_identifier.chain_identifier,
+                    token_network_address=message.canonical_identifier.token_network_address,
+                    channel_identifier=message.canonical_identifier.channel_identifier,
+                    updating_capacity=message.updating_capacity,
+                    other_capacity=message.updating_capacity,
+                )
         else:
             log.info('Ignoring unknown message type')
 
     def on_pfs_update(self, message: UpdatePFS):
+        token_network_address = to_checksum_address(
+            message.canonical_identifier.token_network_address,
+        )
         log.info(
-            'Received Balance Update',
-            token_network_address=message.token_network_address,
-            channel_identifier=message.channel_identifier,
+            'Received Capacity Update',
+            token_network_address=token_network_address,
+            channel_identifier=message.canonical_identifier.channel_identifier,
         )
 
         assert is_checksum_address(message.updating_participant)
         assert is_checksum_address(message.other_participant)
 
         # check if chain_id matches
-        if message.chain_id != self.chain_id:
-            log.info(
-                'Received balance update with unknown chain id',
-                chain_id=message.chain_id,
-            )
-            return
+        if message.canonical_identifier.chain_identifier != self.chain_id:
+            raise InvalidCapacityUpdate('Received Capacity Update with unknown chain identifier')
 
         # check if token network exists
-        token_network = self._get_token_network(message.token_network_address)
+        token_network = self._get_token_network(token_network_address)
         if token_network is None:
-            log.info(
-                'Received balance update with unknown token network',
-                token_network_address=message.token_network_address,
-            )
-            return
+            raise InvalidCapacityUpdate('Received Capacity Update with unknown token network')
 
         # check if channel exists
-        if message.channel_identifier not in token_network.channel_id_to_addresses:
-            log.info(
-                'Received balance update with unknown channel_id in token network',
-                channel_id=message.channel_identifier,
-                token_network_address=message.token_network_address,
+        channel_identifier = message.canonical_identifier.channel_identifier
+        if channel_identifier not in token_network.channel_id_to_addresses:
+            raise InvalidCapacityUpdate(
+                'Received Capacity Update with unknown channel identifier in token network',
             )
-            return
 
         # TODO: check signature of message
 
-        # check values max int 256 TODO: get constants
-        if not 0 < message.updating_capacity < 2 ^ 256:
-            return
-        if not 0 < message.other_capacity < 2 ^ 256:
-            return
+        # check values < max int 256
+        if message.updating_capacity > UINT256_MAX:
+            raise InvalidCapacityUpdate(
+                'Received Capacity Update with impossible updating_capacity',
+            )
+        if message.other_capacity > UINT256_MAX:
+            raise InvalidCapacityUpdate(
+                'Received Capacity Update with impossible other_capacity',
+            )
+
+        # check if participants fit to channel id
+        participants = token_network.channel_id_to_addresses[channel_identifier]
+        if message.updating_participant not in participants:
+            raise InvalidCapacityUpdate(
+                'Sender of Capacity Update does not match the internal channel',
+            )
+        if message.other_participant not in participants:
+            raise InvalidCapacityUpdate(
+                'Other Participant of Capacity Update does not match the internal channel',
+            )
+
+        # check if nonce is higher than current nonce
+        view_to_partner, view_from_partner = token_network.get_channel_views_for_partner(
+            channel_identifier=channel_identifier,
+            updating_participant=message.updating_participant,
+            other_participant=message.other_participant,
+        )
+
+        valid_nonces = (
+            message.updating_nonce <= view_to_partner.update_nonce and
+            message.other_nonce <= view_from_partner.update_nonce
+        )
+        if valid_nonces:
+            raise InvalidCapacityUpdate('Capacity Update already received')
 
         token_network.handle_channel_balance_update_message(
-            channel_identifier=message.channel_identifier,
+            channel_identifier=message.canonical_identifier.channel_identifier,
             updating_participant=message.updating_participant,
             other_participant=message.other_participant,
             updating_nonce=message.updating_nonce,
