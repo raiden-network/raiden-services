@@ -7,7 +7,7 @@ The Capacity Updates show different correct and incorrect values to test all edg
 from typing import List
 
 import pytest
-from eth_utils import decode_hex
+from eth_utils import decode_hex, to_checksum_address
 
 from pathfinding_service import PathfindingService
 from pathfinding_service.exceptions import InvalidCapacityUpdate
@@ -33,17 +33,17 @@ DEFAULT_TOKEN_ADDRESS = Address('0x44Ac22fd9672cC559Ab171603D474cEA8a2D7b4D')
 
 
 def get_updatepfs_message(
-        chain_identifier: ChainID = 1,
-        channel_identifier: ChannelID = 0,
+        updating_participant: Address,
+        other_participant: Address,
+        chain_identifier=ChainID(1),
+        channel_identifier=ChannelID(0),
         token_network_address: TokenNetworkAddress = DEFAULT_TOKEN_NETWORK_ADDRESS_BYTES,
-        updating_participant: Address = None,
-        other_participant: Address = None,
-        updating_nonce: Nonce = 1,
-        other_nonce: Nonce = 0,
-        updating_capacity: TokenAmount = 90,
-        other_capacity: TokenAmount = 110,
+        updating_nonce=Nonce(1),
+        other_nonce=Nonce(0),
+        updating_capacity=TokenAmount(90),
+        other_capacity=TokenAmount(110),
         reveal_timeout: int = 2,
-        signature: Signature = '',
+        signature=Signature(bytes()),
 ) -> UpdatePFS:
     return UpdatePFS(
         canonical_identifier=CanonicalIdentifier(
@@ -51,8 +51,8 @@ def get_updatepfs_message(
             channel_identifier=channel_identifier,
             token_network_address=token_network_address,
         ),
-        updating_participant=updating_participant,
-        other_participant=other_participant,
+        updating_participant=to_checksum_address(updating_participant),
+        other_participant=to_checksum_address(other_participant),
         updating_nonce=updating_nonce,
         other_nonce=other_nonce,
         updating_capacity=updating_capacity,
@@ -82,7 +82,7 @@ def test_pfs_rejects_capacity_update_with_wrong_token_network_address(
     addresses: List[Address],
     pathfinding_service_mocked_listeners: PathfindingService,
 ):
-    pathfinding_service_mocked_listeners.chain_id = 1
+    pathfinding_service_mocked_listeners.chain_id = ChainID(1)
 
     token_network = TokenNetwork(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
@@ -107,7 +107,7 @@ def test_pfs_rejects_capacity_update_with_wrong_channel_identifier(
         addresses: List[Address],
         pathfinding_service_mocked_listeners: PathfindingService,
 ):
-    pathfinding_service_mocked_listeners.chain_id = 1
+    pathfinding_service_mocked_listeners.chain_id = ChainID(1)
 
     token_network = TokenNetwork(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
@@ -145,7 +145,7 @@ def test_pfs_rejects_capacity_update_with_impossible_updating_capacity(
         addresses: List[Address],
         pathfinding_service_mocked_listeners: PathfindingService,
 ):
-    pathfinding_service_mocked_listeners.chain_id = 1
+    pathfinding_service_mocked_listeners.chain_id = ChainID(1)
 
     token_network = TokenNetwork(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
@@ -195,7 +195,7 @@ def test_pfs_rejects_capacity_update_with_impossible_other_capacity(
         addresses: List[Address],
         pathfinding_service_mocked_listeners: PathfindingService,
 ):
-    pathfinding_service_mocked_listeners.chain_id = 1
+    pathfinding_service_mocked_listeners.chain_id = ChainID(1)
 
     token_network = TokenNetwork(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
@@ -245,7 +245,7 @@ def test_pfs_rejects_capacity_update_with_wrong_updating_participant(
         addresses: List[Address],
         pathfinding_service_mocked_listeners: PathfindingService,
 ):
-    pathfinding_service_mocked_listeners.chain_id = 1
+    pathfinding_service_mocked_listeners.chain_id = ChainID(1)
 
     token_network = TokenNetwork(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
@@ -294,7 +294,7 @@ def test_pfs_rejects_capacity_update_with_wrong_other_participant(
         addresses: List[Address],
         pathfinding_service_mocked_listeners: PathfindingService,
 ):
-    pathfinding_service_mocked_listeners.chain_id = 1
+    pathfinding_service_mocked_listeners.chain_id = ChainID(1)
 
     token_network = TokenNetwork(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
@@ -343,7 +343,7 @@ def test_pfs_rejects_capacity_update_with_wrong_nonces(
         addresses: List[Address],
         pathfinding_service_mocked_listeners: PathfindingService,
 ):
-    pathfinding_service_mocked_listeners.chain_id = 1
+    pathfinding_service_mocked_listeners.chain_id = ChainID(1)
 
     token_network = TokenNetwork(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,

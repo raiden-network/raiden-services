@@ -1,14 +1,16 @@
 from web3 import Web3
 
 from monitoring_service.blockchain import query_blockchain_events
+from raiden.utils.typing import BlockNumber
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, EVENT_TOKEN_NETWORK_CREATED
 from raiden_contracts.contract_manager import ContractManager
+from raiden_libs.types import Address
 
 
 def create_tnr_contract_events_query(
     web3: Web3,
     contract_manager: ContractManager,
-    contract_address: str,
+    contract_address: Address,
 ):
     def query_callback():
         return query_blockchain_events(
@@ -17,7 +19,7 @@ def create_tnr_contract_events_query(
             contract_address=contract_address,
             contract_name=CONTRACT_TOKEN_NETWORK_REGISTRY,
             topics=[],
-            from_block=0,
+            from_block=BlockNumber(0),
             to_block=web3.eth.blockNumber,
         )
     return query_callback
@@ -41,7 +43,7 @@ def test_limit_inclusivity_in_query_blockchain_events(
     assert len(events) == 1
     event = events[0]
     assert event['event'] == EVENT_TOKEN_NETWORK_CREATED
-    registry_event_block = event['blockNumber']
+    registry_event_block = BlockNumber(event['blockNumber'])
 
     # test to_block is inclusive
     events = query_blockchain_events(
@@ -50,8 +52,8 @@ def test_limit_inclusivity_in_query_blockchain_events(
         contract_address=token_network_registry_contract.address,
         contract_name=CONTRACT_TOKEN_NETWORK_REGISTRY,
         topics=[],
-        from_block=0,
-        to_block=registry_event_block - 1,
+        from_block=BlockNumber(0),
+        to_block=BlockNumber(registry_event_block - 1),
     )
     assert len(events) == 0
 
@@ -61,7 +63,7 @@ def test_limit_inclusivity_in_query_blockchain_events(
         contract_address=token_network_registry_contract.address,
         contract_name=CONTRACT_TOKEN_NETWORK_REGISTRY,
         topics=[],
-        from_block=0,
+        from_block=BlockNumber(0),
         to_block=registry_event_block,
     )
     assert len(events) == 1
@@ -78,7 +80,7 @@ def test_limit_inclusivity_in_query_blockchain_events(
         contract_address=token_network_registry_contract.address,
         contract_name=CONTRACT_TOKEN_NETWORK_REGISTRY,
         topics=[],
-        from_block=registry_event_block + 1,
+        from_block=BlockNumber(registry_event_block + 1),
         to_block=current_block_number,
     )
     assert len(events) == 0
