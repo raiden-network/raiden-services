@@ -8,6 +8,7 @@ import structlog
 from eth_account import Account
 from eth_utils import is_checksum_address
 from web3 import HTTPProvider, Web3
+from web3.middleware import geth_poa_middleware
 
 from monitoring_service.constants import DEFAULT_REQUIRED_CONFIRMATIONS
 from monitoring_service.service import MonitoringService
@@ -128,6 +129,10 @@ def main(
 
     provider = HTTPProvider(eth_rpc)
     web3 = Web3(provider)
+
+    # Add POA middleware for geth POA chains, no/op for other chains
+    web3.middleware_stack.inject(geth_poa_middleware, layer=0)
+
     contract_manager = ContractManager(contracts_precompiled_path())
     contract_infos = get_contract_addresses_and_start_block(
         chain_id=int(web3.net.version),
