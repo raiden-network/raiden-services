@@ -23,7 +23,7 @@ def get_deployment_infos(
             chain_id=chain_id,
             version=contracts_version,
         )
-        token_network_registry_info = contract_data['contracts'][CONTRACT_TOKEN_NETWORK_REGISTRY]  # noqa
+        token_network_registry_info = contract_data['contracts'][CONTRACT_TOKEN_NETWORK_REGISTRY]
         monitor_contract_info = contract_data['contracts'][CONTRACT_MONITORING_SERVICE]
         user_deposit_contract_info = contract_data['contracts'][CONTRACT_USER_DEPOSIT]
 
