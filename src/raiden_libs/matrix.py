@@ -47,6 +47,7 @@ def message_from_dict(data: dict) -> Message:
             raise InvalidProtocolMessage(
                 'Invalid message data. Can not find the data type',
             ) from None
+
     return klass.from_dict(data)
 
 
@@ -185,13 +186,14 @@ class MatrixListener(gevent.Greenlet):
                     _exc=ex,
                 )
                 continue
-            except InvalidProtocolMessage as ex:
+            except (InvalidProtocolMessage, KeyError) as ex:
                 logger.warning(
-                    "Message data JSON are not a valid message",
+                    "Message data JSON is not a valid message",
                     message_data=line,
                     _exc=ex,
                 )
                 continue
+
             if not isinstance(message, SignedMessage):
                 logger.warning(
                     'Received invalid message',
