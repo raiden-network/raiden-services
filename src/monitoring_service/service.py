@@ -146,7 +146,7 @@ class MonitoringService:
             try:
                 wait_function(self.poll_interval)
             except KeyboardInterrupt:
-                log.info('Shutting down.')
+                log.info('Shutting down')
                 sys.exit(0)
 
     def _process_new_blocks(self, last_block: BlockNumber) -> None:
