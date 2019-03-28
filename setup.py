@@ -72,6 +72,7 @@ setup(
     entry_points={
         'console_scripts': [
             'pathfinding-service=pathfinding_service.cli:main',
+            'claim-pfs-fees=pathfinding_service.claim_fees:main',
             'monitoring-service=monitoring_service.cli:main',
             'request-collector=request_collector.cli:main',
         ],
