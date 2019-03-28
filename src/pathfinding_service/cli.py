@@ -20,6 +20,7 @@ from pathfinding_service import PathfindingService
 from pathfinding_service.api.rest import ServiceApi
 from pathfinding_service.config import DEFAULT_API_HOST, DEFAULT_POLL_INTERVALL
 from pathfinding_service.middleware import http_retry_with_backoff_middleware
+from raiden.utils.types import BlockNumber, ChainID
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
 from raiden_contracts.contract_manager import ContractManager, contracts_precompiled_path
 from raiden_libs.contract_info import START_BLOCK_ID, get_contract_addresses_and_start_block
@@ -112,7 +113,7 @@ def main(
     eth_rpc: str,
     registry_address: Address,
     user_deposit_contract_address: Address,
-    start_block: int,
+    start_block: BlockNumber,
     confirmations: int,
     host: str,
     log_level: str,
@@ -149,7 +150,8 @@ def main(
         log.info(f'Starting Web3 client for node at {eth_rpc}')
         provider = HTTPProvider(eth_rpc)
         web3 = Web3(provider)
-        net_version = int(web3.net.version)  # Will throw ConnectionError on bad Ethereum client
+        # Will throw ConnectionError on bad Ethereum client
+        net_version = ChainID(int(web3.net.version))
     except ConnectionError:
         log.error(
             'Can not connect to the Ethereum client. Please check that it is running and that '
@@ -171,7 +173,7 @@ def main(
         contracts_version=contracts_version,
         token_network_registry_address=registry_address,
         # necessary so that the overwrite logic works properly
-        monitor_contract_address='0x' + '1' * 40,
+        monitor_contract_address=Address('0x' + '1' * 40),
         user_deposit_contract_address=user_deposit_contract_address,
         start_block=start_block,
     )

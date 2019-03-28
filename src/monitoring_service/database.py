@@ -18,6 +18,7 @@ from monitoring_service.states import (
     OnChainUpdateStatus,
 )
 from raiden.utils.typing import BlockNumber
+from raiden_libs.types import Address
 
 SubEvent = Union[ActionMonitoringTriggeredEvent, ActionClaimRewardTriggeredEvent]
 
@@ -272,8 +273,8 @@ class Database(SharedDatabase):
         self,
         filename: str,
         chain_id: int,
-        msc_address: str,
-        registry_address: str,
+        msc_address: Address,
+        registry_address: Address,
         receiver: str,
     ) -> None:
         super(Database, self).__init__(filename, allow_create=True)

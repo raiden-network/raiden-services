@@ -19,7 +19,7 @@ from monitoring_service.events import (
     UpdatedHeadBlockEvent,
 )
 from monitoring_service.states import BlockchainState
-from raiden.utils.typing import ABI, Address, BlockNumber
+from raiden.utils.typing import ABI, BlockNumber
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
     CONTRACT_TOKEN_NETWORK,
@@ -29,6 +29,7 @@ from raiden_contracts.constants import (
     MonitoringServiceEvent,
 )
 from raiden_contracts.contract_manager import ContractManager
+from raiden_libs.types import Address, TokenNetworkAddress
 
 log = structlog.get_logger(__name__)
 
@@ -131,14 +132,14 @@ class BlockchainListener:
 
     def _get_token_networks_events(
             self,
-            network_address: Address,
+            network_address: TokenNetworkAddress,
             from_block: BlockNumber,
             to_block: BlockNumber,
     ) -> List[Dict]:
         return query_blockchain_events(
             web3=self.w3,
             contract_manager=self.contract_manager,
-            contract_address=network_address,
+            contract_address=Address(network_address),
             contract_name=CONTRACT_TOKEN_NETWORK,
             topics=[None],
             from_block=from_block,
@@ -167,7 +168,7 @@ class BlockchainListener:
         to_block: BlockNumber,
     ) -> Tuple[BlockchainState, List[Event]]:
         # increment by one, as latest_known_block has been queried last time already
-        from_block = chain_state.latest_known_block + 1
+        from_block = BlockNumber(chain_state.latest_known_block + 1)
 
         # Check if the current block was already processed
         if from_block > to_block:

@@ -11,7 +11,8 @@ from pathfinding_service.config import (
     MAX_PATHS_PER_REQUEST,
 )
 from pathfinding_service.model import ChannelView
-from raiden_libs.types import Address, ChannelIdentifier
+from raiden.utils.types import ChannelID
+from raiden_libs.types import Address
 
 log = structlog.get_logger(__name__)
 
@@ -24,7 +25,7 @@ class TokenNetwork:
 
         self.address = token_network_address
         self.token_address = token_address
-        self.channel_id_to_addresses: Dict[ChannelIdentifier, Tuple[Address, Address]] = dict()
+        self.channel_id_to_addresses: Dict[ChannelID, Tuple[Address, Address]] = dict()
         self.G = DiGraph()
         self.max_relative_fee = 0
 
@@ -37,7 +38,7 @@ class TokenNetwork:
 
     def handle_channel_opened_event(
         self,
-        channel_identifier: ChannelIdentifier,
+        channel_identifier: ChannelID,
         participant1: Address,
         participant2: Address,
         settle_timeout: int,
@@ -72,7 +73,7 @@ class TokenNetwork:
 
     def handle_channel_new_deposit_event(
         self,
-        channel_identifier: ChannelIdentifier,
+        channel_identifier: ChannelID,
         receiver: Address,
         total_deposit: int,
     ):
@@ -99,7 +100,7 @@ class TokenNetwork:
                 channel_identifier=channel_identifier,
             )
 
-    def handle_channel_closed_event(self, channel_identifier: ChannelIdentifier):
+    def handle_channel_closed_event(self, channel_identifier: ChannelID):
         """ Close a channel. This doesn't mean that the channel is settled yet, but it cannot
         transfer any more.
 
@@ -119,7 +120,7 @@ class TokenNetwork:
 
     def get_channel_views_for_partner(
             self,
-            channel_identifier: ChannelIdentifier,
+            channel_identifier: ChannelID,
             updating_participant: Address,
             other_participant: Address,
     ) -> Tuple[ChannelView, ChannelView]:
@@ -132,7 +133,7 @@ class TokenNetwork:
 
     def handle_channel_balance_update_message(
         self,
-        channel_identifier: ChannelIdentifier,
+        channel_identifier: ChannelID,
         updating_participant: Address,
         other_participant: Address,
         updating_nonce: int,
@@ -160,7 +161,7 @@ class TokenNetwork:
 
     @staticmethod
     def edge_weight(
-        visited: Dict[ChannelIdentifier, float],
+        visited: Dict[ChannelID, float],
         attr: Dict[str, Any],
     ):
         view: ChannelView = attr['view']
@@ -197,7 +198,7 @@ class TokenNetwork:
     ):
         assert hop_bias == 1, 'Only hop_bias 1 is supported'
         max_paths = min(max_paths, MAX_PATHS_PER_REQUEST)
-        visited: Dict[ChannelIdentifier, float] = {}
+        visited: Dict[ChannelID, float] = {}
         paths: List[List[Address]] = []
 
         for _ in range(max_paths):
