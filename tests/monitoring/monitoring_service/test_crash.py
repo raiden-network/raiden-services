@@ -67,7 +67,7 @@ def test_crash(
             ),
         ],
         [
-            UpdatedHeadBlockEvent(1),
+            UpdatedHeadBlockEvent(BlockNumber(1)),
         ],
         [
             ActionMonitoringTriggeredEvent(
@@ -77,7 +77,7 @@ def test_crash(
             ),
         ],
         [
-            UpdatedHeadBlockEvent(3),
+            UpdatedHeadBlockEvent(BlockNumber(3)),
         ],
     ]
 

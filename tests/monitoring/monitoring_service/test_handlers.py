@@ -30,17 +30,19 @@ from monitoring_service.states import (
     OnChainUpdateStatus,
     UnsignedMonitorRequest,
 )
+from raiden.utils.typing import BlockNumber, ChannelID, Nonce, TokenAmount
 from raiden_contracts.constants import ChannelState
 from raiden_contracts.tests.utils import get_random_privkey
+from raiden_libs.types import Address, TokenNetworkAddress
 from raiden_libs.utils import private_key_to_address
 
-DEFAULT_TOKEN_NETWORK_ADDRESS = '0x0000000000000000000000000000000000000000'
-DEFAULT_CHANNEL_IDENTIFIER = 3
+DEFAULT_TOKEN_NETWORK_ADDRESS = TokenNetworkAddress('0x0000000000000000000000000000000000000000')
+DEFAULT_CHANNEL_IDENTIFIER = ChannelID(3)
 DEFAULT_PRIVATE_KEY1 = '0x' + '1' * 64
 DEFAULT_PRIVATE_KEY2 = '0x' + '2' * 64
-DEFAULT_PARTICIPANT1 = private_key_to_address(DEFAULT_PRIVATE_KEY1)
-DEFAULT_PARTICIPANT2 = private_key_to_address(DEFAULT_PRIVATE_KEY2)
-DEFAULT_REWARD_AMOUNT = 1
+DEFAULT_PARTICIPANT1 = Address(private_key_to_address(DEFAULT_PRIVATE_KEY1))
+DEFAULT_PARTICIPANT2 = Address(private_key_to_address(DEFAULT_PRIVATE_KEY2))
+DEFAULT_REWARD_AMOUNT = TokenAmount(1)
 DEFAULT_SETTLE_TIMEOUT = 100
 
 
@@ -61,7 +63,7 @@ def setup_state_with_open_channel(context: Context) -> Context:
         participant1=DEFAULT_PARTICIPANT1,
         participant2=DEFAULT_PARTICIPANT2,
         settle_timeout=DEFAULT_SETTLE_TIMEOUT,
-        block_number=42,
+        block_number=BlockNumber(42),
     )
     assert context.db.channel_count() == 0
 
@@ -77,7 +79,7 @@ def setup_state_with_closed_channel(context: Context) -> Context:
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
         closing_participant=DEFAULT_PARTICIPANT2,
-        block_number=52,
+        block_number=BlockNumber(52),
     )
     channel_closed_event_handler(event2, context)
 
@@ -89,7 +91,7 @@ def setup_state_with_closed_channel(context: Context) -> Context:
 
 def get_signed_monitor_request(
     nonce: int = 5,
-    reward_amount: int = DEFAULT_REWARD_AMOUNT,
+    reward_amount: TokenAmount = DEFAULT_REWARD_AMOUNT,
     closing_privkey: str = DEFAULT_PRIVATE_KEY1,
     nonclosing_privkey: str = DEFAULT_PRIVATE_KEY2,
 ) -> MonitorRequest:
@@ -163,7 +165,7 @@ def test_channel_opened_event_handler_adds_channel(
         participant1=DEFAULT_PARTICIPANT1,
         participant2=DEFAULT_PARTICIPANT2,
         settle_timeout=100,
-        block_number=42,
+        block_number=BlockNumber(42),
     )
 
     assert context.db.channel_count() == 0
@@ -183,7 +185,7 @@ def test_channel_closed_event_handler_closes_existing_channel(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
         closing_participant=DEFAULT_PARTICIPANT2,
-        block_number=52,
+        block_number=BlockNumber(52),
     )
     channel_closed_event_handler(event, context)
 
@@ -204,7 +206,7 @@ def test_channel_closed_event_handler_idempotency(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
         closing_participant=DEFAULT_PARTICIPANT2,
-        block_number=52,
+        block_number=BlockNumber(52),
     )
     channel_closed_event_handler(event, context)
 
@@ -228,7 +230,7 @@ def test_channel_closed_event_handler_ignores_existing_channel_after_timeout(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
         closing_participant=DEFAULT_PARTICIPANT2,
-        block_number=52,
+        block_number=BlockNumber(52),
     )
     channel_closed_event_handler(event, context)
 
@@ -246,9 +248,9 @@ def test_channel_closed_event_handler_leaves_existing_channel(
 
     event = ReceiveChannelClosedEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
-        channel_identifier=4,
+        channel_identifier=ChannelID(4),
         closing_participant=DEFAULT_PARTICIPANT2,
-        block_number=52,
+        block_number=BlockNumber(52),
     )
     channel_closed_event_handler(event, context)
 
@@ -267,7 +269,7 @@ def test_channel_closed_event_handler_trigger_action_monitor_event_with_monitor_
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
         closing_participant=DEFAULT_PARTICIPANT2,
-        block_number=52,
+        block_number=BlockNumber(52),
     )
 
     channel_closed_event_handler(event, context)
@@ -283,7 +285,7 @@ def test_channel_closed_event_handler_trigger_action_monitor_event_without_monit
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
         closing_participant=DEFAULT_PARTICIPANT2,
-        block_number=52,
+        block_number=BlockNumber(52),
     )
 
     channel_closed_event_handler(event, context)
@@ -298,7 +300,7 @@ def test_channel_settled_event_handler_settles_existing_channel(
     event = ReceiveChannelSettledEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
-        block_number=52,
+        block_number=BlockNumber(52),
     )
     channel_settled_event_handler(event, context)
 
@@ -313,8 +315,8 @@ def test_channel_settled_event_handler_leaves_existing_channel(
 
     event = ReceiveChannelSettledEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
-        channel_identifier=4,
-        block_number=52,
+        channel_identifier=ChannelID(4),
+        block_number=BlockNumber(52),
     )
     channel_settled_event_handler(event, context)
 
@@ -331,8 +333,8 @@ def test_channel_bp_updated_event_handler_sets_update_status_if_not_set(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
         closing_participant=DEFAULT_PARTICIPANT2,
-        nonce=2,
-        block_number=23,
+        nonce=Nonce(2),
+        block_number=BlockNumber(23),
     )
 
     channel = context.db.get_channel(event_bp.token_network_address, event_bp.channel_identifier)
@@ -352,8 +354,8 @@ def test_channel_bp_updated_event_handler_sets_update_status_if_not_set(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
         closing_participant=DEFAULT_PARTICIPANT2,
-        nonce=5,
-        block_number=53,
+        nonce=Nonce(5),
+        block_number=BlockNumber(53),
     )
 
     channel_non_closing_balance_proof_updated_event_handler(event_bp2, context)
@@ -374,11 +376,11 @@ def test_monitor_new_balance_proof_event_handler_sets_update_status(
     new_balance_event = ReceiveMonitoringNewBalanceProofEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
-        reward_amount=1,
-        nonce=2,
-        ms_address='C',
+        reward_amount=TokenAmount(1),
+        nonce=Nonce(2),
+        ms_address=Address('C'),
         raiden_node_address=DEFAULT_PARTICIPANT2,
-        block_number=23,
+        block_number=BlockNumber(23),
     )
 
     channel = context.db.get_channel(
@@ -403,11 +405,11 @@ def test_monitor_new_balance_proof_event_handler_sets_update_status(
     new_balance_event2 = ReceiveMonitoringNewBalanceProofEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
-        reward_amount=1,
-        nonce=5,
-        ms_address='D',
+        reward_amount=TokenAmount(1),
+        nonce=Nonce(5),
+        ms_address=Address('D'),
         raiden_node_address=DEFAULT_PARTICIPANT2,
-        block_number=23,
+        block_number=BlockNumber(23),
     )
 
     monitor_new_balance_proof_event_handler(new_balance_event2, context)
@@ -431,11 +433,11 @@ def test_monitor_new_balance_proof_event_handler_idempotency(
     new_balance_event = ReceiveMonitoringNewBalanceProofEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
-        reward_amount=1,
-        nonce=2,
-        ms_address='C',
+        reward_amount=TokenAmount(1),
+        nonce=Nonce(2),
+        ms_address=Address('C'),
         raiden_node_address=DEFAULT_PARTICIPANT2,
-        block_number=23,
+        block_number=BlockNumber(23),
     )
 
     channel = context.db.get_channel(
@@ -480,11 +482,11 @@ def test_action_monitoring_triggered_event_handler_does_not_trigger_monitor_call
     event3 = ReceiveMonitoringNewBalanceProofEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
-        reward_amount=1,
-        nonce=5,
-        ms_address='C',
+        reward_amount=TokenAmount(1),
+        nonce=Nonce(5),
+        ms_address=Address('C'),
         raiden_node_address=DEFAULT_PARTICIPANT2,
-        block_number=23,
+        block_number=BlockNumber(23),
     )
 
     channel = context.db.get_channel(event3.token_network_address, event3.channel_identifier)
@@ -494,7 +496,7 @@ def test_action_monitoring_triggered_event_handler_does_not_trigger_monitor_call
     monitor_new_balance_proof_event_handler(event3, context)
 
     # add MR to DB, with nonce being smaller than in event3
-    context.db.upsert_monitor_request(get_signed_monitor_request(nonce=4))
+    context.db.upsert_monitor_request(get_signed_monitor_request(nonce=Nonce(4)))
 
     event4 = ActionMonitoringTriggeredEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
@@ -525,7 +527,10 @@ def test_action_monitoring_triggered_event_handler_with_sufficient_balance_does_
     """
     context = setup_state_with_closed_channel(context)
 
-    context.db.upsert_monitor_request(get_signed_monitor_request(nonce=6, reward_amount=10))
+    context.db.upsert_monitor_request(get_signed_monitor_request(
+        nonce=Nonce(6),
+        reward_amount=TokenAmount(10)),
+    )
 
     trigger_event = ActionMonitoringTriggeredEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
@@ -557,7 +562,10 @@ def test_action_monitoring_triggered_event_handler_with_insufficient_reward_amou
     """
     context = setup_state_with_closed_channel(context)
 
-    context.db.upsert_monitor_request(get_signed_monitor_request(nonce=6, reward_amount=0))
+    context.db.upsert_monitor_request(get_signed_monitor_request(
+        nonce=Nonce(6),
+        reward_amount=TokenAmount(0)),
+    )
 
     trigger_event = ActionMonitoringTriggeredEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
@@ -591,7 +599,9 @@ def test_action_monitoring_triggered_event_handler_without_sufficient_balance_do
     """
     context = setup_state_with_closed_channel(context)
 
-    context.db.upsert_monitor_request(get_signed_monitor_request(nonce=6, reward_amount=10))
+    context.db.upsert_monitor_request(
+        get_signed_monitor_request(nonce=Nonce(6), reward_amount=TokenAmount(10)),
+    )
 
     trigger_event = ActionMonitoringTriggeredEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
@@ -678,7 +688,9 @@ def test_action_claim_reward_triggered_event_handler_does_trigger_claim_call(  #
     """
     context = setup_state_with_closed_channel(context)
 
-    context.db.upsert_monitor_request(get_signed_monitor_request(nonce=6, reward_amount=10))
+    context.db.upsert_monitor_request(
+        get_signed_monitor_request(nonce=Nonce(6), reward_amount=TokenAmount(10)),
+    )
 
     trigger_event = ActionClaimRewardTriggeredEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
@@ -696,7 +708,7 @@ def test_action_claim_reward_triggered_event_handler_does_trigger_claim_call(  #
     # Set update state
     channel.update_status = OnChainUpdateStatus(
         update_sender_address=context.ms_state.address,
-        nonce=6,
+        nonce=Nonce(6),
     )
     context.db.upsert_channel(channel)
 
@@ -714,7 +726,9 @@ def test_action_claim_reward_triggered_event_handler_without_reward_doesnt_trigg
     """
     context = setup_state_with_closed_channel(context)
 
-    context.db.upsert_monitor_request(get_signed_monitor_request(nonce=6, reward_amount=0))
+    context.db.upsert_monitor_request(
+        get_signed_monitor_request(nonce=Nonce(6), reward_amount=TokenAmount(0)),
+    )
 
     trigger_event = ActionClaimRewardTriggeredEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
@@ -732,7 +746,7 @@ def test_action_claim_reward_triggered_event_handler_without_reward_doesnt_trigg
     # Set update state
     channel.update_status = OnChainUpdateStatus(
         update_sender_address=context.ms_state.address,
-        nonce=6,
+        nonce=Nonce(6),
     )
     context.db.upsert_channel(channel)
 
@@ -750,7 +764,9 @@ def test_action_claim_reward_triggered_event_handler_without_update_state_doesnt
     """
     context = setup_state_with_closed_channel(context)
 
-    context.db.upsert_monitor_request(get_signed_monitor_request(nonce=6, reward_amount=0))
+    context.db.upsert_monitor_request(
+        get_signed_monitor_request(nonce=Nonce(6), reward_amount=TokenAmount(0)),
+    )
 
     trigger_event = ActionClaimRewardTriggeredEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
@@ -767,8 +783,8 @@ def test_action_claim_reward_triggered_event_handler_without_update_state_doesnt
 
     # Set update state
     channel.update_status = OnChainUpdateStatus(
-        update_sender_address='0x' + '1' * 40,
-        nonce=6,
+        update_sender_address=Address('0x' + '1' * 40),
+        nonce=Nonce(6),
     )
     context.db.upsert_channel(channel)
 

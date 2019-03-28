@@ -273,7 +273,7 @@ class MockRaidenNode:
     def get_monitor_request(
         self,
         balance_proof: HashedBalanceProof,
-        reward_amount: int,
+        reward_amount: TokenAmount,
     ) -> MonitorRequest:
         """Get monitor request message for a given balance proof."""
         assert balance_proof.signature

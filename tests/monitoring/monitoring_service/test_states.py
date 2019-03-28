@@ -11,7 +11,7 @@ from monitoring_service.states import (
     UnsignedMonitorRequest,
 )
 from raiden.constants import UINT64_MAX, UINT256_MAX
-from raiden.utils.types import ChannelID
+from raiden.utils.types import BlockNumber, ChannelID, TokenAmount, TransactionHash
 from raiden_contracts.constants import ChannelState
 from raiden_contracts.tests.utils import get_random_address, get_random_privkey
 from raiden_libs.utils import keccak, private_key_to_address
@@ -53,7 +53,7 @@ def get_random_monitor_request(get_random_identifier):
         )
         monitor_request = UnsignedMonitorRequest.from_balance_proof(
             bp,
-            reward_amount=0,
+            reward_amount=TokenAmount(0),
         ).sign(privkey_non_closing)
         return monitor_request, privkey, privkey_non_closing
     return f
@@ -93,15 +93,15 @@ def test_save_and_load_channel(ms_database):
     ]:
         channel = Channel(
             token_network_address=token_network_address,
-            identifier=random.randint(0, UINT256_MAX),
+            identifier=ChannelID(random.randint(0, UINT256_MAX)),
             participant1=get_random_address(),
             participant2=get_random_address(),
             settle_timeout=random.randint(0, UINT256_MAX),
             state=random.choice(list(ChannelState)),
-            closing_block=random.randint(0, UINT256_MAX),
+            closing_block=BlockNumber(random.randint(0, UINT256_MAX)),
             closing_participant=get_random_address(),
-            closing_tx_hash='%d' % random.randint(0, UINT64_MAX),
-            claim_tx_hash='%d' % random.randint(0, UINT64_MAX),
+            closing_tx_hash=TransactionHash('%d' % random.randint(0, UINT64_MAX)),
+            claim_tx_hash=TransactionHash('%d' % random.randint(0, UINT64_MAX)),
             update_status=update_status,
         )
         ms_database.upsert_channel(channel)

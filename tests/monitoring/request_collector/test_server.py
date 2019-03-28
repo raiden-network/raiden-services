@@ -4,6 +4,7 @@ from eth_utils import decode_hex, to_checksum_address
 from raiden.messages import RequestMonitoring, SignedBlindedBalanceProof
 from raiden.tests.utils.messages import make_balance_proof
 from raiden.utils.signer import LocalSigner
+from raiden.utils.typing import TokenAmount
 from raiden_contracts.tests.utils import get_random_privkey
 
 
@@ -19,10 +20,13 @@ def build_request_monitoring():
         )
         request_monitoring = RequestMonitoring(
             onchain_balance_proof=partner_signed_balance_proof,
-            reward_amount=55,
+            reward_amount=TokenAmount(55),
         )
         request_monitoring.sign(non_closing_signer)
-        request_monitoring.non_closing_signer = to_checksum_address(non_closing_signer.address)
+
+        # usually not a property of RequestMonitoring, but added for convenience in these tests
+        request_monitoring.non_closing_signer = to_checksum_address(  # type: ignore
+            non_closing_signer.address)
         return request_monitoring
     return f
 

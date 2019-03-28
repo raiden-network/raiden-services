@@ -10,6 +10,7 @@ from monitoring_service.database import Database
 from monitoring_service.service import MonitoringService
 from raiden_contracts.contract_manager import ContractManager
 from raiden_contracts.tests.utils import get_random_privkey
+from raiden_libs.types import Address
 from raiden_libs.utils import private_key_to_address
 
 log = logging.getLogger(__name__)
@@ -47,9 +48,9 @@ def ms_database():
     return Database(
         filename=':memory:',
         chain_id=1,
-        msc_address='0x' + '2' * 40,
-        registry_address='0x' + '3' * 40,
-        receiver='0x' + '4' * 40,
+        msc_address=Address('0x' + '2' * 40),
+        registry_address=Address('0x' + '3' * 40),
+        receiver=Address('0x' + '4' * 40),
     )
 
 

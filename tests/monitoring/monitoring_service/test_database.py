@@ -1,4 +1,6 @@
 from monitoring_service.events import ActionMonitoringTriggeredEvent, ScheduledEvent
+from raiden.utils.typing import BlockNumber, ChannelID
+from raiden_libs.types import Address, TokenNetworkAddress
 
 
 def test_scheduled_events(ms_database):
@@ -9,11 +11,11 @@ def test_scheduled_events(ms_database):
     )
 
     event1 = ScheduledEvent(
-        trigger_block_number=23,
+        trigger_block_number=BlockNumber(23),
         event=ActionMonitoringTriggeredEvent(
-            token_network_address='a',
-            channel_identifier=1,
-            non_closing_participant='b',
+            token_network_address=TokenNetworkAddress('a'),
+            channel_identifier=ChannelID(1),
+            non_closing_participant=Address('b'),
         ),
     )
 
@@ -22,11 +24,11 @@ def test_scheduled_events(ms_database):
     assert ms_database.scheduled_event_count() == 1
 
     event2 = ScheduledEvent(
-        trigger_block_number=24,
+        trigger_block_number=BlockNumber(24),
         event=ActionMonitoringTriggeredEvent(
-            token_network_address='a',
-            channel_identifier=1,
-            non_closing_participant='b',
+            token_network_address=TokenNetworkAddress('a'),
+            channel_identifier=ChannelID(1),
+            non_closing_participant=Address('b'),
         ),
     )
 
