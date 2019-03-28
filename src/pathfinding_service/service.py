@@ -317,8 +317,8 @@ class PathfindingService(gevent.Greenlet):
             channel_identifier=message.canonical_identifier.channel_identifier,
         )
 
-        assert is_checksum_address(message.updating_participant)
-        assert is_checksum_address(message.other_participant)
+        updating_participant = to_checksum_address(message.updating_participant)
+        other_participant = to_checksum_address(message.other_participant)
 
         # check if chain_id matches
         if message.canonical_identifier.chain_identifier != self.chain_id:
@@ -350,11 +350,11 @@ class PathfindingService(gevent.Greenlet):
 
         # check if participants fit to channel id
         participants = token_network.channel_id_to_addresses[channel_identifier]
-        if message.updating_participant not in participants:
+        if updating_participant not in participants:
             raise InvalidCapacityUpdate(
                 'Sender of Capacity Update does not match the internal channel',
             )
-        if message.other_participant not in participants:
+        if other_participant not in participants:
             raise InvalidCapacityUpdate(
                 'Other Participant of Capacity Update does not match the internal channel',
             )
@@ -362,8 +362,8 @@ class PathfindingService(gevent.Greenlet):
         # check if nonce is higher than current nonce
         view_to_partner, view_from_partner = token_network.get_channel_views_for_partner(
             channel_identifier=channel_identifier,
-            updating_participant=message.updating_participant,
-            other_participant=message.other_participant,
+            updating_participant=updating_participant,
+            other_participant=other_participant,
         )
 
         valid_nonces = (
@@ -375,8 +375,8 @@ class PathfindingService(gevent.Greenlet):
 
         token_network.handle_channel_balance_update_message(
             channel_identifier=message.canonical_identifier.channel_identifier,
-            updating_participant=message.updating_participant,
-            other_participant=message.other_participant,
+            updating_participant=updating_participant,
+            other_participant=other_participant,
             updating_nonce=message.updating_nonce,
             other_nonce=message.other_nonce,
             updating_capacity=message.updating_capacity,
