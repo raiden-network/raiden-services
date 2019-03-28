@@ -82,12 +82,6 @@ def channel_closed_event_handler(event: Event, context: Context) -> None:
         )
         return
 
-    log.info(
-        'Channel closed, triggering monitoring check',
-        token_network_address=event.token_network_address,
-        identifier=channel.identifier,
-    )
-
     # check if the settle timeout is already over
     # this is important when starting up the MS
     settle_period_end_block = event.block_number + channel.settle_timeout
@@ -113,6 +107,13 @@ def channel_closed_event_handler(event: Event, context: Context) -> None:
             token_network_address=channel.token_network_address,
             channel_identifier=channel.identifier,
             non_closing_participant=non_closing_participant,
+        )
+
+        log.info(
+            'Channel closed, triggering monitoring check',
+            token_network_address=event.token_network_address,
+            identifier=channel.identifier,
+            scheduled_event=triggered_event,
         )
 
         # Add scheduled event if it not exists yet
