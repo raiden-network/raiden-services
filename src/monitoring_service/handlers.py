@@ -30,6 +30,7 @@ from monitoring_service.states import (
     MonitorRequest,
     OnChainUpdateStatus,
 )
+from raiden.utils.typing import BlockNumber
 from raiden_contracts.constants import ChannelState
 from raiden_contracts.contract_manager import ContractManager
 
@@ -101,7 +102,7 @@ def channel_closed_event_handler(event: Event, context: Context) -> None:
         client_update_period: int = round(
             channel.settle_timeout * RATIO_OF_SETTLE_TIMEOUT_BEFORE_MONITOR,
         )
-        trigger_block = event.block_number + client_update_period
+        trigger_block = BlockNumber(event.block_number + client_update_period)
 
         triggered_event = ActionMonitoringTriggeredEvent(
             token_network_address=channel.token_network_address,
@@ -309,7 +310,7 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context) -> N
     # it will be checked there that our update was the latest one
     if event.ms_address == context.ms_state.address:
         assert channel.closing_block is not None, 'closing_block not set'
-        trigger_block: int = channel.closing_block + channel.settle_timeout + 5
+        trigger_block = BlockNumber(channel.closing_block + channel.settle_timeout + 5)
 
         # trigger the claim reward action by an event
         e = ActionClaimRewardTriggeredEvent(

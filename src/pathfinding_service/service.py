@@ -17,6 +17,7 @@ from pathfinding_service.utils.blockchain_listener import (
 )
 from raiden.constants import PATH_FINDING_BROADCASTING_ROOM, UINT256_MAX
 from raiden.messages import SignedMessage, UpdatePFS
+from raiden.utils.typing import ChainID
 from raiden_contracts.constants import (
     CONTRACT_TOKEN_NETWORK,
     CONTRACT_TOKEN_NETWORK_REGISTRY,
@@ -76,7 +77,7 @@ class PathfindingService(gevent.Greenlet):
         self.sync_start_block = sync_start_block
         self.required_confirmations = required_confirmations
         self.poll_interval = poll_interval
-        self.chain_id = int(web3.net.version)
+        self.chain_id = ChainID(int(web3.net.version))
         self.private_key = private_key
         self.address = private_key_to_address(private_key)
         self.service_fee = service_fee

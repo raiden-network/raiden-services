@@ -16,13 +16,14 @@ from monitoring_service.constants import (
 from monitoring_service.database import Database
 from monitoring_service.events import Event
 from monitoring_service.handlers import HANDLERS, Context
-from raiden.utils.typing import Address, BlockNumber
+from raiden.utils.typing import BlockNumber
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
     CONTRACT_USER_DEPOSIT,
     GAS_REQUIRED_FOR_MS_MONITOR,
 )
 from raiden_contracts.contract_manager import ContractManager
+from raiden_libs.types import Address
 from raiden_libs.utils import private_key_to_address
 
 log = structlog.get_logger(__name__)
@@ -61,7 +62,7 @@ class MonitoringService:
         monitor_contract_address: Address,
         user_deposit_contract_address: Address,
         db_filename: str,
-        sync_start_block: BlockNumber = 0,
+        sync_start_block: BlockNumber = BlockNumber(0),
         required_confirmations: int = DEFAULT_REQUIRED_CONFIRMATIONS,
         poll_interval: float = 1,
         min_reward: int = 0,

@@ -9,6 +9,7 @@ from monitoring_service.events import (
     UpdatedHeadBlockEvent,
 )
 from monitoring_service.service import MonitoringService
+from raiden.utils.typing import BlockNumber, ChannelID
 
 
 class MockBlockchainListener:
@@ -40,7 +41,7 @@ def test_crash(
     A somewhat meaninful crash handling is simulated by not including the
     UpdatedHeadBlockEvent in every block.
     """
-    channel_identifier = 3
+    channel_identifier = ChannelID(3)
     c1, c2 = generate_raiden_clients(2)
     monitor_request = c2.get_monitor_request(
         balance_proof=c1.get_balance_proof(
@@ -62,7 +63,8 @@ def test_crash(
                 participant1=c1.address,
                 participant2=c2.address,
                 settle_timeout=20,
-                block_number=0),
+                block_number=BlockNumber(0),
+            ),
         ],
         [
             UpdatedHeadBlockEvent(1),

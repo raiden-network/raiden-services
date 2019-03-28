@@ -1,6 +1,6 @@
 import json
 import sys
-from typing import Callable, Iterable, List, Tuple, Union
+from typing import Callable, Dict, Iterable, List, Tuple, Union
 
 import gevent
 import structlog
@@ -27,17 +27,18 @@ from raiden.settings import (
 )
 from raiden.utils.cli import get_matrix_servers
 from raiden.utils.signer import LocalSigner
+from raiden.utils.typing import ChainID
 
 log = structlog.get_logger(__name__)
 
 
-SERVICE_MESSAGES = (UpdatePFS, RequestMonitoring)
-CLASSNAME_TO_CLASS = {klass.__name__: klass for klass in SERVICE_MESSAGES}
+SERVICE_MESSAGES: Tuple = (UpdatePFS, RequestMonitoring)
+CLASSNAME_TO_CLASS: Dict[str, Message] = {klass.__name__: klass for klass in SERVICE_MESSAGES}
 
 
 def message_from_dict(data: dict) -> Message:
     try:
-        klass = CLASSNAME_TO_CLASS[data['type']]
+        klass: Message = CLASSNAME_TO_CLASS[data['type']]
     except KeyError:
         if 'type' in data:
             raise InvalidProtocolMessage(
@@ -55,7 +56,7 @@ class MatrixListener(gevent.Greenlet):
     def __init__(
         self,
         private_key: str,
-        chain_id: int,
+        chain_id: ChainID,
         callback: Callable,
         service_room_suffix: str,
     ) -> None:
@@ -93,8 +94,8 @@ class MatrixListener(gevent.Greenlet):
             # below constants are defined in raiden.app.App.DEFAULT_CONFIG
             return udp_utils.timeout_exponential_backoff(
                 DEFAULT_TRANSPORT_RETRIES_BEFORE_BACKOFF,
-                DEFAULT_TRANSPORT_MATRIX_RETRY_INTERVAL / 5,
-                DEFAULT_TRANSPORT_MATRIX_RETRY_INTERVAL,
+                int(DEFAULT_TRANSPORT_MATRIX_RETRY_INTERVAL / 5),
+                int(DEFAULT_TRANSPORT_MATRIX_RETRY_INTERVAL),
             )
 
         client = make_client(

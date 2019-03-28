@@ -13,8 +13,9 @@ from monitoring_service.states import HashedBalanceProof, MonitorRequest, Unsign
 from raiden.constants import UINT256_MAX
 from raiden.messages import RequestMonitoring, SignedBlindedBalanceProof
 from raiden.utils.signer import LocalSigner
+from raiden.utils.types import ChannelID, T_ChannelID, TokenAmount
 from raiden_contracts.constants import MessageTypeId
-from raiden_libs.types import Address, ChannelIdentifier, T_ChannelIdentifier
+from raiden_libs.types import Address
 from raiden_libs.utils import private_key_to_address
 
 log = logging.getLogger(__name__)
@@ -78,7 +79,7 @@ class MockRaidenNode:
         self.address = private_key_to_address(privkey)
         self.contract = token_network_contract
         self.token_contract = token_contract
-        self.partner_to_channel_id: Dict[Address, ChannelIdentifier] = dict()
+        self.partner_to_channel_id: Dict[Address, ChannelID] = dict()
         self.token_network_abi = None
         self.client_registry: Dict[Address, 'MockRaidenNode'] = dict()
         self.web3 = self.contract.web3
@@ -86,7 +87,7 @@ class MockRaidenNode:
         self.chain_id = chain_id
 
     @sync_channels
-    def open_channel(self, partner_address: Address) -> ChannelIdentifier:
+    def open_channel(self, partner_address: Address) -> ChannelID:
         """Opens channel with a single partner
         Parameters:
             partner_address - a valid ethereum address of the partner
@@ -114,17 +115,17 @@ class MockRaidenNode:
         )
 
         channel_id = event['args']['channel_identifier']
-        assert isinstance(channel_id, T_ChannelIdentifier)
+        assert isinstance(channel_id, T_ChannelID)
         assert channel_id > 0 and channel_id <= UINT256_MAX
         assert (is_same_address(event['args']['participant1'], self.address) or
                 is_same_address(event['args']['participant2'], self.address))
         assert (is_same_address(event['args']['participant1'], partner_address) or
                 is_same_address(event['args']['participant2'], partner_address))
 
-        self.partner_to_channel_id[partner_address] = ChannelIdentifier(channel_id)
+        self.partner_to_channel_id[partner_address] = ChannelID(channel_id)
         self.client_registry[partner_address].open_channel(self.address)
 
-        return ChannelIdentifier(channel_id)
+        return ChannelID(channel_id)
 
     # TODO: maybe change this to a single function that orders the pair
     #   so this node address is first and partner address second
@@ -290,7 +291,7 @@ class MockRaidenNode:
     def get_request_monitoring(
         self,
         balance_proof: HashedBalanceProof,
-        reward_amount: int,
+        reward_amount: TokenAmount,
     ) -> RequestMonitoring:
         """Get RequestMonitoring (as sent by the client) message for a given balance proof."""
         assert balance_proof.signature
@@ -352,7 +353,7 @@ class MockRaidenNode:
 
     def get_channel_participant_info(
         self,
-        channel_identifier: ChannelIdentifier,
+        channel_identifier: ChannelID,
         participant_address: Address,
         partner_address: Address,
     ):

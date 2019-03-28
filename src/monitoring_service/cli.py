@@ -12,6 +12,7 @@ from web3.middleware import geth_poa_middleware
 
 from monitoring_service.constants import DEFAULT_REQUIRED_CONFIRMATIONS
 from monitoring_service.service import MonitoringService
+from raiden.utils.typing import BlockNumber, ChainID
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
     CONTRACT_TOKEN_NETWORK_REGISTRY,
@@ -106,7 +107,7 @@ def main(
     registry_address: Address,
     monitor_contract_address: Address,
     user_deposit_contract_address: Address,
-    start_block: int,
+    start_block: BlockNumber,
     confirmations: int,
     log_level: str,
     state_db: str,
@@ -135,7 +136,7 @@ def main(
 
     contract_manager = ContractManager(contracts_precompiled_path())
     contract_infos = get_contract_addresses_and_start_block(
-        chain_id=int(web3.net.version),
+        chain_id=ChainID(int(web3.net.version)),
         contracts_version=None,
         token_network_registry_address=registry_address,
         monitor_contract_address=monitor_contract_address,

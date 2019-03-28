@@ -11,8 +11,9 @@ from web3.contract import Contract
 
 from pathfinding_service import PathfindingService
 from pathfinding_service.model.token_network import TokenNetwork
+from raiden.utils.types import ChannelID
 from raiden_contracts.contract_manager import ContractManager
-from raiden_libs.types import Address, ChannelIdentifier
+from raiden_libs.types import Address
 from raiden_libs.utils import private_key_to_address
 
 
@@ -151,7 +152,7 @@ def populate_token_network_random(
     random.seed(NUMBER_OF_CHANNELS)
 
     for channel_id_int in range(NUMBER_OF_CHANNELS):
-        channel_id = ChannelIdentifier(channel_id_int)
+        channel_id = ChannelID(channel_id_int)
 
         private_key1, private_key2 = random.sample(private_keys, 2)
         address1 = Address(private_key_to_address(private_key1))
@@ -222,25 +223,25 @@ def populate_token_network() -> Callable:
             settle_timeout,
         ) in enumerate(channel_descriptions):
             token_network.handle_channel_opened_event(
-                ChannelIdentifier(channel_id),
+                ChannelID(channel_id),
                 addresses[p1_index],
                 addresses[p2_index],
                 settle_timeout=settle_timeout,
             )
 
             token_network.handle_channel_new_deposit_event(
-                ChannelIdentifier(channel_id),
+                ChannelID(channel_id),
                 addresses[p1_index],
                 p1_deposit,
             )
             token_network.handle_channel_new_deposit_event(
-                ChannelIdentifier(channel_id),
+                ChannelID(channel_id),
                 addresses[p2_index],
                 p2_deposit,
             )
 
             token_network.handle_channel_balance_update_message(
-                channel_identifier=ChannelIdentifier(channel_id),
+                channel_identifier=ChannelID(channel_id),
                 updating_participant=addresses[p1_index],
                 other_participant=addresses[p2_index],
                 updating_nonce=1,
@@ -250,7 +251,7 @@ def populate_token_network() -> Callable:
                 reveal_timeout=p1_reveal_timeout,
             )
             token_network.handle_channel_balance_update_message(
-                channel_identifier=ChannelIdentifier(channel_id),
+                channel_identifier=ChannelID(channel_id),
                 updating_participant=addresses[p2_index],
                 other_participant=addresses[p1_index],
                 updating_nonce=2,

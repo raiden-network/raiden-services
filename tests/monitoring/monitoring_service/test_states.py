@@ -11,9 +11,9 @@ from monitoring_service.states import (
     UnsignedMonitorRequest,
 )
 from raiden.constants import UINT64_MAX, UINT256_MAX
+from raiden.utils.types import ChannelID
 from raiden_contracts.constants import ChannelState
 from raiden_contracts.tests.utils import get_random_address, get_random_privkey
-from raiden_libs.types import ChannelIdentifier
 from raiden_libs.utils import keccak, private_key_to_address
 
 
@@ -21,7 +21,7 @@ from raiden_libs.utils import keccak, private_key_to_address
 def get_random_identifier() -> Callable:
     """Returns a function returning a random valid ethereum address"""
     def f():
-        return ChannelIdentifier(random.randint(0, UINT256_MAX))
+        return ChannelID(random.randint(0, UINT256_MAX))
     return f
 
 

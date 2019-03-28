@@ -2,13 +2,14 @@ from typing import Any, Dict, Optional
 
 import structlog
 
-from raiden.utils.typing import Address, BlockNumber, ChainID
+from raiden.utils.typing import BlockNumber, ChainID
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
     CONTRACT_TOKEN_NETWORK_REGISTRY,
     CONTRACT_USER_DEPOSIT,
 )
 from raiden_contracts.contract_manager import get_contracts_deployment_info
+from raiden_libs.types import Address
 
 log = structlog.get_logger(__name__)
 START_BLOCK_ID = 'block'
@@ -58,7 +59,7 @@ def get_contract_addresses_and_start_block(
     token_network_registry_address: Address = None,
     monitor_contract_address: Address = None,
     user_deposit_contract_address: Address = None,
-    start_block: BlockNumber = 0,
+    start_block: BlockNumber = BlockNumber(0),
 ) -> Optional[Dict[str, Any]]:
     """ Returns contract addresses and start query block for a given chain and contracts version.
 

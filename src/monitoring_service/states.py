@@ -9,7 +9,6 @@ from raiden.utils.signer import LocalSigner, recover
 from raiden.utils.signing import pack_data
 from raiden.utils.typing import (
     AdditionalHash,
-    Address,
     BalanceHash,
     BlockNumber,
     ChainID,
@@ -17,11 +16,11 @@ from raiden.utils.typing import (
     Nonce,
     Signature,
     TokenAmount,
-    TokenNetworkAddress,
     TransactionHash,
 )
 from raiden_contracts.constants import ChannelState, MessageTypeId
 from raiden_libs.messages.json_schema import MONITOR_REQUEST_SCHEMA
+from raiden_libs.types import Address, TokenNetworkAddress
 
 
 @dataclass

@@ -23,8 +23,7 @@ from raiden.utils.typing import (
     TokenAmount,
     TokenNetworkAddress,
 )
-from raiden_libs.types import Address, ChannelIdentifier
-
+from raiden_libs.types import Address
 
 DEFAULT_TOKEN_NETWORK_ADDRESS = Address('0x6e46B62a245D9EE7758B8DdCCDD1B85fF56B9Bc9')
 DEFAULT_TOKEN_NETWORK_ADDRESS_BYTES = TokenNetworkAddress(
@@ -119,14 +118,14 @@ def test_pfs_rejects_capacity_update_with_wrong_channel_identifier(
         token_network.address] = token_network
 
     token_network.handle_channel_opened_event(
-        channel_identifier=ChannelIdentifier(0),
+        channel_identifier=ChannelID(0),
         participant1=addresses[0],
         participant2=addresses[1],
         settle_timeout=15,
     )
 
     # Check that the new channel has id == 0
-    assert token_network.channel_id_to_addresses[ChannelIdentifier(0)] == (
+    assert token_network.channel_id_to_addresses[ChannelID(0)] == (
         addresses[0],
         addresses[1],
     )
@@ -157,26 +156,26 @@ def test_pfs_rejects_capacity_update_with_impossible_updating_capacity(
         token_network.address] = token_network
 
     token_network.handle_channel_opened_event(
-        channel_identifier=ChannelIdentifier(0),
+        channel_identifier=ChannelID(0),
         participant1=addresses[0],
         participant2=addresses[1],
         settle_timeout=15,
     )
 
     token_network.handle_channel_new_deposit_event(
-        channel_identifier=ChannelIdentifier(0),
+        channel_identifier=ChannelID(0),
         receiver=addresses[0],
         total_deposit=100,
     )
 
     token_network.handle_channel_new_deposit_event(
-        channel_identifier=ChannelIdentifier(0),
+        channel_identifier=ChannelID(0),
         receiver=addresses[1],
         total_deposit=100,
     )
 
     # Check that the new channel has id == 0
-    assert token_network.channel_id_to_addresses[ChannelIdentifier(0)] == (
+    assert token_network.channel_id_to_addresses[ChannelID(0)] == (
         addresses[0],
         addresses[1],
     )
@@ -207,26 +206,26 @@ def test_pfs_rejects_capacity_update_with_impossible_other_capacity(
         token_network.address] = token_network
 
     token_network.handle_channel_opened_event(
-        channel_identifier=ChannelIdentifier(0),
+        channel_identifier=ChannelID(0),
         participant1=addresses[0],
         participant2=addresses[1],
         settle_timeout=15,
     )
 
     token_network.handle_channel_new_deposit_event(
-        channel_identifier=ChannelIdentifier(0),
+        channel_identifier=ChannelID(0),
         receiver=addresses[0],
         total_deposit=100,
     )
 
     token_network.handle_channel_new_deposit_event(
-        channel_identifier=ChannelIdentifier(0),
+        channel_identifier=ChannelID(0),
         receiver=addresses[1],
         total_deposit=100,
     )
 
     # Check that the new channel has id == 0
-    assert token_network.channel_id_to_addresses[ChannelIdentifier(0)] == (
+    assert token_network.channel_id_to_addresses[ChannelID(0)] == (
         addresses[0],
         addresses[1],
     )
@@ -257,26 +256,26 @@ def test_pfs_rejects_capacity_update_with_wrong_updating_participant(
         token_network.address] = token_network
 
     token_network.handle_channel_opened_event(
-        channel_identifier=ChannelIdentifier(0),
+        channel_identifier=ChannelID(0),
         participant1=addresses[0],
         participant2=addresses[1],
         settle_timeout=15,
     )
 
     token_network.handle_channel_new_deposit_event(
-        channel_identifier=ChannelIdentifier(0),
+        channel_identifier=ChannelID(0),
         receiver=addresses[0],
         total_deposit=100,
     )
 
     token_network.handle_channel_new_deposit_event(
-        channel_identifier=ChannelIdentifier(0),
+        channel_identifier=ChannelID(0),
         receiver=addresses[1],
         total_deposit=100,
     )
 
     # Check that the new channel has id == 0
-    assert token_network.channel_id_to_addresses[ChannelIdentifier(0)] == (
+    assert token_network.channel_id_to_addresses[ChannelID(0)] == (
         addresses[0],
         addresses[1],
     )
@@ -306,26 +305,26 @@ def test_pfs_rejects_capacity_update_with_wrong_other_participant(
         token_network.address] = token_network
 
     token_network.handle_channel_opened_event(
-        channel_identifier=ChannelIdentifier(0),
+        channel_identifier=ChannelID(0),
         participant1=addresses[0],
         participant2=addresses[1],
         settle_timeout=15,
     )
 
     token_network.handle_channel_new_deposit_event(
-        channel_identifier=ChannelIdentifier(0),
+        channel_identifier=ChannelID(0),
         receiver=addresses[0],
         total_deposit=100,
     )
 
     token_network.handle_channel_new_deposit_event(
-        channel_identifier=ChannelIdentifier(0),
+        channel_identifier=ChannelID(0),
         receiver=addresses[1],
         total_deposit=100,
     )
 
     # Check that the new channel has id == 0
-    assert token_network.channel_id_to_addresses[ChannelIdentifier(0)] == (
+    assert token_network.channel_id_to_addresses[ChannelID(0)] == (
         addresses[0],
         addresses[1],
     )
@@ -355,26 +354,26 @@ def test_pfs_rejects_capacity_update_with_wrong_nonces(
         token_network.address] = token_network
 
     token_network.handle_channel_opened_event(
-        channel_identifier=ChannelIdentifier(0),
+        channel_identifier=ChannelID(0),
         participant1=addresses[0],
         participant2=addresses[1],
         settle_timeout=15,
     )
 
     token_network.handle_channel_new_deposit_event(
-        channel_identifier=ChannelIdentifier(0),
+        channel_identifier=ChannelID(0),
         receiver=addresses[0],
         total_deposit=100,
     )
 
     token_network.handle_channel_new_deposit_event(
-        channel_identifier=ChannelIdentifier(0),
+        channel_identifier=ChannelID(0),
         receiver=addresses[1],
         total_deposit=100,
     )
 
     # Check that the new channel has id == 0
-    assert token_network.channel_id_to_addresses[ChannelIdentifier(0)] == (
+    assert token_network.channel_id_to_addresses[ChannelID(0)] == (
         addresses[0],
         addresses[1],
     )
@@ -387,7 +386,7 @@ def test_pfs_rejects_capacity_update_with_wrong_nonces(
     # Check first capacity update succeeded
     pathfinding_service_mocked_listeners.on_pfs_update(message)
     view_to_partner, view_from_partner = token_network.get_channel_views_for_partner(
-        channel_identifier=ChannelIdentifier(0),
+        channel_identifier=ChannelID(0),
         updating_participant=addresses[0],
         other_participant=addresses[1],
     )

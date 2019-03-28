@@ -3,7 +3,8 @@ from enum import Enum
 from eth_utils import is_checksum_address
 
 from pathfinding_service.config import DEFAULT_PERCENTAGE_FEE, DEFAULT_REVEAL_TIMEOUT
-from raiden_libs.types import Address, ChannelIdentifier
+from raiden.utils.types import ChannelID
+from raiden_libs.types import Address
 
 
 class ChannelView:
@@ -17,7 +18,7 @@ class ChannelView:
 
     def __init__(
         self,
-        channel_id: ChannelIdentifier,
+        channel_id: ChannelID,
         participant1: Address,
         participant2: Address,
         settle_timeout: int,
