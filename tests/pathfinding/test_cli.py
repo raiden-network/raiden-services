@@ -37,6 +37,7 @@ def test_bad_eth_client(log, default_cli_args):
         result = runner.invoke(
             main,
             default_cli_args + ['--eth-rpc', 'http://localhost:12345'],
+            catch_exceptions=False,
         )
     assert result.exit_code == 1
     assert log.has(
@@ -82,7 +83,10 @@ def test_registry_address(default_cli_args):
 
     # check validation of address format
     def fails_on_registry_check(address):
-        result = runner.invoke(main, ['--registry-address', address], catch_exceptions=False)
+        result = runner.invoke(
+            main,
+            default_cli_args + ['--registry-address', address],
+            catch_exceptions=False)
         assert result.exit_code != 0
         assert 'EIP-55' in result.output
 
