@@ -1,9 +1,7 @@
 import sys
-from typing import Any, Optional
 
 import click
 import structlog
-from eth_utils import is_checksum_address
 from web3 import HTTPProvider, Web3
 from web3.middleware import geth_poa_middleware
 
@@ -16,58 +14,26 @@ from raiden_contracts.constants import (
     CONTRACT_USER_DEPOSIT,
 )
 from raiden_contracts.contract_manager import ContractManager, contracts_precompiled_path
-from raiden_libs.cli import common_options
+from raiden_libs.cli import blockchain_options, common_options, validate_address
 from raiden_libs.contract_info import START_BLOCK_ID, get_contract_addresses_and_start_block
 from raiden_libs.types import Address
 
 log = structlog.get_logger(__name__)
 
 
-def validate_address(_ctx: Any, _param: Any, value: Optional[str]) -> Optional[str]:
-    if value is None:
-        # None as default value allowed
-        return None
-    if not is_checksum_address(value):
-        raise click.BadParameter('not an EIP-55 checksummed address')
-    return value
+CONTEXT_SETTINGS = dict(
+    default_map={'main': {
+        'confirmations': DEFAULT_REQUIRED_CONFIRMATIONS,
+    }},
+)
 
 
-@click.command()
-@click.option(
-    '--eth-rpc',
-    default='http://parity.ropsten.ethnodes.brainbot.com:8545',
-    type=str,
-    help='Ethereum node RPC URI.',
-)
-@click.option(
-    '--registry-address',
-    type=str,
-    help='Address of the token network registry',
-    callback=validate_address,
-)
+@click.command(context_settings=CONTEXT_SETTINGS)
 @click.option(
     '--monitor-contract-address',
     type=str,
     help='Address of the token monitor contract',
     callback=validate_address,
-)
-@click.option(
-    '--user-deposit-contract-address',
-    type=str,
-    help='Address of the token monitor contract',
-    callback=validate_address,
-)
-@click.option(
-    '--start-block',
-    default=0,
-    type=click.IntRange(min=0),
-    help='Block to start syncing at',
-)
-@click.option(
-    '--confirmations',
-    default=DEFAULT_REQUIRED_CONFIRMATIONS,
-    type=click.IntRange(min=0),
-    help='Number of block confirmations to wait for',
 )
 @click.option(
     '--min-reward',
@@ -76,15 +42,16 @@ def validate_address(_ctx: Any, _param: Any, value: Optional[str]) -> Optional[s
     help='Minimum reward which is required before processing requests',
 )
 @common_options('raiden-monitoring-service')
+@blockchain_options
 def main(
     private_key: str,
     state_db: str,
     eth_rpc: str,
     registry_address: Address,
-    monitor_contract_address: Address,
     user_deposit_contract_address: Address,
     start_block: BlockNumber,
     confirmations: int,
+    monitor_contract_address: Address,
     min_reward: int,
 ) -> None:
     provider = HTTPProvider(eth_rpc)
