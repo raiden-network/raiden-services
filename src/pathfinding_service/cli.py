@@ -8,7 +8,6 @@ import sys
 
 import click
 import structlog
-from eth_utils import is_checksum_address
 from requests.exceptions import ConnectionError
 from web3 import HTTPProvider, Web3
 from web3.middleware import geth_poa_middleware
@@ -20,56 +19,15 @@ from pathfinding_service.middleware import http_retry_with_backoff_middleware
 from raiden.utils.typing import BlockNumber, ChainID
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
 from raiden_contracts.contract_manager import ContractManager, contracts_precompiled_path
-from raiden_libs.cli import common_options
+from raiden_libs.cli import blockchain_options, common_options
 from raiden_libs.contract_info import START_BLOCK_ID, get_contract_addresses_and_start_block
 from raiden_libs.types import Address
 
 log = structlog.get_logger(__name__)
 contract_manager = ContractManager(contracts_precompiled_path())
 
-DEFAULT_REQUIRED_CONFIRMATIONS = 8  # ~2min with 15s blocks
-
-
-def validate_address(ctx, param, value):
-    if value is None:
-        # None as default value allowed
-        return None
-    if not is_checksum_address(value):
-        raise click.BadParameter('not an EIP-55 checksummed address')
-    return value
-
 
 @click.command()
-@click.option(
-    '--eth-rpc',
-    default='http://localhost:8545',
-    type=str,
-    help='Ethereum node RPC URI',
-)
-@click.option(
-    '--registry-address',
-    type=str,
-    help='Address of the token network registry',
-    callback=validate_address,
-)
-@click.option(
-    '--user-deposit-contract-address',
-    type=str,
-    help='Address of the token monitor contract',
-    callback=validate_address,
-)
-@click.option(
-    '--start-block',
-    default=0,
-    type=click.IntRange(min=0),
-    help='Block to start syncing at',
-)
-@click.option(
-    '--confirmations',
-    default=DEFAULT_REQUIRED_CONFIRMATIONS,
-    type=click.IntRange(min=0),
-    help='Number of block confirmations to wait for',
-)
 @click.option(
     '--host',
     default=DEFAULT_API_HOST,
@@ -83,6 +41,7 @@ def validate_address(ctx, param, value):
     help='Service fee which is required before processing requests',
 )
 @common_options('raiden-pathfinding-service')
+@blockchain_options
 def main(
     private_key: str,
     state_db: str,

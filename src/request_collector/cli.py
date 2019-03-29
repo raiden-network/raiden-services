@@ -3,22 +3,12 @@ monkey.patch_all()  # isort:skip # noqa
 
 import click
 import structlog
-from eth_utils import is_checksum_address
 from request_collector.server import RequestCollector
 
 from monitoring_service.database import SharedDatabase
 from raiden_libs.cli import common_options
 
 log = structlog.get_logger(__name__)
-
-
-def validate_address(ctx, param, value):
-    if value is None:
-        # None as default value allowed
-        return None
-    if not is_checksum_address(value):
-        raise click.BadParameter('not an EIP-55 checksummed address')
-    return value
 
 
 @click.command()
