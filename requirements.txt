@@ -1,12 +1,12 @@
 #git+https://github.com/raiden-network/raiden-contracts.git
 git+https://github.com/raiden-network/raiden.git@928dc306c75b2036b13a3af0c2b2fa8bf15f18a1
 
-raiden-contracts==0.16.0
+raiden-contracts==0.17.0
 
 structlog==18.2.0
 colorama==0.3.9
 
-click==6.7
+click>=7.0
 coincurve==11.0.0
 
 web3==4.7.1

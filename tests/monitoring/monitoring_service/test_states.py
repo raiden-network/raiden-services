@@ -11,9 +11,10 @@ from monitoring_service.states import (
     UnsignedMonitorRequest,
 )
 from raiden.constants import UINT64_MAX, UINT256_MAX
-from raiden.utils.types import BlockNumber, ChannelID, TokenAmount, TransactionHash
+from raiden.utils.typing import BlockNumber, ChannelID, TokenAmount
 from raiden_contracts.constants import ChannelState
 from raiden_contracts.tests.utils import get_random_address, get_random_privkey
+from raiden_libs.types import TransactionHash
 from raiden_libs.utils import keccak, private_key_to_address
 
 

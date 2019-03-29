@@ -13,7 +13,7 @@ from monitoring_service.states import HashedBalanceProof, MonitorRequest, Unsign
 from raiden.constants import UINT256_MAX
 from raiden.messages import RequestMonitoring, SignedBlindedBalanceProof
 from raiden.utils.signer import LocalSigner
-from raiden.utils.types import ChannelID, T_ChannelID, TokenAmount
+from raiden.utils.typing import ChannelID, T_ChannelID, TokenAmount
 from raiden_contracts.constants import MessageTypeId
 from raiden_libs.types import Address
 from raiden_libs.utils import private_key_to_address

@@ -11,7 +11,7 @@ from web3.contract import Contract
 
 from pathfinding_service import PathfindingService
 from pathfinding_service.model.token_network import TokenNetwork
-from raiden.utils.types import ChannelID
+from raiden.utils.typing import ChannelID
 from raiden_contracts.contract_manager import ContractManager
 from raiden_libs.types import Address
 from raiden_libs.utils import private_key_to_address

@@ -11,7 +11,7 @@ from pathfinding_service.config import (
     MAX_PATHS_PER_REQUEST,
 )
 from pathfinding_service.model import ChannelView
-from raiden.utils.types import ChannelID
+from raiden.utils.typing import ChannelID
 from raiden_libs.types import Address
 
 log = structlog.get_logger(__name__)

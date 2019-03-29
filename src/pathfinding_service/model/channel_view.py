@@ -3,7 +3,7 @@ from enum import Enum
 from eth_utils import is_checksum_address
 
 from pathfinding_service.config import DEFAULT_PERCENTAGE_FEE, DEFAULT_REVEAL_TIMEOUT
-from raiden.utils.types import ChannelID
+from raiden.utils.typing import ChannelID
 from raiden_libs.types import Address
 
 
