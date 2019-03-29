@@ -4,7 +4,7 @@ from coincurve import PrivateKey, PublicKey
 from eth_utils import keccak, to_bytes, to_checksum_address
 
 from raiden.constants import UINT256_MAX
-from raiden.utils.types import ChannelID, T_ChannelID
+from raiden.utils.typing import ChannelID, T_ChannelID
 from raiden_libs.types import Address
 
 

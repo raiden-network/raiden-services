@@ -8,7 +8,7 @@ from networkx import NetworkXNoPath
 
 from pathfinding_service.config import DEFAULT_PERCENTAGE_FEE
 from pathfinding_service.model import ChannelView, TokenNetwork
-from raiden.utils.types import ChannelID
+from raiden.utils.typing import ChannelID
 from raiden_libs.types import Address
 
 

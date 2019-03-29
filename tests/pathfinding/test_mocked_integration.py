@@ -10,7 +10,7 @@ from eth_utils import decode_hex
 
 from pathfinding_service import PathfindingService
 from pathfinding_service.model import TokenNetwork
-from raiden.utils.types import ChannelID
+from raiden.utils.typing import ChannelID
 from raiden_libs.types import Address
 
 

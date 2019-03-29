@@ -16,11 +16,10 @@ from raiden.utils.typing import (
     Nonce,
     Signature,
     TokenAmount,
-    TransactionHash,
 )
 from raiden_contracts.constants import ChannelState, MessageTypeId
 from raiden_libs.messages.json_schema import MONITOR_REQUEST_SCHEMA
-from raiden_libs.types import Address, TokenNetworkAddress
+from raiden_libs.types import Address, TokenNetworkAddress, TransactionHash
 
 
 @dataclass
