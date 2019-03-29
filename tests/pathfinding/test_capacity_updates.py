@@ -7,7 +7,7 @@ The Capacity Updates show different correct and incorrect values to test all edg
 from typing import List
 
 import pytest
-from eth_utils import decode_hex, to_checksum_address
+from eth_utils import decode_hex
 
 from pathfinding_service import PathfindingService
 from pathfinding_service.exceptions import InvalidCapacityUpdate
@@ -51,8 +51,8 @@ def get_updatepfs_message(
             channel_identifier=channel_identifier,
             token_network_address=token_network_address,
         ),
-        updating_participant=to_checksum_address(updating_participant),
-        other_participant=to_checksum_address(other_participant),
+        updating_participant=decode_hex(updating_participant),
+        other_participant=decode_hex(other_participant),
         updating_nonce=updating_nonce,
         other_nonce=other_nonce,
         updating_capacity=updating_capacity,
