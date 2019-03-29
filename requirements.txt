@@ -1,5 +1,5 @@
 #git+https://github.com/raiden-network/raiden-contracts.git
-git+https://github.com/raiden-network/raiden.git@928dc306c75b2036b13a3af0c2b2fa8bf15f18a1
+git+https://github.com/raiden-network/raiden.git@ffbfcee9405a95e6a64d2282dc174d4b020d68f5
 
 raiden-contracts==0.17.0
 

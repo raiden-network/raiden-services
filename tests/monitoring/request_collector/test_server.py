@@ -26,7 +26,8 @@ def build_request_monitoring():
 
         # usually not a property of RequestMonitoring, but added for convenience in these tests
         request_monitoring.non_closing_signer = to_checksum_address(  # type: ignore
-            non_closing_signer.address)
+            non_closing_signer.address,
+        )
         return request_monitoring
     return f
 
