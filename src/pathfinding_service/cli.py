@@ -4,13 +4,10 @@ from gevent import monkey, config  # isort:skip # noqa
 config.resolver = ['dnspython', 'ares', 'block'] # noqa
 monkey.patch_all()  # isort:skip # noqa
 
-import json
-import os
 import sys
 
 import click
 import structlog
-from eth_account import Account
 from eth_utils import is_checksum_address
 from requests.exceptions import ConnectionError
 from web3 import HTTPProvider, Web3
@@ -23,8 +20,8 @@ from pathfinding_service.middleware import http_retry_with_backoff_middleware
 from raiden.utils.typing import BlockNumber, ChainID
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
 from raiden_contracts.contract_manager import ContractManager, contracts_precompiled_path
+from raiden_libs.cli import common_options
 from raiden_libs.contract_info import START_BLOCK_ID, get_contract_addresses_and_start_block
-from raiden_libs.logging import setup_logging
 from raiden_libs.types import Address
 
 log = structlog.get_logger(__name__)
@@ -43,16 +40,6 @@ def validate_address(ctx, param, value):
 
 
 @click.command()
-@click.option(
-    '--keystore-file',
-    required=True,
-    type=click.Path(exists=True, dir_okay=False, readable=True),
-    help='Path to a keystore file.',
-)
-@click.password_option(
-    '--password',
-    help='Password to unlock the keystore file.',
-)
 @click.option(
     '--eth-rpc',
     default='http://localhost:8545',
@@ -90,34 +77,21 @@ def validate_address(ctx, param, value):
     help='The host to use for serving the REST API',
 )
 @click.option(
-    '--log-level',
-    default='INFO',
-    type=click.Choice(['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG']),
-    help='Print log messages of this level and more important ones',
-)
-@click.option(
-    '--state-db',
-    default=os.path.join(click.get_app_dir('raiden-pathfinding-service'), 'state.db'),
-    type=str,
-    help='Path to SQLite3 db which stores the application state',
-)
-@click.option(
     '--service-fee',
     default=0,
     type=click.IntRange(min=0),
     help='Service fee which is required before processing requests',
 )
+@common_options('raiden-pathfinding-service')
 def main(
-    keystore_file: str,
-    password: str,
+    private_key: str,
+    state_db: str,
     eth_rpc: str,
     registry_address: Address,
     user_deposit_contract_address: Address,
     start_block: BlockNumber,
     confirmations: int,
     host: str,
-    log_level: str,
-    state_db: str,
     service_fee: int,
 ):
     """Console script for pathfinding_service.
@@ -127,25 +101,11 @@ def main(
     https://docs.python.org/3.7/library/logging.config.html#logging-config-dictschema
     for a detailed description of the format.
     """
-    setup_logging(log_level)
-
     log.info("Starting Raiden Pathfinding Service")
 
     contracts_version = '0.10.1'
     log.info(f'Using contracts version: {contracts_version}')
 
-    with open(keystore_file, 'r') as keystore:
-        try:
-            private_key = Account.decrypt(
-                keyfile_json=json.load(keystore),
-                password=password,
-            ).hex()
-        except ValueError as error:
-            log.critical(
-                'Could not decode keyfile with given password. Please try again.',
-                reason=str(error),
-            )
-            sys.exit(1)
     try:
         log.info(f'Starting Web3 client for node at {eth_rpc}')
         provider = HTTPProvider(eth_rpc)
