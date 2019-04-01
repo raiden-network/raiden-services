@@ -46,7 +46,7 @@ def main(
     confirmations: int,
     host: str,
     service_fee: int,
-):
+) -> int:
     """Console script for pathfinding_service.
 
     Logging can be quickly set by specifying a global log level or in a

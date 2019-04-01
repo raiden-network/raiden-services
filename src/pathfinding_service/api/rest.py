@@ -6,7 +6,7 @@ import pkg_resources
 import structlog
 from dataclasses import dataclass, field
 from eth_utils import is_address, is_checksum_address, is_same_address
-from flask import Flask, request
+from flask import Flask, Response, request
 from flask_restful import Api, Resource, reqparse
 from gevent.pywsgi import WSGIServer
 from marshmallow_dataclass import add_schema
@@ -36,7 +36,7 @@ log = structlog.get_logger(__name__)
 
 class ApiWithErrorHandler(Api):
 
-    def handle_error(self, e):
+    def handle_error(self, e: exceptions.ApiException) -> Response:
         return self.make_response({
             'errors': e.msg,
             'error_code': e.error_code,
@@ -75,7 +75,7 @@ class PathfinderResource(Resource):
 
 class PathsResource(PathfinderResource):
     @staticmethod
-    def _validate_args(args):
+    def _validate_args(args: dict) -> Optional[Tuple[dict, int]]:
         required_args = ['from', 'to', 'value', 'max_paths']
         if not all(args[arg] is not None for arg in required_args):
             return {'errors': 'Required parameters: {}'.format(required_args)}, 400
@@ -92,15 +92,17 @@ class PathsResource(PathfinderResource):
         if not is_checksum_address(args['to']):
             return {'errors': address_error.format('Target', args['to'])}, 400
 
-        if args.value < 0:
-            return {'errors': 'Payment value must be non-negative: {}'.format(args.value)}, 400
+        if args['value'] < 0:
+            return {'errors': 'Payment value must be non-negative: {}'.format(args['value'])}, 400
 
-        if args.max_paths <= 0:
-            return {'errors': 'Number of paths must be positive: {}'.format(args.max_paths)}, 400
+        if args['max_paths'] <= 0:
+            return {
+                'errors': 'Number of paths must be positive: {}'.format(args['max_paths']),
+            }, 400
 
         return None
 
-    def post(self, token_network_address: str):
+    def post(self, token_network_address: str) -> Tuple[dict, int]:
         token_network_error = self._validate_token_network_argument(token_network_address)
         if token_network_error is not None:
             return token_network_error
@@ -147,7 +149,7 @@ class PathsResource(PathfinderResource):
         return {'result': paths}, 200
 
 
-def process_payment(iou_dict: dict, pathfinding_service: PathfindingService):
+def process_payment(iou_dict: dict, pathfinding_service: PathfindingService) -> None:
     if pathfinding_service.service_fee == 0:
         return
     if iou_dict is None:
@@ -213,7 +215,7 @@ class IOURequest:
     signature: Signature = field(metadata={"marshmallow_field": HexedBytes()})
     Schema: ClassVar[Type[marshmallow.Schema]]
 
-    def is_signature_valid(self):
+    def is_signature_valid(self) -> bool:
         packed_data = (
             Web3.toBytes(hexstr=self.sender) +
             Web3.toBytes(hexstr=self.receiver) +
@@ -228,7 +230,7 @@ class IOURequest:
 
 class IOUResource(PathfinderResource):
 
-    def get(self, token_network_address: TokenNetworkAddress):
+    def get(self, token_network_address: TokenNetworkAddress) -> Tuple[dict, int]:
         iou_request, errors = IOURequest.Schema().load(request.args)
         if errors:
             raise exceptions.InvalidRequest(**errors)
@@ -255,7 +257,7 @@ class IOUResource(PathfinderResource):
 class InfoResource(PathfinderResource):
     version = pkg_resources.get_distribution('raiden-services').version
 
-    def get(self):
+    def get(self) -> Tuple[dict, int]:
         price = 0
         settings = 'PLACEHOLDER FOR PATHFINDER SETTINGS'
         operator = 'PLACEHOLDER FOR PATHFINDER OPERATOR'
@@ -292,11 +294,11 @@ class ServiceApi:
             kwargs['pathfinding_service'] = pathfinding_service
             self.api.add_resource(resource, endpoint_url, resource_class_kwargs=kwargs)
 
-    def run(self, host: str = DEFAULT_API_HOST, port: int = DEFAULT_API_PORT):
+    def run(self, host: str = DEFAULT_API_HOST, port: int = DEFAULT_API_PORT) -> None:
         self.rest_server = WSGIServer((host, port), self.flask_app)
         self.rest_server.start()
 
         log.info('Running endpoint', endpoint=f'{host}:{port}')
 
-    def stop(self):
+    def stop(self) -> None:
         self.rest_server.stop()

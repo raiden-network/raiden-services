@@ -91,7 +91,7 @@ def common_options(app_name: str) -> Callable:
                 expose_value=False,
             ),
         ]):
-            func = option(func)  # type: ignore
+            func = option(func)
         return func
 
     return decorator
@@ -131,7 +131,7 @@ def blockchain_options(func: Callable) -> Callable:
             help='Number of block confirmations to wait for',
         ),
     ]):
-        func = option(func)  # type: ignore
+        func = option(func)
 
     return func
 
