@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional
 
 import gevent
 import structlog
+from eth_typing import ChecksumAddress
 from eth_utils import is_checksum_address, to_checksum_address
 from web3 import Web3
 
@@ -17,6 +18,7 @@ from pathfinding_service.utils.blockchain_listener import (
 )
 from raiden.constants import PATH_FINDING_BROADCASTING_ROOM, UINT256_MAX
 from raiden.messages import SignedMessage, UpdatePFS
+from raiden.utils.signer import recover
 from raiden.utils.typing import ChainID
 from raiden_contracts.constants import (
     CONTRACT_TOKEN_NETWORK,
@@ -41,6 +43,13 @@ def error_handler(context: Any, exc_info: tuple) -> None:
     )
     traceback.print_exception(etype=exc_info[0], value=exc_info[1], tb=exc_info[2])
     sys.exit()
+
+
+def recover_signer_from_capacity_update(message: UpdatePFS,) -> ChecksumAddress:
+    signer = to_checksum_address(
+        recover(data=message._data_to_sign(), signature=message.signature)
+    )
+    return signer
 
 
 class PathfindingService(gevent.Greenlet):
@@ -313,8 +322,6 @@ class PathfindingService(gevent.Greenlet):
                 'Received Capacity Update with unknown channel identifier in token network'
             )
 
-        # TODO: check signature of message
-
         # check values < max int 256
         if message.updating_capacity > UINT256_MAX:
             raise InvalidCapacityUpdate(
@@ -333,6 +340,11 @@ class PathfindingService(gevent.Greenlet):
             raise InvalidCapacityUpdate(
                 'Other Participant of Capacity Update does not match the internal channel'
             )
+
+        # check signature of Capacity Update
+        signer = recover_signer_from_capacity_update(message)
+        if signer != updating_participant:
+            raise InvalidCapacityUpdate('Capacity Update not signed correctly')
 
         # check if nonce is higher than current nonce
         view_to_partner, view_from_partner = token_network.get_channel_views_for_partner(
