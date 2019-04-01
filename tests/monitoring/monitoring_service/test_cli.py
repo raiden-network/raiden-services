@@ -1,16 +1,20 @@
 import logging
-from unittest.mock import DEFAULT, patch
+from unittest.mock import MagicMock, Mock, patch
 
+import pytest
 from click.testing import CliRunner
 
 from monitoring_service.cli import main
 from monitoring_service.service import check_gas_reserve
 
-patch_args = dict(
-    target='monitoring_service.cli',
-    MonitoringService=DEFAULT,
-    HTTPProvider=DEFAULT,
-)
+
+@pytest.fixture(autouse=True)
+def service_mock(monkeypatch):
+    connect_mock = Mock(return_value=(Mock, MagicMock()))
+    monkeypatch.setattr('monitoring_service.cli.connect_to_blockchain', connect_mock)
+    service_mock = Mock()
+    monkeypatch.setattr('monitoring_service.cli.MonitoringService', service_mock)
+    return service_mock
 
 
 def test_account_check(web3, capsys):
@@ -23,44 +27,41 @@ def test_account_check(web3, capsys):
 def test_success(keystore_file, default_cli_args_ms):
     """ Calling the monitoring_service with default args should succeed after heavy mocking """
     runner = CliRunner()
-    with patch.multiple(**patch_args):
-        result = runner.invoke(
-            main,
-            default_cli_args_ms,
-            catch_exceptions=False,
-        )
+    result = runner.invoke(
+        main,
+        default_cli_args_ms,
+        catch_exceptions=False,
+    )
     assert result.exit_code == 0
 
 
 def test_wrong_password(keystore_file, default_cli_args_ms):
     """ Calling the monitoring_service with default args should succeed after heavy mocking """
     runner = CliRunner()
-    with patch.multiple(**patch_args):
-        result = runner.invoke(
-            main,
-            default_cli_args_ms + ['--password', 'wrong'],
-            catch_exceptions=False,
-        )
+    result = runner.invoke(
+        main,
+        default_cli_args_ms + ['--password', 'wrong'],
+        catch_exceptions=False,
+    )
     assert result.exit_code == 1
 
 
-def test_shutdown(keystore_file, default_cli_args_ms):
+def test_shutdown(keystore_file, default_cli_args_ms, service_mock):
     """ Clean shutdown after KeyboardInterrupt """
     runner = CliRunner()
-    with patch.multiple(**patch_args) as mocks:
-        mocks['MonitoringService'].return_value.run.side_effect = KeyboardInterrupt
-        result = runner.invoke(
-            main,
-            default_cli_args_ms,
-            catch_exceptions=False,
-        )
-        assert result.exit_code == 0
+    service_mock.return_value.run.side_effect = KeyboardInterrupt
+    result = runner.invoke(
+        main,
+        default_cli_args_ms,
+        catch_exceptions=False,
+    )
+    assert result.exit_code == 0
 
 
 def test_log_level(keystore_file, default_cli_args_ms):
     """ Setting of log level via command line switch """
     runner = CliRunner()
-    with patch.multiple(**patch_args), patch('logging.basicConfig') as basicConfig:
+    with patch('logging.basicConfig') as basicConfig:
         for log_level in ('CRITICAL', 'WARNING'):
             runner.invoke(
                 main,

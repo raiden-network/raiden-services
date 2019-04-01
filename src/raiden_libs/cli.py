@@ -1,13 +1,25 @@
 import json
 import os
+import sys
 from typing import Callable
 
 import click
 import structlog
 from eth_account import Account
 from eth_utils import is_checksum_address
+from web3 import HTTPProvider, Web3
+from web3.middleware import geth_poa_middleware
 
+from pathfinding_service.middleware import http_retry_with_backoff_middleware
+from raiden.utils.typing import BlockNumber, ChainID
+from raiden_contracts.constants import (
+    CONTRACT_MONITORING_SERVICE,
+    CONTRACT_TOKEN_NETWORK_REGISTRY,
+    CONTRACT_USER_DEPOSIT,
+)
+from raiden_libs.contract_info import START_BLOCK_ID, get_contract_addresses_and_start_block
 from raiden_libs.logging import setup_logging
+from raiden_libs.types import Address
 
 log = structlog.get_logger(__name__)
 
@@ -129,3 +141,59 @@ def blockchain_options(func: Callable) -> Callable:
         func = option(func)  # type: ignore
 
     return func
+
+
+def connect_to_blockchain(
+    eth_rpc: str,
+    registry_address: Address,
+    user_deposit_contract_address: Address,
+    start_block: BlockNumber,
+    monitor_contract_address: Address,
+    contracts_version: str = None,
+):
+    try:
+        log.info(f'Starting Web3 client for node at {eth_rpc}')
+        provider = HTTPProvider(eth_rpc)
+        web3 = Web3(provider)
+        # Will throw ConnectionError on bad Ethereum client
+        chain_id = ChainID(int(web3.net.version))
+    except ConnectionError:
+        log.error(
+            'Can not connect to the Ethereum client. Please check that it is running and that '
+            'your settings are correct.',
+        )
+        sys.exit(1)
+
+    # Add POA middleware for geth POA chains, no/op for other chains
+    web3.middleware_stack.inject(geth_poa_middleware, layer=0)
+
+    # give web3 some time between retries before failing
+    provider.middlewares.replace(
+        'http_retry_request',
+        http_retry_with_backoff_middleware,
+    )
+
+    if contracts_version:
+        log.info(f'Using contracts version: {contracts_version}')
+
+    contract_infos = get_contract_addresses_and_start_block(
+        chain_id=chain_id,
+        contracts_version=contracts_version,
+        token_network_registry_address=registry_address,
+        monitor_contract_address=monitor_contract_address,
+        user_deposit_contract_address=user_deposit_contract_address,
+        start_block=start_block,
+    )
+
+    if contract_infos is None:
+        log.critical('Could not find correct contracts to use. Please check your configuration')
+        sys.exit(1)
+    else:
+        log.info(
+            'Contract information',
+            registry_address=contract_infos[CONTRACT_TOKEN_NETWORK_REGISTRY],
+            monitor_contract_address=contract_infos[CONTRACT_MONITORING_SERVICE],
+            user_deposit_contract_address=contract_infos[CONTRACT_USER_DEPOSIT],
+            sync_start_block=contract_infos[START_BLOCK_ID],
+        )
+    return web3, contract_infos
