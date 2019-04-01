@@ -16,7 +16,7 @@ log = structlog.get_logger(__name__)
 def main(
     private_key: str,
     state_db: str,
-):
+) -> int:
     """Console script for request_collector.
 
     Logging can be quickly set by specifying a global log level or in a

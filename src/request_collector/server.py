@@ -1,5 +1,6 @@
 import sys
 import traceback
+from typing import Any
 
 import gevent
 import structlog
@@ -16,7 +17,7 @@ from raiden_libs.matrix import MatrixListener
 log = structlog.get_logger(__name__)
 
 
-def error_handler(_context, exc_info):
+def error_handler(_context: Any, exc_info: tuple) -> None:
     log.critical("Unhandled exception terminating the program")
     traceback.print_exception(
         etype=exc_info[0],
@@ -52,18 +53,18 @@ class RequestCollector(gevent.Greenlet):
             )
             sys.exit(1)
 
-    def listen_forever(self):
+    def listen_forever(self) -> None:
         self.matrix_listener.listen_forever()
 
-    def _run(self):
+    def _run(self) -> None:
         register_error_handler(error_handler)
         self.matrix_listener.start()
 
-    def stop(self):
+    def stop(self) -> None:
         self.matrix_listener.stop()
         self.matrix_listener.join()
 
-    def handle_message(self, message: SignedMessage):
+    def handle_message(self, message: SignedMessage) -> None:
         if isinstance(message, RequestMonitoring):
             self.on_monitor_request(message)
         else:
@@ -72,7 +73,7 @@ class RequestCollector(gevent.Greenlet):
     def on_monitor_request(
         self,
         request_monitoring: RequestMonitoring,
-    ):
+    ) -> None:
         assert isinstance(request_monitoring, RequestMonitoring)
 
         # Convert Raiden's RequestMonitoring object to a MonitorRequest
