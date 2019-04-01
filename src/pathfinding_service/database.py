@@ -50,7 +50,7 @@ class PFSDatabase:
                 with open(SCHEMA_FILENAME) as schema_file:
                     self.conn.executescript(schema_file.read())
 
-    def upsert_iou(self, iou: IOU):
+    def upsert_iou(self, iou: IOU) -> None:
         iou_dict = IOU.Schema(strict=True).dump(iou)[0]
         self.conn.execute("""
             INSERT OR REPLACE INTO iou (

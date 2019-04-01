@@ -1,6 +1,6 @@
 import sys
 import traceback
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import gevent
 import structlog
@@ -33,7 +33,7 @@ from raiden_libs.utils import private_key_to_address
 log = structlog.get_logger(__name__)
 
 
-def error_handler(context, exc_info):
+def error_handler(context: Any, exc_info: tuple) -> None:
     log.critical(
         'Unhandled exception. Terminating the program...'
         'Please report this issue at '
@@ -130,19 +130,19 @@ class PathfindingService(gevent.Greenlet):
             )
             sys.exit(1)
 
-    def _setup_token_networks(self):
+    def _setup_token_networks(self) -> None:
         self.token_network_registry_listener.add_confirmed_listener(
             create_registry_event_topics(self.contract_manager),
             self.handle_token_network_created,
         )
 
-    def _run(self):
+    def _run(self) -> None:
         register_error_handler(error_handler)
         self.matrix_listener.start()
         self.token_network_registry_listener.start()
         self.is_running.wait()
 
-    def stop(self):
+    def stop(self) -> None:
         self.token_network_registry_listener.stop()
         for task in self.token_network_listeners:
             task.stop()
@@ -165,7 +165,7 @@ class PathfindingService(gevent.Greenlet):
         else:
             return self.token_networks[token_network_address]
 
-    def handle_channel_event(self, event: Dict):
+    def handle_channel_event(self, event: Dict) -> None:
         event_name = event['event']
 
         if event_name == ChannelEvent.OPENED:
@@ -177,7 +177,7 @@ class PathfindingService(gevent.Greenlet):
         else:
             log.debug('Unhandled event', evt=event)
 
-    def handle_channel_opened(self, event: Dict):
+    def handle_channel_opened(self, event: Dict) -> None:
         token_network = self._get_token_network(event['address'])
 
         if token_network is None:
@@ -204,7 +204,7 @@ class PathfindingService(gevent.Greenlet):
             settle_timeout,
         )
 
-    def handle_channel_new_deposit(self, event: Dict):
+    def handle_channel_new_deposit(self, event: Dict) -> None:
         token_network = self._get_token_network(event['address'])
 
         if token_network is None:
@@ -228,7 +228,7 @@ class PathfindingService(gevent.Greenlet):
             total_deposit,
         )
 
-    def handle_channel_closed(self, event: Dict):
+    def handle_channel_closed(self, event: Dict) -> None:
         token_network = self._get_token_network(event['address'])
 
         if token_network is None:
@@ -244,7 +244,7 @@ class PathfindingService(gevent.Greenlet):
 
         token_network.handle_channel_closed_event(channel_identifier)
 
-    def handle_token_network_created(self, event):
+    def handle_token_network_created(self, event: Dict) -> None:
         token_network_address = event['args']['token_network_address']
         token_address = event['args']['token_address']
         event_block_number = event['blockNumber']
@@ -269,7 +269,7 @@ class PathfindingService(gevent.Greenlet):
         token_network_address: Address,
         token_address: Address,
         block_number: int = 0,
-    ):
+    ) -> None:
         token_network = TokenNetwork(token_network_address, token_address)
         self.token_networks[token_network_address] = token_network
 
@@ -292,7 +292,7 @@ class PathfindingService(gevent.Greenlet):
         token_network_listener.start()
         self.token_network_listeners.append(token_network_listener)
 
-    def handle_message(self, message: SignedMessage):
+    def handle_message(self, message: SignedMessage) -> None:
         if isinstance(message, UpdatePFS):
             try:
                 self.on_pfs_update(message)
@@ -308,7 +308,7 @@ class PathfindingService(gevent.Greenlet):
         else:
             log.info('Ignoring unknown message type')
 
-    def on_pfs_update(self, message: UpdatePFS):
+    def on_pfs_update(self, message: UpdatePFS) -> None:
         token_network_address = to_checksum_address(
             message.canonical_identifier.token_network_address,
         )

@@ -46,7 +46,7 @@ class ChannelView:
         capacity: int = 0,
         reveal_timeout: int = None,
         deposit: int = None,
-    ):
+    ) -> None:
         self.update_nonce = nonce
         self._capacity = capacity
         if reveal_timeout is not None:
@@ -69,7 +69,7 @@ class ChannelView:
     def relative_fee(self) -> int:
         return DEFAULT_PERCENTAGE_FEE
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<ChannelView from={} to={} capacity={}>'.format(
             self.self,
             self.partner,

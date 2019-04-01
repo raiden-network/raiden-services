@@ -25,7 +25,7 @@ class IOU:
     claimed: Optional[bool] = None
     Schema: ClassVar[Type[marshmallow.Schema]]
 
-    def is_signature_valid(self):
+    def is_signature_valid(self) -> bool:
         packed_data = (
             Web3.toBytes(hexstr=self.sender) +
             Web3.toBytes(hexstr=self.receiver) +

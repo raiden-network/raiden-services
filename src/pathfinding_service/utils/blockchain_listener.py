@@ -31,7 +31,7 @@ def create_registry_event_topics(contract_manager: ContractManager) -> List:
     return [encode_hex(event_abi_to_log_topic(new_network_abi))]
 
 
-def decode_event(abi: Dict, log: Dict):
+def decode_event(abi: Dict, log: Dict) -> Dict:
     """ Helper function to unpack event data using a provided ABI
 
     Args:
@@ -137,17 +137,17 @@ class BlockchainListener(gevent.Greenlet):
 
         self.counter = 0
 
-    def add_confirmed_listener(self, topics: List, callback: Callable):
+    def add_confirmed_listener(self, topics: List, callback: Callable) -> None:
         """ Add a callback to listen for confirmed events. """
         self.confirmed_callbacks[self.counter] = (topics, callback)
         self.counter += 1
 
-    def add_unconfirmed_listener(self, topics: List, callback: Callable):
+    def add_unconfirmed_listener(self, topics: List, callback: Callable) -> None:
         """ Add a callback to listen for unconfirmed events. """
         self.unconfirmed_callbacks[self.counter] = (topics, callback)
         self.counter += 1
 
-    def _run(self):
+    def _run(self) -> None:
         self.running = True
         log.info('Starting blockchain polling', interval=self.poll_interval)
         while self.running:
@@ -167,15 +167,15 @@ class BlockchainListener(gevent.Greenlet):
                 self.is_connected.clear()
         log.info('Stopped blockchain polling')
 
-    def stop(self):
+    def stop(self) -> None:
         """ Stops the BlockchainListener. """
         self.running = False
 
-    def wait_sync(self):
+    def wait_sync(self) -> None:
         """Blocks until event polling is up-to-date with a most recent block of the blockchain. """
         self.wait_sync_event.wait()
 
-    def _update(self):
+    def _update(self) -> None:
         current_block = self.web3.eth.blockNumber
 
         # reset unconfirmed channels in case of reorg
@@ -256,7 +256,7 @@ class BlockchainListener(gevent.Greenlet):
         if not self.wait_sync_event.is_set() and new_unconfirmed_head_number == current_block:
             self.wait_sync_event.set()
 
-    def filter_events(self, filter_params: Dict, name_to_callback: Dict):
+    def filter_events(self, filter_params: Dict, name_to_callback: Dict) -> None:
         """ Filter events for given event names
 
         Params:
@@ -280,7 +280,7 @@ class BlockchainListener(gevent.Greenlet):
                 log.debug('Received confirmed event', decoded_event=decoded_event)
                 callback(decoded_event)
 
-    def _detected_chain_reorg(self, current_block: int):
+    def _detected_chain_reorg(self, current_block: int) -> None:
         log.debug(
             'Chain reorganization detected. Resyncing unconfirmed events.',
             unconfirmed_block_number=self.unconfirmed_head_number,
@@ -291,7 +291,7 @@ class BlockchainListener(gevent.Greenlet):
         self.unconfirmed_head_number = self.confirmed_head_number
         self.unconfirmed_head_hash = self.confirmed_head_hash
 
-    def reset_unconfirmed_on_reorg(self, current_block: int):
+    def reset_unconfirmed_on_reorg(self, current_block: int) -> None:
         """Test if chain reorganization happened (head number used in previous pass is greater than
         current_block parameter) and in that case reset unconfirmed event list."""
         if self.wait_sync_event.is_set():  # but not on first sync
