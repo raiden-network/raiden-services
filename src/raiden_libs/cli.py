@@ -1,7 +1,7 @@
 import json
 import os
 import sys
-from typing import Callable
+from typing import Callable, Tuple
 
 import click
 import structlog
@@ -43,7 +43,7 @@ def _open_keystore(ctx: click.Context, param: click.Parameter, value: str) -> No
             ctx.exit(1)
 
 
-def validate_address(ctx, param, value):
+def validate_address(ctx: click.Context, param: click.Parameter, value: str) -> str:
     if value is None:
         # None as default value allowed
         return None
@@ -150,7 +150,7 @@ def connect_to_blockchain(
     start_block: BlockNumber,
     monitor_contract_address: Address,
     contracts_version: str = None,
-):
+) -> Tuple[Web3, dict]:
     try:
         log.info(f'Starting Web3 client for node at {eth_rpc}')
         provider = HTTPProvider(eth_rpc)

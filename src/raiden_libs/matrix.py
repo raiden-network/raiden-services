@@ -1,6 +1,6 @@
 import json
 import sys
-from typing import Callable, Dict, Iterable, List, Tuple, Union
+from typing import Any, Callable, Dict, Iterable, List, Tuple, Union
 
 import gevent
 import structlog
@@ -76,17 +76,17 @@ class MatrixListener(gevent.Greenlet):
             )
             sys.exit(1)
 
-    def listen_forever(self):
+    def listen_forever(self) -> None:
         self.client.listen_forever()
 
-    def _run(self):
+    def _run(self) -> None:
         self.client.start_listener_thread()
         self.client.sync_thread.get()
 
-    def stop(self):
+    def stop(self) -> None:
         self.client.stop_listener_thread()
 
-    def setup_matrix(self, service_room_suffix) -> Tuple[GMatrixClient, Room]:
+    def setup_matrix(self, service_room_suffix: str) -> Tuple[GMatrixClient, Room]:
         available_servers_url = DEFAULT_MATRIX_KNOWN_SERVERS[Environment.DEVELOPMENT]
         available_servers = get_matrix_servers(available_servers_url)
 
@@ -138,7 +138,7 @@ class MatrixListener(gevent.Greenlet):
 
         return user
 
-    def _handle_message(self, room, event) -> bool:
+    def _handle_message(self, room: Any, event: dict) -> bool:
         """ Handle text messages sent to listening rooms """
         if (
                 event['type'] != 'm.room.message' or

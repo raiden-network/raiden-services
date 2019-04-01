@@ -29,7 +29,7 @@ class TokenNetwork:
         self.G = DiGraph()
         self.max_relative_fee = 0
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'<TokenNetwork address = {self.address} ' \
             f'num_channels = {len(self.channel_id_to_addresses)}>'
     #
@@ -42,7 +42,7 @@ class TokenNetwork:
         participant1: Address,
         participant2: Address,
         settle_timeout: int,
-    ):
+    ) -> None:
         """ Register the channel in the graph, add participents to graph if necessary.
 
         Corresponds to the ChannelOpened event. Called by the contract event listener. """
@@ -76,7 +76,7 @@ class TokenNetwork:
         channel_identifier: ChannelID,
         receiver: Address,
         total_deposit: int,
-    ):
+    ) -> None:
         """ Register a new balance for the beneficiary.
 
         Corresponds to the ChannelNewDeposit event. Called by the contract event listener. """
@@ -100,7 +100,7 @@ class TokenNetwork:
                 channel_identifier=channel_identifier,
             )
 
-    def handle_channel_closed_event(self, channel_identifier: ChannelID):
+    def handle_channel_closed_event(self, channel_identifier: ChannelID) -> None:
         """ Close a channel. This doesn't mean that the channel is settled yet, but it cannot
         transfer any more.
 
@@ -141,7 +141,7 @@ class TokenNetwork:
         updating_capacity: int,
         other_capacity: int,
         reveal_timeout: int,
-    ):
+    ) -> None:
         """ Sends Capacity Update to PFS including the reveal timeout """
         channel_view_to_partner, channel_view_from_partner = self.get_channel_views_for_partner(
             channel_identifier=channel_identifier,
@@ -163,7 +163,7 @@ class TokenNetwork:
     def edge_weight(
         visited: Dict[ChannelID, float],
         attr: Dict[str, Any],
-    ):
+    ) -> float:
         view: ChannelView = attr['view']
         return 1 + visited.get(
             view.channel_id,
@@ -194,8 +194,8 @@ class TokenNetwork:
         max_paths: int,
         diversity_penalty: float = DIVERSITY_PEN_DEFAULT,
         hop_bias: float = 1,
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> List[dict]:
         assert hop_bias == 1, 'Only hop_bias 1 is supported'
         max_paths = min(max_paths, MAX_PATHS_PER_REQUEST)
         visited: Dict[ChannelID, float] = {}
