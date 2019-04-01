@@ -20,6 +20,7 @@ def http_retry_with_backoff_middleware(
     increases the backoff between retries. Meant to replace the default
     middleware `http_retry_request_middleware` for HTTPProvider.
     """
+
     def middleware(method: str, params: dict) -> Any:
         backoff = first_backoff
         if check_if_retry_on_failure(method):
@@ -35,4 +36,5 @@ def http_retry_with_backoff_middleware(
                         raise
         else:
             return make_request(method, params)
+
     return middleware

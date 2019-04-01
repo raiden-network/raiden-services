@@ -13,8 +13,7 @@ DEFAULT_VERSION = '0.10.1'
 
 def test_contract_info_defaults():
     infos = get_contract_addresses_and_start_block(
-        chain_id=DEFAULT_CHAIN_ID,
-        contracts_version=DEFAULT_VERSION,
+        chain_id=DEFAULT_CHAIN_ID, contracts_version=DEFAULT_VERSION
     )
     assert infos is not None
     assert infos[CONTRACT_TOKEN_NETWORK_REGISTRY] == '0xde1fAa1385403f05C20a8ca5a0D5106163A35B6e'
@@ -44,8 +43,7 @@ def test_contract_info_overwrite_defaults():
 
 def test_contract_info_returns_nothing_with_invalid_config():
     infos = get_contract_addresses_and_start_block(
-        chain_id=ChainID(123456789),
-        contracts_version=DEFAULT_VERSION,
+        chain_id=ChainID(123456789), contracts_version=DEFAULT_VERSION
     )
     assert infos is None
 

@@ -83,18 +83,21 @@ def test_pfs_with_mocked_client(
     assert len(token_network.channel_id_to_addresses.keys()) == len(channel_descriptions_case_1)
 
     # check that deposits, settle_timeout and transfers got registered
-    for index, (
-        _p1_index,
-        p1_deposit,
-        _p1_capacity,
-        _p1_fee,
-        _p1_reveal_timeout,
-        _p2_index,
-        p2_deposit,
-        _p2_capacity,
-        _p2_fee,
-        _p2_reveal_timeout,
-        _settle_timeout,
+    for (
+        index,
+        (
+            _p1_index,
+            p1_deposit,
+            _p1_capacity,
+            _p1_fee,
+            _p1_reveal_timeout,
+            _p2_index,
+            p2_deposit,
+            _p2_capacity,
+            _p2_fee,
+            _p2_reveal_timeout,
+            _settle_timeout,
+        ),
     ) in enumerate(channel_descriptions_case_1):
         channel_identifier = channel_identifiers[index]
         p1_address, p2_address = token_network.channel_id_to_addresses[channel_identifier]

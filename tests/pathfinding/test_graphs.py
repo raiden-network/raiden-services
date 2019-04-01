@@ -21,16 +21,10 @@ def test_edge_weight(addresses):
     settle_timeout = 15
     view = ChannelView(channel_id, participant1, participant2, settle_timeout)
 
-    assert TokenNetwork.edge_weight(
-        dict(),
-        dict(view=view),
-    ) == 1
+    assert TokenNetwork.edge_weight(dict(), dict(view=view)) == 1
 
 
-def test_routing_benchmark(
-    token_network_model: TokenNetwork,
-    populate_token_network_random: None,
-):
+def test_routing_benchmark(token_network_model: TokenNetwork, populate_token_network_random: None):
     value = 100
     G = token_network_model.G
     times = []
@@ -71,11 +65,7 @@ def test_routing_simple(
 
     # 0->2->3 is the shortest path, but has no capacity, so 0->1->4->3 is used
     paths = token_network_model.get_paths(
-        addresses[0],
-        addresses[3],
-        value=10,
-        max_paths=1,
-        hop_bias=1,
+        addresses[0], addresses[3], value=10, max_paths=1, hop_bias=1
     )
     assert len(paths) == 1
     assert paths[0] == {
@@ -94,18 +84,11 @@ def test_routing_result_order(
     addresses: List[Address],
 ):
     paths = token_network_model.get_paths(
-        addresses[0],
-        addresses[2],
-        value=10,
-        max_paths=5,
-        hop_bias=1,
+        addresses[0], addresses[2], value=10, max_paths=5, hop_bias=1
     )
     # 5 paths requested, but only 1 is available
     assert len(paths) == 1
-    assert paths[0] == {
-        'path': [addresses[0], addresses[1], addresses[2]],
-        'estimated_fee': 0,
-    }
+    assert paths[0] == {'path': [addresses[0], addresses[1], addresses[2]], 'estimated_fee': 0}
 
 
 def addresses_to_indexes(path, addresses):

@@ -17,13 +17,15 @@ def make_iou(sender_priv_key, receiver, amount=1, expiration_block=MIN_IOU_EXPIR
         'amount': amount,
         'expiration_block': expiration_block,
     }
-    iou['signature'] = encode_hex(sign_one_to_n_iou(
-        privatekey=sender_priv_key,
-        sender=iou['sender'],
-        receiver=receiver,
-        amount=amount,
-        expiration=expiration_block,
-    ))
+    iou['signature'] = encode_hex(
+        sign_one_to_n_iou(
+            privatekey=sender_priv_key,
+            sender=iou['sender'],
+            receiver=receiver,
+            amount=amount,
+            expiration=expiration_block,
+        )
+    )
     return iou
 
 
@@ -38,11 +40,7 @@ def test_load_and_save_iou(pathfinding_service_mocked_listeners):
 
 
 def test_process_payment_errors(
-    pathfinding_service_mocked_listeners,
-    web3,
-    deposit_to_udc,
-    create_account,
-    get_private_key,
+    pathfinding_service_mocked_listeners, web3, deposit_to_udc, create_account, get_private_key
 ):
     pfs = pathfinding_service_mocked_listeners
     pfs.service_fee = 1
@@ -89,10 +87,7 @@ def test_process_payment_errors(
 
 
 def test_process_payment(
-    pathfinding_service_mocked_listeners,
-    deposit_to_udc,
-    create_account,
-    get_private_key,
+    pathfinding_service_mocked_listeners, deposit_to_udc, create_account, get_private_key
 ):
     pfs = pathfinding_service_mocked_listeners
     pfs.service_fee = 1

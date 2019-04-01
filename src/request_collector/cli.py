@@ -1,4 +1,5 @@
 from gevent import monkey  # isort:skip # noqa
+
 monkey.patch_all()  # isort:skip # noqa
 
 import click
@@ -13,10 +14,7 @@ log = structlog.get_logger(__name__)
 
 @click.command()
 @common_options('raiden-monitoring-service')
-def main(
-    private_key: str,
-    state_db: str,
-) -> int:
+def main(private_key: str, state_db: str) -> int:
     """Console script for request_collector.
 
     Logging can be quickly set by specifying a global log level or in a
@@ -28,10 +26,7 @@ def main(
 
     database = SharedDatabase(state_db)
 
-    RequestCollector(
-        private_key=private_key,
-        state_db=database,
-    ).listen_forever()
+    RequestCollector(private_key=private_key, state_db=database).listen_forever()
 
     print('Exiting...')
     return 0

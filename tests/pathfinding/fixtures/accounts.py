@@ -16,10 +16,7 @@ def private_keys() -> List[str]:
 
 @pytest.fixture(scope='session')
 def addresses(private_keys: List[str]) -> List[Address]:
-    return [
-        Address(private_key_to_address(private_key))
-        for private_key in private_keys
-    ]
+    return [Address(private_key_to_address(private_key)) for private_key in private_keys]
 
 
 @pytest.fixture(scope='session')

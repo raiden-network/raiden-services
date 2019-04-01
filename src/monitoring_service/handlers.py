@@ -1,4 +1,4 @@
-from dataclasses import dataclass  # isort:skip noqa differences between local and travis
+from dataclasses import dataclass
 from typing import cast
 
 import structlog
@@ -64,16 +64,13 @@ def channel_opened_event_handler(event: Event, context: Context) -> None:
             participant1=event.participant1,
             participant2=event.participant2,
             settle_timeout=event.settle_timeout,
-        ),
+        )
     )
 
 
 def channel_closed_event_handler(event: Event, context: Context) -> None:
     assert isinstance(event, ReceiveChannelClosedEvent)
-    channel = context.db.get_channel(
-        event.token_network_address,
-        event.channel_identifier,
-    )
+    channel = context.db.get_channel(event.token_network_address, event.channel_identifier)
 
     if channel is None:
         log.error(
@@ -86,9 +83,7 @@ def channel_closed_event_handler(event: Event, context: Context) -> None:
     # check if the settle timeout is already over
     # this is important when starting up the MS
     settle_period_end_block = event.block_number + channel.settle_timeout
-    settle_period_over = (
-        settle_period_end_block < context.last_known_block
-    )
+    settle_period_over = settle_period_end_block < context.last_known_block
     if not settle_period_over:
         # trigger the monitoring action event handler, this will check if a
         # valid MR is avilable.
@@ -100,7 +95,7 @@ def channel_closed_event_handler(event: Event, context: Context) -> None:
             non_closing_participant = channel.participant1
 
         client_update_period: int = round(
-            channel.settle_timeout * RATIO_OF_SETTLE_TIMEOUT_BEFORE_MONITOR,
+            channel.settle_timeout * RATIO_OF_SETTLE_TIMEOUT_BEFORE_MONITOR
         )
         trigger_block = BlockNumber(event.block_number + client_update_period)
 
@@ -121,10 +116,7 @@ def channel_closed_event_handler(event: Event, context: Context) -> None:
         # If the event is already scheduled (e.g. after a restart) the DB takes care that
         # it is only stored once
         context.db.upsert_scheduled_event(
-            ScheduledEvent(
-                trigger_block_number=trigger_block,
-                event=cast(Event, triggered_event),
-            ),
+            ScheduledEvent(trigger_block_number=trigger_block, event=cast(Event, triggered_event))
         )
     else:
         log.warning(
@@ -141,15 +133,9 @@ def channel_closed_event_handler(event: Event, context: Context) -> None:
     context.db.upsert_channel(channel)
 
 
-def channel_non_closing_balance_proof_updated_event_handler(
-    event: Event,
-    context: Context,
-) -> None:
+def non_closing_balance_proof_updated_event_handler(event: Event, context: Context) -> None:
     assert isinstance(event, ReceiveNonClosingBalanceProofUpdatedEvent)
-    channel = context.db.get_channel(
-        event.token_network_address,
-        event.channel_identifier,
-    )
+    channel = context.db.get_channel(event.token_network_address, event.channel_identifier)
 
     if channel is None:
         log.error(
@@ -188,8 +174,7 @@ def channel_non_closing_balance_proof_updated_event_handler(
         )
 
         channel.update_status = OnChainUpdateStatus(
-            update_sender_address=non_closing_participant,
-            nonce=event.nonce,
+            update_sender_address=non_closing_participant, nonce=event.nonce
         )
 
         context.db.upsert_channel(channel)
@@ -220,10 +205,7 @@ def channel_settled_event_handler(event: Event, context: Context) -> None:
     # TODO: we might want to remove all related state here in the future
     #     for now we keep it to make debugging easier
     assert isinstance(event, ReceiveChannelSettledEvent)
-    channel = context.db.get_channel(
-        event.token_network_address,
-        event.channel_identifier,
-    )
+    channel = context.db.get_channel(event.token_network_address, event.channel_identifier)
 
     if channel is None:
         log.error(
@@ -245,10 +227,7 @@ def channel_settled_event_handler(event: Event, context: Context) -> None:
 
 def monitor_new_balance_proof_event_handler(event: Event, context: Context) -> None:
     assert isinstance(event, ReceiveMonitoringNewBalanceProofEvent)
-    channel = context.db.get_channel(
-        event.token_network_address,
-        event.channel_identifier,
-    )
+    channel = context.db.get_channel(event.token_network_address, event.channel_identifier)
 
     if channel is None:
         log.error(
@@ -277,8 +256,7 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context) -> N
         )
 
         channel.update_status = OnChainUpdateStatus(
-            update_sender_address=event.ms_address,
-            nonce=event.nonce,
+            update_sender_address=event.ms_address, nonce=event.nonce
         )
 
         context.db.upsert_channel(channel)
@@ -323,10 +301,7 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context) -> N
         # If the event is already scheduled (e.g. after a restart) the DB takes care that
         # it is only stored once
         context.db.upsert_scheduled_event(
-            ScheduledEvent(
-                trigger_block_number=trigger_block,
-                event=cast(Event, e),
-            ),
+            ScheduledEvent(trigger_block_number=trigger_block, event=cast(Event, e))
         )
 
 
@@ -344,8 +319,8 @@ def updated_head_block_event_handler(event: Event, context: Context) -> None:
 
 def _is_mr_valid(monitor_request: MonitorRequest, channel: Channel) -> bool:
     if (
-        monitor_request.signer not in channel.participants or
-        monitor_request.non_closing_signer not in channel.participants
+        monitor_request.signer not in channel.participants
+        or monitor_request.non_closing_signer not in channel.participants
     ):
         log.info('MR signed by unknown party', channel=channel)
         return False
@@ -394,10 +369,10 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
         )
 
     call_monitor = (
-        channel.closing_tx_hash is None and
-        monitor_request.nonce > last_onchain_nonce and
-        user_deposit >= monitor_request.reward_amount * DEFAULT_PAYMENT_RISK_FAKTOR and
-        monitor_request.reward_amount >= context.min_reward
+        channel.closing_tx_hash is None
+        and monitor_request.nonce > last_onchain_nonce
+        and user_deposit >= monitor_request.reward_amount * DEFAULT_PAYMENT_RISK_FAKTOR
+        and monitor_request.reward_amount >= context.min_reward
     )
     if call_monitor:
         try:
@@ -453,15 +428,12 @@ def action_claim_reward_triggered_event_handler(event: Event, context: Context) 
 
     # check that the latest update was ours and that we didn't send a transaction yet
     can_claim = (
-        channel is not None and
-        channel.claim_tx_hash is None and
-        channel.update_status is not None and
-        channel.update_status.update_sender_address == context.ms_state.address
+        channel is not None
+        and channel.claim_tx_hash is None
+        and channel.update_status is not None
+        and channel.update_status.update_sender_address == context.ms_state.address
     )
-    log.info(
-        'Checking if eligible for reward',
-        reward_available=can_claim,
-    )
+    log.info('Checking if eligible for reward', reward_available=can_claim)
 
     # check if claiming will produce a reward
     has_reward = monitor_request.reward_amount > 0
@@ -502,8 +474,7 @@ def action_claim_reward_triggered_event_handler(event: Event, context: Context) 
 HANDLERS = {
     ReceiveChannelOpenedEvent: channel_opened_event_handler,
     ReceiveChannelClosedEvent: channel_closed_event_handler,
-    ReceiveNonClosingBalanceProofUpdatedEvent:
-        channel_non_closing_balance_proof_updated_event_handler,
+    ReceiveNonClosingBalanceProofUpdatedEvent: non_closing_balance_proof_updated_event_handler,
     ReceiveChannelSettledEvent: channel_settled_event_handler,
     ReceiveMonitoringNewBalanceProofEvent: monitor_new_balance_proof_event_handler,
     ReceiveMonitoringRewardClaimedEvent: monitor_reward_claim_event_handler,

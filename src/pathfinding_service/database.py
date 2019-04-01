@@ -8,10 +8,7 @@ from pathfinding_service.model import IOU
 from raiden_libs.types import Address
 
 log = structlog.get_logger(__name__)
-SCHEMA_FILENAME = os.path.join(
-    os.path.dirname(os.path.realpath(__file__)),
-    'schema.sql',
-)
+SCHEMA_FILENAME = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'schema.sql')
 
 
 def convert_hex(raw: bytes) -> int:
@@ -41,7 +38,7 @@ class PFSDatabase:
     def _setup(self) -> None:
         """ Make sure that the db is initialized """
         initialized = self.conn.execute(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name='iou'",
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='iou'"
         ).fetchone()
 
         if not initialized:
@@ -52,17 +49,17 @@ class PFSDatabase:
 
     def upsert_iou(self, iou: IOU) -> None:
         iou_dict = IOU.Schema(strict=True).dump(iou)[0]
-        self.conn.execute("""
+        self.conn.execute(
+            """
             INSERT OR REPLACE INTO iou (
                 sender, amount, expiration_block, signature, claimed
             ) VALUES (:sender, :amount, :expiration_block, :signature, :claimed)
-        """, iou_dict)
+        """,
+            iou_dict,
+        )
 
     def get_iou(
-        self,
-        sender: Address,
-        expiration_block: int = None,
-        claimed: bool = None,
+        self, sender: Address, expiration_block: int = None, claimed: bool = None
     ) -> Optional[IOU]:
         query = "SELECT * FROM iou WHERE sender = ?"
         args: list = [sender]

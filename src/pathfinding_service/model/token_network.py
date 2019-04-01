@@ -30,8 +30,11 @@ class TokenNetwork:
         self.max_relative_fee = 0
 
     def __repr__(self) -> str:
-        return f'<TokenNetwork address = {self.address} ' \
+        return (
+            f'<TokenNetwork address = {self.address} '
             f'num_channels = {len(self.channel_id_to_addresses)}>'
+        )
+
     #
     # Contract event listener functions
     #
@@ -72,10 +75,7 @@ class TokenNetwork:
         self.G.add_edge(participant2, participant1, view=view2)
 
     def handle_channel_new_deposit_event(
-        self,
-        channel_identifier: ChannelID,
-        receiver: Address,
-        total_deposit: int,
+        self, channel_identifier: ChannelID, receiver: Address, total_deposit: int
     ) -> None:
         """ Register a new balance for the beneficiary.
 
@@ -91,9 +91,7 @@ class TokenNetwork:
             elif receiver == participant2:
                 self.G[participant2][participant1]['view'].update_capacity(deposit=total_deposit)
             else:
-                log.error(
-                    "Receiver in ChannelNewDeposit does not fit the internal channel",
-                )
+                log.error("Receiver in ChannelNewDeposit does not fit the internal channel")
         except KeyError:
             log.error(
                 "Received ChannelNewDeposit event for unknown channel",
@@ -119,10 +117,10 @@ class TokenNetwork:
             )
 
     def get_channel_views_for_partner(
-            self,
-            channel_identifier: ChannelID,
-            updating_participant: Address,
-            other_participant: Address,
+        self,
+        channel_identifier: ChannelID,
+        updating_participant: Address,
+        other_participant: Address,
     ) -> Tuple[ChannelView, ChannelView]:
 
         # Get the channel views from the perspective of the updating participant
@@ -150,31 +148,16 @@ class TokenNetwork:
         )
         # FIXME: Add updating only minimum if capacity updates conflict
         channel_view_to_partner.update_capacity(
-            nonce=updating_nonce,
-            capacity=updating_capacity,
-            reveal_timeout=reveal_timeout,
+            nonce=updating_nonce, capacity=updating_capacity, reveal_timeout=reveal_timeout
         )
-        channel_view_from_partner.update_capacity(
-            nonce=other_nonce,
-            capacity=other_capacity,
-        )
+        channel_view_from_partner.update_capacity(nonce=other_nonce, capacity=other_capacity)
 
     @staticmethod
-    def edge_weight(
-        visited: Dict[ChannelID, float],
-        attr: Dict[str, Any],
-    ) -> float:
+    def edge_weight(visited: Dict[ChannelID, float], attr: Dict[str, Any]) -> float:
         view: ChannelView = attr['view']
-        return 1 + visited.get(
-            view.channel_id,
-            0,
-        )
+        return 1 + visited.get(view.channel_id, 0)
 
-    def check_path_constraints(
-        self,
-        value: int,
-        path: List,
-    ) -> bool:
+    def check_path_constraints(self, value: int, path: List) -> bool:
         for node1, node2 in zip(path[:-1], path[1:]):
             channel: ChannelView = self.G[node1][node2]['view']
             # check if available balance > value
@@ -212,7 +195,8 @@ class TokenNetwork:
             try:
                 # skip duplicates and invalid paths
                 path = next(
-                    path for path in all_paths
+                    path
+                    for path in all_paths
                     if self.check_path_constraints(value, path) and path not in paths
                 )
             except StopIteration:
@@ -232,8 +216,5 @@ class TokenNetwork:
             for node1, node2 in zip(path[:-1], path[1:]):
                 fee += self.G[node1][node2]['view'].relative_fee
 
-            result.append(dict(
-                path=path,
-                estimated_fee=0,
-            ))
+            result.append(dict(path=path, estimated_fee=0))
         return result

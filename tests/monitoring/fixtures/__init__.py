@@ -1,2 +1,2 @@
-from .contracts import *    # noqa
+from .contracts import *  # noqa
 from .server import *  # noqa

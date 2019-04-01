@@ -1,10 +1,10 @@
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import ClassVar, Dict, List, Optional, Tuple, Type
 
 import marshmallow
 import pkg_resources
 import structlog
-from dataclasses import dataclass, field
 from eth_utils import is_address, is_checksum_address, is_same_address
 from flask import Flask, Response, request
 from flask_restful import Api, Resource, reqparse
@@ -35,23 +35,19 @@ log = structlog.get_logger(__name__)
 
 
 class ApiWithErrorHandler(Api):
-
     def handle_error(self, e: exceptions.ApiException) -> Response:
-        return self.make_response({
-            'errors': e.msg,
-            'error_code': e.error_code,
-            'error_details': e.error_details,
-        }, e.http_code)
+        return self.make_response(
+            {'errors': e.msg, 'error_code': e.error_code, 'error_details': e.error_details},
+            e.http_code,
+        )
 
 
 class PathfinderResource(Resource):
-
     def __init__(self, pathfinding_service: PathfindingService):
         self.pathfinding_service = pathfinding_service
 
     def _validate_token_network_argument(
-        self,
-        token_network_address: str,
+        self, token_network_address: str
     ) -> Optional[Tuple[Dict, int]]:
 
         if not is_address(token_network_address):
@@ -62,13 +58,9 @@ class PathfinderResource(Resource):
             address_error = 'Token network address not checksummed: {}'
             return {'errors': address_error.format(token_network_address)}, 400
 
-        token_network = self.pathfinding_service.token_networks.get(
-            Address(token_network_address),
-        )
+        token_network = self.pathfinding_service.token_networks.get(Address(token_network_address))
         if token_network is None:
-            return {
-                'errors': 'Unsupported token network: {}'.format(token_network_address),
-            }, 400
+            return ({'errors': 'Unsupported token network: {}'.format(token_network_address)}, 400)
 
         return None
 
@@ -93,12 +85,16 @@ class PathsResource(PathfinderResource):
             return {'errors': address_error.format('Target', args['to'])}, 400
 
         if args['value'] < 0:
-            return {'errors': 'Payment value must be non-negative: {}'.format(args['value'])}, 400
+            return (
+                {'errors': 'Payment value must be non-negative: {}'.format(args['value'])},
+                400,
+            )
 
         if args['max_paths'] <= 0:
-            return {
-                'errors': 'Number of paths must be positive: {}'.format(args['max_paths']),
-            }, 400
+            return (
+                {'errors': 'Number of paths must be positive: {}'.format(args['max_paths'])},
+                400,
+            )
 
         return None
 
@@ -112,10 +108,7 @@ class PathsResource(PathfinderResource):
         parser.add_argument('to', type=str, help='Payment target address.')
         parser.add_argument('value', type=int, help='Maximum payment value.')
         parser.add_argument(
-            'max_paths',
-            type=int,
-            help='Number of paths requested.',
-            default=DEFAULT_MAX_PATHS,
+            'max_paths', type=int, help='Number of paths requested.', default=DEFAULT_MAX_PATHS
         )
 
         args = parser.parse_args()
@@ -128,23 +121,23 @@ class PathsResource(PathfinderResource):
             raise exceptions.ApiException('JSON payload expected')
         process_payment(json.get('iou'), self.pathfinding_service)
 
-        token_network = self.pathfinding_service.token_networks.get(
-            Address(token_network_address),
-        )
+        token_network = self.pathfinding_service.token_networks.get(Address(token_network_address))
         # Existence is checked in _validate_token_network_argument
         assert token_network, 'Requested token network cannot be found'
 
         try:
             paths = token_network.get_paths(
-                source=args['from'],
-                target=args['to'],
-                value=args.value,
-                max_paths=args.max_paths,
+                source=args['from'], target=args['to'], value=args.value, max_paths=args.max_paths
             )
         except NetworkXNoPath:
-            return {'errors': 'No suitable path found for transfer from {} to {}.'.format(
-                args['from'], args['to'],
-            )}, 400
+            return (
+                {
+                    'errors': 'No suitable path found for transfer from {} to {}.'.format(
+                        args['from'], args['to']
+                    )
+                },
+                400,
+            )
 
         return {'result': paths}, 200
 
@@ -165,10 +158,7 @@ def process_payment(iou_dict: dict, pathfinding_service: PathfindingService) -> 
         raise exceptions.InvalidSignature
 
     # Compare with known IOU
-    active_iou = pathfinding_service.database.get_iou(
-        sender=iou.sender,
-        claimed=False,
-    )
+    active_iou = pathfinding_service.database.get_iou(sender=iou.sender, claimed=False)
     if active_iou:
         if active_iou.expiration_block != iou.expiration_block:
             raise exceptions.UseThisIOU(iou=active_iou)
@@ -176,9 +166,7 @@ def process_payment(iou_dict: dict, pathfinding_service: PathfindingService) -> 
         expected_amount = active_iou.amount + pathfinding_service.service_fee
     else:
         claimed_iou = pathfinding_service.database.get_iou(
-            sender=iou.sender,
-            expiration_block=iou.expiration_block,
-            claimed=True,
+            sender=iou.sender, expiration_block=iou.expiration_block, claimed=True
         )
         if claimed_iou:
             raise exceptions.IOUAlreadyClaimed
@@ -206,20 +194,21 @@ def process_payment(iou_dict: dict, pathfinding_service: PathfindingService) -> 
 @dataclass
 class IOURequest:
     """A HTTP request to IOUResource"""
+
     sender: Address
     receiver: Address
     timestamp: datetime
-    timestamp_str: str = field(metadata={
-        "marshmallow_field": marshmallow.fields.String(load_from='timestamp'),
-    })
+    timestamp_str: str = field(
+        metadata={"marshmallow_field": marshmallow.fields.String(load_from='timestamp')}
+    )
     signature: Signature = field(metadata={"marshmallow_field": HexedBytes()})
     Schema: ClassVar[Type[marshmallow.Schema]]
 
     def is_signature_valid(self) -> bool:
         packed_data = (
-            Web3.toBytes(hexstr=self.sender) +
-            Web3.toBytes(hexstr=self.receiver) +
-            Web3.toBytes(text=self.timestamp_str)
+            Web3.toBytes(hexstr=self.sender)
+            + Web3.toBytes(hexstr=self.receiver)
+            + Web3.toBytes(text=self.timestamp_str)
         )
         try:
             recovered_address = recover(packed_data, self.signature)
@@ -229,7 +218,6 @@ class IOURequest:
 
 
 class IOUResource(PathfinderResource):
-
     def get(self, token_network_address: TokenNetworkAddress) -> Tuple[dict, int]:
         iou_request, errors = IOURequest.Schema().load(request.args)
         if errors:
@@ -240,18 +228,13 @@ class IOUResource(PathfinderResource):
             raise exceptions.RequestOutdated
 
         last_iou = self.pathfinding_service.database.get_iou(
-            sender=iou_request.sender,
-            claimed=False,
+            sender=iou_request.sender, claimed=False
         )
         if last_iou:
             last_iou = IOU.Schema(strict=True, exclude=['claimed']).dump(last_iou)[0]
-            return {
-                'last_iou': last_iou,
-            }, 200
+            return {'last_iou': last_iou}, 200
         else:
-            return {
-                'last_iou': None,
-            }, 404
+            return {'last_iou': None}, 404
 
 
 class InfoResource(PathfinderResource):
@@ -263,17 +246,20 @@ class InfoResource(PathfinderResource):
         operator = 'PLACEHOLDER FOR PATHFINDER OPERATOR'
         message = 'PLACEHOLDER FOR ADDITIONAL MESSAGE BY THE PFS'
 
-        return {
-            'price_info': price,
-            'network_info': {
-                'chain_id': self.pathfinding_service.chain_id,
-                'registry_address': self.pathfinding_service.registry_address,
+        return (
+            {
+                'price_info': price,
+                'network_info': {
+                    'chain_id': self.pathfinding_service.chain_id,
+                    'registry_address': self.pathfinding_service.registry_address,
+                },
+                'settings': settings,
+                'version': self.version,
+                'operator': operator,
+                'message': message,
             },
-            'settings': settings,
-            'version': self.version,
-            'operator': operator,
-            'message': message,
-        }, 200
+            200,
+        )
 
 
 class ServiceApi:

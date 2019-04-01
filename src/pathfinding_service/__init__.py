@@ -1,5 +1,3 @@
 from .service import PathfindingService
 
-__all__ = [
-    'PathfindingService',
-]
+__all__ = ['PathfindingService']

@@ -17,11 +17,11 @@ from monitoring_service.handlers import (
     action_claim_reward_triggered_event_handler,
     action_monitoring_triggered_event_handler,
     channel_closed_event_handler,
-    channel_non_closing_balance_proof_updated_event_handler,
     channel_opened_event_handler,
     channel_settled_event_handler,
     monitor_new_balance_proof_event_handler,
     monitor_reward_claim_event_handler,
+    non_closing_balance_proof_updated_event_handler,
     updated_head_block_event_handler,
 )
 from monitoring_service.states import (
@@ -47,10 +47,7 @@ DEFAULT_SETTLE_TIMEOUT = 100
 
 
 def assert_channel_state(context, state):
-    channel = context.db.get_channel(
-        DEFAULT_TOKEN_NETWORK_ADDRESS,
-        DEFAULT_CHANNEL_IDENTIFIER,
-    )
+    channel = context.db.get_channel(DEFAULT_TOKEN_NETWORK_ADDRESS, DEFAULT_CHANNEL_IDENTIFIER)
     assert channel
     assert channel.state == state
 
@@ -105,8 +102,7 @@ def get_signed_monitor_request(
         priv_key=closing_privkey,
     )
     monitor_request = UnsignedMonitorRequest.from_balance_proof(
-        bp,
-        reward_amount=reward_amount,
+        bp, reward_amount=reward_amount
     ).sign(nonclosing_privkey)
     return monitor_request
 
@@ -127,20 +123,17 @@ def context(ms_database):
 
 def create_default_token_network(context):
     context.db.conn.execute(
-        "INSERT INTO token_network (address) VALUES (?)",
-        [DEFAULT_TOKEN_NETWORK_ADDRESS],
+        "INSERT INTO token_network (address) VALUES (?)", [DEFAULT_TOKEN_NETWORK_ADDRESS]
     )
 
 
-def test_event_handler_ignore_other_events(
-    context: Context,
-):
+def test_event_handler_ignore_other_events(context: Context,):
     event = Event()
 
     for handler in [
         channel_opened_event_handler,
         channel_closed_event_handler,
-        channel_non_closing_balance_proof_updated_event_handler,
+        non_closing_balance_proof_updated_event_handler,
         channel_settled_event_handler,
         monitor_new_balance_proof_event_handler,
         monitor_reward_claim_event_handler,
@@ -149,15 +142,10 @@ def test_event_handler_ignore_other_events(
         updated_head_block_event_handler,
     ]:
         with pytest.raises(AssertionError):
-            handler(
-                event=event,
-                context=context,
-            )
+            handler(event=event, context=context)
 
 
-def test_channel_opened_event_handler_adds_channel(
-    context: Context,
-):
+def test_channel_opened_event_handler_adds_channel(context: Context,):
     create_default_token_network(context)
     event = ReceiveChannelOpenedEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
@@ -175,9 +163,7 @@ def test_channel_opened_event_handler_adds_channel(
     assert_channel_state(context, ChannelState.OPENED)
 
 
-def test_channel_closed_event_handler_closes_existing_channel(
-    context: Context,
-):
+def test_channel_closed_event_handler_closes_existing_channel(context: Context,):
     context = setup_state_with_open_channel(context)
     context.last_known_block = 60
 
@@ -196,9 +182,7 @@ def test_channel_closed_event_handler_closes_existing_channel(
     assert_channel_state(context, ChannelState.CLOSED)
 
 
-def test_channel_closed_event_handler_idempotency(
-    context: Context,
-):
+def test_channel_closed_event_handler_idempotency(context: Context,):
     context = setup_state_with_open_channel(context)
     context.last_known_block = 60
 
@@ -220,9 +204,7 @@ def test_channel_closed_event_handler_idempotency(
     assert context.db.scheduled_event_count() == 1
 
 
-def test_channel_closed_event_handler_ignores_existing_channel_after_timeout(
-    context: Context,
-):
+def test_channel_closed_event_handler_ignores_existing_channel_after_timeout(context: Context,):
     context = setup_state_with_open_channel(context)
     context.last_known_block = 200
 
@@ -241,9 +223,7 @@ def test_channel_closed_event_handler_ignores_existing_channel_after_timeout(
     assert_channel_state(context, ChannelState.CLOSED)
 
 
-def test_channel_closed_event_handler_leaves_existing_channel(
-    context: Context,
-):
+def test_channel_closed_event_handler_leaves_existing_channel(context: Context,):
     context = setup_state_with_open_channel(context)
 
     event = ReceiveChannelClosedEvent(
@@ -292,9 +272,7 @@ def test_channel_closed_event_handler_trigger_action_monitor_event_without_monit
     assert context.db.scheduled_event_count() == 1
 
 
-def test_channel_settled_event_handler_settles_existing_channel(
-    context: Context,
-):
+def test_channel_settled_event_handler_settles_existing_channel(context: Context,):
     context = setup_state_with_closed_channel(context)
 
     event = ReceiveChannelSettledEvent(
@@ -308,9 +286,7 @@ def test_channel_settled_event_handler_settles_existing_channel(
     assert_channel_state(context, ChannelState.SETTLED)
 
 
-def test_channel_settled_event_handler_leaves_existing_channel(
-    context: Context,
-):
+def test_channel_settled_event_handler_leaves_existing_channel(context: Context,):
     context = setup_state_with_closed_channel(context)
 
     event = ReceiveChannelSettledEvent(
@@ -324,9 +300,7 @@ def test_channel_settled_event_handler_leaves_existing_channel(
     assert_channel_state(context, ChannelState.CLOSED)
 
 
-def test_channel_bp_updated_event_handler_sets_update_status_if_not_set(
-    context: Context,
-):
+def test_channel_bp_updated_event_handler_sets_update_status_if_not_set(context: Context,):
     context = setup_state_with_closed_channel(context)
 
     event_bp = ReceiveNonClosingBalanceProofUpdatedEvent(
@@ -341,7 +315,7 @@ def test_channel_bp_updated_event_handler_sets_update_status_if_not_set(
     assert channel
     assert channel.update_status is None
 
-    channel_non_closing_balance_proof_updated_event_handler(event_bp, context)
+    non_closing_balance_proof_updated_event_handler(event_bp, context)
 
     assert context.db.channel_count() == 1
     channel = context.db.get_channel(event_bp.token_network_address, event_bp.channel_identifier)
@@ -358,7 +332,7 @@ def test_channel_bp_updated_event_handler_sets_update_status_if_not_set(
         block_number=BlockNumber(53),
     )
 
-    channel_non_closing_balance_proof_updated_event_handler(event_bp2, context)
+    non_closing_balance_proof_updated_event_handler(event_bp2, context)
 
     assert context.db.channel_count() == 1
     channel = context.db.get_channel(event_bp.token_network_address, event_bp.channel_identifier)
@@ -368,9 +342,7 @@ def test_channel_bp_updated_event_handler_sets_update_status_if_not_set(
     assert channel.update_status.update_sender_address == DEFAULT_PARTICIPANT1
 
 
-def test_monitor_new_balance_proof_event_handler_sets_update_status(
-    context: Context,
-):
+def test_monitor_new_balance_proof_event_handler_sets_update_status(context: Context,):
     context = setup_state_with_closed_channel(context)
 
     new_balance_event = ReceiveMonitoringNewBalanceProofEvent(
@@ -384,8 +356,7 @@ def test_monitor_new_balance_proof_event_handler_sets_update_status(
     )
 
     channel = context.db.get_channel(
-        new_balance_event.token_network_address,
-        new_balance_event.channel_identifier,
+        new_balance_event.token_network_address, new_balance_event.channel_identifier
     )
     assert channel
     assert channel.update_status is None
@@ -394,8 +365,7 @@ def test_monitor_new_balance_proof_event_handler_sets_update_status(
 
     assert context.db.channel_count() == 1
     channel = context.db.get_channel(
-        new_balance_event.token_network_address,
-        new_balance_event.channel_identifier,
+        new_balance_event.token_network_address, new_balance_event.channel_identifier
     )
     assert channel
     assert channel.update_status is not None
@@ -416,8 +386,7 @@ def test_monitor_new_balance_proof_event_handler_sets_update_status(
 
     assert context.db.channel_count() == 1
     channel = context.db.get_channel(
-        new_balance_event.token_network_address,
-        new_balance_event.channel_identifier,
+        new_balance_event.token_network_address, new_balance_event.channel_identifier
     )
     assert channel
     assert channel.update_status is not None
@@ -425,9 +394,7 @@ def test_monitor_new_balance_proof_event_handler_sets_update_status(
     assert channel.update_status.update_sender_address == 'D'
 
 
-def test_monitor_new_balance_proof_event_handler_idempotency(
-    context: Context,
-):
+def test_monitor_new_balance_proof_event_handler_idempotency(context: Context,):
     context = setup_state_with_closed_channel(context)
 
     new_balance_event = ReceiveMonitoringNewBalanceProofEvent(
@@ -441,8 +408,7 @@ def test_monitor_new_balance_proof_event_handler_idempotency(
     )
 
     channel = context.db.get_channel(
-        new_balance_event.token_network_address,
-        new_balance_event.channel_identifier,
+        new_balance_event.token_network_address, new_balance_event.channel_identifier
     )
     assert channel
     assert channel.update_status is None
@@ -452,8 +418,7 @@ def test_monitor_new_balance_proof_event_handler_idempotency(
     assert context.db.scheduled_event_count() == 1
     assert context.db.channel_count() == 1
     channel = context.db.get_channel(
-        new_balance_event.token_network_address,
-        new_balance_event.channel_identifier,
+        new_balance_event.token_network_address, new_balance_event.channel_identifier
     )
     assert channel
     assert channel.update_status is not None
@@ -465,8 +430,7 @@ def test_monitor_new_balance_proof_event_handler_idempotency(
     assert context.db.scheduled_event_count() == 1
     assert context.db.channel_count() == 1
     channel = context.db.get_channel(
-        new_balance_event.token_network_address,
-        new_balance_event.channel_identifier,
+        new_balance_event.token_network_address, new_balance_event.channel_identifier
     )
     assert channel
     assert channel.update_status is not None
@@ -527,9 +491,8 @@ def test_action_monitoring_triggered_event_handler_with_sufficient_balance_does_
     """
     context = setup_state_with_closed_channel(context)
 
-    context.db.upsert_monitor_request(get_signed_monitor_request(
-        nonce=Nonce(6),
-        reward_amount=TokenAmount(10)),
+    context.db.upsert_monitor_request(
+        get_signed_monitor_request(nonce=Nonce(6), reward_amount=TokenAmount(10))
     )
 
     trigger_event = ActionMonitoringTriggeredEvent(
@@ -539,14 +502,13 @@ def test_action_monitoring_triggered_event_handler_with_sufficient_balance_does_
     )
 
     channel = context.db.get_channel(
-        trigger_event.token_network_address,
-        trigger_event.channel_identifier,
+        trigger_event.token_network_address, trigger_event.channel_identifier
     )
     assert channel
     assert channel.closing_tx_hash is None
 
     context.user_deposit_contract.functions.effectiveBalance(
-        DEFAULT_PARTICIPANT2,
+        DEFAULT_PARTICIPANT2
     ).call.return_value = 21
     action_monitoring_triggered_event_handler(trigger_event, context)
 
@@ -555,16 +517,15 @@ def test_action_monitoring_triggered_event_handler_with_sufficient_balance_does_
 
 
 def test_action_monitoring_triggered_event_handler_with_insufficient_reward_amount_does_not_trigger_monitor_call(  # noqa
-        context: Context,
+    context: Context,
 ):
     """ Tests that `monitor` is not called when the ActionMonitoringTriggeredEvent is triggered but
     the monitor request shows an insufficient reward amount
     """
     context = setup_state_with_closed_channel(context)
 
-    context.db.upsert_monitor_request(get_signed_monitor_request(
-        nonce=Nonce(6),
-        reward_amount=TokenAmount(0)),
+    context.db.upsert_monitor_request(
+        get_signed_monitor_request(nonce=Nonce(6), reward_amount=TokenAmount(0))
     )
 
     trigger_event = ActionMonitoringTriggeredEvent(
@@ -574,14 +535,13 @@ def test_action_monitoring_triggered_event_handler_with_insufficient_reward_amou
     )
 
     channel = context.db.get_channel(
-        trigger_event.token_network_address,
-        trigger_event.channel_identifier,
+        trigger_event.token_network_address, trigger_event.channel_identifier
     )
     assert channel
     assert channel.closing_tx_hash is None
 
     context.user_deposit_contract.functions.effectiveBalance(
-        DEFAULT_PARTICIPANT2,
+        DEFAULT_PARTICIPANT2
     ).call.return_value = 21
     action_monitoring_triggered_event_handler(trigger_event, context)
 
@@ -600,7 +560,7 @@ def test_action_monitoring_triggered_event_handler_without_sufficient_balance_do
     context = setup_state_with_closed_channel(context)
 
     context.db.upsert_monitor_request(
-        get_signed_monitor_request(nonce=Nonce(6), reward_amount=TokenAmount(10)),
+        get_signed_monitor_request(nonce=Nonce(6), reward_amount=TokenAmount(10))
     )
 
     trigger_event = ActionMonitoringTriggeredEvent(
@@ -610,14 +570,13 @@ def test_action_monitoring_triggered_event_handler_without_sufficient_balance_do
     )
 
     channel = context.db.get_channel(
-        trigger_event.token_network_address,
-        trigger_event.channel_identifier,
+        trigger_event.token_network_address, trigger_event.channel_identifier
     )
     assert channel
     assert channel.closing_tx_hash is None
 
     context.user_deposit_contract.functions.effectiveBalance(
-        DEFAULT_PARTICIPANT2,
+        DEFAULT_PARTICIPANT2
     ).call.return_value = 0
     action_monitoring_triggered_event_handler(trigger_event, context)
 
@@ -625,9 +584,7 @@ def test_action_monitoring_triggered_event_handler_without_sufficient_balance_do
     assert context.monitoring_service_contract.functions.monitor.called is False
 
 
-def test_mr_available_before_channel_triggers_monitor_call(
-    context: Context,
-):
+def test_mr_available_before_channel_triggers_monitor_call(context: Context,):
     """ Tests that the MR is read from the DB, even if it is supplied before the channel was opened.
 
     See https://github.com/raiden-network/raiden-services/issues/26
@@ -645,7 +602,7 @@ def test_mr_available_before_channel_triggers_monitor_call(
     )
 
     context.user_deposit_contract.functions.effectiveBalance(
-        DEFAULT_PARTICIPANT2,
+        DEFAULT_PARTICIPANT2
     ).call.return_value = 100
     action_monitoring_triggered_event_handler(event, context)
 
@@ -653,9 +610,7 @@ def test_mr_available_before_channel_triggers_monitor_call(
     assert context.monitoring_service_contract.functions.monitor.called is True
 
 
-def test_mr_with_unknown_signatures(
-    context: Context,
-):
+def test_mr_with_unknown_signatures(context: Context,):
     """ The signatures are valid but don't belong to the participants.
     """
     context = setup_state_with_closed_channel(context)
@@ -672,12 +627,8 @@ def test_mr_with_unknown_signatures(
         action_monitoring_triggered_event_handler(event, context)
         assert not context.monitoring_service_contract.functions.monitor.called
 
-    assert_mr_is_ignored(get_signed_monitor_request(
-        closing_privkey=get_random_privkey(),
-    ))
-    assert_mr_is_ignored(get_signed_monitor_request(
-        nonclosing_privkey=get_random_privkey(),
-    ))
+    assert_mr_is_ignored(get_signed_monitor_request(closing_privkey=get_random_privkey()))
+    assert_mr_is_ignored(get_signed_monitor_request(nonclosing_privkey=get_random_privkey()))
 
 
 def test_action_claim_reward_triggered_event_handler_does_trigger_claim_call(  # noqa
@@ -689,7 +640,7 @@ def test_action_claim_reward_triggered_event_handler_does_trigger_claim_call(  #
     context = setup_state_with_closed_channel(context)
 
     context.db.upsert_monitor_request(
-        get_signed_monitor_request(nonce=Nonce(6), reward_amount=TokenAmount(10)),
+        get_signed_monitor_request(nonce=Nonce(6), reward_amount=TokenAmount(10))
     )
 
     trigger_event = ActionClaimRewardTriggeredEvent(
@@ -699,16 +650,14 @@ def test_action_claim_reward_triggered_event_handler_does_trigger_claim_call(  #
     )
 
     channel = context.db.get_channel(
-        trigger_event.token_network_address,
-        trigger_event.channel_identifier,
+        trigger_event.token_network_address, trigger_event.channel_identifier
     )
     assert channel
     assert channel.claim_tx_hash is None
 
     # Set update state
     channel.update_status = OnChainUpdateStatus(
-        update_sender_address=context.ms_state.address,
-        nonce=Nonce(6),
+        update_sender_address=context.ms_state.address, nonce=Nonce(6)
     )
     context.db.upsert_channel(channel)
 
@@ -727,7 +676,7 @@ def test_action_claim_reward_triggered_event_handler_without_reward_doesnt_trigg
     context = setup_state_with_closed_channel(context)
 
     context.db.upsert_monitor_request(
-        get_signed_monitor_request(nonce=Nonce(6), reward_amount=TokenAmount(0)),
+        get_signed_monitor_request(nonce=Nonce(6), reward_amount=TokenAmount(0))
     )
 
     trigger_event = ActionClaimRewardTriggeredEvent(
@@ -737,16 +686,14 @@ def test_action_claim_reward_triggered_event_handler_without_reward_doesnt_trigg
     )
 
     channel = context.db.get_channel(
-        trigger_event.token_network_address,
-        trigger_event.channel_identifier,
+        trigger_event.token_network_address, trigger_event.channel_identifier
     )
     assert channel
     assert channel.claim_tx_hash is None
 
     # Set update state
     channel.update_status = OnChainUpdateStatus(
-        update_sender_address=context.ms_state.address,
-        nonce=Nonce(6),
+        update_sender_address=context.ms_state.address, nonce=Nonce(6)
     )
     context.db.upsert_channel(channel)
 
@@ -765,7 +712,7 @@ def test_action_claim_reward_triggered_event_handler_without_update_state_doesnt
     context = setup_state_with_closed_channel(context)
 
     context.db.upsert_monitor_request(
-        get_signed_monitor_request(nonce=Nonce(6), reward_amount=TokenAmount(0)),
+        get_signed_monitor_request(nonce=Nonce(6), reward_amount=TokenAmount(0))
     )
 
     trigger_event = ActionClaimRewardTriggeredEvent(
@@ -775,16 +722,14 @@ def test_action_claim_reward_triggered_event_handler_without_update_state_doesnt
     )
 
     channel = context.db.get_channel(
-        trigger_event.token_network_address,
-        trigger_event.channel_identifier,
+        trigger_event.token_network_address, trigger_event.channel_identifier
     )
     assert channel
     assert channel.claim_tx_hash is None
 
     # Set update state
     channel.update_status = OnChainUpdateStatus(
-        update_sender_address=Address('0x' + '1' * 40),
-        nonce=Nonce(6),
+        update_sender_address=Address('0x' + '1' * 40), nonce=Nonce(6)
     )
     context.db.upsert_channel(channel)
 

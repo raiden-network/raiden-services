@@ -11,6 +11,7 @@ class ChannelView:
     """
     Unidirectional view of a bidirectional channel.
     """
+
     class State(Enum):
         OPEN = 1
         SETTLING = 2
@@ -41,11 +42,7 @@ class ChannelView:
 
     # TODO: define another function update_deposit
     def update_capacity(
-        self,
-        nonce: int = 0,
-        capacity: int = 0,
-        reveal_timeout: int = None,
-        deposit: int = None,
+        self, nonce: int = 0, capacity: int = 0, reveal_timeout: int = None, deposit: int = None
     ) -> None:
         self.update_nonce = nonce
         self._capacity = capacity
@@ -71,7 +68,5 @@ class ChannelView:
 
     def __repr__(self) -> str:
         return '<ChannelView from={} to={} capacity={}>'.format(
-            self.self,
-            self.partner,
-            self.capacity,
+            self.self, self.partner, self.capacity
         )

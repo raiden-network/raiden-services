@@ -16,36 +16,30 @@ def build_request_monitoring():
     def f(amount=1, nonce=1):
         balance_proof = make_balance_proof(signer=signer, amount=amount, nonce=nonce)
         partner_signed_balance_proof = SignedBlindedBalanceProof.from_balance_proof_signed_state(
-            balance_proof,
+            balance_proof
         )
         request_monitoring = RequestMonitoring(
-            onchain_balance_proof=partner_signed_balance_proof,
-            reward_amount=TokenAmount(55),
+            onchain_balance_proof=partner_signed_balance_proof, reward_amount=TokenAmount(55)
         )
         request_monitoring.sign(non_closing_signer)
 
         # usually not a property of RequestMonitoring, but added for convenience in these tests
         request_monitoring.non_closing_signer = to_checksum_address(  # type: ignore
-            non_closing_signer.address,
+            non_closing_signer.address
         )
         return request_monitoring
+
     return f
 
 
-def test_invalid_request_signatures(
-    ms_database,
-    build_request_monitoring,
-    request_collector,
-):
+def test_invalid_request_signatures(ms_database, build_request_monitoring, request_collector):
     request_monitoring = build_request_monitoring()
 
     def store_successful(**kwargs):
         rm_dict = request_monitoring.to_dict()
         for key, val in kwargs.items():
             rm_dict[key] = val
-        request_collector.on_monitor_request(
-            RequestMonitoring.from_dict(rm_dict),
-        )
+        request_collector.on_monitor_request(RequestMonitoring.from_dict(rm_dict))
         return ms_database.monitor_request_count() == 1
 
     # bad signatures
@@ -58,17 +52,13 @@ def test_invalid_request_signatures(
     assert store_successful()
 
 
-def test_ignore_old_nonce(
-    ms_database,
-    build_request_monitoring,
-    request_collector,
-):
+def test_ignore_old_nonce(ms_database, build_request_monitoring, request_collector):
     def stored_mr_after_proccessing(amount, nonce):
         request_monitoring = build_request_monitoring(amount=amount, nonce=nonce)
         request_collector.on_monitor_request(request_monitoring)
         return ms_database.get_monitor_request(
             token_network_address=to_checksum_address(
-                request_monitoring.balance_proof.token_network_address,
+                request_monitoring.balance_proof.token_network_address
             ),
             channel_id=request_monitoring.balance_proof.channel_identifier,
             non_closing_signer=request_monitoring.non_closing_signer,

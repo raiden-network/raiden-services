@@ -37,29 +37,25 @@ def error_handler(context: Any, exc_info: tuple) -> None:
     log.critical(
         'Unhandled exception. Terminating the program...'
         'Please report this issue at '
-        'https://github.com/raiden-network/raiden-services/issues',
+        'https://github.com/raiden-network/raiden-services/issues'
     )
-    traceback.print_exception(
-        etype=exc_info[0],
-        value=exc_info[1],
-        tb=exc_info[2],
-    )
+    traceback.print_exception(etype=exc_info[0], value=exc_info[1], tb=exc_info[2])
     sys.exit()
 
 
 class PathfindingService(gevent.Greenlet):
     def __init__(
-            self,
-            web3: Web3,
-            contract_manager: ContractManager,
-            registry_address: Address,
-            private_key: str,
-            db_filename: str,
-            user_deposit_contract_address: Address,
-            sync_start_block: int = 0,
-            required_confirmations: int = 8,
-            poll_interval: int = 10,
-            service_fee: int = 0,
+        self,
+        web3: Web3,
+        contract_manager: ContractManager,
+        registry_address: Address,
+        private_key: str,
+        db_filename: str,
+        user_deposit_contract_address: Address,
+        sync_start_block: int = 0,
+        required_confirmations: int = 8,
+        poll_interval: int = 10,
+        service_fee: int = 0,
     ):
         """ Creates a new pathfinding service
 
@@ -85,14 +81,9 @@ class PathfindingService(gevent.Greenlet):
         self.is_running = gevent.event.Event()
         self.token_networks: Dict[Address, TokenNetwork] = {}
         self.token_network_listeners: List[BlockchainListener] = []
-        self.database = PFSDatabase(
-            filename=db_filename,
-            pfs_address=self.address,
-        )
+        self.database = PFSDatabase(filename=db_filename, pfs_address=self.address)
         self.user_deposit_contract = web3.eth.contract(
-            abi=self.contract_manager.get_contract_abi(
-                CONTRACT_USER_DEPOSIT,
-            ),
+            abi=self.contract_manager.get_contract_abi(CONTRACT_USER_DEPOSIT),
             address=user_deposit_contract_address,
         )
 
@@ -124,16 +115,12 @@ class PathfindingService(gevent.Greenlet):
                 service_room_suffix=PATH_FINDING_BROADCASTING_ROOM,
             )
         except ConnectionError as e:
-            log.critical(
-                'Could not connect to broadcasting system.',
-                exc=e,
-            )
+            log.critical('Could not connect to broadcasting system.', exc=e)
             sys.exit(1)
 
     def _setup_token_networks(self) -> None:
         self.token_network_registry_listener.add_confirmed_listener(
-            create_registry_event_topics(self.contract_manager),
-            self.handle_token_network_created,
+            create_registry_event_topics(self.contract_manager), self.handle_token_network_created
         )
 
     def _run(self) -> None:
@@ -198,10 +185,7 @@ class PathfindingService(gevent.Greenlet):
         )
 
         token_network.handle_channel_opened_event(
-            channel_identifier,
-            participant1,
-            participant2,
-            settle_timeout,
+            channel_identifier, participant1, participant2, settle_timeout
         )
 
     def handle_channel_new_deposit(self, event: Dict) -> None:
@@ -223,9 +207,7 @@ class PathfindingService(gevent.Greenlet):
         )
 
         token_network.handle_channel_new_deposit_event(
-            channel_identifier,
-            participant_address,
-            total_deposit,
+            channel_identifier, participant_address, total_deposit
         )
 
     def handle_channel_closed(self, event: Dict) -> None:
@@ -259,16 +241,11 @@ class PathfindingService(gevent.Greenlet):
                 token_network_address=token_network_address,
             )
             self.create_token_network_for_address(
-                token_network_address,
-                token_address,
-                event_block_number,
+                token_network_address, token_address, event_block_number
             )
 
     def create_token_network_for_address(
-        self,
-        token_network_address: Address,
-        token_address: Address,
-        block_number: int = 0,
+        self, token_network_address: Address, token_address: Address, block_number: int = 0
     ) -> None:
         token_network = TokenNetwork(token_network_address, token_address)
         self.token_networks[token_network_address] = token_network
@@ -286,8 +263,7 @@ class PathfindingService(gevent.Greenlet):
 
         # subscribe to event notifications from blockchain listener
         token_network_listener.add_confirmed_listener(
-            create_channel_event_topics(),
-            self.handle_channel_event,
+            create_channel_event_topics(), self.handle_channel_event
         )
         token_network_listener.start()
         self.token_network_listeners.append(token_network_listener)
@@ -310,7 +286,7 @@ class PathfindingService(gevent.Greenlet):
 
     def on_pfs_update(self, message: UpdatePFS) -> None:
         token_network_address = to_checksum_address(
-            message.canonical_identifier.token_network_address,
+            message.canonical_identifier.token_network_address
         )
         log.info(
             'Received Capacity Update',
@@ -334,7 +310,7 @@ class PathfindingService(gevent.Greenlet):
         channel_identifier = message.canonical_identifier.channel_identifier
         if channel_identifier not in token_network.channel_id_to_addresses:
             raise InvalidCapacityUpdate(
-                'Received Capacity Update with unknown channel identifier in token network',
+                'Received Capacity Update with unknown channel identifier in token network'
             )
 
         # TODO: check signature of message
@@ -342,22 +318,20 @@ class PathfindingService(gevent.Greenlet):
         # check values < max int 256
         if message.updating_capacity > UINT256_MAX:
             raise InvalidCapacityUpdate(
-                'Received Capacity Update with impossible updating_capacity',
+                'Received Capacity Update with impossible updating_capacity'
             )
         if message.other_capacity > UINT256_MAX:
-            raise InvalidCapacityUpdate(
-                'Received Capacity Update with impossible other_capacity',
-            )
+            raise InvalidCapacityUpdate('Received Capacity Update with impossible other_capacity')
 
         # check if participants fit to channel id
         participants = token_network.channel_id_to_addresses[channel_identifier]
         if updating_participant not in participants:
             raise InvalidCapacityUpdate(
-                'Sender of Capacity Update does not match the internal channel',
+                'Sender of Capacity Update does not match the internal channel'
             )
         if other_participant not in participants:
             raise InvalidCapacityUpdate(
-                'Other Participant of Capacity Update does not match the internal channel',
+                'Other Participant of Capacity Update does not match the internal channel'
             )
 
         # check if nonce is higher than current nonce
@@ -368,8 +342,8 @@ class PathfindingService(gevent.Greenlet):
         )
 
         valid_nonces = (
-            message.updating_nonce <= view_to_partner.update_nonce and
-            message.other_nonce <= view_from_partner.update_nonce
+            message.updating_nonce <= view_to_partner.update_nonce
+            and message.other_nonce <= view_from_partner.update_nonce
         )
         if valid_nonces:
             raise InvalidCapacityUpdate('Capacity Update already received')
