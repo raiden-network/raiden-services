@@ -1,21 +1,22 @@
-import sys
-
 import click
 import structlog
-from web3 import HTTPProvider, Web3
-from web3.middleware import geth_poa_middleware
 
 from monitoring_service.constants import DEFAULT_REQUIRED_CONFIRMATIONS
 from monitoring_service.service import MonitoringService
-from raiden.utils.typing import BlockNumber, ChainID
+from raiden.utils.typing import BlockNumber
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
     CONTRACT_TOKEN_NETWORK_REGISTRY,
     CONTRACT_USER_DEPOSIT,
 )
 from raiden_contracts.contract_manager import ContractManager, contracts_precompiled_path
-from raiden_libs.cli import blockchain_options, common_options, validate_address
-from raiden_libs.contract_info import START_BLOCK_ID, get_contract_addresses_and_start_block
+from raiden_libs.cli import (
+    blockchain_options,
+    common_options,
+    connect_to_blockchain,
+    validate_address,
+)
+from raiden_libs.contract_info import START_BLOCK_ID
 from raiden_libs.types import Address
 
 log = structlog.get_logger(__name__)
@@ -46,41 +47,24 @@ CONTEXT_SETTINGS = dict(
 def main(
     private_key: str,
     state_db: str,
+
     eth_rpc: str,
     registry_address: Address,
     user_deposit_contract_address: Address,
     start_block: BlockNumber,
-    confirmations: int,
     monitor_contract_address: Address,
+
     min_reward: int,
+    confirmations: int,
 ) -> None:
-    provider = HTTPProvider(eth_rpc)
-    web3 = Web3(provider)
-
-    # Add POA middleware for geth POA chains, no/op for other chains
-    web3.middleware_stack.inject(geth_poa_middleware, layer=0)
-
-    contract_manager = ContractManager(contracts_precompiled_path())
-    contract_infos = get_contract_addresses_and_start_block(
-        chain_id=ChainID(int(web3.net.version)),
-        contracts_version=None,
-        token_network_registry_address=registry_address,
-        monitor_contract_address=monitor_contract_address,
+    web3, contract_infos = connect_to_blockchain(
+        eth_rpc=eth_rpc,
+        registry_address=registry_address,
         user_deposit_contract_address=user_deposit_contract_address,
         start_block=start_block,
+        monitor_contract_address=monitor_contract_address,
     )
-
-    if contract_infos is None:
-        log.critical('Could not find correct contracts to use. Please check your configuration')
-        sys.exit(1)
-    else:
-        log.info(
-            'Contract information',
-            registry_address=contract_infos[CONTRACT_TOKEN_NETWORK_REGISTRY],
-            monitor_contract_address=contract_infos[CONTRACT_MONITORING_SERVICE],
-            user_deposit_contract_address=contract_infos[CONTRACT_USER_DEPOSIT],
-            sync_start_block=contract_infos[START_BLOCK_ID],
-        )
+    contract_manager = ContractManager(contracts_precompiled_path())
 
     ms = MonitoringService(
         web3=web3,
