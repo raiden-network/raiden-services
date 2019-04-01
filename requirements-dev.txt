@@ -10,10 +10,10 @@ flake8>=3.6.0
 flake8-bugbear==18.8.0
 flake8-tuple==0.2.13
 isort==4.3.16
-mypy==0.660
+mypy==0.670
 black==19.3b0
 
-pytest>=4.0.1
+pytest==4.3.0
 pytest-runner
 pytest-cov
 pytest-structlog==0.1
@@ -23,7 +23,7 @@ ipython
 pdbpp
 psutil
 
-eth-tester[py-evm]==0.1.0b32
+eth-tester[py-evm]==0.1.0b33
 attrs==18.2.0  # needed for travis
 
 # Release

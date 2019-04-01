@@ -10,7 +10,7 @@ from setuptools import find_packages, setup
 REQ_REPLACE = {
     'git+https://github.com/matrix-org/matrix-python-sdk.git': 'matrix-client',
     # 'git+https://github.com/raiden-network/raiden-contracts.git': 'raiden-contracts',
-    'git+https://github.com/raiden-network/raiden.git@ffbfcee9405a95e6a64d2282dc174d4b020d68f5': 'raiden',
+    'git+https://github.com/raiden-network/raiden.git@77fcf0b13956390ecbfce0fff55c830b63cb9444': 'raiden',
 }
 
 DESCRIPTION = 'Raiden Services contain additional tools for the Raiden Network.'
