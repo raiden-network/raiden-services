@@ -98,14 +98,7 @@ def common_options(app_name: str) -> Callable:
 
 
 def blockchain_options(func: Callable) -> Callable:
-    """A decorator to be used with all service commands
-
-    It will pass two new args to the given func:
-    * private_key (as a result of `--keystore-file` and `--password`)
-    * state_db
-
-    The `app_name` will be used to determine the state_db location.
-    """
+    """A decorator providing blockchain related params to a command"""
     for option in reversed([
         click.option(
             '--eth-rpc',
