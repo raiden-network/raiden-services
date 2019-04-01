@@ -6,6 +6,7 @@ from raiden_libs.types import Address, TokenNetworkAddress
 
 class Event:
     """ Base class for events. """
+
     pass
 
 
@@ -65,12 +66,14 @@ class ReceiveMonitoringRewardClaimedEvent(Event):
 @dataclass
 class UpdatedHeadBlockEvent(Event):
     """ Event triggered after updating the head block and all events. """
+
     head_block_number: BlockNumber
 
 
 @dataclass
 class ScheduledEvent(Event):
     """ An event to be triggered a t a certain block number. """
+
     trigger_block_number: BlockNumber
     event: Event
 

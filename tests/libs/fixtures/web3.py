@@ -19,10 +19,7 @@ log = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope='session')
-def web3(
-        patch_genesis_gas_limit,
-        ethereum_tester,
-):
+def web3(patch_genesis_gas_limit, ethereum_tester):
     """Returns an initialized Web3 instance"""
     provider = EthereumTesterProvider(ethereum_tester)
     web3 = Web3(provider)
@@ -32,12 +29,14 @@ def web3(
     ethereum_tester.add_account(FAUCET_PRIVATE_KEY)
 
     # make faucet rich
-    ethereum_tester.send_transaction({
-        'from': ethereum_tester.get_accounts()[0],
-        'to': FAUCET_ADDRESS,
-        'gas': 21000,
-        'value': FAUCET_ALLOWANCE,
-    })
+    ethereum_tester.send_transaction(
+        {
+            'from': ethereum_tester.get_accounts()[0],
+            'to': FAUCET_ADDRESS,
+            'gas': 21000,
+            'value': FAUCET_ALLOWANCE,
+        }
+    )
 
     yield web3
 
@@ -45,9 +44,11 @@ def web3(
 @pytest.fixture(scope='session')
 def wait_for_blocks(web3):
     """Returns a function that blocks until n blocks are mined"""
+
     def wait_for_blocks(n):
         web3.testing.mine(n)
         gevent.sleep()
+
     return wait_for_blocks
 
 
@@ -62,10 +63,7 @@ def keystore_file(tmp_path) -> str:
     keystore_file = tmp_path / KEYSTORE_FILE_NAME
 
     account = Account.create()
-    keystore_json = Account.encrypt(
-        private_key=account.privateKey,
-        password=KEYSTORE_PASSWORD,
-    )
+    keystore_json = Account.encrypt(private_key=account.privateKey, password=KEYSTORE_PASSWORD)
     with open(keystore_file, 'w') as fp:
         json.dump(keystore_json, fp)
 

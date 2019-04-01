@@ -7,6 +7,7 @@ class InvalidCapacityUpdate(Exception):
 
 class ApiException(Exception):
     """An exception that can be returned via the REST API"""
+
     msg: str = 'Unknown Error'
     http_code: int = 400
     error_code: int = 0
@@ -26,6 +27,7 @@ class ApiException(Exception):
 
 class InvalidRequest(ApiException):
     """Request arguments failed schema validation"""
+
     error_code = 2000
     msg = 'Request parameter failed validation. See `error_details`.'
 
@@ -41,6 +43,7 @@ class RequestOutdated(ApiException):
 
 
 # ### BadIOU 21xx ###
+
 
 class BadIOU(ApiException):
     error_code = 2100

@@ -21,11 +21,7 @@ def test_message_signature(generate_raiden_clients):
     c1.open_channel(c2.address)
 
     balance_proof = c1.get_balance_proof(
-        c2.address,
-        nonce=1,
-        transferred_amount=5,
-        locksroot='0x%064x' % 0,
-        locked_amount=0,
+        c2.address, nonce=1, transferred_amount=5, locksroot='0x%064x' % 0, locked_amount=0
     )
     assert is_same_address(balance_proof.signer, c1.address)
     monitor_request = c1.get_monitor_request(c2.address, balance_proof, 1, c2.address)
@@ -106,12 +102,7 @@ def test_client_one_side_settle(generate_raiden_clients, wait_for_blocks, custom
     c1.close_channel(c2.address, balance_proof)
 
     wait_for_blocks(40)
-    c1.settle_channel(
-        c2.address,
-        (0, transfer_c1),
-        (0, 0),
-        ('0x%064x' % 0, '0x%064x' % 0),
-    )
+    c1.settle_channel(c2.address, (0, transfer_c1), (0, 0), ('0x%064x' % 0, '0x%064x' % 0))
 
     final_balance_c1 = custom_token.functions.balanceOf(c1.address).call()
     final_balance_c2 = custom_token.functions.balanceOf(c2.address).call()

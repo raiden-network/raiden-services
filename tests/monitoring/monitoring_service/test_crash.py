@@ -13,13 +13,12 @@ from raiden.utils.typing import BlockNumber, ChannelID
 
 
 class MockBlockchainListener:
-
     def __init__(self, block_events: List[List[Event]]):
         self.block_events = block_events
 
     def get_events(self, chain_state, to_block: int):
         from_block = chain_state.latest_known_block + 1
-        blocks = self.block_events[from_block:to_block + 1]
+        blocks = self.block_events[from_block : to_block + 1]
         events = [ev for block in blocks for ev in block]  # flatten
         return chain_state, events
 
@@ -64,21 +63,17 @@ def test_crash(
                 participant2=c2.address,
                 settle_timeout=20,
                 block_number=BlockNumber(0),
-            ),
+            )
         ],
-        [
-            UpdatedHeadBlockEvent(BlockNumber(1)),
-        ],
+        [UpdatedHeadBlockEvent(BlockNumber(1))],
         [
             ActionMonitoringTriggeredEvent(
                 token_network_address=token_network.address,
                 channel_identifier=channel_identifier,
                 non_closing_participant=c2.address,
-            ),
+            )
         ],
-        [
-            UpdatedHeadBlockEvent(BlockNumber(3)),
-        ],
+        [UpdatedHeadBlockEvent(BlockNumber(3))],
     ]
 
     def new_ms(filename):
@@ -103,8 +98,7 @@ def test_crash(
     crashy_ms = new_ms('crashy.db')
     for ms in [stable_ms, crashy_ms]:
         ms.database.conn.execute(
-            "INSERT INTO token_network(address) VALUES (?)",
-            [token_network.address],
+            "INSERT INTO token_network(address) VALUES (?)", [token_network.address]
         )
         ms.context.ms_state.blockchain_state.token_network_addresses = [token_network.address]
         ms.database.upsert_monitor_request(monitor_request)
@@ -117,11 +111,13 @@ def test_crash(
         result_state: List[dict] = []
         for ms in [stable_ms, crashy_ms]:
             ms._process_new_blocks(to_block)
-            result_state.append(dict(
-                blockchain_state=ms.context.ms_state.blockchain_state,
-                db_dump=list(ms.database.conn.iterdump()),
-                monitor_calls=ms.monitor_mock.mock_calls,
-            ))
+            result_state.append(
+                dict(
+                    blockchain_state=ms.context.ms_state.blockchain_state,
+                    db_dump=list(ms.database.conn.iterdump()),
+                    monitor_calls=ms.monitor_mock.mock_calls,
+                )
+            )
 
         # both instances should have the same state after processing
         for stable_state, crashy_state in zip(result_state[0].values(), result_state[1].values()):

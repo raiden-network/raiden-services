@@ -28,18 +28,24 @@ def server_private_key(ethereum_tester):
 @pytest.fixture
 def default_cli_args(keystore_file) -> List[str]:
     return [
-        '--keystore-file', keystore_file,
-        '--password', KEYSTORE_PASSWORD,
-        '--state-db', ':memory:',
+        '--keystore-file',
+        keystore_file,
+        '--password',
+        KEYSTORE_PASSWORD,
+        '--state-db',
+        ':memory:',
     ]
 
 
 @pytest.fixture
 def default_cli_args_ms(default_cli_args) -> List[str]:
     return default_cli_args + [
-        '--registry-address', '0x' + '1' * 40,
-        '--monitor-contract-address', '0x' + '2' * 40,
-        '--user-deposit-contract-address', '0x' + '3' * 40,
+        '--registry-address',
+        '0x' + '1' * 40,
+        '--monitor-contract-address',
+        '0x' + '2' * 40,
+        '--user-deposit-contract-address',
+        '0x' + '3' * 40,
     ]
 
 
@@ -72,10 +78,9 @@ def monitoring_service(
     send_funds(ms_address)
     deposit = 10  # any amount is sufficient for regsitration, right now
     custom_token.functions.mint(deposit).transact({'from': ms_address})
-    custom_token.functions.approve(
-        service_registry.address,
-        deposit,
-    ).transact({'from': ms_address})
+    custom_token.functions.approve(service_registry.address, deposit).transact(
+        {'from': ms_address}
+    )
     service_registry.functions.deposit(deposit).transact({'from': ms_address})
 
     ms = MonitoringService(
@@ -105,10 +110,7 @@ def request_collector(
     contracts_manager: ContractManager,
 ):
     with patch('request_collector.server.MatrixListener'):
-        rc = RequestCollector(
-            private_key=server_private_key,
-            state_db=ms_database,
-        )
+        rc = RequestCollector(private_key=server_private_key, state_db=ms_database)
         rc.start()
         yield rc
         rc.stop()

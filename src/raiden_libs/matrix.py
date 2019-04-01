@@ -42,11 +42,11 @@ def message_from_dict(data: dict) -> Message:
     except KeyError:
         if 'type' in data:
             raise InvalidProtocolMessage(
-                'Invalid message type (data["type"] = {})'.format(data['type']),
+                'Invalid message type (data["type"] = {})'.format(data['type'])
             ) from None
         else:
             raise InvalidProtocolMessage(
-                'Invalid message data. Can not find the data type',
+                'Invalid message data. Can not find the data type'
             ) from None
 
     return klass.from_dict(data)
@@ -54,11 +54,7 @@ def message_from_dict(data: dict) -> Message:
 
 class MatrixListener(gevent.Greenlet):
     def __init__(
-        self,
-        private_key: str,
-        chain_id: ChainID,
-        callback: Callable,
-        service_room_suffix: str,
+        self, private_key: str, chain_id: ChainID, callback: Callable, service_room_suffix: str
     ) -> None:
         super().__init__()
 
@@ -70,10 +66,7 @@ class MatrixListener(gevent.Greenlet):
             self.client, self.monitoring_room = self.setup_matrix(service_room_suffix)
             self.monitoring_room.add_listener(self._handle_message, 'm.room.message')
         except ConnectionError as e:
-            log.critical(
-                'Could not connect to broadcasting system.',
-                exc=e,
-            )
+            log.critical('Could not connect to broadcasting system.', exc=e)
             sys.exit(1)
 
     def listen_forever(self) -> None:
@@ -113,9 +106,7 @@ class MatrixListener(gevent.Greenlet):
         try:
             room_name = make_room_alias(self.chain_id, service_room_suffix)
             monitoring_room = join_global_room(
-                client=client,
-                name=room_name,
-                servers=available_servers,
+                client=client, name=room_name, servers=available_servers
             )
         except (MatrixRequestError, TransportError):
             raise ConnectionError('Could not join monitoring broadcasting room.')
@@ -140,10 +131,7 @@ class MatrixListener(gevent.Greenlet):
 
     def _handle_message(self, room: Any, event: dict) -> bool:
         """ Handle text messages sent to listening rooms """
-        if (
-                event['type'] != 'm.room.message' or
-                event['content']['msgtype'] != 'm.text'
-        ):
+        if event['type'] != 'm.room.message' or event['content']['msgtype'] != 'm.text':
             # Ignore non-messages and non-text messages
             return False
 
@@ -181,31 +169,20 @@ class MatrixListener(gevent.Greenlet):
                 message_dict = json.loads(line)
                 message = message_from_dict(message_dict)
             except (UnicodeDecodeError, json.JSONDecodeError) as ex:
-                logger.warning(
-                    "Can't parse message data JSON",
-                    message_data=line,
-                    _exc=ex,
-                )
+                logger.warning("Can't parse message data JSON", message_data=line, _exc=ex)
                 continue
             except (InvalidProtocolMessage, KeyError) as ex:
                 logger.warning(
-                    "Message data JSON is not a valid message",
-                    message_data=line,
-                    _exc=ex,
+                    "Message data JSON is not a valid message", message_data=line, _exc=ex
                 )
                 continue
 
             if not isinstance(message, SignedMessage):
-                logger.warning(
-                    'Received invalid message',
-                    message=message,
-                )
+                logger.warning('Received invalid message', message=message)
                 continue
             elif message.sender != peer_address:
                 logger.warning(
-                    'Message not signed by sender!',
-                    message=message,
-                    signer=message.sender,
+                    'Message not signed by sender!', message=message, signer=message.sender
                 )
                 continue
             messages.append(message)
@@ -215,9 +192,7 @@ class MatrixListener(gevent.Greenlet):
 
         for message in messages:
             log.debug(
-                'Message received',
-                message=message,
-                sender=to_checksum_address(message.sender),
+                'Message received', message=message, sender=to_checksum_address(message.sender)
             )
             self.callback(message)
 

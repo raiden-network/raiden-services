@@ -1,7 +1,8 @@
 """Console script for pathfinding_service."""
 from gevent import monkey, config  # isort:skip # noqa
+
 # there were some issues with the 'thread' resolver, remove it from the options
-config.resolver = ['dnspython', 'ares', 'block'] # noqa
+config.resolver = ['dnspython', 'ares', 'block']  # noqa
 monkey.patch_all()  # isort:skip # noqa
 
 import click
@@ -23,10 +24,7 @@ contract_manager = ContractManager(contracts_precompiled_path())
 
 @click.command()
 @click.option(
-    '--host',
-    default=DEFAULT_API_HOST,
-    type=str,
-    help='The host to use for serving the REST API',
+    '--host', default=DEFAULT_API_HOST, type=str, help='The host to use for serving the REST API'
 )
 @click.option(
     '--service-fee',

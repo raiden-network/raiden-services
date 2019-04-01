@@ -24,12 +24,10 @@ def test_blockchain_listener(
     confirmed_channel_open_events: List[Dict] = []
 
     blockchain_listener.add_unconfirmed_listener(
-        create_channel_event_topics(),
-        unconfirmed_channel_open_events.append,
+        create_channel_event_topics(), unconfirmed_channel_open_events.append
     )
     blockchain_listener.add_confirmed_listener(
-        create_channel_event_topics(),
-        confirmed_channel_open_events.append,
+        create_channel_event_topics(), confirmed_channel_open_events.append
     )
 
     # create unconfirmed channel
@@ -72,12 +70,10 @@ def test_blockchain_listener_nonexistant_contract(
     confirmed_channel_open_events: List[Dict] = []
 
     blockchain_listener.add_unconfirmed_listener(
-        create_channel_event_topics(),
-        unconfirmed_channel_open_events.append,
+        create_channel_event_topics(), unconfirmed_channel_open_events.append
     )
     blockchain_listener.add_confirmed_listener(
-        create_channel_event_topics(),
-        confirmed_channel_open_events.append,
+        create_channel_event_topics(), confirmed_channel_open_events.append
     )
 
     # create unconfirmed channel
@@ -109,8 +105,7 @@ def test_reorg(
 
     unconfirmed_channel_open_events: List[Dict] = []
     blockchain_listener.add_unconfirmed_listener(
-        create_channel_event_topics(),
-        unconfirmed_channel_open_events.append,
+        create_channel_event_topics(), unconfirmed_channel_open_events.append
     )
 
     c1, c2 = generate_raiden_clients(2)
@@ -153,8 +148,7 @@ def test_reorg(
     # test a big chain reorg (> required_confirmations)
     confirmed_channel_open_events: List[Dict] = []
     blockchain_listener.add_confirmed_listener(
-        create_channel_event_topics(),
-        confirmed_channel_open_events.append,
+        create_channel_event_topics(), confirmed_channel_open_events.append
     )
     c1.open_channel(c2.address)
 

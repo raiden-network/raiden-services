@@ -21,8 +21,10 @@ from raiden_libs.utils import keccak, private_key_to_address
 @pytest.fixture
 def get_random_identifier() -> Callable:
     """Returns a function returning a random valid ethereum address"""
+
     def f():
         return ChannelID(random.randint(0, UINT256_MAX))
+
     return f
 
 
@@ -53,10 +55,10 @@ def get_random_monitor_request(get_random_identifier):
             priv_key=privkey,
         )
         monitor_request = UnsignedMonitorRequest.from_balance_proof(
-            bp,
-            reward_amount=TokenAmount(0),
+            bp, reward_amount=TokenAmount(0)
         ).sign(privkey_non_closing)
         return monitor_request, privkey, privkey_non_closing
+
     return f
 
 
@@ -82,14 +84,12 @@ def test_save_and_load_mr(get_random_monitor_request, ms_database):
 def test_save_and_load_channel(ms_database):
     token_network_address = get_random_address()
     ms_database.conn.execute(
-        "INSERT INTO token_network (address) VALUES (?)",
-        [token_network_address],
+        "INSERT INTO token_network (address) VALUES (?)", [token_network_address]
     )
     for update_status in [
         None,
         OnChainUpdateStatus(
-            update_sender_address=get_random_address(),
-            nonce=random.randint(0, UINT256_MAX),
+            update_sender_address=get_random_address(), nonce=random.randint(0, UINT256_MAX)
         ),
     ]:
         channel = Channel(
@@ -107,7 +107,6 @@ def test_save_and_load_channel(ms_database):
         )
         ms_database.upsert_channel(channel)
         loaded_channel = ms_database.get_channel(
-            token_network_address=channel.token_network_address,
-            channel_id=channel.identifier,
+            token_network_address=channel.token_network_address, channel_id=channel.identifier
         )
         assert loaded_channel == channel

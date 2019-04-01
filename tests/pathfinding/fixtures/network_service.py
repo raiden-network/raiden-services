@@ -45,13 +45,13 @@ def channel_descriptions_case_1() -> List:
     #  \-------/
 
     channel_descriptions = [
-        (0, 100,  90,  10, 2, 1,  50,  60, 15, 2, 14),  # capacities  90 --  60
-        (1,  40, 130,   8, 2, 2, 130,  40, 12, 2, 14),  # capacities 130 --  40
-        (2,  90,  80,   7, 2, 3,  10,  20, 10, 2,  3),  # capacities  80 --  20
-        (3,  50,  50,  11, 2, 4,  50,  50, 11, 2, 14),  # capacities  50 --  50
-        (0,  40,   0,  15, 2, 2,  80, 120, 25, 2, 14),  # capacities   0 -- 120
-        (1,  30,  35, 100, 2, 4,  40,  35, 18, 2, 14),  # capacities  35 --  35
-        (5, 500, 550,  30, 2, 6, 750, 700, 40, 2, 14),  # capacities 550 -- 700
+        (0, 100, 90, 10, 2, 1, 50, 60, 15, 2, 14),  # capacities  90 --  60
+        (1, 40, 130, 8, 2, 2, 130, 40, 12, 2, 14),  # capacities 130 --  40
+        (2, 90, 80, 7, 2, 3, 10, 20, 10, 2, 3),  # capacities  80 --  20
+        (3, 50, 50, 11, 2, 4, 50, 50, 11, 2, 14),  # capacities  50 --  50
+        (0, 40, 0, 15, 2, 2, 80, 120, 25, 2, 14),  # capacities   0 -- 120
+        (1, 30, 35, 100, 2, 4, 40, 35, 18, 2, 14),  # capacities  35 --  35
+        (5, 500, 550, 30, 2, 6, 750, 700, 40, 2, 14),  # capacities 550 -- 700
     ]
     return channel_descriptions
 
@@ -84,12 +84,12 @@ def channel_descriptions_case_2() -> List:
     #       \-- 5 --/
 
     channel_descriptions = [
-        (0, 100,  90, 3000, 2, 1,  50,  60, 3000, 2, 15),  # capacities  90 --  60
-        (1,  40, 130, 2000, 2, 4, 130,  40, 2000, 2, 15),  # capacities 130 --  40
-        (0,  90,  80, 1000, 2, 2,  10,  10, 1000, 2, 15),  # capacities  80 --  10
-        (2,  50,  50, 1500, 2, 3,  50,  50, 1500, 2, 15),  # capacities  50 --  50
-        (3, 100,  60, 1000, 2, 4,  80, 120, 1000, 2, 15),  # capacities  60 -- 120
-        (2,  30,  35, 1000, 2, 5,  40,  35, 1000, 2, 15),  # capacities  35 --  35
+        (0, 100, 90, 3000, 2, 1, 50, 60, 3000, 2, 15),  # capacities  90 --  60
+        (1, 40, 130, 2000, 2, 4, 130, 40, 2000, 2, 15),  # capacities 130 --  40
+        (0, 90, 80, 1000, 2, 2, 10, 10, 1000, 2, 15),  # capacities  80 --  10
+        (2, 50, 50, 1500, 2, 3, 50, 50, 1500, 2, 15),  # capacities  50 --  50
+        (3, 100, 60, 1000, 2, 4, 80, 120, 1000, 2, 15),  # capacities  60 -- 120
+        (2, 30, 35, 1000, 2, 5, 40, 35, 1000, 2, 15),  # capacities  35 --  35
         (5, 500, 550, 1000, 2, 4, 750, 700, 1000, 2, 15),  # capacities 550 -- 700
     ]
     return channel_descriptions
@@ -145,8 +145,7 @@ def channel_descriptions_case_3() -> List:
 
 @pytest.fixture
 def populate_token_network_random(
-        token_network_model: TokenNetwork,
-        private_keys: List[str],
+    token_network_model: TokenNetwork, private_keys: List[str]
 ) -> None:
     # seed for pseudo-randomness from config constant, that changes from time to time
     random.seed(NUMBER_OF_CHANNELS)
@@ -159,25 +158,14 @@ def populate_token_network_random(
         address2 = Address(private_key_to_address(private_key2))
         settle_timeout = 15
         token_network_model.handle_channel_opened_event(
-            channel_id,
-            address1,
-            address2,
-            settle_timeout,
+            channel_id, address1, address2, settle_timeout
         )
 
         # deposit to channels
         deposit1, deposit2 = random.sample(range(1000), 2)
         address1, address2 = token_network_model.channel_id_to_addresses[channel_id]
-        token_network_model.handle_channel_new_deposit_event(
-            channel_id,
-            address1,
-            deposit1,
-        )
-        token_network_model.handle_channel_new_deposit_event(
-            channel_id,
-            address2,
-            deposit2,
-        )
+        token_network_model.handle_channel_new_deposit_event(channel_id, address1, deposit1)
+        token_network_model.handle_channel_new_deposit_event(channel_id, address2, deposit2)
         token_network_model.handle_channel_balance_update_message(
             channel_identifier=channel_id,
             updating_participant=address1,
@@ -209,18 +197,21 @@ def populate_token_network() -> Callable:
         web3: Web3,
         channel_descriptions: List,
     ):
-        for channel_id, (
-            p1_index,
-            p1_deposit,
-            p1_capacity,
-            _p1_fee,
-            p1_reveal_timeout,
-            p2_index,
-            p2_deposit,
-            p2_capacity,
-            _p2_fee,
-            p2_reveal_timeout,
-            settle_timeout,
+        for (
+            channel_id,
+            (
+                p1_index,
+                p1_deposit,
+                p1_capacity,
+                _p1_fee,
+                p1_reveal_timeout,
+                p2_index,
+                p2_deposit,
+                p2_capacity,
+                _p2_fee,
+                p2_reveal_timeout,
+                settle_timeout,
+            ),
         ) in enumerate(channel_descriptions):
             token_network.handle_channel_opened_event(
                 ChannelID(channel_id),
@@ -230,14 +221,10 @@ def populate_token_network() -> Callable:
             )
 
             token_network.handle_channel_new_deposit_event(
-                ChannelID(channel_id),
-                addresses[p1_index],
-                p1_deposit,
+                ChannelID(channel_id), addresses[p1_index], p1_deposit
             )
             token_network.handle_channel_new_deposit_event(
-                ChannelID(channel_id),
-                addresses[p2_index],
-                p2_deposit,
+                ChannelID(channel_id), addresses[p2_index], p2_deposit
             )
 
             token_network.handle_channel_balance_update_message(
@@ -274,11 +261,7 @@ def populate_token_network_case_1(
     channel_descriptions_case_1: List,
 ):
     populate_token_network(
-        token_network_model,
-        private_keys,
-        addresses,
-        web3,
-        channel_descriptions_case_1,
+        token_network_model, private_keys, addresses, web3, channel_descriptions_case_1
     )
 
 
@@ -292,11 +275,7 @@ def populate_token_network_case_2(
     channel_descriptions_case_2: List,
 ):
     populate_token_network(
-        token_network_model,
-        private_keys,
-        addresses,
-        web3,
-        channel_descriptions_case_2,
+        token_network_model, private_keys, addresses, web3, channel_descriptions_case_2
     )
 
 
@@ -310,21 +289,17 @@ def populate_token_network_case_3(
     channel_descriptions_case_3: List,
 ):
     populate_token_network(
-        token_network_model,
-        private_keys,
-        addresses,
-        web3,
-        channel_descriptions_case_3,
+        token_network_model, private_keys, addresses, web3, channel_descriptions_case_3
     )
 
 
 @pytest.fixture
 def pathfinding_service_full_mock(
-    contracts_manager: ContractManager,
-    token_network_model: TokenNetwork,
+    contracts_manager: ContractManager, token_network_model: TokenNetwork
 ) -> Generator[PathfindingService, None, None]:
-    with patch('pathfinding_service.service.BlockchainListener', new=Mock), \
-            patch('pathfinding_service.service.MatrixListener', new=Mock):
+    with patch('pathfinding_service.service.BlockchainListener', new=Mock), patch(
+        'pathfinding_service.service.MatrixListener', new=Mock
+    ):
         web3_mock = Mock()
         web3_mock.net.version = '1'
         web3_mock.eth.blockNumber = 1
@@ -337,9 +312,7 @@ def pathfinding_service_full_mock(
             private_key='3a1076bf45ab87712ad64ccb3b10217737f7faacbf2872e88fdd9a537d8fe266',
             db_filename=':memory:',
         )
-        pathfinding_service.token_networks = {
-            token_network_model.address: token_network_model,
-        }
+        pathfinding_service.token_networks = {token_network_model.address: token_network_model}
         mock_udc = pathfinding_service.user_deposit_contract
         mock_udc.functions.effectiveBalance.return_value.call.return_value = 10000
 
@@ -349,13 +322,12 @@ def pathfinding_service_full_mock(
 
 @pytest.fixture
 def pathfinding_service_mocked_listeners(
-    contracts_manager: ContractManager,
-    web3: Web3,
-    user_deposit_contract: Contract,
+    contracts_manager: ContractManager, web3: Web3, user_deposit_contract: Contract
 ) -> Generator[PathfindingService, None, None]:
     """ Returns a PathfindingService with mocked blockchain listeners. """
-    with patch('pathfinding_service.service.BlockchainListener', new=BlockchainListenerMock), \
-            patch('pathfinding_service.service.MatrixListener', new=Mock):
+    with patch(
+        'pathfinding_service.service.BlockchainListener', new=BlockchainListenerMock
+    ), patch('pathfinding_service.service.MatrixListener', new=Mock):
         pathfinding_service = PathfindingService(
             web3=web3,
             contract_manager=contracts_manager,
@@ -370,7 +342,4 @@ def pathfinding_service_mocked_listeners(
 
 @pytest.fixture
 def default_cli_args(keystore_file) -> List[str]:
-    return [
-        '--keystore-file', keystore_file,
-        '--password', KEYSTORE_PASSWORD,
-    ]
+    return ['--keystore-file', keystore_file, '--password', KEYSTORE_PASSWORD]

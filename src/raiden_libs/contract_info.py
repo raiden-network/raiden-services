@@ -15,15 +15,9 @@ log = structlog.get_logger(__name__)
 START_BLOCK_ID = 'block'
 
 
-def get_deployment_infos(
-    chain_id: ChainID,
-    contracts_version: str = None,
-) -> Dict[str, Any]:
+def get_deployment_infos(chain_id: ChainID, contracts_version: str = None) -> Dict[str, Any]:
     try:
-        contract_data = get_contracts_deployment_info(
-            chain_id=chain_id,
-            version=contracts_version,
-        )
+        contract_data = get_contracts_deployment_info(chain_id=chain_id, version=contracts_version)
         token_network_registry_info = contract_data['contracts'][CONTRACT_TOKEN_NETWORK_REGISTRY]
         monitor_contract_info = contract_data['contracts'][CONTRACT_MONITORING_SERVICE]
         user_deposit_contract_info = contract_data['contracts'][CONTRACT_USER_DEPOSIT]
@@ -90,11 +84,9 @@ def get_contract_addresses_and_start_block(
         data[CONTRACT_USER_DEPOSIT] = user_deposit_contract_address
 
     # Overwrite start block when all contracts have been overwritten
-    all_addresses_given = all([
-        token_network_registry_address,
-        monitor_contract_address,
-        user_deposit_contract_address,
-    ])
+    all_addresses_given = all(
+        [token_network_registry_address, monitor_contract_address, user_deposit_contract_address]
+    )
     if all_addresses_given:
         data[START_BLOCK_ID] = start_block
 

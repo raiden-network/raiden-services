@@ -23,17 +23,9 @@ from raiden_libs.types import Address
 SubEvent = Union[ActionMonitoringTriggeredEvent, ActionClaimRewardTriggeredEvent]
 
 log = structlog.get_logger(__name__)
-SCHEMA_FILENAME = os.path.join(
-    os.path.dirname(os.path.realpath(__file__)),
-    'schema.sql',
-)
-EVENT_ID_TYPE_MAP = {
-    0: ActionMonitoringTriggeredEvent,
-    1: ActionClaimRewardTriggeredEvent,
-}
-EVENT_TYPE_ID_MAP = {
-    v: k for k, v in EVENT_ID_TYPE_MAP.items()
-}
+SCHEMA_FILENAME = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'schema.sql')
+EVENT_ID_TYPE_MAP = {0: ActionMonitoringTriggeredEvent, 1: ActionClaimRewardTriggeredEvent}
+EVENT_TYPE_ID_MAP = {v: k for k, v in EVENT_ID_TYPE_MAP.items()}
 
 
 def convert_hex(raw: bytes) -> int:
@@ -74,15 +66,12 @@ class SharedDatabase:
             request.non_closing_signer,
         ]
         upsert_sql = "INSERT OR REPLACE INTO monitor_request VALUES ({})".format(
-            ', '.join('?' * len(values)),
+            ', '.join('?' * len(values))
         )
         self.conn.execute(upsert_sql, values)
 
     def get_monitor_request(
-            self,
-            token_network_address: str,
-            channel_id: int,
-            non_closing_signer: str,
+        self, token_network_address: str, channel_id: int, non_closing_signer: str
     ) -> Optional[MonitorRequest]:
         assert is_checksum_address(token_network_address)
         assert is_checksum_address(non_closing_signer)
@@ -100,10 +89,7 @@ class SharedDatabase:
         if row is None:
             return None
 
-        kwargs = {
-            key: val for key, val in zip(row.keys(), row)
-            if key != 'non_closing_signer'
-        }
+        kwargs = {key: val for key, val in zip(row.keys(), row) if key != 'non_closing_signer'}
         mr = MonitorRequest(**kwargs)
         return mr
 
@@ -132,7 +118,7 @@ class SharedDatabase:
             values += [None, None]
 
         upsert_sql = "INSERT OR REPLACE INTO channel VALUES ({})".format(
-            ', '.join('?' * len(values)),
+            ', '.join('?' * len(values))
         )
         self.conn.execute(upsert_sql, values)
 
@@ -148,14 +134,14 @@ class SharedDatabase:
         if row is None:
             return None
         kwargs = {
-            key: val for key, val in zip(row.keys(), row)
-            if not key.startswith('update_status')
+            key: val for key, val in zip(row.keys(), row) if not key.startswith('update_status')
         }
         return Channel(
             update_status=OnChainUpdateStatus(
-                update_sender_address=row['update_status_sender'],
-                nonce=row['update_status_nonce'],
-            ) if row['update_status_nonce'] is not None else None,
+                update_sender_address=row['update_status_sender'], nonce=row['update_status_nonce']
+            )
+            if row['update_status_nonce'] is not None
+            else None,
             **kwargs,
         )
 
@@ -172,7 +158,7 @@ class SharedDatabase:
             contained_event.non_closing_participant,
         ]
         upsert_sql = "INSERT OR REPLACE INTO scheduled_events VALUES ({})".format(
-            ', '.join('?' * len(values)),
+            ', '.join('?' * len(values))
         )
         self.conn.execute(upsert_sql, values)
 
@@ -194,13 +180,10 @@ class SharedDatabase:
             )
 
             return ScheduledEvent(
-                trigger_block_number=row['trigger_block_number'],
-                event=sub_event,
+                trigger_block_number=row['trigger_block_number'], event=sub_event
             )
 
-        return [
-            create_scheduled_event(row) for row in rows
-        ]
+        return [create_scheduled_event(row) for row in rows]
 
     def remove_scheduled_event(self, event: ScheduledEvent) -> None:
         contained_event: SubEvent = cast(SubEvent, event.event)
@@ -226,22 +209,15 @@ class SharedDatabase:
 
     def get_waiting_transactions(self) -> List[str]:
         return [
-            row[0] for row in self.conn.execute(
-                "SELECT transaction_hash FROM waiting_transactions",
-            )
+            row[0]
+            for row in self.conn.execute("SELECT transaction_hash FROM waiting_transactions")
         ]
 
     def add_waiting_transaction(self, waiting_tx_hash: str) -> None:
-        self.conn.execute(
-            "INSERT INTO waiting_transactions VALUES (?)",
-            [waiting_tx_hash],
-        )
+        self.conn.execute("INSERT INTO waiting_transactions VALUES (?)", [waiting_tx_hash])
 
     def remove_waiting_transaction(self, tx_hash: str) -> None:
-        self.conn.execute(
-            "DELETE FROM waiting_transactions WHERE transaction_hash = ?",
-            [tx_hash],
-        )
+        self.conn.execute("DELETE FROM waiting_transactions WHERE transaction_hash = ?", [tx_hash])
 
     def load_state(self) -> MonitoringServiceState:
         """ Load MS state from db or return a new empty state if not saved one is present
@@ -260,8 +236,7 @@ class SharedDatabase:
             token_network_addresses=token_network_addresses,
         )
         ms_state = MonitoringServiceState(
-            blockchain_state=chain_state,
-            address=blockchain['receiver'],
+            blockchain_state=chain_state, address=blockchain['receiver']
         )
         return ms_state
 
@@ -281,11 +256,7 @@ class Database(SharedDatabase):
         self._setup(chain_id, msc_address, registry_address, receiver)
 
     def _setup(
-        self,
-        chain_id: int,
-        msc_address: str,
-        registry_address: str,
-        receiver: str,
+        self, chain_id: int, msc_address: str, registry_address: str, receiver: str
     ) -> None:
         """ Make sure that the db is initialized an matches the given settings """
         assert chain_id >= 0
@@ -294,31 +265,36 @@ class Database(SharedDatabase):
         assert is_checksum_address(receiver)
 
         initialized = self.conn.execute(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name='blockchain'",
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='blockchain'"
         ).fetchone()
         settings = [chain_id, msc_address, registry_address, receiver]
 
         if initialized:
-            old_settings = self.conn.execute("""
+            old_settings = self.conn.execute(
+                """
                 SELECT chain_id,
                        monitor_contract_address,
                        token_network_registry_address,
                        receiver
                 FROM blockchain
-            """).fetchone()
+            """
+            ).fetchone()
             for name, old, new in zip(old_settings.keys(), old_settings, settings):
                 assert old == new, f'DB was created with {name}={old}, got {new}!'
         else:
             # create db schema
             with open(SCHEMA_FILENAME) as schema_file:
                 self.conn.executescript(schema_file.read())
-            self.conn.execute("""
+            self.conn.execute(
+                """
                 UPDATE blockchain
                 SET chain_id = ?,
                     monitor_contract_address = ?,
                     token_network_registry_address = ?,
                     receiver = ?;
-            """, settings)
+            """,
+                settings,
+            )
 
     def update_state(self, state: MonitoringServiceState) -> None:
         self.conn.execute(

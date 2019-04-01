@@ -18,15 +18,12 @@ log = structlog.get_logger(__name__)
 
 
 def create_channel_event_topics() -> List:
-    return [
-        None,  # event topic is any
-    ]
+    return [None]  # event topic is any
 
 
 def create_registry_event_topics(contract_manager: ContractManager) -> List:
     new_network_abi = contract_manager.get_event_abi(
-        CONTRACT_TOKEN_NETWORK_REGISTRY,
-        EVENT_TOKEN_NETWORK_CREATED,
+        CONTRACT_TOKEN_NETWORK_REGISTRY, EVENT_TOKEN_NETWORK_CREATED
     )
     return [encode_hex(event_abi_to_log_topic(new_network_abi))]
 
@@ -47,20 +44,17 @@ def decode_event(abi: Dict, log: Dict) -> Dict:
         log['topics'][0] = decode_hex(hex(log['topics'][0]))
     event_id = log['topics'][0]
     events = filter_by_type('event', abi)
-    topic_to_event_abi = {
-        event_abi_to_log_topic(event_abi): event_abi
-        for event_abi in events
-    }
+    topic_to_event_abi = {event_abi_to_log_topic(event_abi): event_abi for event_abi in events}
     event_abi = topic_to_event_abi[event_id]
     return get_event_data(event_abi, log)
 
 
 def get_events(
-        web3: Web3,
-        contract_address: str,
-        topics: List,
-        from_block: Union[int, str] = 0,
-        to_block: Union[int, str] = 'latest',
+    web3: Web3,
+    contract_address: str,
+    topics: List,
+    from_block: Union[int, str] = 0,
+    to_block: Union[int, str] = 'latest',
 ) -> List:
     """Returns events emmitted by a contract for a given event name, within a certain range.
 
@@ -90,16 +84,16 @@ class BlockchainListener(gevent.Greenlet):
     """ A class listening for events on a given contract. """
 
     def __init__(
-            self,
-            web3: Web3,
-            contract_manager: ContractManager,
-            contract_name: str,
-            contract_address: str,
-            *,  # require all following arguments to be keyword arguments
-            required_confirmations: int = 4,
-            sync_chunk_size: int = 100_000,
-            poll_interval: int = 15,
-            sync_start_block: int = 0,
+        self,
+        web3: Web3,
+        contract_manager: ContractManager,
+        contract_name: str,
+        contract_address: str,
+        *,  # require all following arguments to be keyword arguments
+        required_confirmations: int = 4,
+        sync_chunk_size: int = 100_000,
+        poll_interval: int = 15,
+        sync_start_block: int = 0,
     ):
         """Creates a new BlockchainListener
 
@@ -184,24 +178,24 @@ class BlockchainListener(gevent.Greenlet):
         new_unconfirmed_head_number = self.unconfirmed_head_number + self.sync_chunk_size
         new_unconfirmed_head_number = min(new_unconfirmed_head_number, current_block)
         new_confirmed_head_number = max(
-            new_unconfirmed_head_number - self.required_confirmations,
-            self.confirmed_head_number,
+            new_unconfirmed_head_number - self.required_confirmations, self.confirmed_head_number
         )
 
         # return if blocks have already been processed
-        if (self.confirmed_head_number >= new_confirmed_head_number and
-                self.unconfirmed_head_number >= new_unconfirmed_head_number):
+        if (
+            self.confirmed_head_number >= new_confirmed_head_number
+            and self.unconfirmed_head_number >= new_unconfirmed_head_number
+        ):
             return
 
         run_confirmed_filters = (
-            self.confirmed_head_number < new_confirmed_head_number and
-            len(self.confirmed_callbacks) > 0
+            self.confirmed_head_number < new_confirmed_head_number
+            and len(self.confirmed_callbacks) > 0
         )
         if run_confirmed_filters:
             # create filters depending on current head number
             filters_confirmed = self.get_filter_params(
-                self.confirmed_head_number,
-                new_confirmed_head_number,
+                self.confirmed_head_number, new_confirmed_head_number
             )
             log.debug(
                 'Filtering for confirmed events',
@@ -214,14 +208,13 @@ class BlockchainListener(gevent.Greenlet):
             log.debug('Finished.')
 
         run_unconfirmed_filters = (
-            self.unconfirmed_head_number < new_unconfirmed_head_number and
-            len(self.unconfirmed_callbacks) > 0
+            self.unconfirmed_head_number < new_unconfirmed_head_number
+            and len(self.unconfirmed_callbacks) > 0
         )
         if run_unconfirmed_filters:
             # create filters depending on current head number
             filters_unconfirmed = self.get_filter_params(
-                self.unconfirmed_head_number,
-                new_unconfirmed_head_number,
+                self.unconfirmed_head_number, new_unconfirmed_head_number
             )
             log.debug(
                 'Filtering for unconfirmed events',
@@ -274,8 +267,7 @@ class BlockchainListener(gevent.Greenlet):
 
             for raw_event in events:
                 decoded_event = decode_event(
-                    self.contract_manager.get_contract_abi(self.contract_name),
-                    raw_event,
+                    self.contract_manager.get_contract_abi(self.contract_name), raw_event
                 )
                 log.debug('Received confirmed event', decoded_event=decoded_event)
                 callback(decoded_event)
@@ -300,7 +292,7 @@ class BlockchainListener(gevent.Greenlet):
             if current_block >= self.unconfirmed_head_number:
                 # if the hash of our head changed, there was a chain reorg
                 current_unconfirmed_hash = self.web3.eth.getBlock(
-                    self.unconfirmed_head_number,
+                    self.unconfirmed_head_number
                 ).hash
                 if current_unconfirmed_hash != self.unconfirmed_head_hash:
                     self._detected_chain_reorg(current_block)
@@ -335,7 +327,4 @@ class BlockchainListener(gevent.Greenlet):
     # see https://github.com/raiden-network/raiden/pull/1321
     def get_filter_params(self, from_block: int, to_block: int) -> Dict[str, int]:
         assert from_block <= to_block
-        return {
-            'from_block': from_block + 1,
-            'to_block': to_block + 1,
-        }
+        return {'from_block': from_block + 1, 'to_block': to_block + 1}

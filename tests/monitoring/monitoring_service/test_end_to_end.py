@@ -11,9 +11,7 @@ from raiden_libs.types import Address
 
 
 def create_ms_contract_events_query(
-    web3: Web3,
-    contract_manager: ContractManager,
-    contract_address: Address,
+    web3: Web3, contract_manager: ContractManager, contract_address: Address
 ):
     def f():
         return query_blockchain_events(
@@ -25,6 +23,7 @@ def create_ms_contract_events_query(
             from_block=BlockNumber(0),
             to_block=web3.eth.blockNumber,
         )
+
     return f
 
 
@@ -49,28 +48,21 @@ def test_e2e(
         6) MS claims the reward
     """
     query = create_ms_contract_events_query(
-        web3,
-        contracts_manager,
-        monitoring_service_contract.address,
+        web3, contracts_manager, monitoring_service_contract.address
     )
-    initial_balance = user_deposit_contract.functions.balances(
-        monitoring_service.address,
-    ).call()
+    initial_balance = user_deposit_contract.functions.balances(monitoring_service.address).call()
     c1, c2 = generate_raiden_clients(2)
 
     # add deposit for c1
     node_deposit = 10
-    custom_token.functions.approve(
-        user_deposit_contract.address,
-        node_deposit,
-    ).transact({'from': c1.address})
-    user_deposit_contract.functions.deposit(
-        c1.address, node_deposit,
-    ).transact({'from': c1.address})
+    custom_token.functions.approve(user_deposit_contract.address, node_deposit).transact(
+        {'from': c1.address}
+    )
+    user_deposit_contract.functions.deposit(c1.address, node_deposit).transact(
+        {'from': c1.address}
+    )
 
-    deposit = service_registry.functions.deposits(
-        monitoring_service.address,
-    ).call()
+    deposit = service_registry.functions.deposits(monitoring_service.address).call()
     assert deposit > 0
 
     # each client does a transfer
@@ -102,10 +94,7 @@ def test_e2e(
 
     # c1 asks MS to monitor the channel
     reward_amount = 1
-    request_monitoring = c1.get_request_monitoring(
-        balance_proof_c2,
-        reward_amount,
-    )
+    request_monitoring = c1.get_request_monitoring(balance_proof_c2, reward_amount)
     request_collector.on_monitor_request(request_monitoring)
 
     # c2 closes the channel
@@ -134,9 +123,7 @@ def test_e2e(
         MonitoringServiceEvent.REWARD_CLAIMED.value,
     ]
 
-    final_balance = user_deposit_contract.functions.balances(
-        monitoring_service.address,
-    ).call()
+    final_balance = user_deposit_contract.functions.balances(monitoring_service.address).call()
     assert final_balance == (initial_balance + reward_amount)
 
     ms_greenlet.kill()

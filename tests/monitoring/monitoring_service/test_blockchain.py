@@ -8,9 +8,7 @@ from raiden_libs.types import Address
 
 
 def create_tnr_contract_events_query(
-    web3: Web3,
-    contract_manager: ContractManager,
-    contract_address: Address,
+    web3: Web3, contract_manager: ContractManager, contract_address: Address
 ):
     def query_callback():
         return query_blockchain_events(
@@ -22,20 +20,15 @@ def create_tnr_contract_events_query(
             from_block=BlockNumber(0),
             to_block=web3.eth.blockNumber,
         )
+
     return query_callback
 
 
 def test_limit_inclusivity_in_query_blockchain_events(
-    web3,
-    token_network,
-    wait_for_blocks,
-    contracts_manager,
-    token_network_registry_contract,
+    web3, token_network, wait_for_blocks, contracts_manager, token_network_registry_contract
 ):
     query = create_tnr_contract_events_query(
-        web3,
-        contracts_manager,
-        token_network_registry_contract.address,
+        web3, contracts_manager, token_network_registry_contract.address
     )
 
     # A new token network has been registered by the `token_network` fixture

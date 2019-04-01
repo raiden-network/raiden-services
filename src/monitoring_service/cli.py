@@ -22,11 +22,7 @@ from raiden_libs.types import Address
 log = structlog.get_logger(__name__)
 
 
-CONTEXT_SETTINGS = dict(
-    default_map={'main': {
-        'confirmations': DEFAULT_REQUIRED_CONFIRMATIONS,
-    }},
-)
+CONTEXT_SETTINGS = dict(default_map={'main': {'confirmations': DEFAULT_REQUIRED_CONFIRMATIONS}})
 
 
 @click.command(context_settings=CONTEXT_SETTINGS)
@@ -47,13 +43,11 @@ CONTEXT_SETTINGS = dict(
 def main(
     private_key: str,
     state_db: str,
-
     eth_rpc: str,
     registry_address: Address,
     user_deposit_contract_address: Address,
     start_block: BlockNumber,
     monitor_contract_address: Address,
-
     min_reward: int,
     confirmations: int,
 ) -> None:

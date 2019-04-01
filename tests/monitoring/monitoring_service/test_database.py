@@ -5,10 +5,7 @@ from raiden_libs.types import Address, TokenNetworkAddress
 
 def test_scheduled_events(ms_database):
     # Add token network used as foreign key
-    ms_database.conn.execute(
-        "INSERT INTO token_network(address) VALUES (?)",
-        ['a'],
-    )
+    ms_database.conn.execute("INSERT INTO token_network(address) VALUES (?)", ['a'])
 
     event1 = ScheduledEvent(
         trigger_block_number=BlockNumber(23),

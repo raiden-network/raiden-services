@@ -34,9 +34,7 @@ def get_free_port(address: str, initial_port: int):
             connect_using_port = (
                 conn
                 for conn in psutil.net_connections()
-                if hasattr(conn, 'laddr') and
-                conn.laddr[0] == address and
-                conn.laddr[1] == port
+                if hasattr(conn, 'laddr') and conn.laddr[0] == address and conn.laddr[1] == port
             )
 
             # only generate unused ports

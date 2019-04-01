@@ -1,7 +1,7 @@
+from dataclasses import dataclass, field
 from typing import ClassVar, Optional, Type
 
 import marshmallow
-from dataclasses import dataclass, field
 from eth_abi import encode_single
 from eth_utils import is_same_address
 from marshmallow_dataclass import add_schema
@@ -27,10 +27,10 @@ class IOU:
 
     def is_signature_valid(self) -> bool:
         packed_data = (
-            Web3.toBytes(hexstr=self.sender) +
-            Web3.toBytes(hexstr=self.receiver) +
-            encode_single('uint256', self.amount) +
-            encode_single('uint256', self.expiration_block)
+            Web3.toBytes(hexstr=self.sender)
+            + Web3.toBytes(hexstr=self.receiver)
+            + encode_single('uint256', self.amount)
+            + encode_single('uint256', self.expiration_block)
         )
         try:
             recovered_address = recover(packed_data, self.signature)

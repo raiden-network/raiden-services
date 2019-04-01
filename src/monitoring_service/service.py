@@ -41,7 +41,7 @@ def check_gas_reserve(web3: Web3, private_key: str) -> None:
             "Your account's balance is below the estimated gas reserve of "
             f"{estimated_required_balance_eth} Eth. You will be be unable "
             "to perform on-chain transactions and cannot monitor any channels. "
-            "Please add funds to your account as soon as possible.",
+            "Please add funds to your account as soon as possible."
         )
 
 
@@ -75,21 +75,15 @@ class MonitoringService:
         self.poll_interval = poll_interval
         self.last_gas_check_block = 0
 
-        web3.middleware_stack.add(
-            construct_sign_and_send_raw_middleware(private_key),
-        )
+        web3.middleware_stack.add(construct_sign_and_send_raw_middleware(private_key))
 
         monitoring_contract = self.web3.eth.contract(
-            abi=self.contract_manager.get_contract_abi(
-                CONTRACT_MONITORING_SERVICE,
-            ),
+            abi=self.contract_manager.get_contract_abi(CONTRACT_MONITORING_SERVICE),
             address=monitor_contract_address,
         )
 
         user_deposit_contract = self.web3.eth.contract(
-            abi=self.contract_manager.get_contract_abi(
-                CONTRACT_USER_DEPOSIT,
-            ),
+            abi=self.contract_manager.get_contract_abi(CONTRACT_USER_DEPOSIT),
             address=user_deposit_contract_address,
         )
 
@@ -103,10 +97,7 @@ class MonitoringService:
         )
         ms_state = self.database.load_state()
 
-        self.bcl = BlockchainListener(
-            web3=self.web3,
-            contract_manager=contract_manager,
-        )
+        self.bcl = BlockchainListener(web3=self.web3, contract_manager=contract_manager)
 
         self.context = Context(
             ms_state=ms_state,
@@ -120,17 +111,15 @@ class MonitoringService:
         )
 
     def start(
-        self,
-        wait_function: Callable = time.sleep,
-        check_account_gas_reserve: bool = True,
+        self, wait_function: Callable = time.sleep, check_account_gas_reserve: bool = True
     ) -> None:
         while True:
             last_confirmed_block = self.web3.eth.blockNumber - self.required_confirmations
 
             # check gas reserve
             do_gas_reserve_check = (
-                check_account_gas_reserve and
-                last_confirmed_block >= self.last_gas_check_block + DEFAULT_GAS_CHECK_BLOCKS
+                check_account_gas_reserve
+                and last_confirmed_block >= self.last_gas_check_block + DEFAULT_GAS_CHECK_BLOCKS
             )
             if do_gas_reserve_check:
                 check_gas_reserve(self.web3, self.private_key)
@@ -155,20 +144,20 @@ class MonitoringService:
 
         # BCL return a new state and events related to channel lifecycle
         new_chain_state, events = self.bcl.get_events(
-            chain_state=self.context.ms_state.blockchain_state,
-            to_block=last_block,
+            chain_state=self.context.ms_state.blockchain_state, to_block=last_block
         )
 
         # If a new token network was found we need to write it to the DB, otherwise
         # the constraints for new channels will not be constrained. But only update
         # the network addresses here, all else is done later.
         token_networks_changed = (
-            self.context.ms_state.blockchain_state.token_network_addresses !=
-            new_chain_state.token_network_addresses
+            self.context.ms_state.blockchain_state.token_network_addresses
+            != new_chain_state.token_network_addresses
         )
         if token_networks_changed:
-            self.context.ms_state.blockchain_state.token_network_addresses = \
+            self.context.ms_state.blockchain_state.token_network_addresses = (
                 new_chain_state.token_network_addresses
+            )
             self.context.db.update_state(self.context.ms_state)
 
         # Now set the updated chain state to the context, will be stored later

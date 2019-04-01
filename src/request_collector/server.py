@@ -19,20 +19,12 @@ log = structlog.get_logger(__name__)
 
 def error_handler(_context: Any, exc_info: tuple) -> None:
     log.critical("Unhandled exception terminating the program")
-    traceback.print_exception(
-        etype=exc_info[0],
-        value=exc_info[1],
-        tb=exc_info[2],
-    )
+    traceback.print_exception(etype=exc_info[0], value=exc_info[1], tb=exc_info[2])
     sys.exit()
 
 
 class RequestCollector(gevent.Greenlet):
-    def __init__(
-        self,
-        private_key: str,
-        state_db: SharedDatabase,
-    ):
+    def __init__(self, private_key: str, state_db: SharedDatabase):
         super().__init__()
 
         self.private_key = private_key
@@ -47,10 +39,7 @@ class RequestCollector(gevent.Greenlet):
                 service_room_suffix=MONITORING_BROADCASTING_ROOM,
             )
         except ConnectionError as e:
-            log.critical(
-                'Could not connect to broadcasting system.',
-                exc=e,
-            )
+            log.critical('Could not connect to broadcasting system.', exc=e)
             sys.exit(1)
 
     def listen_forever(self) -> None:
@@ -70,10 +59,7 @@ class RequestCollector(gevent.Greenlet):
         else:
             log.info('Ignoring unknown message type')
 
-    def on_monitor_request(
-        self,
-        request_monitoring: RequestMonitoring,
-    ) -> None:
+    def on_monitor_request(self, request_monitoring: RequestMonitoring) -> None:
         assert isinstance(request_monitoring, RequestMonitoring)
 
         # Convert Raiden's RequestMonitoring object to a MonitorRequest
@@ -81,7 +67,7 @@ class RequestCollector(gevent.Greenlet):
             monitor_request = MonitorRequest(
                 channel_identifier=request_monitoring.balance_proof.channel_identifier,
                 token_network_address=to_checksum_address(
-                    request_monitoring.balance_proof.token_network_address,
+                    request_monitoring.balance_proof.token_network_address
                 ),
                 chain_id=request_monitoring.balance_proof.chain_id,
                 balance_hash=encode_hex(request_monitoring.balance_proof.balance_hash),
@@ -93,10 +79,7 @@ class RequestCollector(gevent.Greenlet):
                 reward_proof_signature=encode_hex(request_monitoring.signature),
             )
         except InvalidSignature:
-            log.info(
-                'Ignore MR with invalid signature',
-                monitor_request=request_monitoring,
-            )
+            log.info('Ignore MR with invalid signature', monitor_request=request_monitoring)
             return
 
         # Check that received MR is newer by comparing nonces

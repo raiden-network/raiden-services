@@ -34,12 +34,7 @@ def test_get_paths_validation(
     token_network_model: TokenNetwork,
 ):
     url = api_url + f'/{token_network_model.address}/paths'
-    default_params = {
-        'from': initiator_address,
-        'to': target_address,
-        'value': 5,
-        'max_paths': 3,
-    }
+    default_params = {'from': initiator_address, 'to': target_address, 'value': 5, 'max_paths': 3}
 
     def request_path_with(status_code=400, **kwargs):
         params = default_params.copy()
@@ -60,12 +55,12 @@ def test_get_paths_validation(
 
     response = request_path_with(**{'from': to_normalized_address(initiator_address)})
     assert response.json()['errors'] == 'Initiator address not checksummed: {}'.format(
-        to_normalized_address(initiator_address),
+        to_normalized_address(initiator_address)
     )
 
     response = request_path_with(to=to_normalized_address(target_address))
     assert response.json()['errors'] == 'Target address not checksummed: {}'.format(
-        to_normalized_address(target_address),
+        to_normalized_address(target_address)
     )
 
     response = request_path_with(value=-10)
@@ -86,15 +81,10 @@ def test_get_paths_validation(
     response = request_path_with(iou=iou, status_code=200)
 
     # kill all running greenlets
-    gevent.killall(
-        [obj for obj in gc.get_objects() if isinstance(obj, gevent.Greenlet)],
-    )
+    gevent.killall([obj for obj in gc.get_objects() if isinstance(obj, gevent.Greenlet)])
 
 
-def test_get_paths_path_validation(
-    api_sut: ServiceApi,
-    api_url: str,
-):
+def test_get_paths_path_validation(api_sut: ServiceApi, api_url: str):
     url = api_url + '/1234abc/paths'
     response = requests.post(url)
     assert response.status_code == 400
@@ -104,87 +94,60 @@ def test_get_paths_path_validation(
     response = requests.post(url)
     assert response.status_code == 400
     assert response.json()['errors'] == 'Token network address not checksummed: {}'.format(
-        'df173a5173c3d0ae5ba11dae84470c5d3f1a8413',
+        'df173a5173c3d0ae5ba11dae84470c5d3f1a8413'
     )
 
     url = api_url + '/0xdf173a5173c3d0ae5ba11dae84470c5d3f1a8413/paths'
     response = requests.post(url)
     assert response.status_code == 400
     assert response.json()['errors'] == 'Token network address not checksummed: {}'.format(
-        '0xdf173a5173c3d0ae5ba11dae84470c5d3f1a8413',
+        '0xdf173a5173c3d0ae5ba11dae84470c5d3f1a8413'
     )
 
     url = api_url + '/0x0000000000000000000000000000000000000000/paths'
     response = requests.post(url)
     assert response.status_code == 400
     assert response.json()['errors'] == 'Unsupported token network: {}'.format(
-        '0x0000000000000000000000000000000000000000',
+        '0x0000000000000000000000000000000000000000'
     )
     # killen aller greenlets
-    gevent.killall(
-        [obj for obj in gc.get_objects() if isinstance(obj, gevent.Greenlet)],
-    )
+    gevent.killall([obj for obj in gc.get_objects() if isinstance(obj, gevent.Greenlet)])
 
 
 def test_get_paths(
-    api_sut: ServiceApi,
-    api_url: str,
-    addresses: List[Address],
-    token_network_model: TokenNetwork,
+    api_sut: ServiceApi, api_url: str, addresses: List[Address], token_network_model: TokenNetwork
 ):
     url = api_url + f'/{token_network_model.address}/paths'
 
-    data = {
-        'from': addresses[0],
-        'to': addresses[2],
-        'value': 10,
-        'max_paths': DEFAULT_MAX_PATHS,
-    }
+    data = {'from': addresses[0], 'to': addresses[2], 'value': 10, 'max_paths': DEFAULT_MAX_PATHS}
     response = requests.post(url, json=data)
     assert response.status_code == 200
     paths = response.json()['result']
     assert len(paths) == 1
-    assert paths == [
-        {
-            'path': [addresses[0], addresses[1], addresses[2]],
-            'estimated_fee': 0,
-        },
-    ]
+    assert paths == [{'path': [addresses[0], addresses[1], addresses[2]], 'estimated_fee': 0}]
 
     # check default value for num_path
-    data = {
-        'from': addresses[0],
-        'to': addresses[2],
-        'value': 10,
-    }
+    data = {'from': addresses[0], 'to': addresses[2], 'value': 10}
     default_response = requests.post(url, json=data)
     assert default_response.json()['result'] == response.json()['result']
 
     # there is no connection between 0 and 5, this should return an error
-    data = {
-        'from': addresses[0],
-        'to': addresses[5],
-        'value': 10,
-        'max_paths': 3,
-    }
+    data = {'from': addresses[0], 'to': addresses[5], 'value': 10, 'max_paths': 3}
     response = requests.post(url, json=data)
     assert response.status_code == 400
     assert response.json()['errors'].startswith('No suitable path found for transfer from')
 
     # killen aller greenlets
-    gevent.killall(
-        [obj for obj in gc.get_objects() if isinstance(obj, gevent.Greenlet)],
-    )
+    gevent.killall([obj for obj in gc.get_objects() if isinstance(obj, gevent.Greenlet)])
 
 
 #
 # tests for /info endpoint
 #
 
+
 def test_get_info(
-    api_sut: ServiceApi,
-    api_url: str,
-    pathfinding_service_full_mock: PathfindingService,
+    api_sut: ServiceApi, api_url: str, pathfinding_service_full_mock: PathfindingService
 ):
     url = api_url + '/info'
 
@@ -202,14 +165,13 @@ def test_get_info(
         'message': 'PLACEHOLDER FOR ADDITIONAL MESSAGE BY THE PFS',
     }
     # killen aller greenlets
-    gevent.killall(
-        [obj for obj in gc.get_objects() if isinstance(obj, gevent.Greenlet)],
-    )
+    gevent.killall([obj for obj in gc.get_objects() if isinstance(obj, gevent.Greenlet)])
 
 
 #
 # tests for iou endpoint
 #
+
 
 def test_get_iou(
     api_sut: ServiceApi,
@@ -228,12 +190,14 @@ def test_get_iou(
             'timestamp': timestamp.isoformat(),
         }
         local_signer = LocalSigner(private_key=decode_hex(privkey))
-        params['signature'] = encode_hex(local_signer.sign(
-            pack_data(
-                ['address', 'address', 'string'],
-                [params['sender'], params['receiver'], params['timestamp']],
-            ),
-        ))
+        params['signature'] = encode_hex(
+            local_signer.sign(
+                pack_data(
+                    ['address', 'address', 'string'],
+                    [params['sender'], params['receiver'], params['timestamp']],
+                )
+            )
+        )
         return params
 
     # Request without IOU in database
@@ -266,6 +230,4 @@ def test_get_iou(
     assert response.json()['error_code'] == exceptions.RequestOutdated.error_code
 
     # kill all running greenlets
-    gevent.killall(
-        [obj for obj in gc.get_objects() if isinstance(obj, gevent.Greenlet)],
-    )
+    gevent.killall([obj for obj in gc.get_objects() if isinstance(obj, gevent.Greenlet)])
