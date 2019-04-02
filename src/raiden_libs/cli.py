@@ -1,15 +1,15 @@
 import json
 import os
 import sys
-from typing import Callable, Tuple
+from typing import Callable, Optional, Tuple
 
 import click
 import structlog
 from eth_account import Account
 from eth_utils import is_checksum_address
+from requests.exceptions import ConnectionError
 from web3 import HTTPProvider, Web3
 from web3.middleware import geth_poa_middleware
-from requests.exceptions import ConnectionError
 
 from pathfinding_service.middleware import http_retry_with_backoff_middleware
 from raiden.utils.typing import BlockNumber, ChainID
@@ -27,9 +27,9 @@ log = structlog.get_logger(__name__)
 DEFAULT_REQUIRED_CONFIRMATIONS = 8  # ~2min with 15s blocks
 
 
-def _open_keystore(ctx: click.Context, param: click.Parameter, value: str) -> None:
-    keystore_file = value
-    password = ctx.params.pop('password')
+def _open_keystore(ctx: click.Context, _param: click.Parameter, value: str) -> None:
+    password = value
+    keystore_file = ctx.params.pop('keystore_file')
     with open(keystore_file, 'r') as keystore:
         try:
             ctx.params['private_key'] = Account.decrypt(
@@ -43,7 +43,7 @@ def _open_keystore(ctx: click.Context, param: click.Parameter, value: str) -> No
             ctx.exit(1)
 
 
-def validate_address(ctx: click.Context, param: click.Parameter, value: str) -> str:
+def validate_address(_ctx: click.Context, _param: click.Parameter, value: str) -> Optional[str]:
     if value is None:
         # None as default value allowed
         return None
@@ -55,9 +55,10 @@ def validate_address(ctx: click.Context, param: click.Parameter, value: str) -> 
 def common_options(app_name: str) -> Callable:
     """A decorator to be used with all service commands
 
-    It will pass two new args to the given func:
+    It will pass new args to the given func:
     * private_key (as a result of `--keystore-file` and `--password`)
     * state_db
+    * log_level
 
     The `app_name` will be used to determine the state_db location.
     """
@@ -70,13 +71,12 @@ def common_options(app_name: str) -> Callable:
                     required=True,
                     type=click.Path(exists=True, dir_okay=False, readable=True),
                     help='Path to a keystore file.',
-                    callback=_open_keystore,
-                    expose_value=False,  # only the private_key is used
                 ),
                 click.password_option(
                     '--password',
                     help='Password to unlock the keystore file.',
-                    is_eager=True,  # read the password before opening keystore
+                    callback=_open_keystore,
+                    expose_value=False,  # only the private_key is used
                 ),
                 click.option(
                     '--state-db',
