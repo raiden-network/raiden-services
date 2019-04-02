@@ -251,12 +251,18 @@ class Database(SharedDatabase):
         msc_address: Address,
         registry_address: Address,
         receiver: str,
+        sync_start_block: BlockNumber = BlockNumber(0),
     ) -> None:
         super(Database, self).__init__(filename, allow_create=True)
-        self._setup(chain_id, msc_address, registry_address, receiver)
+        self._setup(chain_id, msc_address, registry_address, receiver, sync_start_block)
 
     def _setup(
-        self, chain_id: int, msc_address: str, registry_address: str, receiver: str
+        self,
+        chain_id: int,
+        msc_address: str,
+        registry_address: str,
+        receiver: str,
+        sync_start_block: BlockNumber,
     ) -> None:
         """ Make sure that the db is initialized an matches the given settings """
         assert chain_id >= 0
@@ -291,9 +297,10 @@ class Database(SharedDatabase):
                 SET chain_id = ?,
                     monitor_contract_address = ?,
                     token_network_registry_address = ?,
-                    receiver = ?;
+                    receiver = ?,
+                    latest_known_block = ?
             """,
-                settings,
+                settings + [sync_start_block],
             )
 
     def update_state(self, state: MonitoringServiceState) -> None:
