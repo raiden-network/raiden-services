@@ -95,7 +95,7 @@ def query_blockchain_events(
     events = web3.eth.getLogs(filter_params)
 
     return [
-        decode_event(contract_manager.get_contract_abi(contract_name), raw_event)
+        decode_event(ABI(contract_manager.get_contract_abi(contract_name)), raw_event)
         for raw_event in events
     ]
 
