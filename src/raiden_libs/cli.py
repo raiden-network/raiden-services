@@ -9,6 +9,7 @@ from eth_account import Account
 from eth_utils import is_checksum_address
 from web3 import HTTPProvider, Web3
 from web3.middleware import geth_poa_middleware
+from requests.exceptions import ConnectionError
 
 from pathfinding_service.middleware import http_retry_with_backoff_middleware
 from raiden.utils.typing import BlockNumber, ChainID
@@ -149,7 +150,7 @@ def connect_to_blockchain(
     contracts_version: str = None,
 ) -> Tuple[Web3, dict]:
     try:
-        log.info(f'Starting Web3 client for node at {eth_rpc}')
+        log.info('Starting Web3 client', node_address=eth_rpc)
         provider = HTTPProvider(eth_rpc)
         web3 = Web3(provider)
         # Will throw ConnectionError on bad Ethereum client

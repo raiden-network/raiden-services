@@ -30,6 +30,6 @@ To install the Raiden services run the following commands:
 
 ```sh
 virtualenv -p python3.7 venv
-. venv/bin/activate
+source venv/bin/activate
 pip install raiden-services
 ```
