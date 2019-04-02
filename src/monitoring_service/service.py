@@ -94,6 +94,7 @@ class MonitoringService:
             registry_address=registry_address,
             receiver=self.address,
             msc_address=monitor_contract_address,
+            sync_start_block=sync_start_block,
         )
         ms_state = self.database.load_state()
 
