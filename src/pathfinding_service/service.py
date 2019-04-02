@@ -66,14 +66,6 @@ class PathfindingService(gevent.Greenlet):
         poll_interval: int = 10,
         service_fee: int = 0,
     ):
-        """ Creates a new pathfinding service
-
-        Args:
-            contract_manager: A contract manager
-            token_network_listener: A blockchain listener object
-            token_network_registry_listener: A blockchain listener object for the network registry
-            chain_id: The id of the chain the PFS runs on
-        """
         super().__init__()
 
         self.web3 = web3

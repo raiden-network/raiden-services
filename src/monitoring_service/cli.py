@@ -50,7 +50,10 @@ def main(
     monitor_contract_address: Address,
     min_reward: int,
     confirmations: int,
-) -> None:
+) -> int:
+    """ The Monitoring service for the Raiden Network. """
+    log.info("Starting Raiden Monitoring Service")
+
     web3, contract_infos = connect_to_blockchain(
         eth_rpc=eth_rpc,
         registry_address=registry_address,
@@ -73,6 +76,8 @@ def main(
         min_reward=min_reward,
     )
     ms.start()
+
+    return 0
 
 
 if __name__ == '__main__':

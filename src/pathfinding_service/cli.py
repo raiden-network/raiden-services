@@ -45,13 +45,7 @@ def main(
     host: str,
     service_fee: int,
 ) -> int:
-    """Console script for pathfinding_service.
-
-    Logging can be quickly set by specifying a global log level or in a
-    detailed way by using a log configuration file. See
-    https://docs.python.org/3.7/library/logging.config.html#logging-config-dictschema
-    for a detailed description of the format.
-    """
+    """ The Pathfinding service for the Raiden Network. """
     log.info("Starting Raiden Pathfinding Service")
 
     contracts_version = '0.10.1'
@@ -68,7 +62,6 @@ def main(
     service = None
     api = None
     try:
-        log.info('Starting Pathfinding Service...')
         service = PathfindingService(
             web3=web3,
             contract_manager=contract_manager,
