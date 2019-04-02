@@ -26,7 +26,7 @@ charged and the respective available channel capacities.
 Installation
 ------------
 
-The Raiden services are available in through the pip package
+The Raiden services are available through the pip package
 ``raiden-services``. As there is currently a lot of development activity, we
 recommend to use the latest version from git right now.
 
@@ -65,20 +65,20 @@ The services share a number of options. These are:
 ``--registry-address``
     Defines the address of the token network registry to be used.
 
-    Defaults to the contract address that Raiden client uses for the given
+    Defaults to the contract address that the Raiden client uses for the given
     chain.
 
 ``--user-deposit-contract-address``
     Defines the address of the user deposit contract to be used.
 
-    Defaults to the contract address that Raiden client uses for the given
+    Defaults to the contract address that Raiden the client uses for the given
     chain.
 
 ``--start-block``
     Defines the block number at which the service starts syncing.
 
     Defaults to the block number in which the earliest contract was deployed,
-    but only if only predeployed contracts are used. Otherwise is set to 0.
+    but only if predeployed contracts are used. Otherwise it is set to 0.
 
 ``--confirmations``
     Defines the number of blocks after which blocks are assumed confirmed.
@@ -117,13 +117,13 @@ indenpendently for now. The ``monitoring-service`` program is responsible for
 all interactions with the blockchain and **must** be started first, as it
 writes some essential information to the state database.
 Afterwards the ``request-collector`` can be started. It listens to the public
-Matrix room for monitporing request from Raiden nodes and validates and saves
+Matrix room for monitoring request from Raiden nodes and validates and saves
 them to the monitoring services database.
 
 .. note::
-    The reason of this separation is security. Even when the broadcast room and
-    therefore the request collector are attacked, the monitoring service
-    continues working and can safely monitor the users channels.
+    The reason for this separation is security. Even when the broadcast room
+    and therefore the request collector are attacked, the monitoring service
+    continues to work and can safely monitor the user's channels.
 
 The Monitoring service has some additional parameters which can be set.
 
@@ -137,7 +137,7 @@ The Monitoring service has some additional parameters which can be set.
 ``--monitor-contract-address``
     Defines the address of the monitoring contract to be used.
 
-    Defaults to the contract address that Raiden client uses for the given
+    Defaults to the contract address that the Raiden client uses for the given
     chain.
 
 ``--min-reward``
