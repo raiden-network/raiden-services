@@ -219,14 +219,17 @@ class SharedDatabase:
     def remove_waiting_transaction(self, tx_hash: str) -> None:
         self.conn.execute("DELETE FROM waiting_transactions WHERE transaction_hash = ?", [tx_hash])
 
-    def load_state(self) -> MonitoringServiceState:
+    def load_state(self, sync_start_block: BlockNumber) -> MonitoringServiceState:
         """ Load MS state from db or return a new empty state if not saved one is present
         """
         blockchain = self.conn.execute("SELECT * FROM blockchain").fetchone()
         token_network_addresses = [
             row[0] for row in self.conn.execute("SELECT address FROM token_network")
         ]
+
         latest_known_block = blockchain['latest_known_block']
+        if latest_known_block == -1:
+            latest_known_block = sync_start_block
 
         chain_state = BlockchainState(
             chain_id=blockchain['chain_id'],

@@ -11,6 +11,7 @@ from monitoring_service.states import MonitorRequest
 from raiden.constants import MONITORING_BROADCASTING_ROOM
 from raiden.exceptions import InvalidSignature
 from raiden.messages import RequestMonitoring, SignedMessage
+from raiden.utils.typing import BlockNumber
 from raiden_libs.gevent_error_handler import register_error_handler
 from raiden_libs.matrix import MatrixListener
 
@@ -30,7 +31,7 @@ class RequestCollector(gevent.Greenlet):
         self.private_key = private_key
         self.state_db = state_db
 
-        state = self.state_db.load_state()
+        state = self.state_db.load_state(sync_start_block=BlockNumber(0))
         try:
             self.matrix_listener = MatrixListener(
                 private_key=private_key,
