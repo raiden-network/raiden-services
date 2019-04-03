@@ -44,12 +44,39 @@ def test_blockchain_listener(
 
     # the confirmed event should be available after 4 more blocks as set above
     assert len(confirmed_channel_open_events) == 0
-    wait_for_blocks(4)
+
+    # Move in 1 block steps, to make sure no events appear twice
+    wait_for_blocks(1)
+    assert len(unconfirmed_channel_open_events) == 1
+    assert len(confirmed_channel_open_events) == 0
+    wait_for_blocks(1)
+    assert len(unconfirmed_channel_open_events) == 1
+    assert len(confirmed_channel_open_events) == 0
+    wait_for_blocks(1)
+    assert len(unconfirmed_channel_open_events) == 1
+    assert len(confirmed_channel_open_events) == 0
+    wait_for_blocks(1)
+    assert len(unconfirmed_channel_open_events) == 1
     assert len(confirmed_channel_open_events) == 1
+
     assert confirmed_channel_open_events[0]['args']['participant1'] == c1.address
     assert confirmed_channel_open_events[0]['args']['participant2'] == c2.address
     # settle_timeout acc. to mock client = 15
     assert confirmed_channel_open_events[0]['args']['settle_timeout'] == 15
+
+    # Move in 1 block steps, to make sure no events appear twice
+    wait_for_blocks(1)
+    assert len(unconfirmed_channel_open_events) == 1
+    assert len(confirmed_channel_open_events) == 1
+    wait_for_blocks(1)
+    assert len(unconfirmed_channel_open_events) == 1
+    assert len(confirmed_channel_open_events) == 1
+    wait_for_blocks(1)
+    assert len(unconfirmed_channel_open_events) == 1
+    assert len(confirmed_channel_open_events) == 1
+    wait_for_blocks(1)
+    assert len(unconfirmed_channel_open_events) == 1
+    assert len(confirmed_channel_open_events) == 1
 
     blockchain_listener.stop()
 
