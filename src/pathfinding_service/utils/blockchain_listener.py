@@ -178,7 +178,8 @@ class BlockchainListener(gevent.Greenlet):
         new_unconfirmed_head_number = self.unconfirmed_head_number + self.sync_chunk_size
         new_unconfirmed_head_number = min(new_unconfirmed_head_number, current_block)
         new_confirmed_head_number = max(
-            new_unconfirmed_head_number - self.required_confirmations, self.confirmed_head_number
+            new_unconfirmed_head_number - self.required_confirmations,
+            self.confirmed_head_number + 1,
         )
 
         # return if blocks have already been processed
@@ -193,18 +194,18 @@ class BlockchainListener(gevent.Greenlet):
             and len(self.confirmed_callbacks) > 0
         )
         if run_confirmed_filters:
-            # create filters depending on current head number
-            filters_confirmed = self.get_filter_params(
-                self.confirmed_head_number, new_confirmed_head_number
-            )
             log.debug(
                 'Filtering for confirmed events',
-                from_block=filters_confirmed['from_block'],
-                to_block=filters_confirmed['to_block'],
+                from_block=self.confirmed_head_number + 1,
+                to_block=new_confirmed_head_number,
                 current_block=current_block,
             )
             # filter the events and run callbacks
-            self.filter_events(filters_confirmed, self.confirmed_callbacks)
+            self.filter_events(
+                from_block=self.confirmed_head_number + 1,
+                to_block=new_confirmed_head_number,
+                name_to_callback=self.confirmed_callbacks,
+            )
             log.debug('Finished.')
 
         run_unconfirmed_filters = (
@@ -212,18 +213,18 @@ class BlockchainListener(gevent.Greenlet):
             and len(self.unconfirmed_callbacks) > 0
         )
         if run_unconfirmed_filters:
-            # create filters depending on current head number
-            filters_unconfirmed = self.get_filter_params(
-                self.unconfirmed_head_number, new_unconfirmed_head_number
-            )
             log.debug(
                 'Filtering for unconfirmed events',
-                from_block=filters_unconfirmed['from_block'],
-                to_block=filters_unconfirmed['to_block'],
+                from_block=self.unconfirmed_head_number + 1,
+                to_block=new_unconfirmed_head_number,
                 current_block=current_block,
             )
             # filter the events and run callbacks
-            self.filter_events(filters_unconfirmed, self.unconfirmed_callbacks)
+            self.filter_events(
+                from_block=self.unconfirmed_head_number + 1,
+                to_block=new_unconfirmed_head_number,
+                name_to_callback=self.unconfirmed_callbacks,
+            )
             log.debug('Finished.')
 
         # update head hash and number
@@ -249,7 +250,7 @@ class BlockchainListener(gevent.Greenlet):
         if not self.wait_sync_event.is_set() and new_unconfirmed_head_number == current_block:
             self.wait_sync_event.set()
 
-    def filter_events(self, filter_params: Dict, name_to_callback: Dict) -> None:
+    def filter_events(self, from_block: int, to_block: int, name_to_callback: Dict) -> None:
         """ Filter events for given event names
 
         Params:
@@ -262,14 +263,15 @@ class BlockchainListener(gevent.Greenlet):
                 web3=self.web3,
                 contract_address=self.contract_address,
                 topics=topics,
-                **filter_params,
+                from_block=from_block,
+                to_block=to_block,
             )
 
             for raw_event in events:
                 decoded_event = decode_event(
                     self.contract_manager.get_contract_abi(self.contract_name), raw_event
                 )
-                log.debug('Received confirmed event', decoded_event=decoded_event)
+                log.debug('Received event', decoded_event=decoded_event)
                 callback(decoded_event)
 
     def _detected_chain_reorg(self, current_block: int) -> None:
@@ -321,10 +323,3 @@ class BlockchainListener(gevent.Greenlet):
                     confirmed_block_hash=self.confirmed_head_hash,
                 )
                 sys.exit(1)  # unreachable as long as confirmation level is set high enough
-
-    # filter for events after block_number
-    # to_block is incremented because eth-tester doesn't include events from the end block
-    # see https://github.com/raiden-network/raiden/pull/1321
-    def get_filter_params(self, from_block: int, to_block: int) -> Dict[str, int]:
-        assert from_block <= to_block
-        return {'from_block': from_block + 1, 'to_block': to_block + 1}

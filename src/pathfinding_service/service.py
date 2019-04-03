@@ -175,6 +175,7 @@ class PathfindingService(gevent.Greenlet):
         participant1 = event['args']['participant1']
         participant2 = event['args']['participant2']
         settle_timeout = event['args']['settle_timeout']
+        event_block_number = event['blockNumber']
 
         log.info(
             'Received ChannelOpened event',
@@ -183,6 +184,7 @@ class PathfindingService(gevent.Greenlet):
             participant1=participant1,
             participant2=participant2,
             settle_timeout=settle_timeout,
+            event_block_number=event_block_number,
         )
 
         token_network.handle_channel_opened_event(
@@ -198,6 +200,7 @@ class PathfindingService(gevent.Greenlet):
         channel_identifier = event['args']['channel_identifier']
         participant_address = event['args']['participant']
         total_deposit = event['args']['total_deposit']
+        event_block_number = event['blockNumber']
 
         log.info(
             'Received ChannelNewDeposit event',
@@ -205,6 +208,7 @@ class PathfindingService(gevent.Greenlet):
             channel_identifier=channel_identifier,
             participant=participant_address,
             total_deposit=total_deposit,
+            event_block_number=event_block_number,
         )
 
         token_network.handle_channel_new_deposit_event(
@@ -218,11 +222,13 @@ class PathfindingService(gevent.Greenlet):
             return
 
         channel_identifier = event['args']['channel_identifier']
+        event_block_number = event['blockNumber']
 
         log.info(
             'Received ChannelClosed event',
             token_network_address=token_network.address,
             channel_identifier=channel_identifier,
+            event_block_number=event_block_number,
         )
 
         token_network.handle_channel_closed_event(channel_identifier)
@@ -240,6 +246,7 @@ class PathfindingService(gevent.Greenlet):
                 'Found new token network',
                 token_address=token_address,
                 token_network_address=token_network_address,
+                event_block_number=event_block_number,
             )
             self.create_token_network_for_address(
                 token_network_address, token_address, event_block_number
