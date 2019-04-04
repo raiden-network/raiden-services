@@ -54,14 +54,16 @@ def test_claim_fees(
     # Check if the right IOUs are considered to be claimable
     expected_claimable = ious[:4]
     claimable_ious = list(
-        get_claimable_ious(pfs.database, expires_before=1000, claim_cost_rdn=100)
+        get_claimable_ious(
+            pfs.database, expires_before=BlockNumber(1000), claim_cost_rdn=TokenAmount(100)
+        )
     )
     assert claimable_ious == expected_claimable
 
     # Claim IOUs
     skipped, failures = claim_ious(
         claimable_ious,
-        claim_cost_rdn=100,
+        claim_cost_rdn=TokenAmount(100),
         one_to_n_contract=one_to_n_contract,
         web3=web3,
         database=pfs.database,

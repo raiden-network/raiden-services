@@ -5,6 +5,7 @@ from typing import Iterator, Optional
 import structlog
 
 from pathfinding_service.model import IOU
+from raiden.utils.typing import BlockNumber, TokenAmount
 from raiden_libs.types import Address
 
 log = structlog.get_logger(__name__)
@@ -74,10 +75,10 @@ class PFSDatabase:
     def get_ious(
         self,
         sender: Address = None,
-        expiration_block: int = None,
+        expiration_block: BlockNumber = None,
         claimed: bool = None,
-        expires_before: int = None,
-        amount_at_least: int = None,
+        expires_before: BlockNumber = None,
+        amount_at_least: TokenAmount = None,
     ) -> Iterator[IOU]:
         query = "SELECT * FROM iou WHERE 1=1"
         args: list = []
@@ -103,7 +104,7 @@ class PFSDatabase:
             yield IOU.Schema().load(iou_dict)[0]
 
     def get_iou(
-        self, sender: Address, expiration_block: int = None, claimed: bool = None
+        self, sender: Address, expiration_block: BlockNumber = None, claimed: bool = None
     ) -> Optional[IOU]:
         try:
             return next(self.get_ious(sender, expiration_block, claimed))
