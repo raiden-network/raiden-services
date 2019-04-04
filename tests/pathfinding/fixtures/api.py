@@ -5,7 +5,7 @@ import psutil
 import pytest
 
 from pathfinding_service import PathfindingService
-from pathfinding_service.api.rest import ServiceApi
+from pathfinding_service.api import ServiceApi
 from pathfinding_service.config import API_PATH, DEFAULT_API_PORT
 
 

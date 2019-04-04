@@ -8,14 +8,14 @@ from eth_typing import ChecksumAddress
 from eth_utils import is_checksum_address, to_checksum_address
 from web3 import Web3
 
-from pathfinding_service.database import PFSDatabase
-from pathfinding_service.exceptions import InvalidCapacityUpdate
-from pathfinding_service.model import TokenNetwork
-from pathfinding_service.utils.blockchain_listener import (
+from pathfinding_service.blockchain import (
     BlockchainListener,
     create_channel_event_topics,
     create_registry_event_topics,
 )
+from pathfinding_service.database import PFSDatabase
+from pathfinding_service.exceptions import InvalidCapacityUpdate
+from pathfinding_service.model import TokenNetwork
 from raiden.constants import PATH_FINDING_BROADCASTING_ROOM, UINT256_MAX
 from raiden.messages import SignedMessage, UpdatePFS
 from raiden.utils.signer import recover
