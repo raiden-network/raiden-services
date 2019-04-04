@@ -1,5 +1,6 @@
 from typing import Dict, List
 
+import gevent
 import pytest
 from web3 import Web3
 
@@ -62,18 +63,16 @@ def test_blockchain_listener(
     assert confirmed_channel_open_events[0]['args']['settle_timeout'] == 15
 
     # Move in 1 block steps, to make sure no events appear twice
-    wait_for_blocks(1)
-    assert len(unconfirmed_channel_open_events) == 1
-    assert len(confirmed_channel_open_events) == 1
-    wait_for_blocks(1)
-    assert len(unconfirmed_channel_open_events) == 1
-    assert len(confirmed_channel_open_events) == 1
-    wait_for_blocks(1)
-    assert len(unconfirmed_channel_open_events) == 1
-    assert len(confirmed_channel_open_events) == 1
-    wait_for_blocks(1)
-    assert len(unconfirmed_channel_open_events) == 1
-    assert len(confirmed_channel_open_events) == 1
+    for _ in range(10):
+        wait_for_blocks(1)
+        assert len(unconfirmed_channel_open_events) == 1
+        assert len(confirmed_channel_open_events) == 1
+
+    # Test that confirmed counters are stable, see #223
+    for _ in range(10):
+        gevent.sleep()
+
+    assert blockchain_listener.exception is None
 
     blockchain_listener.stop()
 

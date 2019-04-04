@@ -178,8 +178,7 @@ class BlockchainListener(gevent.Greenlet):
         new_unconfirmed_head_number = self.unconfirmed_head_number + self.sync_chunk_size
         new_unconfirmed_head_number = min(new_unconfirmed_head_number, current_block)
         new_confirmed_head_number = max(
-            new_unconfirmed_head_number - self.required_confirmations,
-            self.confirmed_head_number + 1,
+            new_unconfirmed_head_number - self.required_confirmations, self.confirmed_head_number
         )
 
         # return if blocks have already been processed
