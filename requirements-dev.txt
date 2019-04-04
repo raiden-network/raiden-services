@@ -19,9 +19,9 @@ pytest-cov
 pytest-structlog==0.1
 coverage>=4.5.2
 
-ipython
+ipython==4.2.1
 pdbpp
-psutil
+psutil==5.4.7
 
 eth-tester[py-evm]==0.1.0b33
 attrs==18.2.0  # needed for travis
