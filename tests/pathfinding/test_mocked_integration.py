@@ -68,6 +68,7 @@ def test_pfs_with_mocked_events(
             dict(
                 address=token_network_address,
                 event='ChannelOpened',
+                blockNumber=13,
                 args=dict(
                     channel_identifier=index,
                     participant1=addresses[p1_index],
@@ -81,6 +82,7 @@ def test_pfs_with_mocked_events(
             dict(
                 address=token_network_address,
                 event='ChannelNewDeposit',
+                blockNumber=14,
                 args=dict(
                     channel_identifier=index,
                     participant=addresses[p1_index],
@@ -93,6 +95,7 @@ def test_pfs_with_mocked_events(
             dict(
                 address=token_network_address,
                 event='ChannelNewDeposit',
+                blockNumber=15,
                 args=dict(
                     channel_identifier=index,
                     participant=addresses[p2_index],
@@ -185,6 +188,7 @@ def test_pfs_with_mocked_events(
             dict(
                 address=token_network_address,
                 event='ChannelClosed',
+                blockNumber=99,
                 args=dict(channel_identifier=index, closing_participant=addresses[p1_index]),
             )
         )
@@ -231,6 +235,7 @@ def test_pfs_idempotency_of_channel_openings(
             dict(
                 address=token_network_address,
                 event='ChannelOpened',
+                blockNumber=13,
                 args=dict(
                     channel_identifier=decode_hex('0x%064x' % 1),
                     participant1=addresses[0],
@@ -248,6 +253,7 @@ def test_pfs_idempotency_of_channel_openings(
         dict(
             address=token_network_address,
             event='ChannelClosed',
+            blockNumber=99,
             args=dict(
                 channel_identifier=decode_hex('0x%064x' % 1), closing_participant=addresses[0]
             ),
@@ -295,6 +301,7 @@ def test_pfs_multiple_channels_for_two_participants_opened(
         dict(
             address=token_network_address,
             event='ChannelOpened',
+            blockNumber=13,
             args=dict(
                 channel_identifier=decode_hex('0x%064x' % 1),
                 participant1=addresses[0],
@@ -309,6 +316,7 @@ def test_pfs_multiple_channels_for_two_participants_opened(
         dict(
             address=token_network_address,
             event='ChannelOpened',
+            blockNumber=14,
             args=dict(
                 channel_identifier=decode_hex('0x%064x' % 2),
                 participant1=addresses[1],
@@ -326,6 +334,7 @@ def test_pfs_multiple_channels_for_two_participants_opened(
         dict(
             address=token_network_address,
             event='ChannelClosed',
+            blockNumber=99,
             args=dict(
                 channel_identifier=decode_hex('0x%064x' % 1), closing_participant=addresses[0]
             ),
