@@ -113,7 +113,7 @@ Monitoring Service
 ^^^^^^^^^^^^^^^^^^
 
 The Monitoring service consists of two components that have to be started
-indenpendently for now. The ``monitoring-service`` program is responsible for
+independently for now. The ``monitoring-service`` program is responsible for
 all interactions with the blockchain and **must** be started first, as it
 writes some essential information to the state database.
 Afterwards the ``request-collector`` can be started. It listens to the public
@@ -150,12 +150,38 @@ The Monitoring service has some additional parameters which can be set.
 The request collector shares the database path with the monitoring service
 
 ``--state-db``
-    Defines the location where the state is of the moinitoring service is
+    Defines the location where the state is of the monitoring service is
     stored.
 
     Defaults to ``~/.config/raiden-monitoring-service/state.db`` on Unix or
     ``~/Library/Application Support/raiden-monitoring-service/state.db`` on
     macOS.
+
+
+Claim Pathfinding Fees
+^^^^^^^^^^^^^^^^^^^^^^
+
+If you are running the Pathfinding Service with `--service-fee`, the service
+fees will need to be claimed to actually reach your wallet. Claiming fees less
+frequently will reduce the Ethereum transactions costs spent while claiming,
+while not claiming for a long time might make you miss the expiration block for
+your claims. The `claim-pfs-fees` script helps doing this in a profitable and
+reasonably easy way. You must use the same `keystore` and `state-db` as for
+running the Pathfinding Service.
+
+In addition to the mandatory parameters, the following parameters are useful to increase profitability:
+
+``--rdn-per-eth``
+    The RDN/Eth price used to calculate whether the value of a fee IOU exceeds
+    the transactions costs to claim it.
+
+``--expires-within``
+    Only IOUs which expire within this number of blocks will be claimed.
+    Reducing this number gives the IOUs more time to accumulate a higher
+    amount, allowing higher amounts to be claimed with the same Ethereum
+    transaction costs. Increasing this value makes it less likely for IOUs to
+    expire before being claimed, if you run `claim-pfs-fees` rarely or at
+    irregular intervals.
 
 
 Indices and tables
