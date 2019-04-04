@@ -131,11 +131,16 @@ def test_get_paths(
     default_response = requests.post(url, json=data)
     assert default_response.json()['result'] == response.json()['result']
 
-    # there is no connection between 0 and 5, this should return an error
-    data = {'from': addresses[0], 'to': addresses[5], 'value': 10, 'max_paths': 3}
-    response = requests.post(url, json=data)
-    assert response.status_code == 400
-    assert response.json()['errors'].startswith('No suitable path found for transfer from')
+    # impossible routes
+    for source, dest in [
+        (addresses[0], addresses[5]),  # no connection between 0 and 5
+        ('0x' + '1' * 40, addresses[5]),  # source not in graph
+        (addresses[0], '0x' + '1' * 40),  # dest not in graph
+    ]:
+        data = {'from': source, 'to': dest, 'value': 10, 'max_paths': 3}
+        response = requests.post(url, json=data)
+        assert response.status_code == 400
+        assert response.json()['errors'].startswith('No suitable path found for transfer from')
 
     # killen aller greenlets
     gevent.killall([obj for obj in gc.get_objects() if isinstance(obj, gevent.Greenlet)])
