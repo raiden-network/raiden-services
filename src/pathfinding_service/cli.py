@@ -9,7 +9,7 @@ import click
 import structlog
 
 from pathfinding_service import PathfindingService
-from pathfinding_service.api.rest import ServiceApi
+from pathfinding_service.api import ServiceApi
 from pathfinding_service.config import DEFAULT_API_HOST, DEFAULT_POLL_INTERVALL
 from raiden.utils.typing import BlockNumber
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT

@@ -2,7 +2,7 @@ import pytest
 from eth_utils import encode_hex
 
 import pathfinding_service.exceptions as exceptions
-from pathfinding_service.api.rest import process_payment
+from pathfinding_service.api import process_payment
 from pathfinding_service.config import MIN_IOU_EXPIRY, UDC_SECURITY_MARGIN_FACTOR
 from pathfinding_service.model import IOU
 from raiden_contracts.tests.utils import get_random_address, get_random_privkey

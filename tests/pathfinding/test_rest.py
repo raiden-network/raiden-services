@@ -9,7 +9,7 @@ from eth_utils import decode_hex, encode_hex, to_normalized_address
 
 import pathfinding_service.exceptions as exceptions
 from pathfinding_service import PathfindingService
-from pathfinding_service.api.rest import DEFAULT_MAX_PATHS, ServiceApi
+from pathfinding_service.api import DEFAULT_MAX_PATHS, ServiceApi
 from pathfinding_service.model import IOU, TokenNetwork
 from raiden.utils.signer import LocalSigner
 from raiden.utils.signing import pack_data

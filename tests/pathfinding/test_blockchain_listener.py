@@ -3,10 +3,7 @@ from typing import Dict, List
 import pytest
 from web3 import Web3
 
-from pathfinding_service.utils.blockchain_listener import (
-    BlockchainListener,
-    create_channel_event_topics,
-)
+from pathfinding_service.blockchain import BlockchainListener, create_channel_event_topics
 
 
 def test_blockchain_listener(

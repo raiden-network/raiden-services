@@ -60,7 +60,7 @@ class PathfinderResource(Resource):
 
         token_network = self.pathfinding_service.token_networks.get(Address(token_network_address))
         if token_network is None:
-            return ({'errors': 'Unsupported token network: {}'.format(token_network_address)}, 400)
+            return {'errors': 'Unsupported token network: {}'.format(token_network_address)}, 400
 
         return None
 
