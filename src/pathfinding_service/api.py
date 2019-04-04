@@ -10,7 +10,7 @@ from flask import Flask, Response, request
 from flask_restful import Api, Resource, reqparse
 from gevent.pywsgi import WSGIServer
 from marshmallow_dataclass import add_schema
-from networkx.exception import NetworkXNoPath
+from networkx.exception import NetworkXNoPath, NodeNotFound
 from web3 import Web3
 
 import pathfinding_service.exceptions as exceptions
@@ -129,7 +129,7 @@ class PathsResource(PathfinderResource):
             paths = token_network.get_paths(
                 source=args['from'], target=args['to'], value=args.value, max_paths=args.max_paths
             )
-        except NetworkXNoPath:
+        except (NetworkXNoPath, NodeNotFound):
             return (
                 {
                     'errors': 'No suitable path found for transfer from {} to {}.'.format(
