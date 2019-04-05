@@ -1,7 +1,8 @@
 import json
 import os
 import sys
-from typing import Callable, Optional, Tuple
+from functools import wraps
+from typing import Any, Callable, Optional, Tuple
 
 import click
 import structlog
@@ -27,20 +28,19 @@ log = structlog.get_logger(__name__)
 DEFAULT_REQUIRED_CONFIRMATIONS = 8  # ~2min with 15s blocks
 
 
-def _open_keystore(ctx: click.Context, _param: click.Parameter, value: str) -> None:
-    password = value
-    keystore_file = ctx.params.pop('keystore_file')
+def _open_keystore(keystore_file: str, password: str) -> str:
     with open(keystore_file, 'r') as keystore:
         try:
-            ctx.params['private_key'] = Account.decrypt(
+            private_key = Account.decrypt(
                 keyfile_json=json.load(keystore), password=password
             ).hex()
+            return private_key
         except ValueError as error:
             log.critical(
                 'Could not decode keyfile with given password. Please try again.',
                 reason=str(error),
             )
-            ctx.exit(1)
+            sys.exit(1)
 
 
 def validate_address(_ctx: click.Context, _param: click.Parameter, value: str) -> Optional[str]:
@@ -72,12 +72,7 @@ def common_options(app_name: str) -> Callable:
                     type=click.Path(exists=True, dir_okay=False, readable=True),
                     help='Path to a keystore file.',
                 ),
-                click.password_option(
-                    '--password',
-                    help='Password to unlock the keystore file.',
-                    callback=_open_keystore,
-                    expose_value=False,  # only the private_key is used
-                ),
+                click.password_option('--password', help='Password to unlock the keystore file.'),
                 click.option(
                     '--state-db',
                     default=os.path.join(click.get_app_dir(app_name), 'state.db'),
@@ -95,7 +90,15 @@ def common_options(app_name: str) -> Callable:
             ]
         ):
             func = option(func)
-        return func
+
+        @wraps(func)
+        def call_with_opened_keystore(**kwargs: Any) -> Callable:
+            kwargs['private_key'] = _open_keystore(
+                kwargs.pop('keystore_file'), kwargs.pop('password')
+            )
+            return func(**kwargs)
+
+        return call_with_opened_keystore
 
     return decorator
 
