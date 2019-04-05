@@ -9,7 +9,7 @@ from web3.contract import Contract
 from pathfinding_service.database import PFSDatabase
 from pathfinding_service.model import IOU
 from raiden.utils.typing import BlockNumber, TokenAmount
-from raiden_contracts.constants import CONTRACT_ONE_TO_N
+from raiden_contracts.constants import CONTRACT_ONE_TO_N, CONTRACT_USER_DEPOSIT
 from raiden_contracts.contract_manager import ContractManager, contracts_precompiled_path
 from raiden_libs.cli import blockchain_options, common_options, connect_to_blockchain
 from raiden_libs.types import Address
@@ -59,7 +59,7 @@ def main(
     contract_manager = ContractManager(contracts_precompiled_path())
     one_to_n_contract = web3.eth.contract(
         abi=contract_manager.get_contract_abi(CONTRACT_ONE_TO_N),
-        address=contract_infos['user_deposit_contract_address'],
+        address=contract_infos[CONTRACT_USER_DEPOSIT],
     )
 
     claim_cost_eth = 90897
