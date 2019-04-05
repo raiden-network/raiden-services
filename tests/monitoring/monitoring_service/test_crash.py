@@ -12,7 +12,7 @@ from monitoring_service.service import MonitoringService
 from raiden.utils.typing import BlockNumber, ChannelID
 
 
-class MockBlockchainListener:
+class MockBlockchainListener:  # pylint: disable=too-few-public-methods
     def __init__(self, block_events: List[List[Event]]):
         self.block_events = block_events
 

@@ -124,7 +124,7 @@ class PathfindingService(gevent.Greenlet):
             create_registry_event_topics(self.contract_manager), self.handle_token_network_created
         )
 
-    def _run(self) -> None:
+    def _run(self) -> None:  # pylint: disable=method-hidden
         register_error_handler(error_handler)
         self.matrix_listener.start()
         self.token_network_registry_listener.start()

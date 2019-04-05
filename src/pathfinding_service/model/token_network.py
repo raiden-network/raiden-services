@@ -10,7 +10,7 @@ from pathfinding_service.config import (
     DIVERSITY_PEN_DEFAULT,
     MAX_PATHS_PER_REQUEST,
 )
-from pathfinding_service.model import ChannelView
+from pathfinding_service.model.channel_view import ChannelView
 from raiden.utils.typing import ChannelID
 from raiden_libs.types import Address
 

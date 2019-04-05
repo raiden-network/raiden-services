@@ -100,7 +100,8 @@ def query_blockchain_events(
     ]
 
 
-class BlockchainListener:
+# TODO: maybe pylint is right and this class should just be a `get_events` function?
+class BlockchainListener:  # pylint: disable=too-few-public-methods
     """ This is pull-based blockchain listener. """
 
     def __init__(self, web3: Web3, contract_manager: ContractManager):

@@ -44,10 +44,7 @@ def message_from_dict(data: dict) -> Message:
             raise InvalidProtocolMessage(
                 'Invalid message type (data["type"] = {})'.format(data['type'])
             ) from None
-        else:
-            raise InvalidProtocolMessage(
-                'Invalid message data. Can not find the data type'
-            ) from None
+        raise InvalidProtocolMessage('Invalid message data. Can not find the data type') from None
 
     return klass.from_dict(data)
 
@@ -72,7 +69,7 @@ class MatrixListener(gevent.Greenlet):
     def listen_forever(self) -> None:
         self.client.listen_forever()
 
-    def _run(self) -> None:
+    def _run(self) -> None:  # pylint: disable=method-hidden
         self.client.start_listener_thread()
         self.client.sync_thread.get()
 

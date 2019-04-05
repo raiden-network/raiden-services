@@ -4,10 +4,9 @@ from raiden.utils.typing import BlockNumber, ChannelID, Nonce, TokenAmount
 from raiden_libs.types import Address, TokenNetworkAddress
 
 
+@dataclass
 class Event:
     """ Base class for events. """
-
-    pass
 
 
 @dataclass

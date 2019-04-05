@@ -59,7 +59,7 @@ def main(
     contract_manager = ContractManager(contracts_precompiled_path())
     one_to_n_contract = web3.eth.contract(
         abi=contract_manager.get_contract_abi(CONTRACT_ONE_TO_N),
-        address=user_deposit_contract_address,
+        address=contract_infos['user_deposit_contract_address'],
     )
 
     claim_cost_eth = 90897

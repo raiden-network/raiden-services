@@ -141,7 +141,7 @@ class BlockchainListener(gevent.Greenlet):
         self.unconfirmed_callbacks[self.counter] = (topics, callback)
         self.counter += 1
 
-    def _run(self) -> None:
+    def _run(self) -> None:  # pylint: disable=method-hidden
         self.running = True
         log.info('Starting blockchain polling', interval=self.poll_interval)
         while self.running:
