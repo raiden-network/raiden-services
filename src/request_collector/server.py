@@ -31,10 +31,11 @@ class RequestCollector(gevent.Greenlet):
         self.state_db = state_db
 
         state = self.state_db.load_state()
+        self.chain_id = state.blockchain_state.chain_id
         try:
             self.matrix_listener = MatrixListener(
                 private_key=private_key,
-                chain_id=state.blockchain_state.chain_id,
+                chain_id=self.chain_id,
                 callback=self.handle_message,
                 service_room_suffix=MONITORING_BROADCASTING_ROOM,
             )
@@ -80,6 +81,11 @@ class RequestCollector(gevent.Greenlet):
             )
         except InvalidSignature:
             log.info('Ignore MR with invalid signature', monitor_request=request_monitoring)
+            return
+
+        # Validate MR
+        if monitor_request.chain_id != self.chain_id:
+            log.debug('Bad chain_id', monitor_request=monitor_request, expected=self.chain_id)
             return
 
         # Check that received MR is newer by comparing nonces

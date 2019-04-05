@@ -13,8 +13,9 @@ def build_request_monitoring():
     signer = LocalSigner(decode_hex(get_random_privkey()))
     non_closing_signer = LocalSigner(decode_hex(get_random_privkey()))
 
-    def f(amount=1, nonce=1):
-        balance_proof = make_balance_proof(signer=signer, amount=amount, nonce=nonce)
+    def f(chain_id=1, **kwargs):
+        balance_proof = make_balance_proof(signer=signer, **kwargs)
+        balance_proof.chain_id = chain_id
         partner_signed_balance_proof = SignedBlindedBalanceProof.from_balance_proof_signed_state(
             balance_proof
         )
@@ -32,21 +33,21 @@ def build_request_monitoring():
     return f
 
 
-def test_invalid_request_signatures(ms_database, build_request_monitoring, request_collector):
-    request_monitoring = build_request_monitoring()
-
-    def store_successful(**kwargs):
+def test_invalid_request(ms_database, build_request_monitoring, request_collector):
+    def store_successful(reward_proof_signature=None, **kwargs):
+        request_monitoring = build_request_monitoring(**kwargs)
         rm_dict = request_monitoring.to_dict()
-        for key, val in kwargs.items():
-            rm_dict[key] = val
+        if reward_proof_signature:
+            rm_dict['reward_proof_signature'] = reward_proof_signature
         request_collector.on_monitor_request(RequestMonitoring.from_dict(rm_dict))
         return ms_database.monitor_request_count() == 1
 
-    # bad signatures
-    invalid_sig = '0x' + '0' * 130
+    # bad signature
+    invalid_sig = '0x' + '1' * 130
     assert not store_successful(reward_proof_signature=invalid_sig)
-    assert not store_successful(reward_proof_signature=invalid_sig)
-    assert not store_successful(reward_proof_signature=invalid_sig)
+
+    # wrong chain_id
+    assert not store_successful(chain_id=2)
 
     # success
     assert store_successful()
