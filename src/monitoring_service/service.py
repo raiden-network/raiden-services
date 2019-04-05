@@ -52,7 +52,7 @@ def handle_event(event: Event, context: Context) -> None:
     log.debug('Processed event', num_scheduled_events=context.db.scheduled_event_count())
 
 
-class MonitoringService:
+class MonitoringService:  # pylint: disable=too-few-public-methods
     def __init__(
         self,
         web3: Web3,

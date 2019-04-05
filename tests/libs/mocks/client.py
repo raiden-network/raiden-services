@@ -110,7 +110,7 @@ class MockRaidenNode:
 
         channel_id = event['args']['channel_identifier']
         assert isinstance(channel_id, T_ChannelID)
-        assert channel_id > 0 and channel_id <= UINT256_MAX
+        assert 0 < channel_id <= UINT256_MAX
         assert is_same_address(event['args']['participant1'], self.address) or is_same_address(
             event['args']['participant2'], self.address
         )
@@ -131,7 +131,7 @@ class MockRaidenNode:
             return address1
         if is_same_address(self.address, address2):
             return address2
-        assert False
+        raise AssertionError
 
     def get_other_address(self, address1: Address, address2: Address) -> Address:
         """Pick an address that is not equal to address of this MockRaidenNode"""
@@ -139,7 +139,7 @@ class MockRaidenNode:
             return address2
         if is_same_address(self.address, address2):
             return address1
-        assert False
+        raise AssertionError
 
     def sync_open_channels(self) -> Dict[Address, Dict]:
         """Parses logs and update internal channel state to include all already open channels."""

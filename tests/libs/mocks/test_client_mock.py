@@ -10,7 +10,8 @@ def test_client_multiple_topups(generate_raiden_clients):
     channel_identifier = c1.open_channel(c2.address)
     assert is_channel_identifier(channel_identifier)
 
-    [c1.deposit_to_channel(c2.address, x) for x in deposits]
+    for x in deposits:
+        c1.deposit_to_channel(c2.address, x)
     channel_info = c1.get_own_channel_info(c2.address)
     assert sum(deposits) == channel_info['deposit']
 

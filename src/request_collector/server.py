@@ -45,7 +45,7 @@ class RequestCollector(gevent.Greenlet):
     def listen_forever(self) -> None:
         self.matrix_listener.listen_forever()
 
-    def _run(self) -> None:
+    def _run(self) -> None:  # pylint: disable=method-hidden
         register_error_handler(error_handler)
         self.matrix_listener.start()
 
