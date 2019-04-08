@@ -5,7 +5,6 @@ from unittest.mock import Mock, patch
 import pytest
 from tests.constants import KEYSTORE_PASSWORD
 from tests.pathfinding.config import NUMBER_OF_CHANNELS
-from tests.pathfinding.mocks.blockchain_listener import BlockchainListenerMock
 from web3 import Web3
 from web3.contract import Contract
 
@@ -298,9 +297,7 @@ def populate_token_network_case_3(
 def pathfinding_service_full_mock(
     contracts_manager: ContractManager, token_network_model: TokenNetwork
 ) -> Generator[PathfindingService, None, None]:
-    with patch('pathfinding_service.service.BlockchainListener', new=Mock), patch(
-        'pathfinding_service.service.MatrixListener', new=Mock
-    ):
+    with patch('pathfinding_service.service.MatrixListener', new=Mock):
         web3_mock = Mock()
         web3_mock.net.version = '1'
         web3_mock.eth.blockNumber = 1
@@ -327,9 +324,7 @@ def pathfinding_service_mocked_listeners(
     contracts_manager: ContractManager, web3: Web3, user_deposit_contract: Contract
 ) -> Generator[PathfindingService, None, None]:
     """ Returns a PathfindingService with mocked blockchain listeners. """
-    with patch(
-        'pathfinding_service.service.BlockchainListener', new=BlockchainListenerMock
-    ), patch('pathfinding_service.service.MatrixListener', new=Mock):
+    with patch('pathfinding_service.service.MatrixListener', new=Mock):
         pathfinding_service = PathfindingService(
             web3=web3,
             contracts={

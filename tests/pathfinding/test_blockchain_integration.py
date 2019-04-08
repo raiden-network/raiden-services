@@ -12,6 +12,7 @@ import gevent
 from pathfinding_service import PathfindingService
 from pathfinding_service.config import DEFAULT_REVEAL_TIMEOUT
 from pathfinding_service.model import ChannelView
+from raiden.utils.typing import BlockNumber
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
 from raiden_contracts.contract_manager import ContractManager
 
@@ -43,14 +44,15 @@ def test_pfs_with_mocked_client(
             },
             required_confirmations=1,
             db_filename=':memory:',
-            poll_interval=0,
+            poll_interval=0.1,
+            sync_start_block=BlockNumber(0),
             private_key='3a1076bf45ab87712ad64ccb3b10217737f7faacbf2872e88fdd9a537d8fe266',
         )
 
     # greenlet needs to be started and context switched to
     pfs.start()
     wait_for_blocks(1)
-    gevent.sleep(1)
+    gevent.sleep(0.1)
 
     # there should be one token network registered
     assert len(pfs.token_networks) == 1
@@ -79,7 +81,7 @@ def test_pfs_with_mocked_client(
         clients[p2_index].deposit_to_channel(clients[p1_index].address, p2_deposit)
         gevent.sleep()
     wait_for_blocks(1)
-    gevent.sleep(0)
+    gevent.sleep(0.1)
 
     # there should be as many open channels as described
     assert len(token_network.channel_id_to_addresses.keys()) == len(channel_descriptions_case_1)
@@ -136,7 +138,7 @@ def test_pfs_with_mocked_client(
         clients[p1_index].close_channel(clients[p2_index].address, balance_proof)
 
     wait_for_blocks(1)
-    gevent.sleep()
+    gevent.sleep(0.1)
 
     # there should be no channels
     assert len(token_network.channel_id_to_addresses.keys()) == 0

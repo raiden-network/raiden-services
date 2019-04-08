@@ -14,17 +14,16 @@ from pathfinding_service.exceptions import InvalidCapacityUpdate
 from pathfinding_service.model import TokenNetwork
 from raiden.constants import UINT256_MAX
 from raiden.messages import UpdatePFS
-from raiden.utils import CanonicalIdentifier
+from raiden.utils import CanonicalIdentifier, typing
 from raiden.utils.signer import LocalSigner
-from raiden.utils.typing import ChainID, ChannelID, Nonce, TokenAmount, TokenNetworkAddress
-from raiden_libs.types import Address
+from raiden.utils.typing import ChainID, ChannelID, Nonce, TokenAmount
+from raiden_libs.types import Address, TokenNetworkAddress
 from raiden_libs.utils import private_key_to_address
 
-DEFAULT_TOKEN_NETWORK_ADDRESS = Address("0x6e46B62a245D9EE7758B8DdCCDD1B85fF56B9Bc9")
-DEFAULT_TOKEN_NETWORK_ADDRESS_BYTES = TokenNetworkAddress(
+DEFAULT_TOKEN_NETWORK_ADDRESS = TokenNetworkAddress("0x6e46B62a245D9EE7758B8DdCCDD1B85fF56B9Bc9")
+DEFAULT_TOKEN_NETWORK_ADDRESS_BYTES = typing.TokenNetworkAddress(
     decode_hex(DEFAULT_TOKEN_NETWORK_ADDRESS)
 )
-DEFAULT_TOKEN_ADDRESS = Address("0x44Ac22fd9672cC559Ab171603D474cEA8a2D7b4D")
 PRIVAT_KEY_EXAMPLE_1 = bytes([1] * 32)
 PRIVAT_KEY_EXAMPLE_2 = bytes([2] * 32)
 PRIVAT_KEY_EXAMPLE_3 = bytes([3] * 32)
@@ -35,7 +34,7 @@ def get_updatepfs_message(
     other_participant: Address,
     chain_identifier=ChainID(1),
     channel_identifier=ChannelID(0),
-    token_network_address: TokenNetworkAddress = DEFAULT_TOKEN_NETWORK_ADDRESS_BYTES,
+    token_network_address: typing.TokenNetworkAddress = DEFAULT_TOKEN_NETWORK_ADDRESS_BYTES,
     updating_nonce=Nonce(1),
     other_nonce=Nonce(0),
     updating_capacity=TokenAmount(90),
@@ -84,14 +83,12 @@ def test_pfs_rejects_capacity_update_with_wrong_token_network_address(
 ):
     pathfinding_service_mocked_listeners.chain_id = ChainID(1)
 
-    token_network = TokenNetwork(
-        token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS, token_address=DEFAULT_TOKEN_ADDRESS
-    )
+    token_network = TokenNetwork(token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS)
 
     pathfinding_service_mocked_listeners.token_networks[token_network.address] = token_network
 
     message = get_updatepfs_message(
-        token_network_address=TokenNetworkAddress(decode_hex("0x" + "1" * 40)),
+        token_network_address=typing.TokenNetworkAddress(decode_hex("0x" + "1" * 40)),
         updating_participant=private_key_to_address(PRIVAT_KEY_EXAMPLE_1),
         other_participant=private_key_to_address(PRIVAT_KEY_EXAMPLE_2),
         privkey_signer=PRIVAT_KEY_EXAMPLE_1,
@@ -107,9 +104,7 @@ def test_pfs_rejects_capacity_update_with_wrong_channel_identifier(
 ):
     pathfinding_service_mocked_listeners.chain_id = ChainID(1)
 
-    token_network = TokenNetwork(
-        token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS, token_address=DEFAULT_TOKEN_ADDRESS
-    )
+    token_network = TokenNetwork(token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS)
     pathfinding_service_mocked_listeners.token_networks[token_network.address] = token_network
 
     token_network.handle_channel_opened_event(
@@ -142,9 +137,7 @@ def test_pfs_rejects_capacity_update_with_impossible_updating_capacity(
 ):
     pathfinding_service_mocked_listeners.chain_id = ChainID(1)
 
-    token_network = TokenNetwork(
-        token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS, token_address=DEFAULT_TOKEN_ADDRESS
-    )
+    token_network = TokenNetwork(token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS)
 
     pathfinding_service_mocked_listeners.token_networks[token_network.address] = token_network
 
@@ -195,9 +188,7 @@ def test_pfs_rejects_capacity_update_with_impossible_other_capacity(
 ):
     pathfinding_service_mocked_listeners.chain_id = ChainID(1)
 
-    token_network = TokenNetwork(
-        token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS, token_address=DEFAULT_TOKEN_ADDRESS
-    )
+    token_network = TokenNetwork(token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS)
 
     pathfinding_service_mocked_listeners.token_networks[token_network.address] = token_network
 
@@ -247,9 +238,7 @@ def test_pfs_rejects_capacity_update_with_wrong_updating_participant(
 ):
     pathfinding_service_mocked_listeners.chain_id = ChainID(1)
 
-    token_network = TokenNetwork(
-        token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS, token_address=DEFAULT_TOKEN_ADDRESS
-    )
+    token_network = TokenNetwork(token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS)
 
     pathfinding_service_mocked_listeners.token_networks[token_network.address] = token_network
 
@@ -294,9 +283,7 @@ def test_pfs_rejects_capacity_update_with_wrong_other_participant(
 ):
     pathfinding_service_mocked_listeners.chain_id = ChainID(1)
 
-    token_network = TokenNetwork(
-        token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS, token_address=DEFAULT_TOKEN_ADDRESS
-    )
+    token_network = TokenNetwork(token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS)
 
     pathfinding_service_mocked_listeners.token_networks[token_network.address] = token_network
 
@@ -341,9 +328,7 @@ def test_pfs_rejects_capacity_update_with_wrong_nonces(
 ):
     pathfinding_service_mocked_listeners.chain_id = ChainID(1)
 
-    token_network = TokenNetwork(
-        token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS, token_address=DEFAULT_TOKEN_ADDRESS
-    )
+    token_network = TokenNetwork(token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS)
 
     pathfinding_service_mocked_listeners.token_networks[token_network.address] = token_network
 
@@ -401,9 +386,7 @@ def test_pfs_rejects_capacity_update_with_incorrect_signature(
 ):
     pathfinding_service_mocked_listeners.chain_id = ChainID(1)
 
-    token_network = TokenNetwork(
-        token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS, token_address=DEFAULT_TOKEN_ADDRESS
-    )
+    token_network = TokenNetwork(token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS)
 
     pathfinding_service_mocked_listeners.token_networks[token_network.address] = token_network
 

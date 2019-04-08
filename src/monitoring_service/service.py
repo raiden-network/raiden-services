@@ -48,9 +48,11 @@ def check_gas_reserve(web3: Web3, private_key: str) -> None:
 
 def handle_event(event: Event, context: Context) -> None:
     log.debug('Processing event', event_=event)
-    handler: Callable = HANDLERS[type(event)]
-    handler(event, context)
-    log.debug('Processed event', num_scheduled_events=context.db.scheduled_event_count())
+    handler = HANDLERS.get(type(event))
+
+    if handler:
+        handler(event, context)
+        log.debug('Processed event', num_scheduled_events=context.db.scheduled_event_count())
 
 
 class MonitoringService:  # pylint: disable=too-few-public-methods

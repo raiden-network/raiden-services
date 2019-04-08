@@ -12,7 +12,7 @@ from pathfinding_service.config import (
 )
 from pathfinding_service.model.channel_view import ChannelView
 from raiden.utils.typing import ChannelID
-from raiden_libs.types import Address
+from raiden_libs.types import Address, TokenNetworkAddress
 
 log = structlog.get_logger(__name__)
 
@@ -20,11 +20,10 @@ log = structlog.get_logger(__name__)
 class TokenNetwork:
     """ Manages a token network for pathfinding. """
 
-    def __init__(self, token_network_address: Address, token_address: Address):
+    def __init__(self, token_network_address: TokenNetworkAddress):
         """ Initializes a new TokenNetwork. """
 
         self.address = token_network_address
-        self.token_address = token_address
         self.channel_id_to_addresses: Dict[ChannelID, Tuple[Address, Address]] = dict()
         self.G = DiGraph()
         self.max_relative_fee = 0

@@ -46,7 +46,7 @@ class Channel:
 
     @property
     def participants(self) -> Iterable[Address]:
-        return (self.participant1, self.participant2)
+        return self.participant1, self.participant2
 
 
 @dataclass
