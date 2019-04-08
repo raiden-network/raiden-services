@@ -1,3 +1,5 @@
+import pytest
+
 from raiden.utils.typing import ChainID
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
@@ -54,17 +56,11 @@ def test_contract_info_overwrite_defaults():
     assert infos[START_BLOCK_ID] == 0
 
 
-def test_start_block_zero_when_address_overridden():
-    address1 = Address('0x' + '1' * 40)
-    infos = get_contract_addresses_and_start_block(
-        chain_id=ChainID(123456789),
-        contracts_version=DEFAULT_VERSION,
-        contracts=[
-            CONTRACT_TOKEN_NETWORK_REGISTRY,
-            CONTRACT_MONITORING_SERVICE,
-            CONTRACT_USER_DEPOSIT,
-        ],
-        address_overwrites={CONTRACT_TOKEN_NETWORK_REGISTRY: address1},
-    )
-    assert infos
-    assert infos[START_BLOCK_ID] == 0
+def test_invalid_chain_id():
+    with pytest.raises(SystemExit):
+        get_contract_addresses_and_start_block(
+            chain_id=ChainID(123456789),
+            contracts_version=DEFAULT_VERSION,
+            contracts=[],
+            address_overwrites={},
+        )
