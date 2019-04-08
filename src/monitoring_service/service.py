@@ -22,7 +22,7 @@ from raiden_contracts.constants import (
     CONTRACT_USER_DEPOSIT,
     GAS_REQUIRED_FOR_MS_MONITOR,
 )
-from raiden_contracts.contract_manager import ContractManager
+from raiden_libs.contract_info import CONTRACT_MANAGER
 from raiden_libs.types import Address
 from raiden_libs.utils import private_key_to_address
 
@@ -56,7 +56,6 @@ class MonitoringService:  # pylint: disable=too-few-public-methods
     def __init__(
         self,
         web3: Web3,
-        contract_manager: ContractManager,
         private_key: str,
         registry_address: Address,
         monitor_contract_address: Address,
@@ -68,7 +67,6 @@ class MonitoringService:  # pylint: disable=too-few-public-methods
         min_reward: int = 0,
     ):
         self.web3 = web3
-        self.contract_manager = contract_manager
         self.private_key = private_key
         self.address = private_key_to_address(private_key)
         self.required_confirmations = required_confirmations
@@ -78,12 +76,12 @@ class MonitoringService:  # pylint: disable=too-few-public-methods
         web3.middleware_stack.add(construct_sign_and_send_raw_middleware(private_key))
 
         monitoring_contract = self.web3.eth.contract(
-            abi=self.contract_manager.get_contract_abi(CONTRACT_MONITORING_SERVICE),
+            abi=CONTRACT_MANAGER.get_contract_abi(CONTRACT_MONITORING_SERVICE),
             address=monitor_contract_address,
         )
 
         user_deposit_contract = self.web3.eth.contract(
-            abi=self.contract_manager.get_contract_abi(CONTRACT_USER_DEPOSIT),
+            abi=CONTRACT_MANAGER.get_contract_abi(CONTRACT_USER_DEPOSIT),
             address=user_deposit_contract_address,
         )
 
@@ -102,7 +100,7 @@ class MonitoringService:  # pylint: disable=too-few-public-methods
             ms_state=ms_state,
             db=self.database,
             w3=self.web3,
-            contract_manager=contract_manager,
+            contract_manager=CONTRACT_MANAGER,
             last_known_block=0,
             monitoring_service_contract=monitoring_contract,
             user_deposit_contract=user_deposit_contract,
@@ -144,7 +142,7 @@ class MonitoringService:  # pylint: disable=too-few-public-methods
         # BCL return a new state and events related to channel lifecycle
         new_chain_state, events = get_blockchain_events(
             web3=self.web3,
-            contract_manager=self.contract_manager,
+            contract_manager=CONTRACT_MANAGER,
             chain_state=self.context.ms_state.blockchain_state,
             to_block=last_block,
         )

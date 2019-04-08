@@ -36,7 +36,6 @@ def test_pfs_with_mocked_client(
     with patch('pathfinding_service.service.MatrixListener', new=Mock):
         pfs = PathfindingService(
             web3=web3,
-            contract_manager=contracts_manager,
             registry_address=token_network_registry_contract.address,
             user_deposit_contract_address=user_deposit_contract.address,
             required_confirmations=1,

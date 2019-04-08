@@ -10,7 +10,6 @@ from raiden_contracts.constants import (
     CONTRACT_TOKEN_NETWORK_REGISTRY,
     CONTRACT_USER_DEPOSIT,
 )
-from raiden_contracts.contract_manager import ContractManager, contracts_precompiled_path
 from raiden_libs.cli import blockchain_options, common_options
 from raiden_libs.contract_info import START_BLOCK_ID
 
@@ -45,11 +44,8 @@ def main(
     """ The Monitoring service for the Raiden Network. """
     log.info("Starting Raiden Monitoring Service")
 
-    contract_manager = ContractManager(contracts_precompiled_path())
-
     ms = MonitoringService(
         web3=web3,
-        contract_manager=contract_manager,
         private_key=private_key,
         registry_address=contract_infos[CONTRACT_TOKEN_NETWORK_REGISTRY],
         monitor_contract_address=contract_infos[CONTRACT_MONITORING_SERVICE],
