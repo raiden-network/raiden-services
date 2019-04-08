@@ -2,7 +2,7 @@ import json
 import os
 import sys
 from functools import wraps
-from typing import Any, Callable, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import click
 import structlog
@@ -13,7 +13,7 @@ from web3 import HTTPProvider, Web3
 from web3.middleware import geth_poa_middleware
 
 from pathfinding_service.middleware import http_retry_with_backoff_middleware
-from raiden.utils.typing import BlockNumber, ChainID
+from raiden.utils.typing import ChainID
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
     CONTRACT_ONE_TO_N,
@@ -107,13 +107,7 @@ def blockchain_options(contracts: List[str], contracts_version: str = None) -> C
     options = [
         click.Option(
             ['--eth-rpc'], default='http://localhost:8545', type=str, help='Ethereum node RPC URI'
-        ),
-        click.Option(
-            ['--start-block'],
-            default=0,
-            type=click.IntRange(min=0),
-            help='Block to start syncing at',
-        ),
+        )
     ]
 
     arg_for_contract = {
@@ -123,15 +117,16 @@ def blockchain_options(contracts: List[str], contracts_version: str = None) -> C
         CONTRACT_ONE_TO_N: 'one-to-n-contract',
     }
 
+    param_for_contract: Dict[str, str] = {}
     for c in contracts:
-        options.append(
-            click.Option(
-                ['--{}-address'.format(arg_for_contract[c])],
-                type=str,
-                help=f'Address of the {c} contract',
-                callback=validate_address,
-            )
+        option = click.Option(
+            ['--{}-address'.format(arg_for_contract[c])],
+            type=str,
+            help=f'Address of the {c} contract',
+            callback=validate_address,
         )
+        options.append(option)
+        param_for_contract[c] = option.human_readable_name
 
     def decorator(command: click.Command) -> click.Command:
         assert command.callback
@@ -140,18 +135,15 @@ def blockchain_options(contracts: List[str], contracts_version: str = None) -> C
         command.params += options
 
         def call_with_blockchain_info(**params: Any) -> Callable:
-            dummy_address = Address('0x' + '1' * 40)
+            address_overwrites = {
+                contract: params.pop(param) for contract, param in param_for_contract.items()
+            }
             params['web3'], params['contract_infos'] = connect_to_blockchain(
                 eth_rpc=params.pop('eth_rpc'),
-                registry_address=params.pop('registry_address', dummy_address),
-                user_deposit_contract_address=params.pop(
-                    'user_deposit_contract_address', dummy_address
-                ),
-                start_block=params.pop('start_block'),
-                monitor_contract_address=params.pop('monitor_contract_address', dummy_address),
+                contracts=contracts,
+                address_overwrites=address_overwrites,
                 contracts_version=contracts_version,
             )
-            params.pop('one_to_n_contract_address', dummy_address)  # TODO
             return callback(**params)
 
         command.callback = call_with_blockchain_info
@@ -162,10 +154,8 @@ def blockchain_options(contracts: List[str], contracts_version: str = None) -> C
 
 def connect_to_blockchain(
     eth_rpc: str,
-    registry_address: Address,
-    user_deposit_contract_address: Address,
-    start_block: BlockNumber,
-    monitor_contract_address: Address,
+    contracts: List[str],
+    address_overwrites: Dict[str, Address],
     contracts_version: str = None,
 ) -> Tuple[Web3, dict]:
     try:
@@ -193,11 +183,9 @@ def connect_to_blockchain(
 
     contract_infos = get_contract_addresses_and_start_block(
         chain_id=chain_id,
+        contracts=contracts,
+        address_overwrites=address_overwrites,
         contracts_version=contracts_version,
-        token_network_registry_address=registry_address,
-        monitor_contract_address=monitor_contract_address,
-        user_deposit_contract_address=user_deposit_contract_address,
-        start_block=start_block,
     )
 
     if contract_infos is None:
