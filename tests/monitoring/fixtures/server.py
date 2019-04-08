@@ -85,7 +85,6 @@ def monitoring_service(
 
     ms = MonitoringService(
         web3=web3,
-        contract_manager=contracts_manager,
         private_key=server_private_key,
         registry_address=token_network_registry_contract.address,
         monitor_contract_address=monitoring_service_contract.address,

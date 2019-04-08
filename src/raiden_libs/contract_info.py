@@ -8,11 +8,16 @@ from raiden_contracts.constants import (
     CONTRACT_TOKEN_NETWORK_REGISTRY,
     CONTRACT_USER_DEPOSIT,
 )
-from raiden_contracts.contract_manager import get_contracts_deployment_info
+from raiden_contracts.contract_manager import (
+    ContractManager,
+    contracts_precompiled_path,
+    get_contracts_deployment_info,
+)
 from raiden_libs.types import Address
 
 log = structlog.get_logger(__name__)
 START_BLOCK_ID = 'block'
+CONTRACT_MANAGER = ContractManager(contracts_precompiled_path())
 
 
 def get_deployment_infos(

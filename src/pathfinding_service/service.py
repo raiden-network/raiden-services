@@ -26,7 +26,7 @@ from raiden_contracts.constants import (
     CONTRACT_USER_DEPOSIT,
     ChannelEvent,
 )
-from raiden_contracts.contract_manager import ContractManager
+from raiden_libs.contract_info import CONTRACT_MANAGER
 from raiden_libs.gevent_error_handler import register_error_handler
 from raiden_libs.matrix import MatrixListener
 from raiden_libs.types import Address
@@ -56,7 +56,6 @@ class PathfindingService(gevent.Greenlet):
     def __init__(
         self,
         web3: Web3,
-        contract_manager: ContractManager,
         registry_address: Address,
         private_key: str,
         db_filename: str,
@@ -69,7 +68,6 @@ class PathfindingService(gevent.Greenlet):
         super().__init__()
 
         self.web3 = web3
-        self.contract_manager = contract_manager
         self.registry_address = registry_address
         self.sync_start_block = sync_start_block
         self.required_confirmations = required_confirmations
@@ -84,7 +82,7 @@ class PathfindingService(gevent.Greenlet):
         self.token_network_listeners: List[BlockchainListener] = []
         self.database = PFSDatabase(filename=db_filename, pfs_address=self.address)
         self.user_deposit_contract = web3.eth.contract(
-            abi=self.contract_manager.get_contract_abi(CONTRACT_USER_DEPOSIT),
+            abi=CONTRACT_MANAGER.get_contract_abi(CONTRACT_USER_DEPOSIT),
             address=user_deposit_contract_address,
         )
 
@@ -94,7 +92,7 @@ class PathfindingService(gevent.Greenlet):
         )
         self.token_network_registry_listener = BlockchainListener(
             web3=web3,
-            contract_manager=self.contract_manager,
+            contract_manager=CONTRACT_MANAGER,
             contract_name=CONTRACT_TOKEN_NETWORK_REGISTRY,
             contract_address=self.registry_address,
             required_confirmations=self.required_confirmations,
@@ -121,7 +119,7 @@ class PathfindingService(gevent.Greenlet):
 
     def _setup_token_networks(self) -> None:
         self.token_network_registry_listener.add_confirmed_listener(
-            create_registry_event_topics(self.contract_manager), self.handle_token_network_created
+            create_registry_event_topics(CONTRACT_MANAGER), self.handle_token_network_created
         )
 
     def _run(self) -> None:  # pylint: disable=method-hidden
@@ -261,7 +259,7 @@ class PathfindingService(gevent.Greenlet):
         log.debug('Creating token network model', token_network_address=token_network_address)
         token_network_listener = BlockchainListener(
             web3=self.web3,
-            contract_manager=self.contract_manager,
+            contract_manager=CONTRACT_MANAGER,
             contract_address=token_network_address,
             contract_name=CONTRACT_TOKEN_NETWORK,
             required_confirmations=self.required_confirmations,

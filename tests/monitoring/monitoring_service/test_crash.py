@@ -79,7 +79,6 @@ def test_crash(
     def new_ms(filename):
         ms = MonitoringService(
             web3=web3,
-            contract_manager=contracts_manager,
             private_key=server_private_key,
             registry_address=token_network_registry_contract.address,
             monitor_contract_address=monitoring_service_contract.address,
@@ -89,8 +88,8 @@ def test_crash(
         ms.bcl = MockBlockchainListener(events)  # type: ignore
         msc = Mock()
         ms.context.monitoring_service_contract = msc
-        ms.monitor_mock = msc.functions.monitor.return_value.transact  # type:ignore
-        ms.monitor_mock.return_value = bytes(0)  # type:ignore
+        ms.monitor_mock = msc.functions.monitor.return_value.transact  # type: ignore
+        ms.monitor_mock.return_value = bytes(0)  # type: ignore
         return ms
 
     # initialize both monitoring services

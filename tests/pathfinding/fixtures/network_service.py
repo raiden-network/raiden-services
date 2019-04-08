@@ -306,7 +306,6 @@ def pathfinding_service_full_mock(
 
         pathfinding_service = PathfindingService(
             web3=web3_mock,
-            contract_manager=contracts_manager,
             registry_address=Address('0xB9633dd9a9a71F22C933bF121d7a22008f66B908'),
             user_deposit_contract_address=Address('0x' + '1' * 20),
             private_key='3a1076bf45ab87712ad64ccb3b10217737f7faacbf2872e88fdd9a537d8fe266',
@@ -330,7 +329,6 @@ def pathfinding_service_mocked_listeners(
     ), patch('pathfinding_service.service.MatrixListener', new=Mock):
         pathfinding_service = PathfindingService(
             web3=web3,
-            contract_manager=contracts_manager,
             registry_address=Address(''),
             user_deposit_contract_address=user_deposit_contract.address,
             private_key='3a1076bf45ab87712ad64ccb3b10217737f7faacbf2872e88fdd9a537d8fe266',
