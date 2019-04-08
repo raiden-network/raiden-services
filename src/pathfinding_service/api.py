@@ -27,9 +27,9 @@ from pathfinding_service.config import (
 from pathfinding_service.model import IOU
 from raiden.exceptions import InvalidSignature
 from raiden.utils.signer import recover
-from raiden.utils.typing import Signature, TokenNetworkAddress
+from raiden.utils.typing import Signature
 from raiden_libs.marshmallow import HexedBytes
-from raiden_libs.types import Address
+from raiden_libs.types import Address, TokenNetworkAddress
 
 log = structlog.get_logger(__name__)
 
@@ -58,7 +58,9 @@ class PathfinderResource(Resource):
             address_error = 'Token network address not checksummed: {}'
             return {'errors': address_error.format(token_network_address)}, 400
 
-        token_network = self.pathfinding_service.token_networks.get(Address(token_network_address))
+        token_network = self.pathfinding_service.get_token_network(
+            TokenNetworkAddress(token_network_address)
+        )
         if token_network is None:
             return {'errors': 'Unsupported token network: {}'.format(token_network_address)}, 400
 
@@ -121,7 +123,9 @@ class PathsResource(PathfinderResource):
             raise exceptions.ApiException('JSON payload expected')
         process_payment(json.get('iou'), self.pathfinding_service)
 
-        token_network = self.pathfinding_service.token_networks.get(Address(token_network_address))
+        token_network = self.pathfinding_service.token_networks.get(
+            TokenNetworkAddress(token_network_address)
+        )
         # Existence is checked in _validate_token_network_argument
         assert token_network, 'Requested token network cannot be found'
 

@@ -29,8 +29,8 @@ def make_iou(sender_priv_key, receiver, amount=1, expiration_block=MIN_IOU_EXPIR
     return iou
 
 
-def test_load_and_save_iou(pathfinding_service_mocked_listeners):
-    pfs = pathfinding_service_mocked_listeners
+def test_load_and_save_iou(pathfinding_service_full_mock):
+    pfs = pathfinding_service_full_mock
     iou_dict = make_iou(get_random_privkey(), pfs.address)
     iou = IOU.Schema().load(iou_dict)[0]
     iou.claimed = False

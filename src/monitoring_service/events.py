@@ -10,12 +10,28 @@ class Event:
 
 
 @dataclass
+class ReceiveTokenNetworkCreatedEvent(Event):
+    token_address: Address
+    token_network_address: Address
+    block_number: BlockNumber
+
+
+@dataclass
 class ReceiveChannelOpenedEvent(Event):
     token_network_address: TokenNetworkAddress
     channel_identifier: ChannelID
     participant1: Address
     participant2: Address
     settle_timeout: int
+    block_number: BlockNumber
+
+
+@dataclass
+class ReceiveChannelNewDepositEvent(Event):
+    token_network_address: TokenNetworkAddress
+    channel_identifier: ChannelID
+    participant_address: Address
+    total_deposit: TokenAmount
     block_number: BlockNumber
 
 
