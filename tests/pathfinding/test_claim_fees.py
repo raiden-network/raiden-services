@@ -90,7 +90,7 @@ def mock_connect_to_blockchain(monkeypatch):
     web3_mock = Mock()
     web3_mock.eth.blockNumber = 1
     connect_mock = Mock(return_value=(web3_mock, MagicMock()))
-    monkeypatch.setattr('pathfinding_service.claim_fees.connect_to_blockchain', connect_mock)
+    monkeypatch.setattr('raiden_libs.cli.connect_to_blockchain', connect_mock)
 
 
 @pytest.mark.usefixtures('mock_connect_to_blockchain')

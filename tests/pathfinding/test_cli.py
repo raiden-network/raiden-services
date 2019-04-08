@@ -100,34 +100,6 @@ def test_registry_address(default_cli_args):
 
 
 @pytest.mark.usefixtures('provider_mock')
-def test_start_block(default_cli_args):
-    """ The `start_block` parameter must reach the `PathfindingService`
-
-    We also have to pass a registry address, because `start_block` is
-    overwritten with a default when no registry has been specified.
-    """
-    runner = CliRunner()
-    with patch.multiple(**patch_args) as mocks, patch.multiple(**patch_info_args):
-        start_block = 10
-        address = to_checksum_address('0x' + '1' * 40)
-        address2 = to_checksum_address('0x' + '2' * 40)
-        result = runner.invoke(
-            main,
-            default_cli_args
-            + [
-                '--registry-address',
-                address,
-                '--user-deposit-contract-address',
-                address2,
-                '--start-block',
-                str(start_block),
-            ],
-        )
-        assert result.exit_code == 0
-        assert mocks['PathfindingService'].call_args[1]['sync_start_block'] == start_block
-
-
-@pytest.mark.usefixtures('provider_mock')
 def test_confirmations(default_cli_args):
     """ The `confirmations` parameter must reach the `PathfindingService` """
     runner = CliRunner()

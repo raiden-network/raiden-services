@@ -1,5 +1,6 @@
 import click
 import structlog
+from web3 import Web3
 
 from monitoring_service.constants import DEFAULT_REQUIRED_CONFIRMATIONS
 from monitoring_service.service import MonitoringService
@@ -10,57 +11,38 @@ from raiden_contracts.constants import (
     CONTRACT_USER_DEPOSIT,
 )
 from raiden_contracts.contract_manager import ContractManager, contracts_precompiled_path
-from raiden_libs.cli import (
-    blockchain_options,
-    common_options,
-    connect_to_blockchain,
-    validate_address,
-)
+from raiden_libs.cli import blockchain_options, common_options
 from raiden_libs.contract_info import START_BLOCK_ID
-from raiden_libs.types import Address
 
 log = structlog.get_logger(__name__)
 
 
-CONTEXT_SETTINGS = dict(default_map={'main': {'confirmations': DEFAULT_REQUIRED_CONFIRMATIONS}})
-
-
-@click.command(context_settings=CONTEXT_SETTINGS)
-@click.option(
-    '--monitor-contract-address',
-    type=str,
-    help='Address of the token monitor contract',
-    callback=validate_address,
-)
+@blockchain_options()
+@click.command()
 @click.option(
     '--min-reward',
     default=0,
     type=click.IntRange(min=0),
     help='Minimum reward which is required before processing requests',
 )
+@click.option(
+    '--confirmations',
+    default=DEFAULT_REQUIRED_CONFIRMATIONS,
+    type=click.IntRange(min=0),
+    help='Number of block confirmations to wait for',
+)
 @common_options('raiden-monitoring-service')
-@blockchain_options
 def main(
     private_key: str,
     state_db: str,
-    eth_rpc: str,
-    registry_address: Address,
-    user_deposit_contract_address: Address,
-    start_block: BlockNumber,
-    monitor_contract_address: Address,
+    web3: Web3,
+    contract_infos: dict,
+    confirmations: BlockNumber,
     min_reward: int,
-    confirmations: int,
 ) -> int:
     """ The Monitoring service for the Raiden Network. """
     log.info("Starting Raiden Monitoring Service")
 
-    web3, contract_infos = connect_to_blockchain(
-        eth_rpc=eth_rpc,
-        registry_address=registry_address,
-        user_deposit_contract_address=user_deposit_contract_address,
-        start_block=start_block,
-        monitor_contract_address=monitor_contract_address,
-    )
     contract_manager = ContractManager(contracts_precompiled_path())
 
     ms = MonitoringService(
