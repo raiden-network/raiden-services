@@ -6,7 +6,7 @@ import structlog
 from web3 import Web3
 from web3.middleware import construct_sign_and_send_raw_middleware
 
-from monitoring_service.blockchain import BlockchainListener
+from monitoring_service.blockchain import get_blockchain_events
 from monitoring_service.constants import (
     DEFAULT_GAS_BUFFER_FACTOR,
     DEFAULT_GAS_CHECK_BLOCKS,
@@ -98,8 +98,6 @@ class MonitoringService:  # pylint: disable=too-few-public-methods
         )
         ms_state = self.database.load_state()
 
-        self.bcl = BlockchainListener(web3=self.web3, contract_manager=contract_manager)
-
         self.context = Context(
             ms_state=ms_state,
             db=self.database,
@@ -144,8 +142,11 @@ class MonitoringService:  # pylint: disable=too-few-public-methods
         self.context.last_known_block = last_block
 
         # BCL return a new state and events related to channel lifecycle
-        new_chain_state, events = self.bcl.get_events(
-            chain_state=self.context.ms_state.blockchain_state, to_block=last_block
+        new_chain_state, events = get_blockchain_events(
+            web3=self.web3,
+            contract_manager=self.contract_manager,
+            chain_state=self.context.ms_state.blockchain_state,
+            to_block=last_block,
         )
 
         # If a new token network was found we need to write it to the DB, otherwise

@@ -100,159 +100,177 @@ def query_blockchain_events(
     ]
 
 
-# TODO: maybe pylint is right and this class should just be a `get_events` function?
-class BlockchainListener:  # pylint: disable=too-few-public-methods
-    """ This is pull-based blockchain listener. """
+def _get_token_network_registry_events(
+    web3: Web3,
+    contract_manager: ContractManager,
+    registry_address: Address,
+    from_block: BlockNumber,
+    to_block: BlockNumber,
+) -> List[Dict]:
+    return query_blockchain_events(
+        web3=web3,
+        contract_manager=contract_manager,
+        contract_address=registry_address,
+        contract_name=CONTRACT_TOKEN_NETWORK_REGISTRY,
+        topics=create_registry_event_topics(contract_manager),
+        from_block=from_block,
+        to_block=to_block,
+    )
 
-    def __init__(self, web3: Web3, contract_manager: ContractManager):
-        self.w3 = web3
-        self.contract_manager = contract_manager
 
-    def _get_token_network_registry_events(
-        self, registry_address: Address, from_block: BlockNumber, to_block: BlockNumber
-    ) -> List[Dict]:
-        return query_blockchain_events(
-            web3=self.w3,
-            contract_manager=self.contract_manager,
-            contract_address=registry_address,
-            contract_name=CONTRACT_TOKEN_NETWORK_REGISTRY,
-            topics=create_registry_event_topics(self.contract_manager),
+def _get_token_networks_events(
+    web3: Web3,
+    contract_manager: ContractManager,
+    network_address: TokenNetworkAddress,
+    from_block: BlockNumber,
+    to_block: BlockNumber,
+) -> List[Dict]:
+    return query_blockchain_events(
+        web3=web3,
+        contract_manager=contract_manager,
+        contract_address=Address(network_address),
+        contract_name=CONTRACT_TOKEN_NETWORK,
+        topics=[None],
+        from_block=from_block,
+        to_block=to_block,
+    )
+
+
+def _get_monitoring_service_events(
+    web3: Web3,
+    contract_manager: ContractManager,
+    monitoring_service_address: Address,
+    from_block: BlockNumber,
+    to_block: BlockNumber,
+) -> List[Dict]:
+    return query_blockchain_events(
+        web3=web3,
+        contract_manager=contract_manager,
+        contract_address=monitoring_service_address,
+        contract_name=CONTRACT_MONITORING_SERVICE,
+        topics=[None],
+        from_block=from_block,
+        to_block=to_block,
+    )
+
+
+def get_blockchain_events(
+    web3: Web3,
+    contract_manager: ContractManager,
+    chain_state: BlockchainState,
+    to_block: BlockNumber,
+) -> Tuple[BlockchainState, List[Event]]:
+    # increment by one, as latest_known_block has been queried last time already
+    from_block = BlockNumber(chain_state.latest_known_block + 1)
+
+    # Check if the current block was already processed
+    if from_block > to_block:
+        return chain_state, []
+
+    new_chain_state = deepcopy(chain_state)
+    log.info('Querying new block(s)', from_block=from_block, end_block=to_block)
+
+    # first check for new token networks and add to state
+    registry_events = _get_token_network_registry_events(
+        web3=web3,
+        contract_manager=contract_manager,
+        registry_address=new_chain_state.token_network_registry_address,
+        from_block=from_block,
+        to_block=to_block,
+    )
+
+    for event in registry_events:
+        new_chain_state.token_network_addresses.append(event['args']['token_network_address'])
+
+    # then check all token networks
+    events: List[Event] = []
+    for token_network_address in new_chain_state.token_network_addresses:
+        network_events = _get_token_networks_events(
+            web3=web3,
+            contract_manager=contract_manager,
+            network_address=token_network_address,
             from_block=from_block,
             to_block=to_block,
         )
 
-    def _get_token_networks_events(
-        self, network_address: TokenNetworkAddress, from_block: BlockNumber, to_block: BlockNumber
-    ) -> List[Dict]:
-        return query_blockchain_events(
-            web3=self.w3,
-            contract_manager=self.contract_manager,
-            contract_address=Address(network_address),
-            contract_name=CONTRACT_TOKEN_NETWORK,
-            topics=[None],
-            from_block=from_block,
-            to_block=to_block,
-        )
-
-    def _get_monitoring_service_events(
-        self, monitoring_service_address: Address, from_block: BlockNumber, to_block: BlockNumber
-    ) -> List[Dict]:
-        return query_blockchain_events(
-            web3=self.w3,
-            contract_manager=self.contract_manager,
-            contract_address=monitoring_service_address,
-            contract_name=CONTRACT_MONITORING_SERVICE,
-            topics=[None],
-            from_block=from_block,
-            to_block=to_block,
-        )
-
-    def get_events(
-        self, chain_state: BlockchainState, to_block: BlockNumber
-    ) -> Tuple[BlockchainState, List[Event]]:
-        # increment by one, as latest_known_block has been queried last time already
-        from_block = BlockNumber(chain_state.latest_known_block + 1)
-
-        # Check if the current block was already processed
-        if from_block > to_block:
-            return chain_state, []
-
-        new_chain_state = deepcopy(chain_state)
-        log.info('Querying new block(s)', from_block=from_block, end_block=to_block)
-
-        # first check for new token networks and add to state
-        registry_events = self._get_token_network_registry_events(
-            registry_address=new_chain_state.token_network_registry_address,
-            from_block=from_block,
-            to_block=to_block,
-        )
-
-        for event in registry_events:
-            new_chain_state.token_network_addresses.append(event['args']['token_network_address'])
-
-        # then check all token networks
-        events: List[Event] = []
-        for token_network_address in new_chain_state.token_network_addresses:
-            network_events = self._get_token_networks_events(
-                network_address=token_network_address, from_block=from_block, to_block=to_block
-            )
-
-            for event in network_events:
-                event_name = event['event']
-                block_number = event['blockNumber']
-
-                if event_name == ChannelEvent.OPENED:
-                    events.append(
-                        ReceiveChannelOpenedEvent(
-                            token_network_address=event['address'],
-                            channel_identifier=event['args']['channel_identifier'],
-                            participant1=event['args']['participant1'],
-                            participant2=event['args']['participant2'],
-                            settle_timeout=event['args']['settle_timeout'],
-                            block_number=block_number,
-                        )
-                    )
-                elif event_name == ChannelEvent.CLOSED:
-                    events.append(
-                        ReceiveChannelClosedEvent(
-                            token_network_address=event['address'],
-                            channel_identifier=event['args']['channel_identifier'],
-                            closing_participant=event['args']['closing_participant'],
-                            block_number=block_number,
-                        )
-                    )
-                elif event_name == ChannelEvent.BALANCE_PROOF_UPDATED:
-                    events.append(
-                        ReceiveNonClosingBalanceProofUpdatedEvent(
-                            token_network_address=event['address'],
-                            channel_identifier=event['args']['channel_identifier'],
-                            closing_participant=event['args']['closing_participant'],
-                            nonce=event['args']['nonce'],
-                            block_number=block_number,
-                        )
-                    )
-                elif event_name == ChannelEvent.SETTLED:
-                    events.append(
-                        ReceiveChannelSettledEvent(
-                            token_network_address=event['address'],
-                            channel_identifier=event['args']['channel_identifier'],
-                            block_number=block_number,
-                        )
-                    )
-
-        # get events from monitoring service contract
-        monitoring_service_events = self._get_monitoring_service_events(
-            monitoring_service_address=new_chain_state.monitor_contract_address,
-            from_block=from_block,
-            to_block=to_block,
-        )
-        for event in monitoring_service_events:
+        for event in network_events:
             event_name = event['event']
             block_number = event['blockNumber']
 
-            if event_name == MonitoringServiceEvent.NEW_BALANCE_PROOF_RECEIVED:
+            if event_name == ChannelEvent.OPENED:
                 events.append(
-                    ReceiveMonitoringNewBalanceProofEvent(
-                        token_network_address=event['args']['token_network_address'],
+                    ReceiveChannelOpenedEvent(
+                        token_network_address=event['address'],
                         channel_identifier=event['args']['channel_identifier'],
-                        reward_amount=event['args']['reward_amount'],
-                        nonce=event['args']['nonce'],
-                        ms_address=event['args']['ms_address'],
-                        raiden_node_address=event['args']['raiden_node_address'],
+                        participant1=event['args']['participant1'],
+                        participant2=event['args']['participant2'],
+                        settle_timeout=event['args']['settle_timeout'],
                         block_number=block_number,
                     )
                 )
-            elif event_name == MonitoringServiceEvent.REWARD_CLAIMED:
+            elif event_name == ChannelEvent.CLOSED:
                 events.append(
-                    ReceiveMonitoringRewardClaimedEvent(
-                        ms_address=event['args']['ms_address'],
-                        amount=event['args']['amount'],
-                        reward_identifier=encode_hex(event['args']['reward_identifier']),
+                    ReceiveChannelClosedEvent(
+                        token_network_address=event['address'],
+                        channel_identifier=event['args']['channel_identifier'],
+                        closing_participant=event['args']['closing_participant'],
+                        block_number=block_number,
+                    )
+                )
+            elif event_name == ChannelEvent.BALANCE_PROOF_UPDATED:
+                events.append(
+                    ReceiveNonClosingBalanceProofUpdatedEvent(
+                        token_network_address=event['address'],
+                        channel_identifier=event['args']['channel_identifier'],
+                        closing_participant=event['args']['closing_participant'],
+                        nonce=event['args']['nonce'],
+                        block_number=block_number,
+                    )
+                )
+            elif event_name == ChannelEvent.SETTLED:
+                events.append(
+                    ReceiveChannelSettledEvent(
+                        token_network_address=event['address'],
+                        channel_identifier=event['args']['channel_identifier'],
                         block_number=block_number,
                     )
                 )
 
-        # commit new block number
-        events.append(UpdatedHeadBlockEvent(head_block_number=to_block))
+    # get events from monitoring service contract
+    monitoring_service_events = _get_monitoring_service_events(
+        web3=web3,
+        contract_manager=contract_manager,
+        monitoring_service_address=new_chain_state.monitor_contract_address,
+        from_block=from_block,
+        to_block=to_block,
+    )
+    for event in monitoring_service_events:
+        event_name = event['event']
+        block_number = event['blockNumber']
 
-        return new_chain_state, events
+        if event_name == MonitoringServiceEvent.NEW_BALANCE_PROOF_RECEIVED:
+            events.append(
+                ReceiveMonitoringNewBalanceProofEvent(
+                    token_network_address=event['args']['token_network_address'],
+                    channel_identifier=event['args']['channel_identifier'],
+                    reward_amount=event['args']['reward_amount'],
+                    nonce=event['args']['nonce'],
+                    ms_address=event['args']['ms_address'],
+                    raiden_node_address=event['args']['raiden_node_address'],
+                    block_number=block_number,
+                )
+            )
+        elif event_name == MonitoringServiceEvent.REWARD_CLAIMED:
+            events.append(
+                ReceiveMonitoringRewardClaimedEvent(
+                    ms_address=event['args']['ms_address'],
+                    amount=event['args']['amount'],
+                    reward_identifier=encode_hex(event['args']['reward_identifier']),
+                    block_number=block_number,
+                )
+            )
+
+    # commit new block number
+    events.append(UpdatedHeadBlockEvent(head_block_number=to_block))
+
+    return new_chain_state, events
