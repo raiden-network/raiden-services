@@ -1,9 +1,10 @@
 import sys
 import time
-from typing import Callable
+from typing import Callable, Dict
 
 import structlog
 from web3 import Web3
+from web3.contract import Contract
 from web3.middleware import construct_sign_and_send_raw_middleware
 
 from monitoring_service.blockchain import get_blockchain_events
@@ -19,11 +20,11 @@ from monitoring_service.handlers import HANDLERS, Context
 from raiden.utils.typing import BlockNumber
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
+    CONTRACT_TOKEN_NETWORK_REGISTRY,
     CONTRACT_USER_DEPOSIT,
     GAS_REQUIRED_FOR_MS_MONITOR,
 )
 from raiden_libs.contract_info import CONTRACT_MANAGER
-from raiden_libs.types import Address
 from raiden_libs.utils import private_key_to_address
 
 log = structlog.get_logger(__name__)
@@ -57,10 +58,8 @@ class MonitoringService:  # pylint: disable=too-few-public-methods
         self,
         web3: Web3,
         private_key: str,
-        registry_address: Address,
-        monitor_contract_address: Address,
-        user_deposit_contract_address: Address,
         db_filename: str,
+        contracts: Dict[str, Contract],
         sync_start_block: BlockNumber = BlockNumber(0),
         required_confirmations: int = DEFAULT_REQUIRED_CONFIRMATIONS,
         poll_interval: float = 1,
@@ -75,23 +74,16 @@ class MonitoringService:  # pylint: disable=too-few-public-methods
 
         web3.middleware_stack.add(construct_sign_and_send_raw_middleware(private_key))
 
-        monitoring_contract = self.web3.eth.contract(
-            abi=CONTRACT_MANAGER.get_contract_abi(CONTRACT_MONITORING_SERVICE),
-            address=monitor_contract_address,
-        )
-
-        user_deposit_contract = self.web3.eth.contract(
-            abi=CONTRACT_MANAGER.get_contract_abi(CONTRACT_USER_DEPOSIT),
-            address=user_deposit_contract_address,
-        )
+        monitoring_contract = contracts[CONTRACT_MONITORING_SERVICE]
+        user_deposit_contract = contracts[CONTRACT_USER_DEPOSIT]
 
         chain_id = int(web3.net.version)
         self.database = Database(
             filename=db_filename,
             chain_id=chain_id,
-            registry_address=registry_address,
+            registry_address=contracts[CONTRACT_TOKEN_NETWORK_REGISTRY].address,
             receiver=self.address,
-            msc_address=monitor_contract_address,
+            msc_address=monitoring_contract.address,
             sync_start_block=sync_start_block,
         )
         ms_state = self.database.load_state()

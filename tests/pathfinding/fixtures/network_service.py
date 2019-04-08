@@ -12,6 +12,7 @@ from web3.contract import Contract
 from pathfinding_service import PathfindingService
 from pathfinding_service.model.token_network import TokenNetwork
 from raiden.utils.typing import ChannelID
+from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
 from raiden_contracts.contract_manager import ContractManager
 from raiden_libs.types import Address
 from raiden_libs.utils import private_key_to_address
@@ -306,8 +307,10 @@ def pathfinding_service_full_mock(
 
         pathfinding_service = PathfindingService(
             web3=web3_mock,
-            registry_address=Address('0xB9633dd9a9a71F22C933bF121d7a22008f66B908'),
-            user_deposit_contract_address=Address('0x' + '1' * 20),
+            contracts={
+                CONTRACT_TOKEN_NETWORK_REGISTRY: Mock(address='0x1234'),
+                CONTRACT_USER_DEPOSIT: Mock(),
+            },
             private_key='3a1076bf45ab87712ad64ccb3b10217737f7faacbf2872e88fdd9a537d8fe266',
             db_filename=':memory:',
         )
@@ -329,8 +332,10 @@ def pathfinding_service_mocked_listeners(
     ), patch('pathfinding_service.service.MatrixListener', new=Mock):
         pathfinding_service = PathfindingService(
             web3=web3,
-            registry_address=Address(''),
-            user_deposit_contract_address=user_deposit_contract.address,
+            contracts={
+                CONTRACT_TOKEN_NETWORK_REGISTRY: Mock(),
+                CONTRACT_USER_DEPOSIT: user_deposit_contract,
+            },
             private_key='3a1076bf45ab87712ad64ccb3b10217737f7faacbf2872e88fdd9a537d8fe266',
             db_filename=':memory:',
         )

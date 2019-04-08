@@ -5,9 +5,15 @@ from unittest.mock import patch
 import pytest
 from request_collector.server import RequestCollector
 from tests.constants import KEYSTORE_PASSWORD
+from web3 import Web3
 
 from monitoring_service.database import Database
 from monitoring_service.service import MonitoringService
+from raiden_contracts.constants import (
+    CONTRACT_MONITORING_SERVICE,
+    CONTRACT_TOKEN_NETWORK_REGISTRY,
+    CONTRACT_USER_DEPOSIT,
+)
 from raiden_contracts.contract_manager import ContractManager
 from raiden_contracts.tests.utils import get_random_privkey
 from raiden_libs.types import Address
@@ -63,7 +69,7 @@ def ms_database():
 @pytest.fixture
 def monitoring_service(
     server_private_key,
-    web3,
+    web3: Web3,
     monitoring_service_contract,
     user_deposit_contract,
     token_network_registry_contract,
@@ -86,9 +92,11 @@ def monitoring_service(
     ms = MonitoringService(
         web3=web3,
         private_key=server_private_key,
-        registry_address=token_network_registry_contract.address,
-        monitor_contract_address=monitoring_service_contract.address,
-        user_deposit_contract_address=user_deposit_contract.address,
+        contracts={
+            CONTRACT_TOKEN_NETWORK_REGISTRY: token_network_registry_contract,
+            CONTRACT_MONITORING_SERVICE: monitoring_service_contract,
+            CONTRACT_USER_DEPOSIT: user_deposit_contract,
+        },
         required_confirmations=1,  # for faster tests
         poll_interval=0.01,  # for faster tests
         db_filename=':memory:',

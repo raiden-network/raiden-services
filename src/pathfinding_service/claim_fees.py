@@ -11,7 +11,6 @@ from pathfinding_service.model import IOU
 from raiden.utils.typing import BlockNumber, TokenAmount
 from raiden_contracts.constants import CONTRACT_ONE_TO_N
 from raiden_libs.cli import blockchain_options, common_options
-from raiden_libs.contract_info import CONTRACT_MANAGER
 from raiden_libs.utils import private_key_to_address
 
 log = structlog.get_logger(__name__)
@@ -36,17 +35,15 @@ def main(
     private_key: str,
     state_db: str,
     web3: Web3,
-    contract_infos: dict,
+    contracts: dict,
+    start_block: BlockNumber,
     rdn_per_eth: float,
     expires_within: BlockNumber,
 ) -> None:
     pfs_address = private_key_to_address(private_key)
     database = PFSDatabase(filename=state_db, pfs_address=pfs_address)
 
-    one_to_n_contract = web3.eth.contract(
-        abi=CONTRACT_MANAGER.get_contract_abi(CONTRACT_ONE_TO_N),
-        address=contract_infos[CONTRACT_ONE_TO_N],
-    )
+    one_to_n_contract = contracts[CONTRACT_ONE_TO_N]
 
     claim_cost_eth = 90897
     claim_cost_rdn = TokenAmount(int(claim_cost_eth / rdn_per_eth))
