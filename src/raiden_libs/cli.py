@@ -10,17 +10,18 @@ from eth_account import Account
 from eth_utils import is_checksum_address
 from requests.exceptions import ConnectionError
 from web3 import HTTPProvider, Web3
+from web3.contract import Contract
 from web3.middleware import geth_poa_middleware
 
 from pathfinding_service.middleware import http_retry_with_backoff_middleware
-from raiden.utils.typing import ChainID
+from raiden.utils.typing import BlockNumber, ChainID
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
     CONTRACT_ONE_TO_N,
     CONTRACT_TOKEN_NETWORK_REGISTRY,
     CONTRACT_USER_DEPOSIT,
 )
-from raiden_libs.contract_info import get_contract_addresses_and_start_block
+from raiden_libs.contract_info import CONTRACT_MANAGER, get_contract_addresses_and_start_block
 from raiden_libs.logging import setup_logging
 from raiden_libs.types import Address
 
@@ -138,9 +139,9 @@ def blockchain_options(contracts: List[str], contracts_version: str = None) -> C
             address_overwrites = {
                 contract: params.pop(param) for contract, param in param_for_contract.items()
             }
-            params['web3'], params['contract_infos'] = connect_to_blockchain(
+            params['web3'], params['contracts'], params['start_block'] = connect_to_blockchain(
                 eth_rpc=params.pop('eth_rpc'),
-                contracts=contracts,
+                used_contracts=contracts,
                 address_overwrites=address_overwrites,
                 contracts_version=contracts_version,
             )
@@ -154,10 +155,10 @@ def blockchain_options(contracts: List[str], contracts_version: str = None) -> C
 
 def connect_to_blockchain(
     eth_rpc: str,
-    contracts: List[str],
+    used_contracts: List[str],
     address_overwrites: Dict[str, Address],
     contracts_version: str = None,
-) -> Tuple[Web3, dict]:
+) -> Tuple[Web3, Dict[str, Contract], BlockNumber]:
     try:
         log.info('Starting Web3 client', node_address=eth_rpc)
         provider = HTTPProvider(eth_rpc)
@@ -181,12 +182,16 @@ def connect_to_blockchain(
     if contracts_version:
         log.info(f'Using contracts version: {contracts_version}')
 
-    contract_infos = get_contract_addresses_and_start_block(
+    addresses, start_block = get_contract_addresses_and_start_block(
         chain_id=chain_id,
-        contracts=contracts,
+        contracts=used_contracts,
         address_overwrites=address_overwrites,
         contracts_version=contracts_version,
     )
+    contracts = {
+        c: web3.eth.contract(abi=CONTRACT_MANAGER.get_contract_abi(c), address=address)
+        for c, address in addresses.items()
+    }
 
-    log.info('Contract information', contract_infos=contract_infos)
-    return web3, contract_infos
+    log.info('Contract information', addresses=addresses, start_block=start_block)
+    return web3, contracts, start_block

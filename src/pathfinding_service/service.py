@@ -7,6 +7,7 @@ import structlog
 from eth_typing import ChecksumAddress
 from eth_utils import is_checksum_address, to_checksum_address
 from web3 import Web3
+from web3.contract import Contract
 
 from pathfinding_service.blockchain import (
     BlockchainListener,
@@ -56,10 +57,9 @@ class PathfindingService(gevent.Greenlet):
     def __init__(
         self,
         web3: Web3,
-        registry_address: Address,
+        contracts: Dict[str, Contract],
         private_key: str,
         db_filename: str,
-        user_deposit_contract_address: Address,
         sync_start_block: int = 0,
         required_confirmations: int = 8,
         poll_interval: int = 10,
@@ -68,7 +68,7 @@ class PathfindingService(gevent.Greenlet):
         super().__init__()
 
         self.web3 = web3
-        self.registry_address = registry_address
+        self.registry_address = contracts[CONTRACT_TOKEN_NETWORK_REGISTRY].address
         self.sync_start_block = sync_start_block
         self.required_confirmations = required_confirmations
         self.poll_interval = poll_interval
@@ -81,10 +81,7 @@ class PathfindingService(gevent.Greenlet):
         self.token_networks: Dict[Address, TokenNetwork] = {}
         self.token_network_listeners: List[BlockchainListener] = []
         self.database = PFSDatabase(filename=db_filename, pfs_address=self.address)
-        self.user_deposit_contract = web3.eth.contract(
-            abi=CONTRACT_MANAGER.get_contract_abi(CONTRACT_USER_DEPOSIT),
-            address=user_deposit_contract_address,
-        )
+        self.user_deposit_contract = contracts[CONTRACT_USER_DEPOSIT]
 
         log.info(
             'Starting TokenNetworkRegistry Listener',
@@ -101,7 +98,7 @@ class PathfindingService(gevent.Greenlet):
         )
         log.info(
             'Listening to token network registry',
-            registry_address=registry_address,
+            registry_address=self.registry_address,
             start_block=sync_start_block,
         )
         self._setup_token_networks()

@@ -10,7 +10,7 @@ from monitoring_service.service import check_gas_reserve
 
 @pytest.fixture(autouse=True)
 def service_mock(monkeypatch):
-    connect_mock = Mock(return_value=(Mock, MagicMock()))
+    connect_mock = Mock(return_value=(Mock(), MagicMock(), Mock()))
     monkeypatch.setattr('raiden_libs.cli.connect_to_blockchain', connect_mock)
     service_mock = Mock()
     monkeypatch.setattr('monitoring_service.cli.MonitoringService', service_mock)

@@ -11,7 +11,6 @@ from raiden_contracts.constants import (
     CONTRACT_USER_DEPOSIT,
 )
 from raiden_libs.cli import blockchain_options, common_options
-from raiden_libs.contract_info import START_BLOCK_ID
 
 log = structlog.get_logger(__name__)
 
@@ -37,7 +36,8 @@ def main(
     private_key: str,
     state_db: str,
     web3: Web3,
-    contract_infos: dict,
+    contracts: dict,
+    start_block: BlockNumber,
     confirmations: BlockNumber,
     min_reward: int,
 ) -> int:
@@ -47,10 +47,8 @@ def main(
     ms = MonitoringService(
         web3=web3,
         private_key=private_key,
-        registry_address=contract_infos[CONTRACT_TOKEN_NETWORK_REGISTRY],
-        monitor_contract_address=contract_infos[CONTRACT_MONITORING_SERVICE],
-        user_deposit_contract_address=contract_infos[CONTRACT_USER_DEPOSIT],
-        sync_start_block=contract_infos[START_BLOCK_ID],
+        contracts=contracts,
+        sync_start_block=start_block,
         required_confirmations=confirmations,
         db_filename=state_db,
         min_reward=min_reward,

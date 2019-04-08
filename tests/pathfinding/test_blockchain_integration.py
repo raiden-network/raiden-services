@@ -12,6 +12,7 @@ import gevent
 from pathfinding_service import PathfindingService
 from pathfinding_service.config import DEFAULT_REVEAL_TIMEOUT
 from pathfinding_service.model import ChannelView
+from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
 from raiden_contracts.contract_manager import ContractManager
 
 
@@ -36,8 +37,10 @@ def test_pfs_with_mocked_client(
     with patch('pathfinding_service.service.MatrixListener', new=Mock):
         pfs = PathfindingService(
             web3=web3,
-            registry_address=token_network_registry_contract.address,
-            user_deposit_contract_address=user_deposit_contract.address,
+            contracts={
+                CONTRACT_TOKEN_NETWORK_REGISTRY: token_network_registry_contract,
+                CONTRACT_USER_DEPOSIT: user_deposit_contract,
+            },
             required_confirmations=1,
             db_filename=':memory:',
             poll_interval=0,

@@ -10,7 +10,6 @@ from raiden_contracts.constants import (
     CONTRACT_TOKEN_NETWORK_REGISTRY,
     CONTRACT_USER_DEPOSIT,
 )
-from raiden_libs.contract_info import START_BLOCK_ID
 
 patch_args = {
     'target': 'pathfinding_service.cli',
@@ -21,12 +20,14 @@ patch_args = {
 patch_info_args = {
     'target': 'raiden_libs.cli',
     'get_contract_addresses_and_start_block': MagicMock(
-        return_value={
-            CONTRACT_TOKEN_NETWORK_REGISTRY: '0xde1fAa1385403f05C20a8ca5a0D5106163A35B6e',
-            CONTRACT_MONITORING_SERVICE: '0x58c73CabCFB3c55B420E3F60a4b06098e9D1960E',
-            CONTRACT_USER_DEPOSIT: '0x85F2c5eA50861DF5eA2EBd3651fAB091e14B849C',
-            START_BLOCK_ID: 5235346,
-        }
+        return_value=(
+            {
+                CONTRACT_TOKEN_NETWORK_REGISTRY: '0xde1fAa1385403f05C20a8ca5a0D5106163A35B6e',
+                CONTRACT_MONITORING_SERVICE: '0x58c73CabCFB3c55B420E3F60a4b06098e9D1960E',
+                CONTRACT_USER_DEPOSIT: '0x85F2c5eA50861DF5eA2EBd3651fAB091e14B849C',
+            },
+            5235346,
+        )
     ),
 }
 

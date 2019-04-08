@@ -10,6 +10,11 @@ from monitoring_service.events import (
 )
 from monitoring_service.service import MonitoringService
 from raiden.utils.typing import BlockNumber, ChannelID
+from raiden_contracts.constants import (
+    CONTRACT_MONITORING_SERVICE,
+    CONTRACT_TOKEN_NETWORK_REGISTRY,
+    CONTRACT_USER_DEPOSIT,
+)
 
 
 class MockBlockchainListener:  # pylint: disable=too-few-public-methods
@@ -80,10 +85,12 @@ def test_crash(
         ms = MonitoringService(
             web3=web3,
             private_key=server_private_key,
-            registry_address=token_network_registry_contract.address,
-            monitor_contract_address=monitoring_service_contract.address,
+            contracts={
+                CONTRACT_TOKEN_NETWORK_REGISTRY: token_network_registry_contract,
+                CONTRACT_MONITORING_SERVICE: monitoring_service_contract,
+                CONTRACT_USER_DEPOSIT: user_deposit_contract,
+            },
             db_filename=os.path.join(tmpdir, filename),
-            user_deposit_contract_address=user_deposit_contract.address,
         )
         ms.bcl = MockBlockchainListener(events)  # type: ignore
         msc = Mock()
