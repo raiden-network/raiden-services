@@ -23,7 +23,9 @@ contract_manager = ContractManager(contracts_precompiled_path())
 DEFAULT_REQUIRED_CONFIRMATIONS = 8  # ~2min with 15s blocks
 
 
-@blockchain_options(contracts_version='0.10.1')
+@blockchain_options(
+    contracts_version='0.10.1', contracts=[CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT]
+)
 @click.command()
 @click.option(
     '--host', default=DEFAULT_API_HOST, type=str, help='The host to use for serving the REST API'

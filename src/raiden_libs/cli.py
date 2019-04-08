@@ -2,7 +2,7 @@ import json
 import os
 import sys
 from functools import wraps
-from typing import Any, Callable, Optional, Tuple
+from typing import Any, Callable, List, Optional, Tuple
 
 import click
 import structlog
@@ -16,6 +16,7 @@ from pathfinding_service.middleware import http_retry_with_backoff_middleware
 from raiden.utils.typing import BlockNumber, ChainID
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
+    CONTRACT_ONE_TO_N,
     CONTRACT_TOKEN_NETWORK_REGISTRY,
     CONTRACT_USER_DEPOSIT,
 )
@@ -101,29 +102,11 @@ def common_options(app_name: str) -> Callable:
     return decorator
 
 
-def blockchain_options(contracts_version: str = None) -> Callable:
+def blockchain_options(contracts: List[str], contracts_version: str = None) -> Callable:
     """A decorator providing blockchain related params to a command"""
     options = [
         click.Option(
             ['--eth-rpc'], default='http://localhost:8545', type=str, help='Ethereum node RPC URI'
-        ),
-        click.Option(
-            ['--registry-address'],
-            type=str,
-            help='Address of the token network registry',
-            callback=validate_address,
-        ),
-        click.Option(
-            ['--user-deposit-contract-address'],
-            type=str,
-            help='Address of the token monitor contract',
-            callback=validate_address,
-        ),
-        click.Option(
-            ['--monitor-contract-address'],
-            type=str,
-            help='Address of the token monitor contract',
-            callback=validate_address,
         ),
         click.Option(
             ['--start-block'],
@@ -133,6 +116,23 @@ def blockchain_options(contracts_version: str = None) -> Callable:
         ),
     ]
 
+    arg_for_contract = {
+        CONTRACT_TOKEN_NETWORK_REGISTRY: 'registry',
+        CONTRACT_USER_DEPOSIT: 'user-deposit-contract',
+        CONTRACT_MONITORING_SERVICE: 'monitor-contract',
+        CONTRACT_ONE_TO_N: 'one-to-n-contract',
+    }
+
+    for c in contracts:
+        options.append(
+            click.Option(
+                ['--{}-address'.format(arg_for_contract[c])],
+                type=str,
+                help=f'Address of the {c} contract',
+                callback=validate_address,
+            )
+        )
+
     def decorator(command: click.Command) -> click.Command:
         assert command.callback
         callback = command.callback
@@ -140,16 +140,18 @@ def blockchain_options(contracts_version: str = None) -> Callable:
         command.params += options
 
         def call_with_blockchain_info(**params: Any) -> Callable:
+            dummy_address = Address('0x' + '1' * 40)
             params['web3'], params['contract_infos'] = connect_to_blockchain(
                 eth_rpc=params.pop('eth_rpc'),
-                registry_address=params.pop('registry_address'),
-                user_deposit_contract_address=params.pop('user_deposit_contract_address'),
+                registry_address=params.pop('registry_address', dummy_address),
+                user_deposit_contract_address=params.pop(
+                    'user_deposit_contract_address', dummy_address
+                ),
                 start_block=params.pop('start_block'),
-                monitor_contract_address=params.pop('monitor_contract_address'),
-                # necessary so that the overwrite logic works properly
-                # monitor_contract_address=Address('0x' + '1' * 40),  # TODO
+                monitor_contract_address=params.pop('monitor_contract_address', dummy_address),
                 contracts_version=contracts_version,
             )
+            params.pop('one_to_n_contract_address', dummy_address)  # TODO
             return callback(**params)
 
         command.callback = call_with_blockchain_info
