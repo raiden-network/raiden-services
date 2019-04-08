@@ -29,8 +29,8 @@ def make_iou(sender_priv_key, receiver, amount=1, expiration_block=MIN_IOU_EXPIR
     return iou
 
 
-def test_load_and_save_iou(pathfinding_service_full_mock):
-    pfs = pathfinding_service_full_mock
+def test_load_and_save_iou(pathfinding_service_mock):
+    pfs = pathfinding_service_mock
     iou_dict = make_iou(get_random_privkey(), pfs.address)
     iou = IOU.Schema().load(iou_dict)[0]
     iou.claimed = False
@@ -40,9 +40,9 @@ def test_load_and_save_iou(pathfinding_service_full_mock):
 
 
 def test_process_payment_errors(
-    pathfinding_service_mocked_listeners, web3, deposit_to_udc, create_account, get_private_key
+    pathfinding_service_web3_mock, web3, deposit_to_udc, create_account, get_private_key
 ):
-    pfs = pathfinding_service_mocked_listeners
+    pfs = pathfinding_service_web3_mock
     pfs.service_fee = 1
     sender = create_account()
     privkey = get_private_key(sender)
@@ -87,9 +87,9 @@ def test_process_payment_errors(
 
 
 def test_process_payment(
-    pathfinding_service_mocked_listeners, deposit_to_udc, create_account, get_private_key
+    pathfinding_service_web3_mock, deposit_to_udc, create_account, get_private_key
 ):
-    pfs = pathfinding_service_mocked_listeners
+    pfs = pathfinding_service_web3_mock
     pfs.service_fee = 1
     sender = create_account()
     privkey = get_private_key(sender)

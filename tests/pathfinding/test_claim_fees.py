@@ -12,7 +12,7 @@ from raiden.utils.typing import BlockNumber, Signature, TokenAmount
 
 
 def test_claim_fees(
-    pathfinding_service_full_mock,
+    pathfinding_service_mock,
     one_to_n_contract,
     web3,
     deposit_to_udc,
@@ -21,7 +21,7 @@ def test_claim_fees(
 ):
     # Prepare test data
     accounts = get_accounts(6)
-    pfs = pathfinding_service_full_mock
+    pfs = pathfinding_service_mock
     iou_inputs: List[dict] = [
         dict(sender=accounts[0], amount=100, deposit=200),
         dict(sender=accounts[1], amount=200, deposit=100),

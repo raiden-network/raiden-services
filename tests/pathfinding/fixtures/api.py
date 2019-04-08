@@ -56,11 +56,9 @@ def api_url(free_port: int) -> str:
 
 @pytest.fixture
 def api_sut(
-    pathfinding_service_full_mock: PathfindingService,
-    free_port: int,
-    populate_token_network_case_1: None,
+    pathfinding_service_mock, free_port: int, populate_token_network_case_1: None
 ) -> Iterator[ServiceApi]:
-    api = ServiceApi(pathfinding_service_full_mock)
+    api = ServiceApi(pathfinding_service_mock)
     api.run(port=free_port)
     yield api
     api.stop()

@@ -151,9 +151,7 @@ def test_get_paths(
 #
 
 
-def test_get_info(
-    api_sut: ServiceApi, api_url: str, pathfinding_service_full_mock: PathfindingService
-):
+def test_get_info(api_sut: ServiceApi, api_url: str, pathfinding_service_mock):
     url = api_url + '/info'
 
     response = requests.get(url)
@@ -161,8 +159,8 @@ def test_get_info(
     assert response.json() == {
         'price_info': 0,
         'network_info': {
-            'chain_id': pathfinding_service_full_mock.chain_id,
-            'registry_address': pathfinding_service_full_mock.registry_address,
+            'chain_id': pathfinding_service_mock.chain_id,
+            'registry_address': pathfinding_service_mock.registry_address,
         },
         'settings': 'PLACEHOLDER FOR PATHFINDER SETTINGS',
         'version': pkg_resources.require('raiden-services')[0].version,
@@ -179,10 +177,7 @@ def test_get_info(
 
 
 def test_get_iou(
-    api_sut: ServiceApi,
-    api_url: str,
-    pathfinding_service_full_mock: PathfindingService,
-    token_network_model: TokenNetwork,
+    api_sut: ServiceApi, api_url: str, pathfinding_service_mock, token_network_model: TokenNetwork
 ):
     privkey = get_random_privkey()
     sender = private_key_to_address(privkey)
