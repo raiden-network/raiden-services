@@ -17,7 +17,9 @@ from raiden_libs.contract_info import START_BLOCK_ID
 log = structlog.get_logger(__name__)
 
 
-@blockchain_options()
+@blockchain_options(
+    contracts=[CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT, CONTRACT_MONITORING_SERVICE]
+)
 @click.command()
 @click.option(
     '--min-reward',
