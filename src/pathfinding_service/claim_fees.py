@@ -11,13 +11,13 @@ from pathfinding_service.model import IOU
 from raiden.utils.typing import BlockNumber, TokenAmount
 from raiden_contracts.constants import CONTRACT_ONE_TO_N, CONTRACT_USER_DEPOSIT
 from raiden_contracts.contract_manager import ContractManager, contracts_precompiled_path
-from raiden_libs.cli import blockchain_options, common_options, connect_to_blockchain
-from raiden_libs.types import Address
+from raiden_libs.cli import blockchain_options, common_options
 from raiden_libs.utils import private_key_to_address
 
 log = structlog.get_logger(__name__)
 
 
+@blockchain_options()
 @click.command()
 @click.option(
     '--rdn-per-eth',
@@ -32,30 +32,17 @@ log = structlog.get_logger(__name__)
     help='Only IOUs which expire withing this number of blocks will be claimed',
 )
 @common_options('raiden-pathfinding-service')
-@blockchain_options
 def main(
     private_key: str,
     state_db: str,
-    eth_rpc: str,
-    registry_address: Address,
-    user_deposit_contract_address: Address,
-    start_block: BlockNumber,
-    confirmations: int,
+    web3: Web3,
+    contract_infos: dict,
     rdn_per_eth: float,
     expires_within: BlockNumber,
 ) -> None:
     pfs_address = private_key_to_address(private_key)
     database = PFSDatabase(filename=state_db, pfs_address=pfs_address)
 
-    web3, contract_infos = connect_to_blockchain(
-        eth_rpc=eth_rpc,
-        registry_address=registry_address,
-        user_deposit_contract_address=user_deposit_contract_address,
-        start_block=start_block,
-        # necessary so that the overwrite logic works properly
-        monitor_contract_address=Address('0x' + '1' * 40),
-        contracts_version=None,
-    )
     contract_manager = ContractManager(contracts_precompiled_path())
     one_to_n_contract = web3.eth.contract(
         abi=contract_manager.get_contract_abi(CONTRACT_ONE_TO_N),

@@ -7,21 +7,23 @@ monkey.patch_all()  # isort:skip # noqa
 
 import click
 import structlog
+from web3 import Web3
 
 from pathfinding_service import PathfindingService
 from pathfinding_service.api import ServiceApi
 from pathfinding_service.config import DEFAULT_API_HOST, DEFAULT_POLL_INTERVALL
-from raiden.utils.typing import BlockNumber
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
 from raiden_contracts.contract_manager import ContractManager, contracts_precompiled_path
-from raiden_libs.cli import blockchain_options, common_options, connect_to_blockchain
+from raiden_libs.cli import blockchain_options, common_options
 from raiden_libs.contract_info import START_BLOCK_ID
-from raiden_libs.types import Address
 
 log = structlog.get_logger(__name__)
 contract_manager = ContractManager(contracts_precompiled_path())
 
+DEFAULT_REQUIRED_CONFIRMATIONS = 8  # ~2min with 15s blocks
 
+
+@blockchain_options(contracts_version='0.10.1')
 @click.command()
 @click.option(
     '--host', default=DEFAULT_API_HOST, type=str, help='The host to use for serving the REST API'
@@ -32,32 +34,24 @@ contract_manager = ContractManager(contracts_precompiled_path())
     type=click.IntRange(min=0),
     help='Service fee which is required before processing requests',
 )
+@click.option(
+    '--confirmations',
+    default=DEFAULT_REQUIRED_CONFIRMATIONS,
+    type=click.IntRange(min=0),
+    help='Number of block confirmations to wait for',
+)
 @common_options('raiden-pathfinding-service')
-@blockchain_options
 def main(
     private_key: str,
     state_db: str,
-    eth_rpc: str,
-    registry_address: Address,
-    user_deposit_contract_address: Address,
-    start_block: BlockNumber,
+    web3: Web3,
+    contract_infos: dict,
     confirmations: int,
     host: str,
     service_fee: int,
 ) -> int:
     """ The Pathfinding service for the Raiden Network. """
     log.info("Starting Raiden Pathfinding Service")
-
-    contracts_version = '0.10.1'
-    web3, contract_infos = connect_to_blockchain(
-        eth_rpc=eth_rpc,
-        registry_address=registry_address,
-        user_deposit_contract_address=user_deposit_contract_address,
-        start_block=start_block,
-        # necessary so that the overwrite logic works properly
-        monitor_contract_address=Address('0x' + '1' * 40),
-        contracts_version=contracts_version,
-    )
 
     service = None
     api = None

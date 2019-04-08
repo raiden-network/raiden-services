@@ -25,8 +25,6 @@ from raiden_libs.types import Address
 
 log = structlog.get_logger(__name__)
 
-DEFAULT_REQUIRED_CONFIRMATIONS = 8  # ~2min with 15s blocks
-
 
 def _open_keystore(keystore_file: str, password: str) -> str:
     with open(keystore_file, 'r') as keystore:
@@ -92,56 +90,72 @@ def common_options(app_name: str) -> Callable:
             func = option(func)
 
         @wraps(func)
-        def call_with_opened_keystore(**kwargs: Any) -> Callable:
-            kwargs['private_key'] = _open_keystore(
-                kwargs.pop('keystore_file'), kwargs.pop('password')
+        def call_with_opened_keystore(**params: Any) -> Callable:
+            params['private_key'] = _open_keystore(
+                params.pop('keystore_file'), params.pop('password')
             )
-            return func(**kwargs)
+            return func(**params)
 
         return call_with_opened_keystore
 
     return decorator
 
 
-def blockchain_options(func: Callable) -> Callable:
+def blockchain_options(contracts_version: str = None) -> Callable:
     """A decorator providing blockchain related params to a command"""
-    for option in reversed(
-        [
-            click.option(
-                '--eth-rpc',
-                default='http://localhost:8545',
-                type=str,
-                help='Ethereum node RPC URI',
-            ),
-            click.option(
-                '--registry-address',
-                type=str,
-                help='Address of the token network registry',
-                callback=validate_address,
-            ),
-            click.option(
-                '--user-deposit-contract-address',
-                type=str,
-                help='Address of the token monitor contract',
-                callback=validate_address,
-            ),
-            click.option(
-                '--start-block',
-                default=0,
-                type=click.IntRange(min=0),
-                help='Block to start syncing at',
-            ),
-            click.option(
-                '--confirmations',
-                default=DEFAULT_REQUIRED_CONFIRMATIONS,
-                type=click.IntRange(min=0),
-                help='Number of block confirmations to wait for',
-            ),
-        ]
-    ):
-        func = option(func)
+    options = [
+        click.Option(
+            ['--eth-rpc'], default='http://localhost:8545', type=str, help='Ethereum node RPC URI'
+        ),
+        click.Option(
+            ['--registry-address'],
+            type=str,
+            help='Address of the token network registry',
+            callback=validate_address,
+        ),
+        click.Option(
+            ['--user-deposit-contract-address'],
+            type=str,
+            help='Address of the token monitor contract',
+            callback=validate_address,
+        ),
+        click.Option(
+            ['--monitor-contract-address'],
+            type=str,
+            help='Address of the token monitor contract',
+            callback=validate_address,
+        ),
+        click.Option(
+            ['--start-block'],
+            default=0,
+            type=click.IntRange(min=0),
+            help='Block to start syncing at',
+        ),
+    ]
 
-    return func
+    def decorator(command: click.Command) -> click.Command:
+        assert command.callback
+        callback = command.callback
+
+        command.params += options
+
+        def call_with_blockchain_info(**params: Any) -> Callable:
+            params['web3'], params['contract_infos'] = connect_to_blockchain(
+                eth_rpc=params.pop('eth_rpc'),
+                registry_address=params.pop('registry_address'),
+                user_deposit_contract_address=params.pop('user_deposit_contract_address'),
+                start_block=params.pop('start_block'),
+                monitor_contract_address=params.pop('monitor_contract_address'),
+                # necessary so that the overwrite logic works properly
+                # monitor_contract_address=Address('0x' + '1' * 40),  # TODO
+                contracts_version=contracts_version,
+            )
+            return callback(**params)
+
+        command.callback = call_with_blockchain_info
+        return command
+
+    return decorator
 
 
 def connect_to_blockchain(
@@ -161,7 +175,8 @@ def connect_to_blockchain(
     except ConnectionError:
         log.error(
             'Can not connect to the Ethereum client. Please check that it is running and that '
-            'your settings are correct.'
+            'your settings are correct.',
+            eth_rpc=eth_rpc,
         )
         sys.exit(1)
 
