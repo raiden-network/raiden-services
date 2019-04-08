@@ -191,11 +191,7 @@ def populate_token_network_random(
 @pytest.fixture(scope='session')
 def populate_token_network() -> Callable:
     def populate_token_network(
-        token_network: TokenNetwork,
-        private_keys: List[str],
-        addresses: List[Address],
-        web3: Web3,
-        channel_descriptions: List,
+        token_network: TokenNetwork, addresses: List[Address], channel_descriptions: List
     ):
         for (
             channel_id,
@@ -255,46 +251,34 @@ def populate_token_network() -> Callable:
 def populate_token_network_case_1(
     populate_token_network: Callable,
     token_network_model: TokenNetwork,
-    private_keys: List[str],
     addresses: List[Address],
-    web3: Web3,
     channel_descriptions_case_1: List,
 ):
-    populate_token_network(
-        token_network_model, private_keys, addresses, web3, channel_descriptions_case_1
-    )
+    populate_token_network(token_network_model, addresses, channel_descriptions_case_1)
 
 
 @pytest.fixture
 def populate_token_network_case_2(
     populate_token_network: Callable,
     token_network_model: TokenNetwork,
-    private_keys: List[str],
     addresses: List[Address],
-    web3: Web3,
     channel_descriptions_case_2: List,
 ):
-    populate_token_network(
-        token_network_model, private_keys, addresses, web3, channel_descriptions_case_2
-    )
+    populate_token_network(token_network_model, addresses, channel_descriptions_case_2)
 
 
 @pytest.fixture
 def populate_token_network_case_3(
     populate_token_network: Callable,
     token_network_model: TokenNetwork,
-    private_keys: List[str],
     addresses: List[Address],
-    web3: Web3,
     channel_descriptions_case_3: List,
 ):
-    populate_token_network(
-        token_network_model, private_keys, addresses, web3, channel_descriptions_case_3
-    )
+    populate_token_network(token_network_model, addresses, channel_descriptions_case_3)
 
 
 @pytest.fixture
-def pathfinding_service_full_mock(
+def pathfinding_service_mock(
     contracts_manager: ContractManager, token_network_model: TokenNetwork
 ) -> Generator[PathfindingService, None, None]:
     with patch('pathfinding_service.service.MatrixListener', new=Mock):
@@ -320,10 +304,9 @@ def pathfinding_service_full_mock(
 
 
 @pytest.fixture
-def pathfinding_service_mocked_listeners(
+def pathfinding_service_web3_mock(
     contracts_manager: ContractManager, web3: Web3, user_deposit_contract: Contract
 ) -> Generator[PathfindingService, None, None]:
-    """ Returns a PathfindingService with mocked blockchain listeners. """
     with patch('pathfinding_service.service.MatrixListener', new=Mock):
         pathfinding_service = PathfindingService(
             web3=web3,
