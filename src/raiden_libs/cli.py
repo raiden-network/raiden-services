@@ -20,7 +20,7 @@ from raiden_contracts.constants import (
     CONTRACT_TOKEN_NETWORK_REGISTRY,
     CONTRACT_USER_DEPOSIT,
 )
-from raiden_libs.contract_info import START_BLOCK_ID, get_contract_addresses_and_start_block
+from raiden_libs.contract_info import get_contract_addresses_and_start_block
 from raiden_libs.logging import setup_logging
 from raiden_libs.types import Address
 
@@ -188,15 +188,5 @@ def connect_to_blockchain(
         contracts_version=contracts_version,
     )
 
-    if contract_infos is None:
-        log.critical('Could not find correct contracts to use. Please check your configuration')
-        sys.exit(1)
-    else:
-        log.info(
-            'Contract information',
-            registry_address=contract_infos[CONTRACT_TOKEN_NETWORK_REGISTRY],
-            monitor_contract_address=contract_infos[CONTRACT_MONITORING_SERVICE],
-            user_deposit_contract_address=contract_infos[CONTRACT_USER_DEPOSIT],
-            sync_start_block=contract_infos[START_BLOCK_ID],
-        )
+    log.info('Contract information', contract_infos=contract_infos)
     return web3, contract_infos

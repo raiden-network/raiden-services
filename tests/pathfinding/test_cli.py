@@ -3,7 +3,6 @@ from unittest.mock import DEFAULT, MagicMock, Mock, patch
 
 import pytest
 from click.testing import CliRunner
-from eth_utils import to_checksum_address
 
 from pathfinding_service.cli import main
 from raiden_contracts.constants import (
@@ -20,8 +19,8 @@ patch_args = {
 }
 
 patch_info_args = {
-    'target': 'raiden_libs.contract_info',
-    'get_deployment_infos': MagicMock(
+    'target': 'raiden_libs.cli',
+    'get_contract_addresses_and_start_block': MagicMock(
         return_value={
             CONTRACT_TOKEN_NETWORK_REGISTRY: '0xde1fAa1385403f05C20a8ca5a0D5106163A35B6e',
             CONTRACT_MONITORING_SERVICE: '0x58c73CabCFB3c55B420E3F60a4b06098e9D1960E',
@@ -78,13 +77,7 @@ def test_eth_rpc(default_cli_args, provider_mock):
 
 @pytest.mark.usefixtures('provider_mock')
 def test_registry_address(default_cli_args):
-    """ The `registry_address` parameter must reach the `PathfindingService` """
     runner = CliRunner()
-    with patch.multiple(**patch_args) as mocks, patch.multiple(**patch_info_args):
-        address = to_checksum_address('0x' + '1' * 40)
-        result = runner.invoke(main, default_cli_args + ['--registry-address', address])
-        assert result.exit_code == 0
-        assert mocks['PathfindingService'].call_args[1]['registry_address'] == address
 
     # check validation of address format
     def fails_on_registry_check(address):
