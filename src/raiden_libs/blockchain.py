@@ -102,7 +102,7 @@ def query_blockchain_events(
     ]
 
 
-def get_blockchain_events(  # pylint: disable=too-many-branches
+def get_blockchain_events(
     web3: Web3,
     contract_manager: ContractManager,
     chain_state: BlockchainState,
@@ -202,42 +202,63 @@ def get_blockchain_events(  # pylint: disable=too-many-branches
 
     # get events from monitoring service contract
     if query_ms:
-        monitoring_service_events = query_blockchain_events(
+        monitoring_events = get_monitoring_blockchain_events(
             web3=web3,
             contract_manager=contract_manager,
-            contract_address=new_chain_state.monitor_contract_address,
-            contract_name=CONTRACT_MONITORING_SERVICE,
-            topics=[None],
+            chain_state=new_chain_state,
             from_block=from_block,
             to_block=to_block,
         )
-        for event in monitoring_service_events:
-            event_name = event['event']
-            block_number = event['blockNumber']
-
-            if event_name == MonitoringServiceEvent.NEW_BALANCE_PROOF_RECEIVED:
-                events.append(
-                    ReceiveMonitoringNewBalanceProofEvent(
-                        token_network_address=event['args']['token_network_address'],
-                        channel_identifier=event['args']['channel_identifier'],
-                        reward_amount=event['args']['reward_amount'],
-                        nonce=event['args']['nonce'],
-                        ms_address=event['args']['ms_address'],
-                        raiden_node_address=event['args']['raiden_node_address'],
-                        block_number=block_number,
-                    )
-                )
-            elif event_name == MonitoringServiceEvent.REWARD_CLAIMED:
-                events.append(
-                    ReceiveMonitoringRewardClaimedEvent(
-                        ms_address=event['args']['ms_address'],
-                        amount=event['args']['amount'],
-                        reward_identifier=encode_hex(event['args']['reward_identifier']),
-                        block_number=block_number,
-                    )
-                )
+        events.extend(monitoring_events)
 
     # commit new block number
     events.append(UpdatedHeadBlockEvent(head_block_number=to_block))
 
     return new_chain_state, events
+
+
+def get_monitoring_blockchain_events(
+    web3: Web3,
+    contract_manager: ContractManager,
+    chain_state: BlockchainState,
+    from_block: BlockNumber,
+    to_block: BlockNumber,
+) -> List[Event]:
+    monitoring_service_events = query_blockchain_events(
+        web3=web3,
+        contract_manager=contract_manager,
+        contract_address=chain_state.monitor_contract_address,
+        contract_name=CONTRACT_MONITORING_SERVICE,
+        topics=[None],
+        from_block=from_block,
+        to_block=to_block,
+    )
+
+    events: List[Event] = []
+    for event in monitoring_service_events:
+        event_name = event['event']
+        block_number = event['blockNumber']
+
+        if event_name == MonitoringServiceEvent.NEW_BALANCE_PROOF_RECEIVED:
+            events.append(
+                ReceiveMonitoringNewBalanceProofEvent(
+                    token_network_address=event['args']['token_network_address'],
+                    channel_identifier=event['args']['channel_identifier'],
+                    reward_amount=event['args']['reward_amount'],
+                    nonce=event['args']['nonce'],
+                    ms_address=event['args']['ms_address'],
+                    raiden_node_address=event['args']['raiden_node_address'],
+                    block_number=block_number,
+                )
+            )
+        elif event_name == MonitoringServiceEvent.REWARD_CLAIMED:
+            events.append(
+                ReceiveMonitoringRewardClaimedEvent(
+                    ms_address=event['args']['ms_address'],
+                    amount=event['args']['amount'],
+                    reward_identifier=encode_hex(event['args']['reward_identifier']),
+                    block_number=block_number,
+                )
+            )
+
+    return events

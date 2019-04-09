@@ -1,5 +1,6 @@
 import sys
 import traceback
+from dataclasses import asdict
 from typing import Any, Dict, Optional
 
 import gevent
@@ -139,8 +140,6 @@ class PathfindingService(gevent.Greenlet):
             query_ms=False,
         )
 
-        log.info('events', events=events)
-
         # If a new token network was found we need to write it to the DB, otherwise
         # the constraints for new channels will not be constrained. But only update
         # the network addresses here, all else is done later.
@@ -189,12 +188,7 @@ class PathfindingService(gevent.Greenlet):
     def handle_token_network_created(self, event: ReceiveTokenNetworkCreatedEvent) -> None:
         network_address = TokenNetworkAddress(event.token_network_address)
         if not self.follows_token_network(network_address):
-            log.info(
-                'Found new token network',
-                token_network_address=network_address,
-                token_address=event.token_address,
-                event_block_number=event.block_number,
-            )
+            log.info('Found new token network', **asdict(event))
 
             self.token_networks[network_address] = TokenNetwork(network_address)
 
@@ -203,15 +197,7 @@ class PathfindingService(gevent.Greenlet):
         if token_network is None:
             return
 
-        log.info(
-            'Received ChannelOpened event',
-            token_network_address=token_network.address,
-            channel_identifier=event.channel_identifier,
-            participant1=event.participant1,
-            participant2=event.participant2,
-            settle_timeout=event.settle_timeout,
-            event_block_number=event.block_number,
-        )
+        log.info('Received ChannelOpened event', **asdict(event))
 
         token_network.handle_channel_opened_event(
             channel_identifier=event.channel_identifier,
@@ -225,14 +211,7 @@ class PathfindingService(gevent.Greenlet):
         if token_network is None:
             return
 
-        log.info(
-            'Received ChannelNewDeposit event',
-            token_network_address=token_network.address,
-            channel_identifier=event.channel_identifier,
-            participant=event.participant_address,
-            total_deposit=event.total_deposit,
-            event_block_number=event.block_number,
-        )
+        log.info('Received ChannelNewDeposit event', **asdict(event))
 
         token_network.handle_channel_new_deposit_event(
             channel_identifier=event.channel_identifier,
@@ -245,12 +224,7 @@ class PathfindingService(gevent.Greenlet):
         if token_network is None:
             return
 
-        log.info(
-            'Received ChannelClosed event',
-            token_network_address=token_network.address,
-            channel_identifier=event.channel_identifier,
-            event_block_number=event.block_number,
-        )
+        log.info('Received ChannelClosed event', **asdict(event))
 
         token_network.handle_channel_closed_event(channel_identifier=event.channel_identifier)
 
