@@ -7,7 +7,7 @@ import pkg_resources
 import structlog
 from eth_utils import is_address, is_checksum_address, is_same_address
 from flask import Flask, Response, request
-from flask_restful import Api, Resource, reqparse
+from flask_restful import Api, Resource
 from gevent.pywsgi import WSGIServer
 from marshmallow_dataclass import add_schema
 from networkx.exception import NetworkXNoPath, NodeNotFound
@@ -27,7 +27,7 @@ from pathfinding_service.config import (
 from pathfinding_service.model import IOU
 from raiden.exceptions import InvalidSignature
 from raiden.utils.signer import recover
-from raiden.utils.typing import Signature
+from raiden.utils.typing import Signature, TokenAmount
 from raiden_libs.marshmallow import HexedBytes
 from raiden_libs.types import Address, TokenNetworkAddress
 
@@ -67,61 +67,34 @@ class PathfinderResource(Resource):
         return None
 
 
+@add_schema
+@dataclass
+class PathRequest:
+    """A HTTP request to PathsResource"""
+
+    from_: Address = field(metadata=dict(load_from='from', validate=is_checksum_address))
+    to: Address = field(metadata=dict(validate=is_checksum_address))
+    value: TokenAmount = field(metadata=dict(validate=marshmallow.validate.Range(min=1)))
+    max_paths: int = field(
+        default=DEFAULT_MAX_PATHS, metadata=dict(validate=marshmallow.validate.Range(min=1))
+    )
+    iou: Optional[IOU] = None
+    Schema: ClassVar[Type[marshmallow.Schema]]
+
+
 class PathsResource(PathfinderResource):
-    @staticmethod
-    def _validate_args(args: dict) -> Optional[Tuple[dict, int]]:
-        required_args = ['from', 'to', 'value', 'max_paths']
-        if not all(args[arg] is not None for arg in required_args):
-            return {'errors': 'Required parameters: {}'.format(required_args)}, 400
-
-        address_error = 'Invalid {} address: {}'
-        if not is_address(args['from']):
-            return {'errors': address_error.format('initiator', args['from'])}, 400
-        if not is_address(args['to']):
-            return {'errors': address_error.format('target', args['to'])}, 400
-
-        address_error = '{} address not checksummed: {}'
-        if not is_checksum_address(args['from']):
-            return {'errors': address_error.format('Initiator', args['from'])}, 400
-        if not is_checksum_address(args['to']):
-            return {'errors': address_error.format('Target', args['to'])}, 400
-
-        if args['value'] < 0:
-            return (
-                {'errors': 'Payment value must be non-negative: {}'.format(args['value'])},
-                400,
-            )
-
-        if args['max_paths'] <= 0:
-            return (
-                {'errors': 'Number of paths must be positive: {}'.format(args['max_paths'])},
-                400,
-            )
-
-        return None
-
     def post(self, token_network_address: str) -> Tuple[dict, int]:
         token_network_error = self._validate_token_network_argument(token_network_address)
         if token_network_error is not None:
             return token_network_error
 
-        parser = reqparse.RequestParser()
-        parser.add_argument('from', type=str, help='Payment initiator address.')
-        parser.add_argument('to', type=str, help='Payment target address.')
-        parser.add_argument('value', type=int, help='Maximum payment value.')
-        parser.add_argument(
-            'max_paths', type=int, help='Number of paths requested.', default=DEFAULT_MAX_PATHS
-        )
-
-        args = parser.parse_args()
-        error = self._validate_args(args)
-        if error is not None:
-            return error
-
         json = request.get_json()
         if not json:
             raise exceptions.ApiException('JSON payload expected')
-        process_payment(json.get('iou'), self.pathfinding_service)
+        path_req, errors = PathRequest.Schema().load(json)
+        if errors:
+            raise exceptions.InvalidRequest(**errors)
+        process_payment(path_req.iou, self.pathfinding_service)
 
         token_network = self.pathfinding_service.token_networks.get(
             TokenNetworkAddress(token_network_address)
@@ -131,13 +104,16 @@ class PathsResource(PathfinderResource):
 
         try:
             paths = token_network.get_paths(
-                source=args['from'], target=args['to'], value=args.value, max_paths=args.max_paths
+                source=path_req.from_,
+                target=path_req.to,
+                value=path_req.value,
+                max_paths=path_req.max_paths,
             )
         except (NetworkXNoPath, NodeNotFound):
             return (
                 {
                     'errors': 'No suitable path found for transfer from {} to {}.'.format(
-                        args['from'], args['to']
+                        path_req.from_, path_req.to
                     )
                 },
                 400,
@@ -146,16 +122,13 @@ class PathsResource(PathfinderResource):
         return {'result': paths}, 200
 
 
-def process_payment(iou_dict: dict, pathfinding_service: PathfindingService) -> None:
+def process_payment(iou: IOU, pathfinding_service: PathfindingService) -> None:
     if pathfinding_service.service_fee == 0:
         return
-    if iou_dict is None:
+    if iou is None:
         raise exceptions.MissingIOU
 
     # Basic IOU validity checks
-    iou, errors = IOU.Schema().load(iou_dict)
-    if errors:
-        raise exceptions.InvalidRequest(**errors)
     if iou.receiver != pathfinding_service.address:
         raise exceptions.WrongIOURecipient(expected=pathfinding_service.address)
     if not iou.is_signature_valid():
@@ -202,9 +175,7 @@ class IOURequest:
     sender: Address
     receiver: Address
     timestamp: datetime
-    timestamp_str: str = field(
-        metadata={"marshmallow_field": marshmallow.fields.String(load_from='timestamp')}
-    )
+    timestamp_str: str = field(metadata={'load_from': 'timestamp'})
     signature: Signature = field(metadata={"marshmallow_field": HexedBytes()})
     Schema: ClassVar[Type[marshmallow.Schema]]
 

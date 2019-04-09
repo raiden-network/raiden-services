@@ -44,29 +44,24 @@ def test_get_paths_validation(
 
     response = requests.post(url)
     assert response.status_code == 400
-    assert response.json()['errors'].startswith('Required parameters:')
+    assert response.json()['errors'].startswith('JSON payload expected')
 
-    response = request_path_with(**{'from': 'notanaddress'})
-    assert response.json()['errors'] == 'Invalid initiator address: notanaddress'
+    for address in ['notanaddress', to_normalized_address(initiator_address)]:
+        response = request_path_with(**{'from': address})
+        assert response.json()['error_code'] == exceptions.InvalidRequest.error_code
+        assert 'from' in response.json()['error_details']
 
-    response = request_path_with(to='notanaddress')
-    assert response.json()['errors'] == 'Invalid target address: notanaddress'
-
-    response = request_path_with(**{'from': to_normalized_address(initiator_address)})
-    assert response.json()['errors'] == 'Initiator address not checksummed: {}'.format(
-        to_normalized_address(initiator_address)
-    )
-
-    response = request_path_with(to=to_normalized_address(target_address))
-    assert response.json()['errors'] == 'Target address not checksummed: {}'.format(
-        to_normalized_address(target_address)
-    )
+        response = request_path_with(to=address)
+        assert response.json()['error_code'] == exceptions.InvalidRequest.error_code
+        assert 'to' in response.json()['error_details']
 
     response = request_path_with(value=-10)
-    assert response.json()['errors'] == 'Payment value must be non-negative: -10'
+    assert response.json()['error_code'] == exceptions.InvalidRequest.error_code
+    assert 'value' in response.json()['error_details']
 
     response = request_path_with(max_paths=-1)
-    assert response.json()['errors'] == 'Number of paths must be positive: -1'
+    assert response.json()['error_code'] == exceptions.InvalidRequest.error_code
+    assert 'max_paths' in response.json()['error_details']
 
     # Exemplary test for payment errors. Different errors are serialized the
     # same way in the rest API. Checking for specific errors is tested in
@@ -77,7 +72,7 @@ def test_get_paths_validation(
 
     # with successful payment
     iou = make_iou(get_random_privkey(), api_sut.pathfinding_service.address)
-    response = request_path_with(iou=iou, status_code=200)
+    response = request_path_with(iou=iou.Schema().dump(iou)[0], status_code=200)
 
     # kill all running greenlets
     gevent.killall([obj for obj in gc.get_objects() if isinstance(obj, gevent.Greenlet)])
@@ -206,14 +201,14 @@ def test_get_iou(
     assert response.json() == {'last_iou': None}
 
     # Add IOU to database
-    iou_dict = make_iou(privkey, api_sut.pathfinding_service.address)
-    iou = IOU.Schema().load(iou_dict)[0]
+    iou = make_iou(privkey, api_sut.pathfinding_service.address)
     iou.claimed = False
     api_sut.pathfinding_service.database.upsert_iou(iou)
 
     # Is returned IOU the one save into the db?
     response = requests.get(url, params=params)
     assert response.status_code == 200, response.json()
+    iou_dict = IOU.Schema(exclude=['claimed']).dump(iou)[0]
     assert response.json()['last_iou'] == iou_dict
 
     # Invalid signatures must fail
