@@ -11,7 +11,7 @@ from pathfinding_service.config import (
     MAX_PATHS_PER_REQUEST,
 )
 from pathfinding_service.model.channel_view import ChannelView
-from raiden.utils.typing import ChannelID, FeeAmount
+from raiden.utils.typing import ChannelID, FeeAmount, Nonce, TokenAmount
 from raiden_libs.types import Address, TokenNetworkAddress
 
 log = structlog.get_logger(__name__)
@@ -59,7 +59,7 @@ class TokenNetwork:
             participant1=participant1,
             participant2=participant2,
             settle_timeout=settle_timeout,
-            deposit=0,
+            deposit=TokenAmount(0),
         )
 
         view2 = ChannelView(
@@ -67,7 +67,7 @@ class TokenNetwork:
             participant2=participant2,
             participant1=participant1,
             settle_timeout=settle_timeout,
-            deposit=0,
+            deposit=TokenAmount(0),
         )
 
         self.G.add_edge(participant1, participant2, view=view1)
@@ -133,10 +133,10 @@ class TokenNetwork:
         channel_identifier: ChannelID,
         updating_participant: Address,
         other_participant: Address,
-        updating_nonce: int,
-        other_nonce: int,
-        updating_capacity: int,
-        other_capacity: int,
+        updating_nonce: Nonce,
+        other_nonce: Nonce,
+        updating_capacity: TokenAmount,
+        other_capacity: TokenAmount,
         reveal_timeout: int,
         mediation_fee: FeeAmount,
     ) -> None:

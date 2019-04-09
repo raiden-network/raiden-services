@@ -3,7 +3,7 @@ from enum import Enum
 from eth_utils import is_checksum_address
 
 from pathfinding_service.config import DEFAULT_REVEAL_TIMEOUT
-from raiden.utils.typing import ChannelID, FeeAmount
+from raiden.utils.typing import ChannelID, FeeAmount, Nonce, TokenAmount
 from raiden_libs.types import Address
 
 
@@ -23,7 +23,7 @@ class ChannelView:
         participant1: Address,
         participant2: Address,
         settle_timeout: int,
-        deposit: int = 0,
+        deposit: TokenAmount = TokenAmount(0),
         reveal_timeout: int = DEFAULT_REVEAL_TIMEOUT,
     ):
         assert is_checksum_address(participant1)
@@ -44,10 +44,10 @@ class ChannelView:
     # TODO: define another function update_deposit
     def update_capacity(
         self,
-        nonce: int = 0,
-        capacity: int = 0,
+        nonce: Nonce = Nonce(0),
+        capacity: TokenAmount = TokenAmount(0),
         reveal_timeout: int = None,
-        deposit: int = None,
+        deposit: TokenAmount = None,
         mediation_fee: FeeAmount = FeeAmount(0),
     ) -> None:
         self.update_nonce = nonce
@@ -58,16 +58,16 @@ class ChannelView:
         if deposit is not None:
             self._deposit = deposit
             if self._capacity is not None:
-                self._capacity += deposit
+                self._capacity = TokenAmount(self._capacity + deposit)
 
         self.mediation_fee = mediation_fee
 
     @property
-    def deposit(self) -> int:
+    def deposit(self) -> TokenAmount:
         return self._deposit
 
     @property
-    def capacity(self) -> int:
+    def capacity(self) -> TokenAmount:
         return self._capacity
 
     def __repr__(self) -> str:
