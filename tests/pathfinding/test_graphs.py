@@ -6,7 +6,7 @@ import pytest
 from networkx import NetworkXNoPath
 
 from pathfinding_service.model import ChannelView, TokenNetwork
-from raiden.utils.typing import ChannelID, TokenAmount
+from raiden.utils.typing import ChannelID, FeeAmount, TokenAmount
 from raiden_libs.types import Address
 
 
@@ -28,11 +28,11 @@ def test_edge_weight(addresses):
     )
 
     # absolute fee
-    view.absolute_fee = int(0.03e18)
+    view.absolute_fee = FeeAmount(int(0.03e18))
     assert TokenNetwork.edge_weight(dict(), dict(view=view), amount=amount, fee_penalty=100) == 4
 
     # relative fee
-    view.absolute_fee = 0
+    view.absolute_fee = FeeAmount(0)
     view.relative_fee = 0.01
     assert TokenNetwork.edge_weight(dict(), dict(view=view), amount=amount, fee_penalty=100) == 2
 

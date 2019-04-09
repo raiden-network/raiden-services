@@ -9,7 +9,6 @@ from pathfinding_service.config import (
     DEFAULT_SETTLE_TO_REVEAL_TIMEOUT_RATIO,
     DIVERSITY_PEN_DEFAULT,
     FEE_PEN_DEFAULT,
-    MAX_PATHS_PER_REQUEST,
 )
 from pathfinding_service.model.channel_view import ChannelView
 from raiden.utils.typing import ChannelID, FeeAmount, Nonce, TokenAmount
@@ -196,7 +195,6 @@ class TokenNetwork:
         diversity_penalty: One previously used channel is as bad as X more hops
         fee_penalty: One RDN in fees is as bad as X more hops
         """
-        max_paths = min(max_paths, MAX_PATHS_PER_REQUEST)
         visited: Dict[ChannelID, float] = {}
         paths: List[List[Address]] = []
 

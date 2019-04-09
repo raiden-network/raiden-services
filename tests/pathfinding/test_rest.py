@@ -70,9 +70,24 @@ def test_get_paths_validation(
     response = request_path_with()
     assert response.json()['error_code'] == exceptions.MissingIOU.error_code
 
-    # with successful payment
+    # prepare iou for payment tests
     iou = make_iou(get_random_privkey(), api_sut.pathfinding_service.address)
-    response = request_path_with(iou=iou.Schema().dump(iou)[0], status_code=200)
+    good_iou_dict = iou.Schema().dump(iou)[0]
+
+    # malformed iou
+    bad_iou_dict = good_iou_dict.copy()
+    del bad_iou_dict['amount']
+    response = request_path_with(iou=bad_iou_dict)
+    assert response.json()['error_code'] == exceptions.InvalidRequest.error_code
+
+    # bad signature
+    bad_iou_dict = good_iou_dict.copy()
+    bad_iou_dict['signature'] = hex(int(bad_iou_dict['signature'], 16) + 1)
+    response = request_path_with(iou=bad_iou_dict)
+    assert response.json()['error_code'] == exceptions.InvalidSignature.error_code
+
+    # with successful payment
+    response = request_path_with(iou=good_iou_dict, status_code=200)
 
     # kill all running greenlets
     gevent.killall([obj for obj in gc.get_objects() if isinstance(obj, gevent.Greenlet)])
