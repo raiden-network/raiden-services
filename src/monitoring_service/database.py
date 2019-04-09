@@ -11,13 +11,13 @@ from monitoring_service.events import (
     ScheduledEvent,
 )
 from monitoring_service.states import (
-    BlockchainState,
     Channel,
     MonitoringServiceState,
     MonitorRequest,
     OnChainUpdateStatus,
 )
 from raiden.utils.typing import BlockNumber
+from raiden_libs.states import BlockchainState
 from raiden_libs.types import Address
 
 SubEvent = Union[ActionMonitoringTriggeredEvent, ActionClaimRewardTriggeredEvent]

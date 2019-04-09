@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, Optional
 
 import jsonschema
 from eth_utils import decode_hex, encode_hex, is_checksum_address, to_checksum_address
@@ -19,6 +19,7 @@ from raiden.utils.typing import (
 )
 from raiden_contracts.constants import ChannelState, MessageTypeId
 from raiden_libs.messages.json_schema import MONITOR_REQUEST_SCHEMA
+from raiden_libs.states import BlockchainState
 from raiden_libs.types import Address, TokenNetworkAddress, TransactionHash
 
 
@@ -47,15 +48,6 @@ class Channel:
     @property
     def participants(self) -> Iterable[Address]:
         return self.participant1, self.participant2
-
-
-@dataclass
-class BlockchainState:
-    chain_id: ChainID
-    token_network_registry_address: Address
-    monitor_contract_address: Address
-    latest_known_block: BlockNumber
-    token_network_addresses: List[TokenNetworkAddress] = field(default_factory=list)
 
 
 @dataclass
