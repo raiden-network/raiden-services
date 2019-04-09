@@ -1,30 +1,44 @@
 import random
 import time
-from math import isclose
 from typing import List
 
 import pytest
 from networkx import NetworkXNoPath
 
 from pathfinding_service.model import ChannelView, TokenNetwork
-from raiden.utils.typing import ChannelID
+from raiden.utils.typing import ChannelID, TokenAmount
 from raiden_libs.types import Address
 
 
-# This test is boring right now, but should get more interesting as the routing
-# gets more options.
 def test_edge_weight(addresses):
     channel_id = ChannelID(1)
     participant1 = addresses[0]
     participant2 = addresses[1]
     settle_timeout = 15
     view = ChannelView(channel_id, participant1, participant2, settle_timeout)
+    amount = TokenAmount(int(1e18))  # one RDN
 
-    assert TokenNetwork.edge_weight(dict(), dict(view=view)) == 1
+    # no penalty
+    assert TokenNetwork.edge_weight(dict(), dict(view=view), amount=amount, fee_penalty=0) == 1
+
+    # channel already used in a previous route
+    assert (
+        TokenNetwork.edge_weight({channel_id: 2}, dict(view=view), amount=amount, fee_penalty=0)
+        == 3
+    )
+
+    # absolute fee
+    view.absolute_fee = int(0.03e18)
+    assert TokenNetwork.edge_weight(dict(), dict(view=view), amount=amount, fee_penalty=100) == 4
+
+    # relative fee
+    view.absolute_fee = 0
+    view.relative_fee = 0.01
+    assert TokenNetwork.edge_weight(dict(), dict(view=view), amount=amount, fee_penalty=100) == 2
 
 
 def test_routing_benchmark(token_network_model: TokenNetwork, populate_token_network_random: None):
-    value = 100
+    value = TokenAmount(100)
     G = token_network_model.G
     times = []
     start = time.time()
@@ -40,7 +54,7 @@ def test_routing_benchmark(token_network_model: TokenNetwork, populate_token_net
         fees = path_object['estimated_fee']
         for node1, node2 in zip(path[:-1], path[1:]):
             view: ChannelView = G[node1][node2]['view']
-            print('fee = ', view.mediation_fee, 'capacity = ', view.capacity)
+            print('fee = ', view.absolute_fee, 'capacity = ', view.capacity)
         print('fee sum = ', fees)
     print('Paths: ', paths)
     print('Mean runtime: ', sum(times) / len(times))
@@ -58,13 +72,13 @@ def test_routing_simple(
     view10: ChannelView = token_network_model.G[addresses[1]][addresses[0]]['view']
 
     assert view01.deposit == 100
-    assert isclose(view01.mediation_fee, 0)
+    assert view01.absolute_fee == 0
     assert view01.capacity == 90
     assert view10.capacity == 60
 
     # 0->2->3 is the shortest path, but has no capacity, so 0->1->4->3 is used
     paths = token_network_model.get_paths(
-        addresses[0], addresses[3], value=10, max_paths=1, hop_bias=1
+        addresses[0], addresses[3], value=TokenAmount(10), max_paths=1, hop_bias=1
     )
     assert len(paths) == 1
     assert paths[0] == {
@@ -74,7 +88,9 @@ def test_routing_simple(
 
     # Not connected.
     with pytest.raises(NetworkXNoPath):
-        token_network_model.get_paths(addresses[0], addresses[5], value=10, max_paths=1)
+        token_network_model.get_paths(
+            addresses[0], addresses[5], value=TokenAmount(10), max_paths=1
+        )
 
 
 def test_routing_result_order(
@@ -83,7 +99,7 @@ def test_routing_result_order(
     addresses: List[Address],
 ):
     paths = token_network_model.get_paths(
-        addresses[0], addresses[2], value=10, max_paths=5, hop_bias=1
+        addresses[0], addresses[2], value=TokenAmount(10), max_paths=5, hop_bias=1
     )
     # 5 paths requested, but only 1 is available
     assert len(paths) == 1
@@ -106,7 +122,7 @@ def test_diversity_penalty(
         paths = token_network_model.get_paths(
             addresses[0],
             addresses[8],
-            value=10,
+            value=TokenAmount(10),
             max_paths=5,
             hop_bias=1,
             diversity_penalty=diversity_penalty,
