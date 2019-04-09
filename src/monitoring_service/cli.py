@@ -1,6 +1,9 @@
+from typing import Dict
+
 import click
 import structlog
 from web3 import Web3
+from web3.contract import Contract
 
 from monitoring_service.constants import DEFAULT_REQUIRED_CONFIRMATIONS
 from monitoring_service.service import MonitoringService
@@ -36,7 +39,7 @@ def main(
     private_key: str,
     state_db: str,
     web3: Web3,
-    contracts: dict,
+    contracts: Dict[str, Contract],
     start_block: BlockNumber,
     confirmations: BlockNumber,
     min_reward: int,

@@ -1,5 +1,5 @@
 import sys
-from typing import Iterable, Tuple
+from typing import Dict, Iterable, Tuple
 
 import click
 import structlog
@@ -35,7 +35,7 @@ def main(
     private_key: str,
     state_db: str,
     web3: Web3,
-    contracts: dict,
+    contracts: Dict[str, Contract],
     start_block: BlockNumber,
     rdn_per_eth: float,
     expires_within: BlockNumber,
