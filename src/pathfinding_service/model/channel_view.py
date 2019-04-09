@@ -40,6 +40,8 @@ class ChannelView:
         self.settle_timeout = settle_timeout
         self.reveal_timeout = reveal_timeout
         self.update_nonce = 0
+        self.absolute_fee = 0
+        self.relative_fee: float = 0
 
     # TODO: define another function update_deposit
     def update_capacity(
@@ -69,6 +71,10 @@ class ChannelView:
     @property
     def capacity(self) -> TokenAmount:
         return self._capacity
+
+    def fee(self, amount: TokenAmount) -> int:
+        """Return the mediation fee for this channel when transferring the given amount"""
+        return int(self.absolute_fee + amount * self.relative_fee)
 
     def __repr__(self) -> str:
         return '<ChannelView from={} to={} capacity={}>'.format(

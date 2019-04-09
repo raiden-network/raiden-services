@@ -8,6 +8,7 @@ from networkx import DiGraph
 from pathfinding_service.config import (
     DEFAULT_SETTLE_TO_REVEAL_TIMEOUT_RATIO,
     DIVERSITY_PEN_DEFAULT,
+    FEE_PEN_DEFAULT,
     MAX_PATHS_PER_REQUEST,
 )
 from pathfinding_service.model.channel_view import ChannelView
@@ -156,9 +157,16 @@ class TokenNetwork:
         channel_view_from_partner.update_capacity(nonce=other_nonce, capacity=other_capacity)
 
     @staticmethod
-    def edge_weight(visited: Dict[ChannelID, float], attr: Dict[str, Any]) -> float:
+    def edge_weight(
+        visited: Dict[ChannelID, float],
+        attr: Dict[str, Any],
+        amount: TokenAmount,
+        fee_penalty: float,
+    ) -> float:
         view: ChannelView = attr['view']
-        return 1 + visited.get(view.channel_id, 0)
+        diversity_weight = visited.get(view.channel_id, 0)
+        fee_weight = view.fee(amount) / 1e18 * fee_penalty
+        return 1 + diversity_weight + fee_weight
 
     def check_path_constraints(self, value: int, path: List) -> bool:
         for node1, node2 in zip(path[:-1], path[1:]):
@@ -176,13 +184,18 @@ class TokenNetwork:
         self,
         source: Address,
         target: Address,
-        value: int,
+        value: TokenAmount,
         max_paths: int,
         diversity_penalty: float = DIVERSITY_PEN_DEFAULT,
-        hop_bias: float = 1,
+        fee_penalty: float = FEE_PEN_DEFAULT,
         **kwargs: Any,
     ) -> List[dict]:
-        assert hop_bias == 1, 'Only hop_bias 1 is supported'
+        """ Find best routes according to given preferences
+
+        value: Amount of transferred tokens. Used for capacity checks
+        diversity_penalty: One previously used channel is as bad as X more hops
+        fee_penalty: One RDN in fees is as bad as X more hops
+        """
         max_paths = min(max_paths, MAX_PATHS_PER_REQUEST)
         visited: Dict[ChannelID, float] = {}
         paths: List[List[Address]] = []
@@ -191,7 +204,7 @@ class TokenNetwork:
             # update edge weights
             for node1, node2 in self.G.edges():
                 edge = self.G[node1][node2]
-                edge['weight'] = self.edge_weight(visited, edge)
+                edge['weight'] = self.edge_weight(visited, edge, value, fee_penalty)
 
             # find next path
             all_paths = nx.shortest_simple_paths(self.G, source, target, weight='weight')
