@@ -230,7 +230,7 @@ class TokenNetwork:
         for path in paths:
             fee = 0
             for node1, node2 in zip(path[:-1], path[1:]):
-                fee += self.G[node1][node2]['view'].mediation_fee
+                fee += self.G[node1][node2]['view'].fee(value)
 
-            result.append(dict(path=path, estimated_fee=0))
+            result.append(dict(path=path, estimated_fee=fee))
         return result
