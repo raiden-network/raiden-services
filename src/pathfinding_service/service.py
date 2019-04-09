@@ -19,6 +19,7 @@ from raiden.utils.signer import recover
 from raiden.utils.typing import BlockNumber, ChainID
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
 from raiden_libs.blockchain import get_blockchain_events
+from raiden_libs.contract_info import CONTRACT_MANAGER
 from raiden_libs.events import (
     Event,
     ReceiveChannelClosedEvent,
@@ -132,7 +133,7 @@ class PathfindingService(gevent.Greenlet):
         # BCL return a new state and events related to channel lifecycle
         new_chain_state, events = get_blockchain_events(
             web3=self.web3,
-            contract_manager=self.contract_manager,
+            contract_manager=CONTRACT_MANAGER,
             chain_state=self.blockchain_state,
             to_block=last_block,
             query_ms=False,
