@@ -18,8 +18,7 @@ from raiden.constants import PATH_FINDING_BROADCASTING_ROOM, UINT256_MAX
 from raiden.messages import SignedMessage, UpdatePFS
 from raiden.utils.signer import recover
 from raiden.utils.typing import BlockNumber, ChainID
-from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY
-from raiden_contracts.constants import CONTRACT_USER_DEPOSIT
+from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
 from raiden_libs.blockchain import get_blockchain_events
 from raiden_libs.events import (
     Event,
