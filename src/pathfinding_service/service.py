@@ -114,11 +114,11 @@ class PathfindingService(gevent.Greenlet):
         while not self.is_running.is_set():
             last_confirmed_block = self.web3.eth.blockNumber - self.required_confirmations
 
-            last_query_interval_block = (
+            max_query_interval_end_block = (
                 self.blockchain_state.latest_known_block + MAX_FILTER_INTERVAL
             )
             # Limit the max number of blocks that is processed per iteration
-            last_block = min(last_confirmed_block, last_query_interval_block)
+            last_block = min(last_confirmed_block, max_query_interval_end_block)
 
             self._process_new_blocks(last_block)
 
