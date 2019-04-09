@@ -21,6 +21,7 @@ from pathfinding_service.config import (
     DEFAULT_API_PORT,
     DEFAULT_MAX_PATHS,
     MAX_AGE_OF_IOU_REQUESTS,
+    MAX_PATHS_PER_REQUEST,
     MIN_IOU_EXPIRY,
     UDC_SECURITY_MARGIN_FACTOR,
 )
@@ -76,7 +77,8 @@ class PathRequest:
     to: Address = field(metadata=dict(validate=is_checksum_address))
     value: TokenAmount = field(metadata=dict(validate=marshmallow.validate.Range(min=1)))
     max_paths: int = field(
-        default=DEFAULT_MAX_PATHS, metadata=dict(validate=marshmallow.validate.Range(min=1))
+        default=DEFAULT_MAX_PATHS,
+        metadata=dict(validate=marshmallow.validate.Range(min=1, max=MAX_PATHS_PER_REQUEST)),
     )
     iou: Optional[IOU] = None
     diversity_penalty: Optional[float] = None

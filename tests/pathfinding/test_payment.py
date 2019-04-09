@@ -62,22 +62,10 @@ def test_process_payment_errors(
     iou = make_iou(privkey, pfs.address)
     process_payment(iou, pfs)
 
-    # malformed
-    # iou = make_iou(privkey, pfs.address)
-    # del iou['amount']
-    # with pytest.raises(exceptions.InvalidRequest):
-    #     process_payment(iou, pfs)
-
     # wrong recipient
     iou = make_iou(privkey, get_random_address())
     with pytest.raises(exceptions.WrongIOURecipient):
         process_payment(iou, pfs)
-
-    # bad signature
-    # iou = make_iou(privkey, pfs.address)
-    # iou['signature'] = hex(int(iou['signature'], 16) + 1)
-    # with pytest.raises(exceptions.InvalidSignature):
-    #     process_payment(iou, pfs)
 
     # payment too low
     pfs.service_fee = 2

@@ -34,13 +34,12 @@ class ChannelView:
 
         self._deposit = deposit
         self._capacity = deposit
-        self.mediation_fee = FeeAmount(0)
         self.state = ChannelView.State.OPEN
         self.channel_id = channel_id
         self.settle_timeout = settle_timeout
         self.reveal_timeout = reveal_timeout
         self.update_nonce = 0
-        self.absolute_fee = 0
+        self.absolute_fee = FeeAmount(0)
         self.relative_fee: float = 0
 
     # TODO: define another function update_deposit
@@ -62,7 +61,7 @@ class ChannelView:
             if self._capacity is not None:
                 self._capacity = TokenAmount(self._capacity + deposit)
 
-        self.mediation_fee = mediation_fee
+        self.absolute_fee = mediation_fee
 
     @property
     def deposit(self) -> TokenAmount:
