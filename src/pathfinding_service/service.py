@@ -310,4 +310,5 @@ class PathfindingService(gevent.Greenlet):
             updating_capacity=message.updating_capacity,
             other_capacity=message.other_capacity,
             reveal_timeout=message.reveal_timeout,
+            mediation_fee=message.mediation_fee,
         )
