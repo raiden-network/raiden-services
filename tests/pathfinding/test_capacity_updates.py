@@ -13,14 +13,20 @@ from pathfinding_service.exceptions import InvalidCapacityUpdate
 from pathfinding_service.model import TokenNetwork
 from raiden.constants import UINT256_MAX
 from raiden.messages import UpdatePFS
-from raiden.utils import CanonicalIdentifier, typing
+from raiden.utils import CanonicalIdentifier
 from raiden.utils.signer import LocalSigner
-from raiden.utils.typing import ChainID, ChannelID, Nonce, TokenAmount
+from raiden.utils.typing import (
+    ChainID,
+    ChannelID,
+    Nonce,
+    TokenAmount,
+    TokenNetworkAddress as TokenNetworkAddressBytes,
+)
 from raiden_libs.types import Address, TokenNetworkAddress
 from raiden_libs.utils import private_key_to_address
 
 DEFAULT_TOKEN_NETWORK_ADDRESS = TokenNetworkAddress("0x6e46B62a245D9EE7758B8DdCCDD1B85fF56B9Bc9")
-DEFAULT_TOKEN_NETWORK_ADDRESS_BYTES = typing.TokenNetworkAddress(
+DEFAULT_TOKEN_NETWORK_ADDRESS_BYTES = TokenNetworkAddressBytes(
     decode_hex(DEFAULT_TOKEN_NETWORK_ADDRESS)
 )
 PRIVAT_KEY_EXAMPLE_1 = bytes([1] * 32)
@@ -33,7 +39,7 @@ def get_updatepfs_message(
     other_participant: Address,
     chain_identifier=ChainID(1),
     channel_identifier=ChannelID(0),
-    token_network_address: typing.TokenNetworkAddress = DEFAULT_TOKEN_NETWORK_ADDRESS_BYTES,
+    token_network_address: TokenNetworkAddressBytes = DEFAULT_TOKEN_NETWORK_ADDRESS_BYTES,
     updating_nonce=Nonce(1),
     other_nonce=Nonce(0),
     updating_capacity=TokenAmount(90),
@@ -85,7 +91,7 @@ def test_pfs_rejects_capacity_update_with_wrong_token_network_address(
     pathfinding_service_web3_mock.token_networks[token_network.address] = token_network
 
     message = get_updatepfs_message(
-        token_network_address=typing.TokenNetworkAddress(decode_hex("0x" + "1" * 40)),
+        token_network_address=TokenNetworkAddressBytes(decode_hex("0x" + "1" * 40)),
         updating_participant=private_key_to_address(PRIVAT_KEY_EXAMPLE_1),
         other_participant=private_key_to_address(PRIVAT_KEY_EXAMPLE_2),
         privkey_signer=PRIVAT_KEY_EXAMPLE_1,
