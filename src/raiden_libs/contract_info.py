@@ -45,13 +45,16 @@ def get_contract_addresses_and_start_block(
 
     # Get deployed addresses for those contracts which have no overwrites
     addresses = {
-        c: address_overwrites.get(c, contract_data['contracts'][c]['address']) for c in contracts
+        c: address_overwrites.get(c, Address(contract_data['contracts'][c]['address']))
+        for c in contracts
     }
 
     # Set start block to zero if any contract addresses are overwritten
     if any(address_overwrites.values()):
         start_block = BlockNumber(0)
     else:
-        start_block = max(0, min(contract_data['contracts'][c]['block_number'] for c in contracts))
+        start_block = BlockNumber(
+            max(0, min(contract_data['contracts'][c]['block_number'] for c in contracts))
+        )
 
     return addresses, start_block

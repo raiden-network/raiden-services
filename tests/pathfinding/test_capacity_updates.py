@@ -18,6 +18,7 @@ from raiden.utils.signer import LocalSigner
 from raiden.utils.typing import (
     ChainID,
     ChannelID,
+    FeeAmount,
     Nonce,
     TokenAmount,
     TokenNetworkAddress as TokenNetworkAddressBytes,
@@ -45,6 +46,7 @@ def get_updatepfs_message(
     updating_capacity=TokenAmount(90),
     other_capacity=TokenAmount(110),
     reveal_timeout: int = 2,
+    mediation_fee: FeeAmount = FeeAmount(0),
     privkey_signer: bytes = PRIVAT_KEY_EXAMPLE_1,
 ) -> UpdatePFS:
     updatepfs_message = UpdatePFS(
@@ -60,6 +62,7 @@ def get_updatepfs_message(
         updating_capacity=updating_capacity,
         other_capacity=other_capacity,
         reveal_timeout=reveal_timeout,
+        mediation_fee=mediation_fee,
     )
 
     updatepfs_message.sign(LocalSigner(privkey_signer))

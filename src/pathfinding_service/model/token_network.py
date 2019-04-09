@@ -11,7 +11,7 @@ from pathfinding_service.config import (
     MAX_PATHS_PER_REQUEST,
 )
 from pathfinding_service.model.channel_view import ChannelView
-from raiden.utils.typing import ChannelID
+from raiden.utils.typing import ChannelID, FeeAmount
 from raiden_libs.types import Address, TokenNetworkAddress
 
 log = structlog.get_logger(__name__)
@@ -138,6 +138,7 @@ class TokenNetwork:
         updating_capacity: int,
         other_capacity: int,
         reveal_timeout: int,
+        mediation_fee: FeeAmount,
     ) -> None:
         """ Sends Capacity Update to PFS including the reveal timeout """
         channel_view_to_partner, channel_view_from_partner = self.get_channel_views_for_partner(
@@ -147,7 +148,10 @@ class TokenNetwork:
         )
         # FIXME: Add updating only minimum if capacity updates conflict
         channel_view_to_partner.update_capacity(
-            nonce=updating_nonce, capacity=updating_capacity, reveal_timeout=reveal_timeout
+            nonce=updating_nonce,
+            capacity=updating_capacity,
+            reveal_timeout=reveal_timeout,
+            mediation_fee=mediation_fee,
         )
         channel_view_from_partner.update_capacity(nonce=other_nonce, capacity=other_capacity)
 
@@ -213,7 +217,7 @@ class TokenNetwork:
         for path in paths:
             fee = 0
             for node1, node2 in zip(path[:-1], path[1:]):
-                fee += self.G[node1][node2]['view'].relative_fee
+                fee += self.G[node1][node2]['view'].mediation_fee
 
             result.append(dict(path=path, estimated_fee=0))
         return result

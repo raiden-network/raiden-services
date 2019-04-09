@@ -10,7 +10,7 @@ from web3.contract import Contract
 
 from pathfinding_service import PathfindingService
 from pathfinding_service.model.token_network import TokenNetwork
-from raiden.utils.typing import ChannelID
+from raiden.utils.typing import ChannelID, FeeAmount
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
 from raiden_contracts.contract_manager import ContractManager
 from raiden_libs.types import Address
@@ -175,6 +175,7 @@ def populate_token_network_random(
             updating_capacity=deposit1,
             other_capacity=deposit2,
             reveal_timeout=2,
+            mediation_fee=FeeAmount(0),
         )
         token_network_model.handle_channel_balance_update_message(
             channel_identifier=channel_id,
@@ -185,6 +186,7 @@ def populate_token_network_random(
             updating_capacity=deposit1,
             other_capacity=deposit2,
             reveal_timeout=2,
+            mediation_fee=FeeAmount(0),
         )
 
 
@@ -232,6 +234,7 @@ def populate_token_network() -> Callable:
                 updating_capacity=p1_capacity,
                 other_capacity=p2_capacity,
                 reveal_timeout=p1_reveal_timeout,
+                mediation_fee=FeeAmount(0),
             )
             token_network.handle_channel_balance_update_message(
                 channel_identifier=ChannelID(channel_id),
@@ -242,6 +245,7 @@ def populate_token_network() -> Callable:
                 updating_capacity=p2_capacity,
                 other_capacity=p1_capacity,
                 reveal_timeout=p2_reveal_timeout,
+                mediation_fee=FeeAmount(0),
             )
 
     return populate_token_network

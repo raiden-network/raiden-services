@@ -2,8 +2,8 @@ from enum import Enum
 
 from eth_utils import is_checksum_address
 
-from pathfinding_service.config import DEFAULT_PERCENTAGE_FEE, DEFAULT_REVEAL_TIMEOUT
-from raiden.utils.typing import ChannelID
+from pathfinding_service.config import DEFAULT_REVEAL_TIMEOUT
+from raiden.utils.typing import ChannelID, FeeAmount
 from raiden_libs.types import Address
 
 
@@ -34,6 +34,7 @@ class ChannelView:
 
         self._deposit = deposit
         self._capacity = deposit
+        self.mediation_fee = FeeAmount(0)
         self.state = ChannelView.State.OPEN
         self.channel_id = channel_id
         self.settle_timeout = settle_timeout
@@ -42,7 +43,12 @@ class ChannelView:
 
     # TODO: define another function update_deposit
     def update_capacity(
-        self, nonce: int = 0, capacity: int = 0, reveal_timeout: int = None, deposit: int = None
+        self,
+        nonce: int = 0,
+        capacity: int = 0,
+        reveal_timeout: int = None,
+        deposit: int = None,
+        mediation_fee: FeeAmount = FeeAmount(0),
     ) -> None:
         self.update_nonce = nonce
         self._capacity = capacity
@@ -54,6 +60,8 @@ class ChannelView:
             if self._capacity is not None:
                 self._capacity += deposit
 
+        self.mediation_fee = mediation_fee
+
     @property
     def deposit(self) -> int:
         return self._deposit
@@ -61,10 +69,6 @@ class ChannelView:
     @property
     def capacity(self) -> int:
         return self._capacity
-
-    @property
-    def relative_fee(self) -> int:
-        return DEFAULT_PERCENTAGE_FEE
 
     def __repr__(self) -> str:
         return '<ChannelView from={} to={} capacity={}>'.format(
