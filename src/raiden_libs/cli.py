@@ -137,7 +137,11 @@ def blockchain_options(contracts: List[str], contracts_version: str = None) -> C
 
         def call_with_blockchain_info(**params: Any) -> Callable:
             address_overwrites = {
-                contract: params.pop(param) for contract, param in param_for_contract.items()
+                contract: value
+                for contract, value in (
+                    (contract, params.pop(param)) for contract, param in param_for_contract.items()
+                )
+                if value is not None
             }
             params['web3'], params['contracts'], params['start_block'] = connect_to_blockchain(
                 eth_rpc=params.pop('eth_rpc'),
