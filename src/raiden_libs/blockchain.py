@@ -8,18 +8,6 @@ from web3 import Web3
 from web3.contract import get_event_data
 from web3.utils.abi import filter_by_type
 
-from monitoring_service.events import (
-    Event,
-    ReceiveChannelClosedEvent,
-    ReceiveChannelNewDepositEvent,
-    ReceiveChannelOpenedEvent,
-    ReceiveChannelSettledEvent,
-    ReceiveMonitoringNewBalanceProofEvent,
-    ReceiveMonitoringRewardClaimedEvent,
-    ReceiveNonClosingBalanceProofUpdatedEvent,
-    ReceiveTokenNetworkCreatedEvent,
-    UpdatedHeadBlockEvent,
-)
 from monitoring_service.states import BlockchainState
 from raiden.utils.typing import ABI, BlockNumber
 from raiden_contracts.constants import (
@@ -31,6 +19,18 @@ from raiden_contracts.constants import (
     MonitoringServiceEvent,
 )
 from raiden_contracts.contract_manager import ContractManager
+from raiden_libs.events import (
+    Event,
+    ReceiveChannelClosedEvent,
+    ReceiveChannelNewDepositEvent,
+    ReceiveChannelOpenedEvent,
+    ReceiveChannelSettledEvent,
+    ReceiveMonitoringNewBalanceProofEvent,
+    ReceiveMonitoringRewardClaimedEvent,
+    ReceiveNonClosingBalanceProofUpdatedEvent,
+    ReceiveTokenNetworkCreatedEvent,
+    UpdatedHeadBlockEvent,
+)
 from raiden_libs.types import Address
 
 log = structlog.get_logger(__name__)
