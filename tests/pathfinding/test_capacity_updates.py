@@ -9,7 +9,6 @@ from unittest.mock import patch
 import pytest
 from eth_utils import decode_hex
 
-from pathfinding_service import PathfindingService
 from pathfinding_service.exceptions import InvalidCapacityUpdate
 from pathfinding_service.model import TokenNetwork
 from raiden.constants import UINT256_MAX

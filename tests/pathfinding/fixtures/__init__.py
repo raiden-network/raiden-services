@@ -1,3 +1,5 @@
+import pytest
+
 from pathfinding_service.model.token_network import TokenNetwork
 from raiden_libs.types import TokenNetworkAddress
 

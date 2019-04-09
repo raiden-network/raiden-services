@@ -22,8 +22,8 @@ from raiden_contracts.constants import (
     CONTRACT_USER_DEPOSIT,
     GAS_REQUIRED_FOR_MS_MONITOR,
 )
-from raiden_libs.contract_info import CONTRACT_MANAGER
 from raiden_libs.blockchain import get_blockchain_events
+from raiden_libs.contract_info import CONTRACT_MANAGER
 from raiden_libs.events import Event
 from raiden_libs.utils import private_key_to_address
 
