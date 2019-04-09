@@ -7,7 +7,6 @@ from web3 import Web3
 from web3.contract import Contract
 from web3.middleware import construct_sign_and_send_raw_middleware
 
-from monitoring_service.blockchain import get_blockchain_events
 from monitoring_service.constants import (
     DEFAULT_GAS_BUFFER_FACTOR,
     DEFAULT_GAS_CHECK_BLOCKS,
@@ -15,7 +14,6 @@ from monitoring_service.constants import (
     MAX_FILTER_INTERVAL,
 )
 from monitoring_service.database import Database
-from monitoring_service.events import Event
 from monitoring_service.handlers import HANDLERS, Context
 from raiden.utils.typing import BlockNumber
 from raiden_contracts.constants import (
@@ -25,6 +23,8 @@ from raiden_contracts.constants import (
     GAS_REQUIRED_FOR_MS_MONITOR,
 )
 from raiden_libs.contract_info import CONTRACT_MANAGER
+from raiden_libs.blockchain import get_blockchain_events
+from raiden_libs.events import Event
 from raiden_libs.utils import private_key_to_address
 
 log = structlog.get_logger(__name__)

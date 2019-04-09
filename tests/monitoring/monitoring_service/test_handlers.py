@@ -5,12 +5,6 @@ import pytest
 from monitoring_service.events import (
     ActionClaimRewardTriggeredEvent,
     ActionMonitoringTriggeredEvent,
-    Event,
-    ReceiveChannelClosedEvent,
-    ReceiveChannelOpenedEvent,
-    ReceiveChannelSettledEvent,
-    ReceiveMonitoringNewBalanceProofEvent,
-    ReceiveNonClosingBalanceProofUpdatedEvent,
 )
 from monitoring_service.handlers import (
     Context,
@@ -33,6 +27,14 @@ from monitoring_service.states import (
 from raiden.utils.typing import BlockNumber, ChannelID, Nonce, TokenAmount
 from raiden_contracts.constants import ChannelState
 from raiden_contracts.tests.utils import get_random_privkey
+from raiden_libs.events import (
+    Event,
+    ReceiveChannelClosedEvent,
+    ReceiveChannelOpenedEvent,
+    ReceiveChannelSettledEvent,
+    ReceiveMonitoringNewBalanceProofEvent,
+    ReceiveNonClosingBalanceProofUpdatedEvent,
+)
 from raiden_libs.types import Address, TokenNetworkAddress
 from raiden_libs.utils import private_key_to_address
 

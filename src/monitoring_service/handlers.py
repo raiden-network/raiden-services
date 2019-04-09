@@ -14,15 +14,7 @@ from monitoring_service.database import Database
 from monitoring_service.events import (
     ActionClaimRewardTriggeredEvent,
     ActionMonitoringTriggeredEvent,
-    Event,
-    ReceiveChannelClosedEvent,
-    ReceiveChannelOpenedEvent,
-    ReceiveChannelSettledEvent,
-    ReceiveMonitoringNewBalanceProofEvent,
-    ReceiveMonitoringRewardClaimedEvent,
-    ReceiveNonClosingBalanceProofUpdatedEvent,
     ScheduledEvent,
-    UpdatedHeadBlockEvent,
 )
 from monitoring_service.states import (
     Channel,
@@ -33,6 +25,16 @@ from monitoring_service.states import (
 from raiden.utils.typing import BlockNumber
 from raiden_contracts.constants import ChannelState
 from raiden_contracts.contract_manager import ContractManager
+from raiden_libs.events import (
+    Event,
+    ReceiveChannelClosedEvent,
+    ReceiveChannelOpenedEvent,
+    ReceiveChannelSettledEvent,
+    ReceiveMonitoringNewBalanceProofEvent,
+    ReceiveMonitoringRewardClaimedEvent,
+    ReceiveNonClosingBalanceProofUpdatedEvent,
+    UpdatedHeadBlockEvent,
+)
 
 log = structlog.get_logger(__name__)
 

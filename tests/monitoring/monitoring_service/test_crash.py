@@ -2,12 +2,7 @@ import os
 from typing import List
 from unittest.mock import Mock
 
-from monitoring_service.events import (
-    ActionMonitoringTriggeredEvent,
-    Event,
-    ReceiveChannelOpenedEvent,
-    UpdatedHeadBlockEvent,
-)
+from monitoring_service.events import ActionMonitoringTriggeredEvent
 from monitoring_service.service import MonitoringService
 from raiden.utils.typing import BlockNumber, ChannelID
 from raiden_contracts.constants import (
@@ -15,6 +10,7 @@ from raiden_contracts.constants import (
     CONTRACT_TOKEN_NETWORK_REGISTRY,
     CONTRACT_USER_DEPOSIT,
 )
+from raiden_libs.events import Event, ReceiveChannelOpenedEvent, UpdatedHeadBlockEvent
 
 
 class MockBlockchainListener:  # pylint: disable=too-few-public-methods

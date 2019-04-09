@@ -1,9 +1,9 @@
 from web3 import Web3
 
-from monitoring_service.blockchain import query_blockchain_events
 from raiden.utils.typing import BlockNumber
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, EVENT_TOKEN_NETWORK_CREATED
 from raiden_contracts.contract_manager import ContractManager
+from raiden_libs.blockchain import query_blockchain_events
 from raiden_libs.types import Address
 
 

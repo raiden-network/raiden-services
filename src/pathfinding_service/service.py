@@ -9,15 +9,7 @@ from eth_utils import to_checksum_address
 from web3 import Web3
 from web3.contract import Contract
 
-from monitoring_service.blockchain import get_blockchain_events
 from monitoring_service.constants import MAX_FILTER_INTERVAL
-from monitoring_service.events import (
-    Event,
-    ReceiveChannelClosedEvent,
-    ReceiveChannelNewDepositEvent,
-    ReceiveChannelOpenedEvent,
-    ReceiveTokenNetworkCreatedEvent,
-)
 from monitoring_service.states import BlockchainState
 from pathfinding_service.database import PFSDatabase
 from pathfinding_service.exceptions import InvalidCapacityUpdate
@@ -26,7 +18,16 @@ from raiden.constants import PATH_FINDING_BROADCASTING_ROOM, UINT256_MAX
 from raiden.messages import SignedMessage, UpdatePFS
 from raiden.utils.signer import recover
 from raiden.utils.typing import BlockNumber, ChainID
-from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
+from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY
+from raiden_contracts.constants import CONTRACT_USER_DEPOSIT
+from raiden_libs.blockchain import get_blockchain_events
+from raiden_libs.events import (
+    Event,
+    ReceiveChannelClosedEvent,
+    ReceiveChannelNewDepositEvent,
+    ReceiveChannelOpenedEvent,
+    ReceiveTokenNetworkCreatedEvent,
+)
 from raiden_libs.gevent_error_handler import register_error_handler
 from raiden_libs.matrix import MatrixListener
 from raiden_libs.types import Address, TokenNetworkAddress
