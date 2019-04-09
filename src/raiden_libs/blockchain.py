@@ -8,7 +8,6 @@ from web3 import Web3
 from web3.contract import get_event_data
 from web3.utils.abi import filter_by_type
 
-from monitoring_service.states import BlockchainState
 from raiden.utils.typing import ABI, BlockNumber
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
@@ -31,6 +30,7 @@ from raiden_libs.events import (
     ReceiveTokenNetworkCreatedEvent,
     UpdatedHeadBlockEvent,
 )
+from raiden_libs.states import BlockchainState
 from raiden_libs.types import Address
 
 log = structlog.get_logger(__name__)

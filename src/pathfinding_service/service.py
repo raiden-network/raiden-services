@@ -10,7 +10,6 @@ from web3 import Web3
 from web3.contract import Contract
 
 from monitoring_service.constants import MAX_FILTER_INTERVAL
-from monitoring_service.states import BlockchainState
 from pathfinding_service.database import PFSDatabase
 from pathfinding_service.exceptions import InvalidCapacityUpdate
 from pathfinding_service.model import TokenNetwork
@@ -29,6 +28,7 @@ from raiden_libs.events import (
 )
 from raiden_libs.gevent_error_handler import register_error_handler
 from raiden_libs.matrix import MatrixListener
+from raiden_libs.states import BlockchainState
 from raiden_libs.types import Address, TokenNetworkAddress
 from raiden_libs.utils import private_key_to_address
 
