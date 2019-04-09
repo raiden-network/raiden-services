@@ -5,9 +5,12 @@ from gevent import monkey, config  # isort:skip # noqa
 config.resolver = ['dnspython', 'ares', 'block']  # noqa
 monkey.patch_all()  # isort:skip # noqa
 
+from typing import Dict
+
 import click
 import structlog
 from web3 import Web3
+from web3.contract import Contract
 
 from pathfinding_service import PathfindingService
 from pathfinding_service.api import ServiceApi
@@ -45,7 +48,7 @@ def main(
     private_key: str,
     state_db: str,
     web3: Web3,
-    contracts: dict,
+    contracts: Dict[str, Contract],
     start_block: BlockNumber,
     confirmations: int,
     host: str,
