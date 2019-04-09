@@ -223,7 +223,7 @@ def test_get_iou(
     assert response.json()['last_iou'] == iou_dict
 
     # Invalid signatures must fail
-    params['signature'] = hex(int(params['signature'], 16) + 1)
+    params['signature'] = encode_hex((int(params['signature'], 16) + 1).to_bytes(65, 'big'))
     response = requests.get(url, params=params)
     assert response.status_code == 400, response.json()
     assert response.json()['error_code'] == exceptions.InvalidSignature.error_code
