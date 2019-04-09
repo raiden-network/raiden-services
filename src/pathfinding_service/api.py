@@ -79,6 +79,8 @@ class PathRequest:
         default=DEFAULT_MAX_PATHS, metadata=dict(validate=marshmallow.validate.Range(min=1))
     )
     iou: Optional[IOU] = None
+    diversity_penalty: Optional[float] = None
+    fee_penalty: Optional[float] = None
     Schema: ClassVar[Type[marshmallow.Schema]]
 
 
@@ -103,11 +105,19 @@ class PathsResource(PathfinderResource):
         assert token_network, 'Requested token network cannot be found'
 
         try:
+            # only optional args if not None, so we can use defaults
+            optional_args = {}
+            for arg in ['diversity_penalty', 'fee_penalty']:
+                value = getattr(path_req, arg)
+                if value is not None:
+                    optional_args[arg] = value
+
             paths = token_network.get_paths(
                 source=path_req.from_,
                 target=path_req.to,
                 value=path_req.value,
                 max_paths=path_req.max_paths,
+                **optional_args,
             )
         except (NetworkXNoPath, NodeNotFound):
             return (
