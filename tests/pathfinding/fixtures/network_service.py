@@ -8,8 +8,8 @@ from tests.pathfinding.config import NUMBER_OF_CHANNELS
 from web3 import Web3
 from web3.contract import Contract
 
-from pathfinding_service import PathfindingService
 from pathfinding_service.model.token_network import TokenNetwork
+from pathfinding_service.service import PathfindingService
 from raiden.utils.typing import ChannelID, FeeAmount, Nonce, TokenAmount
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
 from raiden_contracts.contract_manager import ContractManager
