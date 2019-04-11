@@ -12,9 +12,9 @@ import structlog
 from web3 import Web3
 from web3.contract import Contract
 
-from pathfinding_service import PathfindingService
 from pathfinding_service.api import ServiceApi
 from pathfinding_service.config import DEFAULT_API_HOST, DEFAULT_POLL_INTERVALL
+from pathfinding_service.service import PathfindingService
 from raiden.utils.typing import BlockNumber
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
 from raiden_libs.cli import blockchain_options, common_options

@@ -9,9 +9,9 @@ from unittest.mock import Mock, patch
 
 import gevent
 
-from pathfinding_service import PathfindingService
 from pathfinding_service.config import DEFAULT_REVEAL_TIMEOUT
 from pathfinding_service.model import ChannelView
+from pathfinding_service.service import PathfindingService
 from raiden.utils.typing import BlockNumber
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
 from raiden_contracts.contract_manager import ContractManager

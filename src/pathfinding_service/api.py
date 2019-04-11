@@ -14,7 +14,6 @@ from networkx.exception import NetworkXNoPath, NodeNotFound
 from web3 import Web3
 
 import pathfinding_service.exceptions as exceptions
-from pathfinding_service import PathfindingService
 from pathfinding_service.config import (
     API_PATH,
     DEFAULT_API_HOST,
@@ -26,6 +25,7 @@ from pathfinding_service.config import (
     UDC_SECURITY_MARGIN_FACTOR,
 )
 from pathfinding_service.model import IOU
+from pathfinding_service.service import PathfindingService
 from raiden.exceptions import InvalidSignature
 from raiden.utils.signer import recover
 from raiden.utils.typing import Signature, TokenAmount
