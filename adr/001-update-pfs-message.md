@@ -26,7 +26,7 @@ The nodes can decide themselves whether to send balance and fee updates to the P
 
 ## Decision Outcome
 
-Chosen option: "Option 2", because it allows for more privacy while offering only smaller safe capacities in the worst case.
+Chosen option: "Option 2", because it allows for more privacy while offering only smaller safe capacities in the worst case. The honest node always submits the real capacity, then the PFS will use min(real, dishonest_value). So the PFS will always assume a value <= the real value. There's no incentive to decrease the capacity of my channel in either direction, so there's no incentive to lie.
 
 ### Positive Consequences
 
@@ -39,7 +39,7 @@ Chosen option: "Option 2", because it allows for more privacy while offering onl
 
 ## Detailed analysis
 
-To look at the feasibility of both design one needs to look at three different scenarios for the channel participants:
+To look at the feasibility of both designs one needs to look at three different scenarios for the channel participants:
 1. Both participants are well behaving.
 2. Both participants are malicious.
 3. One of the participants is malicious.
@@ -51,13 +51,13 @@ In this case the PFS learns about the correct channel capacities in both message
 ### Case 2: Two malicious participants
 
 In this case the PFS can not do anything to find out about the malicious behaviour. However, we assume that not all participants in the network are malicious.
-Therefore there must exist a channel, where case 3 is active.
+Therefore, a channel must exit where case 3 is active
 
 ### Case 3: One malicious participant
 
-Thesis: Neither in Option 1 nor in Option 2 there is a economic incentive providing an incorrect message.
+Thesis: Neither in Option 1 nor in Option 2 there is aa economic incentive providing an incorrect message.
 
-Definitions: H is honest, M is malicious, H_A is deposit of H, T_H is the transferred amount of H, C_H represents the capacity of H's channel side (variables for M are equially defined)
+Definitions: H is honest, M is malicious, D_H is deposit of H, T_H is the transferred amount of H, C_H represents the capacity of H's channel side (variables for M are equally defined)
 
 Looking at Option 1 - broadcasting balance proofs - B never has an incentive to send an older balance proof, as the transferred amount is monotonically increasing. That means for every balance proof older than the latest, T_A would be smaller and therefore C_B as well. So B would artifically decrease her own capacity which does not lead to any economical incentive. 
 
