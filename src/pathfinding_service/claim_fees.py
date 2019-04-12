@@ -8,7 +8,7 @@ from web3.contract import Contract
 
 from pathfinding_service.database import PFSDatabase
 from pathfinding_service.model import IOU
-from raiden.utils.typing import BlockNumber, TokenAmount
+from raiden.utils.typing import BlockNumber, ChainID, TokenAmount
 from raiden_contracts.constants import CONTRACT_ONE_TO_N
 from raiden_libs.cli import blockchain_options, common_options
 from raiden_libs.utils import private_key_to_address
@@ -41,7 +41,8 @@ def main(
     expires_within: BlockNumber,
 ) -> None:
     pfs_address = private_key_to_address(private_key)
-    database = PFSDatabase(filename=state_db, pfs_address=pfs_address)
+    chain_id = ChainID(int(web3.net.version))
+    database = PFSDatabase(filename=state_db, chain_id=chain_id, pfs_address=pfs_address)
 
     one_to_n_contract = contracts[CONTRACT_ONE_TO_N]
 

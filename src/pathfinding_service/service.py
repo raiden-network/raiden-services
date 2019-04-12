@@ -70,6 +70,7 @@ class PathfindingService(gevent.Greenlet):
 
         self.web3 = web3
         self.registry_address = contracts[CONTRACT_TOKEN_NETWORK_REGISTRY].address
+        self.user_deposit_contract = contracts[CONTRACT_USER_DEPOSIT]
         self.sync_start_block = sync_start_block
         self.required_confirmations = required_confirmations
         self.poll_interval = poll_interval
@@ -80,8 +81,15 @@ class PathfindingService(gevent.Greenlet):
 
         self.is_running = gevent.event.Event()
         self.token_networks: Dict[TokenNetworkAddress, TokenNetwork] = {}
-        self.database = PFSDatabase(filename=db_filename, pfs_address=self.address)
-        self.user_deposit_contract = contracts[CONTRACT_USER_DEPOSIT]
+        self.database = PFSDatabase(
+            filename=db_filename,
+            pfs_address=self.address,
+            sync_start_block=sync_start_block,
+            token_network_registry_address=self.registry_address,
+            chain_id=self.chain_id,
+            user_deposit_contract_address=self.user_deposit_contract.address,
+            allow_create=True,
+        )
 
         self.last_known_block = 0
         self.blockchain_state = BlockchainState(
@@ -149,7 +157,7 @@ class PathfindingService(gevent.Greenlet):
         )
         if token_networks_changed:
             self.blockchain_state.token_network_addresses = new_chain_state.token_network_addresses
-        #     self.context.db.update_state(self.context.ms_state)
+            self.database.update_blockchain_state(new_chain_state)
 
         # Now set the updated chain state to the context, will be stored later
         self.blockchain_state = new_chain_state

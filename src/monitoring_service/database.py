@@ -17,40 +17,20 @@ from monitoring_service.states import (
     OnChainUpdateStatus,
 )
 from raiden.utils.typing import BlockNumber
-from raiden_libs.states import BlockchainState
+from raiden_libs.database import BaseDatabase
 from raiden_libs.types import Address
 
 SubEvent = Union[ActionMonitoringTriggeredEvent, ActionClaimRewardTriggeredEvent]
 
 log = structlog.get_logger(__name__)
-SCHEMA_FILENAME = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'schema.sql')
 EVENT_ID_TYPE_MAP = {0: ActionMonitoringTriggeredEvent, 1: ActionClaimRewardTriggeredEvent}
 EVENT_TYPE_ID_MAP = {v: k for k, v in EVENT_ID_TYPE_MAP.items()}
 
 
-def convert_hex(raw: bytes) -> int:
-    return int(raw, 16)
-
-
-sqlite3.register_converter('HEX_INT', convert_hex)
-
-
-class SharedDatabase:
+class SharedDatabase(BaseDatabase):
     """ DB shared by MS and request collector """
 
-    def __init__(self, filename: str, allow_create: bool = False):
-        log.info('Opening database', filename=filename)
-        if filename != ':memory:' and os.path.dirname(filename):
-            os.makedirs(os.path.dirname(filename), exist_ok=True)
-        mode = 'rwc' if allow_create else 'rw'
-        self.conn = sqlite3.connect(
-            f'file:{filename}?mode={mode}',
-            detect_types=sqlite3.PARSE_DECLTYPES,
-            uri=True,
-            isolation_level=None,  # Disable sqlite3 module’s implicit transaction management
-        )
-        self.conn.row_factory = sqlite3.Row
-        self.conn.execute("PRAGMA foreign_keys = ON")
+    schema_filename = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'schema.sql')
 
     def upsert_monitor_request(self, request: MonitorRequest) -> None:
         values = [
@@ -223,20 +203,8 @@ class SharedDatabase:
         """ Load MS state from db or return a new empty state if not saved one is present
         """
         blockchain = self.conn.execute("SELECT * FROM blockchain").fetchone()
-        token_network_addresses = [
-            row[0] for row in self.conn.execute("SELECT address FROM token_network")
-        ]
-        latest_known_block = blockchain['latest_known_block']
-
-        chain_state = BlockchainState(
-            chain_id=blockchain['chain_id'],
-            token_network_registry_address=blockchain['token_network_registry_address'],
-            monitor_contract_address=blockchain['monitor_contract_address'],
-            latest_known_block=latest_known_block,
-            token_network_addresses=token_network_addresses,
-        )
         ms_state = MonitoringServiceState(
-            blockchain_state=chain_state, address=blockchain['receiver']
+            blockchain_state=self.get_blockchain_state(), address=blockchain['receiver']
         )
         return ms_state
 
@@ -254,62 +222,10 @@ class Database(SharedDatabase):
         sync_start_block: BlockNumber = BlockNumber(0),
     ) -> None:
         super(Database, self).__init__(filename, allow_create=True)
-        self._setup(chain_id, msc_address, registry_address, receiver, sync_start_block)
-
-    def _setup(
-        self,
-        chain_id: int,
-        msc_address: str,
-        registry_address: str,
-        receiver: str,
-        sync_start_block: BlockNumber,
-    ) -> None:
-        """ Make sure that the db is initialized an matches the given settings """
-        assert chain_id >= 0
-        assert is_checksum_address(msc_address)
-        assert is_checksum_address(registry_address)
-        assert is_checksum_address(receiver)
-
-        initialized = self.conn.execute(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name='blockchain'"
-        ).fetchone()
-        settings = [chain_id, msc_address, registry_address, receiver]
-
-        if initialized:
-            old_settings = self.conn.execute(
-                """
-                SELECT chain_id,
-                       monitor_contract_address,
-                       token_network_registry_address,
-                       receiver
-                FROM blockchain
-            """
-            ).fetchone()
-            for name, old, new in zip(old_settings.keys(), old_settings, settings):
-                assert old == new, f'DB was created with {name}={old}, got {new}!'
-        else:
-            # create db schema
-            with open(SCHEMA_FILENAME) as schema_file:
-                self.conn.executescript(schema_file.read())
-            self.conn.execute(
-                """
-                UPDATE blockchain
-                SET chain_id = ?,
-                    monitor_contract_address = ?,
-                    token_network_registry_address = ?,
-                    receiver = ?,
-                    latest_known_block = ?
-            """,
-                settings + [sync_start_block],
-            )
-
-    def update_state(self, state: MonitoringServiceState) -> None:
-        self.conn.execute(
-            "UPDATE blockchain SET latest_known_block = ?",
-            [state.blockchain_state.latest_known_block],
-        )
-        # assumes that token_networks are not removed
-        self.conn.executemany(
-            "INSERT OR REPLACE INTO token_network VALUES (?)",
-            [[address] for address in state.blockchain_state.token_network_addresses],
+        self._setup(
+            chain_id=chain_id,
+            monitor_contract_address=msc_address,
+            token_network_registry_address=registry_address,
+            receiver=receiver,
+            sync_start_block=sync_start_block,
         )
