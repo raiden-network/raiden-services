@@ -293,8 +293,8 @@ def pathfinding_service_mock(
         pathfinding_service = PathfindingService(
             web3=web3_mock,
             contracts={
-                CONTRACT_TOKEN_NETWORK_REGISTRY: Mock(address='0x1234'),
-                CONTRACT_USER_DEPOSIT: Mock(),
+                CONTRACT_TOKEN_NETWORK_REGISTRY: Mock(address='0x' + '9' * 40),
+                CONTRACT_USER_DEPOSIT: Mock(address='0x' + '8' * 40),
             },
             private_key='3a1076bf45ab87712ad64ccb3b10217737f7faacbf2872e88fdd9a537d8fe266',
             db_filename=':memory:',
@@ -315,7 +315,7 @@ def pathfinding_service_web3_mock(
         pathfinding_service = PathfindingService(
             web3=web3,
             contracts={
-                CONTRACT_TOKEN_NETWORK_REGISTRY: Mock(),
+                CONTRACT_TOKEN_NETWORK_REGISTRY: Mock(address='0x' + '9' * 40),
                 CONTRACT_USER_DEPOSIT: user_deposit_contract,
             },
             private_key='3a1076bf45ab87712ad64ccb3b10217737f7faacbf2872e88fdd9a537d8fe266',

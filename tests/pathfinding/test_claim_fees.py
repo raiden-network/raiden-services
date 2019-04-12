@@ -88,6 +88,7 @@ def test_claim_fees(
 @pytest.fixture
 def mock_connect_to_blockchain(monkeypatch):
     web3_mock = Mock()
+    web3_mock.net.version = 1
     web3_mock.eth.blockNumber = 1
     connect_mock = Mock(return_value=(web3_mock, MagicMock(), Mock()))
     monkeypatch.setattr('raiden_libs.cli.connect_to_blockchain', connect_mock)
@@ -96,5 +97,7 @@ def mock_connect_to_blockchain(monkeypatch):
 @pytest.mark.usefixtures('mock_connect_to_blockchain')
 def test_cli(default_cli_args):
     runner = CliRunner()
-    result = runner.invoke(main, default_cli_args, catch_exceptions=False)
+    result = runner.invoke(
+        main, default_cli_args + ['--state-db=:memory:'], catch_exceptions=False
+    )
     assert result.exit_code == 0, result.output

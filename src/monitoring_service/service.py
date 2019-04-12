@@ -152,7 +152,7 @@ class MonitoringService:  # pylint: disable=too-few-public-methods
             self.context.ms_state.blockchain_state.token_network_addresses = (
                 new_chain_state.token_network_addresses
             )
-            self.context.db.update_state(self.context.ms_state)
+            self.context.db.update_blockchain_state(self.context.ms_state.blockchain_state)
 
         # Now set the updated chain state to the context, will be stored later
         self.context.ms_state.blockchain_state = new_chain_state

@@ -315,8 +315,9 @@ def monitor_reward_claim_event_handler(event: Event, context: Context) -> None:
 def updated_head_block_event_handler(event: Event, context: Context) -> None:
     """ Triggers commit of the new block number. """
     assert isinstance(event, UpdatedHeadBlockEvent)
-    context.ms_state.blockchain_state.latest_known_block = event.head_block_number
-    context.db.update_state(context.ms_state)
+    blockchain_state = context.ms_state.blockchain_state
+    blockchain_state.latest_known_block = event.head_block_number
+    context.db.update_blockchain_state(blockchain_state)
 
 
 def _is_mr_valid(monitor_request: MonitorRequest, channel: Channel) -> bool:

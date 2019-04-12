@@ -1,62 +1,38 @@
 import os
-import sqlite3
 from typing import Iterator, Optional
 
 import structlog
 
 from pathfinding_service.model import IOU
 from raiden.utils.typing import BlockNumber, TokenAmount
+from raiden_libs.database import BaseDatabase, hex256
 from raiden_libs.types import Address
 
 log = structlog.get_logger(__name__)
-SCHEMA_FILENAME = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'schema.sql')
 
 
-def convert_hex(raw: bytes) -> int:
-    return int(raw, 16)
-
-
-sqlite3.register_converter('HEX_INT', convert_hex)
-
-
-def hex256(x: int) -> str:
-    """Hex encodes values up to 256 bits into a fixed length
-
-    By including this amount of leading zeros in the hex string, lexicographic
-    and numeric ordering are identical. This facilitates working with these
-    numbers in the database without native uint256 support.
-    """
-    return '0x{:064x}'.format(x)
-
-
-class PFSDatabase:
+class PFSDatabase(BaseDatabase):
     """ Store data that needs to persist between PFS restarts """
 
-    def __init__(self, filename: str, pfs_address: Address):
-        log.info('Opening database at ' + filename)
-        if filename != ':memory:' and os.path.dirname(filename):
-            os.makedirs(os.path.dirname(filename), exist_ok=True)
-        self.conn = sqlite3.connect(
-            filename,
-            detect_types=sqlite3.PARSE_DECLTYPES,
-            isolation_level=None,  # Disable sqlite3 module’s implicit transaction management
-        )
-        self.conn.row_factory = sqlite3.Row
-        self.conn.execute("PRAGMA foreign_keys = ON")
+    schema_filename = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'schema.sql')
+
+    def __init__(
+        self,
+        filename: str,
+        chain_id: int,
+        pfs_address: Address,
+        sync_start_block: BlockNumber = BlockNumber(0),
+        allow_create: bool = False,
+        **contract_addresses: Address,
+    ):
+        super(PFSDatabase, self).__init__(filename, allow_create=allow_create)
         self.pfs_address = pfs_address
-        self._setup()
-
-    def _setup(self) -> None:
-        """ Make sure that the db is initialized """
-        initialized = self.conn.execute(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name='iou'"
-        ).fetchone()
-
-        if not initialized:
-            # create db schema
-            with self.conn:
-                with open(SCHEMA_FILENAME) as schema_file:
-                    self.conn.executescript(schema_file.read())
+        self._setup(
+            chain_id=chain_id,
+            receiver=pfs_address,
+            sync_start_block=sync_start_block,
+            **contract_addresses,
+        )
 
     def upsert_iou(self, iou: IOU) -> None:
         iou_dict = IOU.Schema(strict=True).dump(iou)[0]
