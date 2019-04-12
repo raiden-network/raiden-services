@@ -23,6 +23,70 @@ ID_123 = 123
 
 
 #
+# tests for /_debug endpoint
+#
+
+
+def test_get_paths_via_debug_endpoint(
+    api_sut: ServiceApi, api_url: str, addresses: List[Address], token_network_model: TokenNetwork
+):
+    url = api_url + f'/{token_network_model.address}/paths'
+    url_debug = api_url + f'/_debug/routes/{token_network_model.address}/{addresses[0]}'
+    url_debug_incl_requested_target = (
+        api_url + f'/_debug/routes/{token_network_model.address}/{addresses[0]}/{addresses[2]}'
+    )
+    url_debug_incl_unrequested_target = (
+        api_url + f'/_debug/routes/{token_network_model.address}/{addresses[0]}/{addresses[3]}'
+    )
+
+    data = {'from': addresses[0], 'to': addresses[2], 'value': 10, 'max_paths': DEFAULT_MAX_PATHS}
+    response = requests.post(url, json=data)
+    assert response.status_code == 200
+    paths = response.json()['result']
+    assert len(paths) == 1
+    assert paths == [{'path': [addresses[0], addresses[1], addresses[2]], 'estimated_fee': 0}]
+
+    # now there must be a debug endpoint for that specific route
+    response_debug = requests.get(url_debug)
+    assert response_debug.status_code == 200
+    request_count = response_debug.json()['request_count']
+    assert request_count == 1
+    responses = response_debug.json()['responses']
+    assert responses == [
+        {
+            'source': addresses[0],
+            'target': addresses[2],
+            'routes': [{'path': [addresses[0], addresses[1], addresses[2]], 'estimated_fee': 0}],
+        }
+    ]
+
+    # now there must be a debug endpoint for that specific route and that specific target
+    response_debug_incl_target = requests.get(url_debug_incl_requested_target)
+    assert response_debug_incl_target.status_code == 200
+    request_count = response_debug_incl_target.json()['request_count']
+    assert request_count == 1
+    responses = response_debug.json()['responses']
+    assert responses == [
+        {
+            'source': addresses[0],
+            'target': addresses[2],
+            'routes': [{'path': [addresses[0], addresses[1], addresses[2]], 'estimated_fee': 0}],
+        }
+    ]
+
+    # when requesting info for a target that was no path requested for
+    print(addresses)
+    response_debug_incl_unrequested_target = requests.get(url_debug_incl_unrequested_target)
+    assert response_debug_incl_unrequested_target.status_code == 200
+    request_count = response_debug_incl_unrequested_target.json()['request_count']
+    assert request_count == 0
+    responses = response_debug_incl_unrequested_target.json()['responses']
+    assert responses == []
+    # kill all running greenlets
+    gevent.killall([obj for obj in gc.get_objects() if isinstance(obj, gevent.Greenlet)])
+
+
+#
 # tests for /paths endpoint
 #
 def test_get_paths_validation(
@@ -108,7 +172,8 @@ def test_get_paths_path_validation(api_sut: ServiceApi, api_url: str):
     assert response.status_code == 400
     assert response.json()['error_code'] == exceptions.UnsupportedTokenNetwork.error_code
 
-    # killen aller greenlets
+    # kill all running greenlets
+
     gevent.killall([obj for obj in gc.get_objects() if isinstance(obj, gevent.Greenlet)])
 
 
@@ -140,7 +205,7 @@ def test_get_paths(
         assert response.status_code == 404
         assert response.json()['error_code'] == exceptions.NoRouteFound.error_code
 
-    # killen aller greenlets
+    # kill all running greenlets
     gevent.killall([obj for obj in gc.get_objects() if isinstance(obj, gevent.Greenlet)])
 
 
@@ -165,7 +230,7 @@ def test_get_info(api_sut: ServiceApi, api_url: str, pathfinding_service_mock):
         'operator': 'PLACEHOLDER FOR PATHFINDER OPERATOR',
         'message': 'PLACEHOLDER FOR ADDITIONAL MESSAGE BY THE PFS',
     }
-    # killen aller greenlets
+    # kill all running greenlets
     gevent.killall([obj for obj in gc.get_objects() if isinstance(obj, gevent.Greenlet)])
 
 

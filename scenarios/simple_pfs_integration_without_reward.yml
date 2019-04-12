@@ -6,6 +6,7 @@ settings:
   services:
     pfs:
       url: https://pfs-kovan.services-dev.raiden.network
+      # use http://localhost:6000 when starting the pfs locally
     udc:
       enable: true
       token:
@@ -24,6 +25,7 @@ nodes:
     environment-type: development
     routing-mode: pfs
     pathfinding-max-paths: 5
+    pathfinding-eth-address: "0x308a33011c45bfa0a801fcd16100e80629b25e1f"
 
 
 scenario:

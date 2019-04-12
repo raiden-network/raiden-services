@@ -1,3 +1,4 @@
+import collections
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import ClassVar, Dict, List, Optional, Tuple, Type, TypeVar
@@ -35,12 +36,14 @@ from raiden_libs.types import Address, TokenNetworkAddress
 
 log = structlog.get_logger(__name__)
 T = TypeVar('T')
+# list stores max 200 last requests
+last_requests: collections.deque = collections.deque([], maxlen=200)
 
 
 class ApiWithErrorHandler(Api):
     def handle_error(self, e: exceptions.ApiException) -> Response:
         return self.make_response(
-            {'errors': e.msg, 'error_code': e.error_code, 'error_details': e.error_details},
+            {"errors": e.msg, "error_code": e.error_code, "error_details": e.error_details},
             e.http_code,
         )
 
@@ -79,7 +82,7 @@ class PathfinderResource(Resource):
 class PathRequest:
     """A HTTP request to PathsResource"""
 
-    from_: Address = field(metadata=dict(load_from='from', validate=is_checksum_address))
+    from_: Address = field(metadata=dict(load_from="from", validate=is_checksum_address))
     to: Address = field(metadata=dict(validate=is_checksum_address))
     value: TokenAmount = field(metadata=dict(validate=marshmallow.validate.Range(min=1)))
     max_paths: int = field(
@@ -113,9 +116,28 @@ class PathsResource(PathfinderResource):
                 **optional_args,
             )
         except (NetworkXNoPath, NodeNotFound):
+            # this is for assertion via the scenario player
+            last_requests.append(
+                dict(
+                    token_network_address=token_network_address,
+                    source=path_req.from_,
+                    target=path_req.to,
+                    routes=[],
+                )
+            )
             raise exceptions.NoRouteFound(from_=path_req.from_, to=path_req.to)
 
-        return {'result': paths}, 200
+        # this is for assertion via the scenario player
+        last_requests.append(
+            dict(
+                token_network_address=token_network_address,
+                source=path_req.from_,
+                target=path_req.to,
+                routes=paths,
+            )
+        )
+
+        return {"result": paths}, 200
 
 
 def process_payment(iou: Optional[IOU], pathfinding_service: PathfindingService) -> None:
@@ -171,7 +193,7 @@ class IOURequest:
     sender: Address
     receiver: Address
     timestamp: datetime
-    timestamp_str: str = field(metadata={'load_from': 'timestamp'})
+    timestamp_str: str = field(metadata={"load_from": "timestamp"})
     signature: Signature = field(metadata={"marshmallow_field": HexedBytes()})
     Schema: ClassVar[Type[marshmallow.Schema]]
 
@@ -209,28 +231,52 @@ class IOUResource(PathfinderResource):
 
 
 class InfoResource(PathfinderResource):
-    version = pkg_resources.get_distribution('raiden-services').version
+    version = pkg_resources.get_distribution("raiden-services").version
 
     def get(self) -> Tuple[dict, int]:
         price = 0
-        settings = 'PLACEHOLDER FOR PATHFINDER SETTINGS'
-        operator = 'PLACEHOLDER FOR PATHFINDER OPERATOR'
-        message = 'PLACEHOLDER FOR ADDITIONAL MESSAGE BY THE PFS'
+        settings = "PLACEHOLDER FOR PATHFINDER SETTINGS"
+        operator = "PLACEHOLDER FOR PATHFINDER OPERATOR"
+        message = "PLACEHOLDER FOR ADDITIONAL MESSAGE BY THE PFS"
 
         return (
             {
-                'price_info': price,
-                'network_info': {
-                    'chain_id': self.pathfinding_service.chain_id,
-                    'registry_address': self.pathfinding_service.registry_address,
+                "price_info": price,
+                "network_info": {
+                    "chain_id": self.pathfinding_service.chain_id,
+                    "registry_address": self.pathfinding_service.registry_address,
                 },
-                'settings': settings,
-                'version': self.version,
-                'operator': operator,
-                'message': message,
+                "settings": settings,
+                "version": self.version,
+                "operator": operator,
+                "message": message,
             },
             200,
         )
+
+
+class DebugEndpoint(PathfinderResource):
+    def get(  # pylint: disable=no-self-use
+        self,
+        token_network_address: TokenNetworkAddress,
+        source_address: Address,
+        target_address: Address = None,
+    ) -> Tuple[dict, int]:
+        request_count = 0
+        responses = []
+        for r in last_requests:
+            log.debug("Last Requests Values:", r=r)
+            matches_params = is_same_address(
+                token_network_address, r['token_network_address']
+            ) and is_same_address(source_address, r['source'])
+            if target_address is not None:
+                matches_params = matches_params and is_same_address(target_address, r['target'])
+
+            if matches_params:
+                request_count += 1
+                responses.append(dict(source=r['source'], target=r['target'], routes=r['routes']))
+        # log.debug("Responses:", responses=responses)
+        return dict(request_count=request_count, responses=responses), 200
 
 
 class ServiceApi:
@@ -240,22 +286,36 @@ class ServiceApi:
         self.rest_server: WSGIServer = None
         self.pathfinding_service = pathfinding_service
 
-        resources: List[Tuple[str, Resource, Dict]] = [
-            ('/<token_network_address>/paths', PathsResource, {}),
-            ('/<token_network_address>/payment/iou', IOUResource, {}),
-            ('/info', InfoResource, {}),
+        resources: List[Tuple[str, Resource, Dict, str]] = [
+            ("/<token_network_address>/paths", PathsResource, {}, 'paths'),
+            ("/<token_network_address>/payment/iou", IOUResource, {}, 'payments'),
+            ("/info", InfoResource, {}, 'info'),
+            (
+                "/_debug/routes/<token_network_address>/<source_address>",
+                DebugEndpoint,
+                {},
+                'debug1',
+            ),
+            (
+                "/_debug/routes/<token_network_address>/<source_address>/<target_address>",
+                DebugEndpoint,
+                {},
+                'debug2',
+            ),
         ]
 
-        for endpoint_url, resource, kwargs in resources:
+        for endpoint_url, resource, kwargs, endpoint in resources:
             endpoint_url = API_PATH + endpoint_url
-            kwargs['pathfinding_service'] = pathfinding_service
-            self.api.add_resource(resource, endpoint_url, resource_class_kwargs=kwargs)
+            kwargs["pathfinding_service"] = pathfinding_service
+            self.api.add_resource(
+                resource, endpoint_url, resource_class_kwargs=kwargs, endpoint=endpoint
+            )
 
     def run(self, host: str = DEFAULT_API_HOST, port: int = DEFAULT_API_PORT) -> None:
         self.rest_server = WSGIServer((host, port), self.flask_app)
         self.rest_server.start()
 
-        log.info('Running endpoint', endpoint=f'{host}:{port}')
+        log.info("Running endpoint", endpoint=f"{host}:{port}")
 
     def stop(self) -> None:
         self.rest_server.stop()
