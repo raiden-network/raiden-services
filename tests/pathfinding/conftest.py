@@ -1,5 +1,7 @@
 import pytest
 
+from raiden_libs import gevent_error_handler
+
 from tests.pathfinding.fixtures import *  # isort:skip # noqa
 
 
@@ -14,6 +16,5 @@ def pytest_addoption(parser):
 
 @pytest.fixture(autouse=True)
 def unregister_error_handler():
-    from raiden_libs.gevent_error_handler import unregister_error_handler
-
-    unregister_error_handler()
+    yield
+    gevent_error_handler.unregister_error_handler()
