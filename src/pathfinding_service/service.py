@@ -149,7 +149,7 @@ class PathfindingService(gevent.Greenlet):
         )
 
         # If a new token network was found we need to write it to the DB, otherwise
-        # the constraints for new channels will not be constrained. But only update
+        # the constraints for new channels will not be fulfilled. But only update
         # the network addresses here, all else is done later.
         token_networks_changed = (
             self.blockchain_state.token_network_addresses
@@ -165,6 +165,7 @@ class PathfindingService(gevent.Greenlet):
             self.handle_channel_event(event)
 
         self.blockchain_state.latest_known_block = last_block
+        self.database.update_blockchain_state(self.blockchain_state)
 
     def stop(self) -> None:
         self.matrix_listener.stop()
@@ -207,12 +208,14 @@ class PathfindingService(gevent.Greenlet):
 
         log.info('Received ChannelOpened event', **asdict(event))
 
-        token_network.handle_channel_opened_event(
+        channel_views = token_network.handle_channel_opened_event(
             channel_identifier=event.channel_identifier,
             participant1=event.participant1,
             participant2=event.participant2,
             settle_timeout=event.settle_timeout,
         )
+        for cv in channel_views:
+            self.database.upsert_channel_view(cv)
 
     def handle_channel_new_deposit(self, event: ReceiveChannelNewDepositEvent) -> None:
         token_network = self.get_token_network(event.token_network_address)
@@ -221,11 +224,12 @@ class PathfindingService(gevent.Greenlet):
 
         log.info('Received ChannelNewDeposit event', **asdict(event))
 
-        token_network.handle_channel_new_deposit_event(
+        channel_view = token_network.handle_channel_new_deposit_event(
             channel_identifier=event.channel_identifier,
             receiver=event.participant_address,
             total_deposit=event.total_deposit,
         )
+        self.database.upsert_channel_view(channel_view)
 
     def handle_channel_closed(self, event: ReceiveChannelClosedEvent) -> None:
         token_network = self.get_token_network(event.token_network_address)
@@ -235,6 +239,7 @@ class PathfindingService(gevent.Greenlet):
         log.info('Received ChannelClosed event', **asdict(event))
 
         token_network.handle_channel_closed_event(channel_identifier=event.channel_identifier)
+        self.database.delete_channel_views(event.channel_identifier)
 
     def handle_message(self, message: SignedMessage) -> None:
         if isinstance(message, UpdatePFS):

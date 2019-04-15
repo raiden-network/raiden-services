@@ -4,7 +4,8 @@ from typing import Iterator, Optional
 import structlog
 
 from pathfinding_service.model import IOU
-from raiden.utils.typing import BlockNumber, TokenAmount
+from pathfinding_service.model.channel_view import ChannelView
+from raiden.utils.typing import BlockNumber, ChannelID, TokenAmount
 from raiden_libs.database import BaseDatabase, hex256
 from raiden_libs.types import Address
 
@@ -86,3 +87,35 @@ class PFSDatabase(BaseDatabase):
             return next(self.get_ious(sender, expiration_block, claimed))
         except StopIteration:
             return None
+
+    def upsert_channel_view(self, channel_view: ChannelView) -> None:
+        cv_dict = ChannelView.Schema(strict=True, exclude=['state']).dump(channel_view)[0]
+        self.conn.execute(
+            """
+            INSERT OR REPLACE INTO channel_view (
+                token_network_address, channel_id, participant1, participant2,
+                settle_timeout, capacity, reveal_timeout, deposit,
+                update_nonce, absolute_fee, relative_fee
+            ) VALUES (
+                :token_network_address,
+                printf('0x%064x', :channel_id),
+                :participant1, :participant2,
+                printf('0x%064x', :settle_timeout),
+                printf('0x%064x', :capacity),
+                printf('0x%064x', :reveal_timeout),
+                printf('0x%064x', :deposit),
+                printf('0x%064x', :update_nonce),
+                :absolute_fee, :relative_fee
+            )
+        """,
+            cv_dict,
+        )
+
+    def get_channel_views(self) -> Iterator[IOU]:
+        query = "SELECT * FROM channel_view"
+        for row in self.conn.execute(query):
+            cv_dict = dict(zip(row.keys(), row))
+            yield IOU.Schema().load(cv_dict)[0]
+
+    def delete_channel_views(self, channel_id: ChannelID) -> None:
+        self.conn.execute("DELETE FROM channel_view WHERE channel_id = ?", [channel_id])

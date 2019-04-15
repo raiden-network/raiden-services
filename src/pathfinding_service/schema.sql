@@ -5,12 +5,29 @@ CREATE TABLE blockchain (
     latest_known_block              INT,
     user_deposit_contract_address   CHAR(42)
 );
+INSERT INTO blockchain DEFAULT VALUES;
 
 CREATE TABLE token_network (
     address                 CHAR(42) PRIMARY KEY
 );
 
-INSERT INTO blockchain DEFAULT VALUES;
+CREATE TABLE channel_view (
+    token_network_address   CHAR(42) NOT NULL,
+    channel_id      HEX_INT NOT NULL,
+    participant1    CHAR(42) NOT NULL,
+    participant2    CHAR(42) NOT NULL,
+    settle_timeout  HEX_INT NOT NULL,
+    capacity        HEX_INT NOT NULL,
+    reveal_timeout  HEX_INT NOT NULL,
+    deposit         HEX_INT NOT NULL,
+    update_nonce    HEX_INT,
+    absolute_fee    INT,
+    relative_fee    FLOAT,
+    PRIMARY KEY (token_network_address, channel_id, participant1),
+    FOREIGN KEY (token_network_address)
+        REFERENCES token_network(address)
+);
+
 CREATE TABLE iou (
     sender TEXT NOT NULL,
     amount HEX_INT NOT NULL,
