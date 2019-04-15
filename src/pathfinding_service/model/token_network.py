@@ -44,7 +44,7 @@ class TokenNetwork:
         participant1: Address,
         participant2: Address,
         settle_timeout: int,
-    ) -> None:
+    ) -> List[ChannelView]:
         """ Register the channel in the graph, add participents to graph if necessary.
 
         Corresponds to the ChannelOpened event. Called by the contract event listener. """
@@ -55,6 +55,7 @@ class TokenNetwork:
         self.channel_id_to_addresses[channel_identifier] = (participant1, participant2)
 
         view1 = ChannelView(
+            token_network_address=self.address,
             channel_id=channel_identifier,
             participant1=participant1,
             participant2=participant2,
@@ -63,6 +64,7 @@ class TokenNetwork:
         )
 
         view2 = ChannelView(
+            token_network_address=self.address,
             channel_id=channel_identifier,
             participant2=participant2,
             participant1=participant1,
@@ -72,10 +74,11 @@ class TokenNetwork:
 
         self.G.add_edge(participant1, participant2, view=view1)
         self.G.add_edge(participant2, participant1, view=view2)
+        return [view1, view2]
 
     def handle_channel_new_deposit_event(
         self, channel_identifier: ChannelID, receiver: Address, total_deposit: int
-    ) -> None:
+    ) -> ChannelView:
         """ Register a new balance for the beneficiary.
 
         Corresponds to the ChannelNewDeposit event. Called by the contract event listener. """
@@ -84,18 +87,21 @@ class TokenNetwork:
 
         try:
             participant1, participant2 = self.channel_id_to_addresses[channel_identifier]
-
-            if receiver == participant1:
-                self.G[participant1][participant2]['view'].update_capacity(deposit=total_deposit)
-            elif receiver == participant2:
-                self.G[participant2][participant1]['view'].update_capacity(deposit=total_deposit)
-            else:
-                log.error("Receiver in ChannelNewDeposit does not fit the internal channel")
         except KeyError:
             log.error(
                 "Received ChannelNewDeposit event for unknown channel",
                 channel_identifier=channel_identifier,
             )
+
+        if receiver == participant1:
+            channel_view = self.G[participant1][participant2]['view']
+        elif receiver == participant2:
+            channel_view = self.G[participant2][participant1]['view']
+        else:
+            log.error("Receiver in ChannelNewDeposit does not fit the internal channel")
+
+        channel_view.update_capacity(deposit=total_deposit)
+        return channel_view
 
     def handle_channel_closed_event(self, channel_identifier: ChannelID) -> None:
         """ Close a channel. This doesn't mean that the channel is settled yet, but it cannot

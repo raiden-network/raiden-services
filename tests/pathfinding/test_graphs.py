@@ -7,7 +7,7 @@ from networkx import NetworkXNoPath
 
 from pathfinding_service.model import ChannelView, TokenNetwork
 from raiden.utils.typing import ChannelID, FeeAmount, TokenAmount
-from raiden_libs.types import Address
+from raiden_libs.types import Address, TokenNetworkAddress
 
 
 def test_edge_weight(addresses):
@@ -15,7 +15,9 @@ def test_edge_weight(addresses):
     participant1 = addresses[0]
     participant2 = addresses[1]
     settle_timeout = 15
-    view = ChannelView(channel_id, participant1, participant2, settle_timeout)
+    view = ChannelView(
+        TokenNetworkAddress('0x11'), channel_id, participant1, participant2, settle_timeout
+    )
     amount = TokenAmount(int(1e18))  # one RDN
 
     # no penalty
