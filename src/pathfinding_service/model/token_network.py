@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import networkx as nx
 import structlog
@@ -52,33 +52,45 @@ class TokenNetwork:
         assert is_checksum_address(participant1)
         assert is_checksum_address(participant2)
 
-        self.channel_id_to_addresses[channel_identifier] = (participant1, participant2)
+        views = [
+            ChannelView(
+                token_network_address=self.address,
+                channel_id=channel_identifier,
+                participant1=participant1,
+                participant2=participant2,
+                settle_timeout=settle_timeout,
+                deposit=TokenAmount(0),
+            ),
+            ChannelView(
+                token_network_address=self.address,
+                channel_id=channel_identifier,
+                participant1=participant2,
+                participant2=participant1,
+                settle_timeout=settle_timeout,
+                deposit=TokenAmount(0),
+            ),
+        ]
 
-        view1 = ChannelView(
-            token_network_address=self.address,
-            channel_id=channel_identifier,
-            participant1=participant1,
-            participant2=participant2,
-            settle_timeout=settle_timeout,
-            deposit=TokenAmount(0),
-        )
+        for v in views:
+            self.add_channel_view(v)
 
-        view2 = ChannelView(
-            token_network_address=self.address,
-            channel_id=channel_identifier,
-            participant2=participant2,
-            participant1=participant1,
-            settle_timeout=settle_timeout,
-            deposit=TokenAmount(0),
-        )
+        return views
 
-        self.G.add_edge(participant1, participant2, view=view1)
-        self.G.add_edge(participant2, participant1, view=view2)
-        return [view1, view2]
+    def add_channel_view(self, channel_view: ChannelView) -> None:
+        # Choosing which direction to add by execution order is not very
+        # robust. We might want to change this to either
+        # * participant1 < participant2 or
+        # * same as in contract (which would require an additional attribute on ChannelView)
+        if channel_view.channel_id not in self.channel_id_to_addresses:
+            self.channel_id_to_addresses[channel_view.channel_id] = (
+                channel_view.participant1,
+                channel_view.participant2,
+            )
+        self.G.add_edge(channel_view.participant1, channel_view.participant2, view=channel_view)
 
     def handle_channel_new_deposit_event(
         self, channel_identifier: ChannelID, receiver: Address, total_deposit: int
-    ) -> ChannelView:
+    ) -> Optional[ChannelView]:
         """ Register a new balance for the beneficiary.
 
         Corresponds to the ChannelNewDeposit event. Called by the contract event listener. """
@@ -87,18 +99,19 @@ class TokenNetwork:
 
         try:
             participant1, participant2 = self.channel_id_to_addresses[channel_identifier]
+            if receiver == participant1:
+                channel_view = self.G[participant1][participant2]['view']
+            elif receiver == participant2:
+                channel_view = self.G[participant2][participant1]['view']
+            else:
+                log.error("Receiver in ChannelNewDeposit does not fit the internal channel")
+                return None
         except KeyError:
             log.error(
                 "Received ChannelNewDeposit event for unknown channel",
                 channel_identifier=channel_identifier,
             )
-
-        if receiver == participant1:
-            channel_view = self.G[participant1][participant2]['view']
-        elif receiver == participant2:
-            channel_view = self.G[participant2][participant1]['view']
-        else:
-            log.error("Receiver in ChannelNewDeposit does not fit the internal channel")
+            return None
 
         channel_view.update_capacity(deposit=total_deposit)
         return channel_view

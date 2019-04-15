@@ -6,7 +6,7 @@ from eth_utils import is_checksum_address
 
 from raiden.utils.typing import BlockNumber
 from raiden_libs.states import BlockchainState
-from raiden_libs.types import Address
+from raiden_libs.types import Address, TokenNetworkAddress
 
 log = structlog.get_logger(__name__)
 
@@ -119,4 +119,9 @@ class BaseDatabase:
         self.conn.executemany(
             "INSERT OR REPLACE INTO token_network VALUES (?)",
             [[address] for address in state.token_network_addresses],
+        )
+
+    def upsert_token_network(self, token_network_address: TokenNetworkAddress) -> None:
+        self.conn.execute(
+            "INSERT OR REPLACE INTO token_network VALUES (?)", [token_network_address]
         )

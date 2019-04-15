@@ -12,7 +12,7 @@ class Event:
 @dataclass
 class ReceiveTokenNetworkCreatedEvent(Event):
     token_address: Address
-    token_network_address: Address
+    token_network_address: TokenNetworkAddress
     block_number: BlockNumber
 
 

@@ -5,6 +5,7 @@ import structlog
 
 from pathfinding_service.model import IOU
 from pathfinding_service.model.channel_view import ChannelView
+from pathfinding_service.model.token_network import TokenNetwork
 from raiden.utils.typing import BlockNumber, ChannelID, TokenAmount
 from raiden_libs.database import BaseDatabase, hex256
 from raiden_libs.types import Address
@@ -111,11 +112,15 @@ class PFSDatabase(BaseDatabase):
             cv_dict,
         )
 
-    def get_channel_views(self) -> Iterator[IOU]:
+    def get_channel_views(self) -> Iterator[ChannelView]:
         query = "SELECT * FROM channel_view"
         for row in self.conn.execute(query):
             cv_dict = dict(zip(row.keys(), row))
-            yield IOU.Schema().load(cv_dict)[0]
+            yield ChannelView.Schema().load(cv_dict)[0]
 
     def delete_channel_views(self, channel_id: ChannelID) -> None:
         self.conn.execute("DELETE FROM channel_view WHERE channel_id = ?", [channel_id])
+
+    def get_token_networks(self) -> Iterator[TokenNetwork]:
+        for row in self.conn.execute("SELECT address FROM token_network"):
+            yield TokenNetwork(token_network_address=row[0])
