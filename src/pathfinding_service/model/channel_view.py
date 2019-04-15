@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from enum import Enum
 from typing import ClassVar, Type
 
 import marshmallow
@@ -18,11 +17,6 @@ class ChannelView:
     Unidirectional view of a bidirectional channel.
     """
 
-    class State(Enum):
-        OPEN = 1
-        SETTLING = 2
-        SETTLED = 3
-
     token_network_address: TokenNetworkAddress
     channel_id: ChannelID
     participant1: Address
@@ -31,7 +25,6 @@ class ChannelView:
     capacity: int = None  # type: ignore
     reveal_timeout: int = DEFAULT_REVEAL_TIMEOUT
     deposit: TokenAmount = TokenAmount(0)
-    state: State = State.OPEN  # TODO: do we care about channels with state != OPEN?
     update_nonce: int = 0
     absolute_fee: FeeAmount = FeeAmount(0)
     relative_fee: float = 0

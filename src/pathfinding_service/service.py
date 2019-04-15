@@ -80,7 +80,6 @@ class PathfindingService(gevent.Greenlet):
         self.service_fee = service_fee
 
         self.is_running = gevent.event.Event()
-        self.token_networks: Dict[TokenNetworkAddress, TokenNetwork] = {}
         self.database = PFSDatabase(
             filename=db_filename,
             pfs_address=self.address,
@@ -90,6 +89,7 @@ class PathfindingService(gevent.Greenlet):
             user_deposit_contract_address=self.user_deposit_contract.address,
             allow_create=True,
         )
+        self.token_networks = self._load_token_networks()
 
         self.last_known_block = 0
         self.blockchain_state = BlockchainState(
@@ -97,7 +97,7 @@ class PathfindingService(gevent.Greenlet):
             token_network_registry_address=self.registry_address,
             monitor_contract_address=Address(''),  # FIXME
             latest_known_block=self.sync_start_block,
-            token_network_addresses=[],
+            token_network_addresses=[],  # FIXME
         )
         log.info(
             'Listening to token network registry',
@@ -115,6 +115,13 @@ class PathfindingService(gevent.Greenlet):
         except ConnectionError as e:
             log.critical('Could not connect to broadcasting system.', exc=e)
             sys.exit(1)
+
+    def _load_token_networks(self) -> Dict[TokenNetworkAddress, TokenNetwork]:
+        network_for_address = {n.address: n for n in self.database.get_token_networks()}
+        channel_views = self.database.get_channel_views()
+        for cv in channel_views:
+            network_for_address[cv.token_network_address].add_channel_view(cv)
+        return network_for_address
 
     def _run(self) -> None:  # pylint: disable=method-hidden
         register_error_handler(error_handler)
@@ -147,17 +154,6 @@ class PathfindingService(gevent.Greenlet):
             to_block=last_block,
             query_ms=False,
         )
-
-        # If a new token network was found we need to write it to the DB, otherwise
-        # the constraints for new channels will not be fulfilled. But only update
-        # the network addresses here, all else is done later.
-        token_networks_changed = (
-            self.blockchain_state.token_network_addresses
-            != new_chain_state.token_network_addresses
-        )
-        if token_networks_changed:
-            self.blockchain_state.token_network_addresses = new_chain_state.token_network_addresses
-            self.database.update_blockchain_state(new_chain_state)
 
         # Now set the updated chain state to the context, will be stored later
         self.blockchain_state = new_chain_state
@@ -200,6 +196,7 @@ class PathfindingService(gevent.Greenlet):
             log.info('Found new token network', **asdict(event))
 
             self.token_networks[network_address] = TokenNetwork(network_address)
+            self.database.upsert_token_network(network_address)
 
     def handle_channel_opened(self, event: ReceiveChannelOpenedEvent) -> None:
         token_network = self.get_token_network(event.token_network_address)
@@ -229,7 +226,8 @@ class PathfindingService(gevent.Greenlet):
             receiver=event.participant_address,
             total_deposit=event.total_deposit,
         )
-        self.database.upsert_channel_view(channel_view)
+        if channel_view:
+            self.database.upsert_channel_view(channel_view)
 
     def handle_channel_closed(self, event: ReceiveChannelClosedEvent) -> None:
         token_network = self.get_token_network(event.token_network_address)
