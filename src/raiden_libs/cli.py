@@ -72,7 +72,11 @@ def common_options(app_name: str) -> Callable:
                     type=click.Path(exists=True, dir_okay=False, readable=True),
                     help='Path to a keystore file.',
                 ),
-                click.password_option('--password', help='Password to unlock the keystore file.'),
+                click.password_option(
+                    '--password',
+                    confirmation_prompt=False,
+                    help='Password to unlock the keystore file.',
+                ),
                 click.option(
                     '--state-db',
                     default=os.path.join(click.get_app_dir(app_name), 'state.db'),
