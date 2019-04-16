@@ -5,7 +5,7 @@ from typing import ClassVar, Dict, List, Optional, Tuple, Type
 import marshmallow
 import pkg_resources
 import structlog
-from eth_utils import is_address, is_checksum_address, is_same_address
+from eth_utils import is_checksum_address, is_same_address
 from flask import Flask, Response, request
 from flask_restful import Api, Resource
 from gevent.pywsgi import WSGIServer
@@ -25,6 +25,7 @@ from pathfinding_service.config import (
     UDC_SECURITY_MARGIN_FACTOR,
 )
 from pathfinding_service.model import IOU
+from pathfinding_service.model.token_network import TokenNetwork
 from pathfinding_service.service import PathfindingService
 from raiden.exceptions import InvalidSignature
 from raiden.utils.signer import recover
@@ -47,25 +48,19 @@ class PathfinderResource(Resource):
     def __init__(self, pathfinding_service: PathfindingService):
         self.pathfinding_service = pathfinding_service
 
-    def _validate_token_network_argument(
-        self, token_network_address: str
-    ) -> Optional[Tuple[Dict, int]]:
-
-        if not is_address(token_network_address):
-            no_address_message = 'Invalid token network address: {}'
-            return {'errors': no_address_message.format(token_network_address)}, 400
-
+    def _validate_token_network_argument(self, token_network_address: str) -> TokenNetwork:
         if not is_checksum_address(token_network_address):
-            address_error = 'Token network address not checksummed: {}'
-            return {'errors': address_error.format(token_network_address)}, 400
+            raise exceptions.InvalidTokenNetwork(
+                msg='The token network needs to be given as a checksummed address',
+                token_network=token_network_address,
+            )
 
         token_network = self.pathfinding_service.get_token_network(
             TokenNetworkAddress(token_network_address)
         )
         if token_network is None:
-            return {'errors': 'Unsupported token network: {}'.format(token_network_address)}, 400
-
-        return None
+            raise exceptions.UnsupportedTokenNetwork(token_network=token_network_address)
+        return token_network
 
 
 @add_schema
@@ -88,9 +83,7 @@ class PathRequest:
 
 class PathsResource(PathfinderResource):
     def post(self, token_network_address: str) -> Tuple[dict, int]:
-        token_network_error = self._validate_token_network_argument(token_network_address)
-        if token_network_error is not None:
-            return token_network_error
+        token_network = self._validate_token_network_argument(token_network_address)
 
         json = request.get_json()
         if not json:
@@ -99,12 +92,6 @@ class PathsResource(PathfinderResource):
         if errors:
             raise exceptions.InvalidRequest(**errors)
         process_payment(path_req.iou, self.pathfinding_service)
-
-        token_network = self.pathfinding_service.token_networks.get(
-            TokenNetworkAddress(token_network_address)
-        )
-        # Existence is checked in _validate_token_network_argument
-        assert token_network, 'Requested token network cannot be found'
 
         try:
             # only optional args if not None, so we can use defaults

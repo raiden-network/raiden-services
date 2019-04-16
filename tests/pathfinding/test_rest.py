@@ -94,31 +94,20 @@ def test_get_paths_validation(
 
 
 def test_get_paths_path_validation(api_sut: ServiceApi, api_url: str):
-    url = api_url + '/1234abc/paths'
-    response = requests.post(url)
-    assert response.status_code == 400
-    assert response.json()['errors'] == 'Invalid token network address: 1234abc'
-
-    url = api_url + '/df173a5173c3d0ae5ba11dae84470c5d3f1a8413/paths'
-    response = requests.post(url)
-    assert response.status_code == 400
-    assert response.json()['errors'] == 'Token network address not checksummed: {}'.format(
-        'df173a5173c3d0ae5ba11dae84470c5d3f1a8413'
-    )
-
-    url = api_url + '/0xdf173a5173c3d0ae5ba11dae84470c5d3f1a8413/paths'
-    response = requests.post(url)
-    assert response.status_code == 400
-    assert response.json()['errors'] == 'Token network address not checksummed: {}'.format(
-        '0xdf173a5173c3d0ae5ba11dae84470c5d3f1a8413'
-    )
+    for url in [
+        '/1234abc/paths',
+        '/df173a5173c3d0ae5ba11dae84470c5d3f1a8413/paths',
+        '/0xdf173a5173c3d0ae5ba11dae84470c5d3f1a8413/paths',
+    ]:
+        response = requests.post(api_url + url)
+        assert response.status_code == 400
+        assert response.json()['error_code'] == exceptions.InvalidTokenNetwork.error_code
 
     url = api_url + '/0x0000000000000000000000000000000000000000/paths'
     response = requests.post(url)
     assert response.status_code == 400
-    assert response.json()['errors'] == 'Unsupported token network: {}'.format(
-        '0x0000000000000000000000000000000000000000'
-    )
+    assert response.json()['error_code'] == exceptions.UnsupportedTokenNetwork.error_code
+
     # killen aller greenlets
     gevent.killall([obj for obj in gc.get_objects() if isinstance(obj, gevent.Greenlet)])
 

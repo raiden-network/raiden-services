@@ -43,6 +43,16 @@ class RequestOutdated(ApiException):
     msg = 'The request contains too old timestamps or nonces'
 
 
+class InvalidTokenNetwork(ApiException):
+    error_code = 2003
+    msg = 'Invalid token network'
+
+
+class UnsupportedTokenNetwork(ApiException):
+    error_code = 2004
+    msg = 'This service does not work on the given token network.'
+
+
 # ### BadIOU 21xx ###
 
 
