@@ -39,6 +39,7 @@ the services follow these instructions:
     cd raiden-services
     virtualenv -p python3.7 venv
     source venv/bin/activate
+    pip install -U -r requirements-dev.txt
     pip install -e .
 
 This installs the executables ``pathfinding-service``, ``monitoring-service``
