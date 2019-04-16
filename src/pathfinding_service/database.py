@@ -50,6 +50,12 @@ class PFSDatabase(BaseDatabase):
             iou_dict,
         )
 
+    def get_latest_known_block(self) -> BlockNumber:
+        return self.conn.execute("SELECT latest_known_block FROM blockchain").fetchone()[0]
+
+    def update_lastest_known_block(self, latest_known_block: BlockNumber) -> None:
+        self.conn.execute("UPDATE blockchain SET latest_known_block = ?", [latest_known_block])
+
     def get_ious(
         self,
         sender: Address = None,
