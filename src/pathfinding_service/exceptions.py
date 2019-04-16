@@ -93,3 +93,12 @@ class UseThisIOU(BadIOU):
 class DepositTooLow(BadIOU):
     error_code = 2107
     msg = 'Not enough deposit in UserDeposit contract.'
+
+
+# ### PFS specific errors 22xx ###
+
+
+class NoRouteFound(ApiException):
+    error_code = 2201
+    http_code = 404
+    msg = 'No route between nodes found'

@@ -137,8 +137,8 @@ def test_get_paths(
     ]:
         data = {'from': source, 'to': dest, 'value': 10, 'max_paths': 3}
         response = requests.post(url, json=data)
-        assert response.status_code == 400
-        assert response.json()['errors'].startswith('No suitable path found for transfer from')
+        assert response.status_code == 404
+        assert response.json()['error_code'] == exceptions.NoRouteFound.error_code
 
     # killen aller greenlets
     gevent.killall([obj for obj in gc.get_objects() if isinstance(obj, gevent.Greenlet)])
