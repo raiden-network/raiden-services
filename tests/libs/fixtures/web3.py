@@ -1,5 +1,6 @@
 import json
 import logging
+from typing import Dict, List
 
 import gevent
 import pytest
@@ -14,6 +15,7 @@ from raiden_contracts.tests.utils.constants import (
     FAUCET_ALLOWANCE,
     FAUCET_PRIVATE_KEY,
 )
+from raiden_libs.events import Event
 
 log = logging.getLogger(__name__)
 
@@ -68,3 +70,20 @@ def keystore_file(tmp_path) -> str:
         json.dump(keystore_json, fp)
 
     return keystore_file
+
+
+@pytest.fixture
+def mockchain(monkeypatch):
+    state: Dict[str, List[List[Event]]] = dict(block_events=[])
+
+    def get_events(web3, contract_manager, chain_state, to_block: int, query_ms):
+        from_block = chain_state.latest_known_block + 1
+        blocks = state['block_events'][from_block : to_block + 1]
+        events = [ev for block in blocks for ev in block]  # flatten
+        return chain_state, events
+
+    def set_events(events):
+        state['block_events'] = events
+
+    monkeypatch.setattr('pathfinding_service.service.get_blockchain_events', get_events)
+    return set_events
