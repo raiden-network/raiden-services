@@ -27,6 +27,7 @@ from raiden_libs.events import (
     ReceiveChannelNewDepositEvent,
     ReceiveChannelOpenedEvent,
     ReceiveTokenNetworkCreatedEvent,
+    UpdatedHeadBlockEvent,
 )
 from raiden_libs.gevent_error_handler import register_error_handler
 from raiden_libs.matrix import MatrixListener
@@ -78,8 +79,8 @@ class PathfindingService(gevent.Greenlet):
         self.private_key = private_key
         self.address = private_key_to_address(private_key)
         self.service_fee = service_fee
-
         self.is_running = gevent.event.Event()
+
         self.database = PFSDatabase(
             filename=db_filename,
             pfs_address=self.address,
@@ -90,20 +91,6 @@ class PathfindingService(gevent.Greenlet):
             allow_create=True,
         )
         self.token_networks = self._load_token_networks()
-
-        self.last_known_block = 0
-        self.blockchain_state = BlockchainState(
-            chain_id=self.chain_id,
-            token_network_registry_address=self.registry_address,
-            monitor_contract_address=Address(''),  # FIXME
-            latest_known_block=self.sync_start_block,
-            token_network_addresses=[],  # FIXME
-        )
-        log.info(
-            'Listening to token network registry',
-            registry_address=self.registry_address,
-            start_block=sync_start_block,
-        )
 
         try:
             self.matrix_listener = MatrixListener(
@@ -126,11 +113,17 @@ class PathfindingService(gevent.Greenlet):
     def _run(self) -> None:  # pylint: disable=method-hidden
         register_error_handler(error_handler)
         self.matrix_listener.start()
+
+        log.info(
+            'Listening to token network registry',
+            registry_address=self.registry_address,
+            start_block=self.database.get_latest_known_block(),
+        )
         while not self.is_running.is_set():
             last_confirmed_block = self.web3.eth.blockNumber - self.required_confirmations
 
             max_query_interval_end_block = (
-                self.blockchain_state.latest_known_block + MAX_FILTER_INTERVAL
+                self.database.get_latest_known_block() + MAX_FILTER_INTERVAL
             )
             # Limit the max number of blocks that is processed per iteration
             last_block = min(last_confirmed_block, max_query_interval_end_block)
@@ -144,24 +137,21 @@ class PathfindingService(gevent.Greenlet):
                 sys.exit(0)
 
     def _process_new_blocks(self, last_block: BlockNumber) -> None:
-        self.last_known_block = last_block
-
-        # BCL return a new state and events related to channel lifecycle
-        new_chain_state, events = get_blockchain_events(
+        _, events = get_blockchain_events(
             web3=self.web3,
             contract_manager=CONTRACT_MANAGER,
-            chain_state=self.blockchain_state,
+            chain_state=BlockchainState(
+                latest_known_block=self.database.get_latest_known_block(),
+                token_network_addresses=list(self.token_networks.keys()),
+                token_network_registry_address=self.registry_address,
+                monitor_contract_address=Address(''),  # FIXME
+                chain_id=self.chain_id,
+            ),
             to_block=last_block,
             query_ms=False,
         )
-
-        # Now set the updated chain state to the context, will be stored later
-        self.blockchain_state = new_chain_state
         for event in events:
-            self.handle_channel_event(event)
-
-        self.blockchain_state.latest_known_block = last_block
-        self.database.update_blockchain_state(self.blockchain_state)
+            self.handle_event(event)
 
     def stop(self) -> None:
         self.matrix_listener.stop()
@@ -178,7 +168,7 @@ class PathfindingService(gevent.Greenlet):
         """ Returns the `TokenNetwork` for the given address or `None` for unknown networks. """
         return self.token_networks.get(token_network_address)
 
-    def handle_channel_event(self, event: Event) -> None:
+    def handle_event(self, event: Event) -> None:
         if isinstance(event, ReceiveTokenNetworkCreatedEvent):
             self.handle_token_network_created(event)
         elif isinstance(event, ReceiveChannelOpenedEvent):
@@ -187,6 +177,8 @@ class PathfindingService(gevent.Greenlet):
             self.handle_channel_new_deposit(event)
         elif isinstance(event, ReceiveChannelClosedEvent):
             self.handle_channel_closed(event)
+        elif isinstance(event, UpdatedHeadBlockEvent):
+            self.database.update_lastest_known_block(event.head_block_number)
         else:
             log.debug('Unhandled event', evt=event)
 
