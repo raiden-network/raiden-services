@@ -220,8 +220,8 @@ class IOUResource(PathfinderResource):
         if last_iou:
             last_iou = IOU.Schema(strict=True, exclude=['claimed']).dump(last_iou)[0]
             return {'last_iou': last_iou}, 200
-        else:
-            return {'last_iou': None}, 404
+
+        return {'last_iou': None}, 404
 
 
 class InfoResource(PathfinderResource):
