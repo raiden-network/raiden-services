@@ -97,7 +97,5 @@ def mock_connect_to_blockchain(monkeypatch):
 @pytest.mark.usefixtures('mock_connect_to_blockchain')
 def test_cli(default_cli_args):
     runner = CliRunner()
-    result = runner.invoke(
-        main, default_cli_args + ['--state-db=:memory:'], catch_exceptions=False
-    )
+    result = runner.invoke(main, default_cli_args, catch_exceptions=False)
     assert result.exit_code == 0, result.output

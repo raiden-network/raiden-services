@@ -22,10 +22,10 @@ class ChannelView:
     participant1: Address
     participant2: Address
     settle_timeout: int
-    capacity: int = None  # type: ignore
+    capacity: TokenAmount = None  # type: ignore
     reveal_timeout: int = DEFAULT_REVEAL_TIMEOUT
     deposit: TokenAmount = TokenAmount(0)
-    update_nonce: int = 0
+    update_nonce: Nonce = Nonce(0)
     absolute_fee: FeeAmount = FeeAmount(0)
     relative_fee: float = 0
     Schema: ClassVar[Type[marshmallow.Schema]]
