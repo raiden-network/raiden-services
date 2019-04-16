@@ -4,7 +4,6 @@ from unittest.mock import patch
 
 import pytest
 from request_collector.server import RequestCollector
-from tests.constants import KEYSTORE_PASSWORD
 from web3 import Web3
 
 from monitoring_service.database import Database
@@ -29,18 +28,6 @@ def server_private_key(ethereum_tester):
     key = get_random_privkey()
     ethereum_tester.add_account(key)
     return key
-
-
-@pytest.fixture
-def default_cli_args(keystore_file) -> List[str]:
-    return [
-        '--keystore-file',
-        keystore_file,
-        '--password',
-        KEYSTORE_PASSWORD,
-        '--state-db',
-        ':memory:',
-    ]
 
 
 @pytest.fixture

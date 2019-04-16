@@ -112,7 +112,8 @@ class PFSDatabase(BaseDatabase):
                 printf('0x%064x', :reveal_timeout),
                 printf('0x%064x', :deposit),
                 printf('0x%064x', :update_nonce),
-                :absolute_fee, :relative_fee
+                printf('0x%064x', :absolute_fee),
+                :relative_fee
             )
         """,
             cv_dict,

@@ -3,7 +3,6 @@ from typing import Callable, Generator, List
 from unittest.mock import Mock, patch
 
 import pytest
-from tests.constants import KEYSTORE_PASSWORD
 from tests.pathfinding.config import NUMBER_OF_CHANNELS
 from web3 import Web3
 from web3.contract import Contract
@@ -323,8 +322,3 @@ def pathfinding_service_web3_mock(
         )
 
         yield pathfinding_service
-
-
-@pytest.fixture
-def default_cli_args(keystore_file) -> List[str]:
-    return ['--keystore-file', keystore_file, '--password', KEYSTORE_PASSWORD]
