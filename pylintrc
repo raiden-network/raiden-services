@@ -75,7 +75,6 @@ disable=
         protected-access,
         len-as-condition,
         redefined-builtin,
-        no-else-return,
         too-many-return-statements,
         broad-except,
 
