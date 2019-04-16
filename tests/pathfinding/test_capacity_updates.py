@@ -39,6 +39,26 @@ PRIVATE_KEY_3_ADDRESS = private_key_to_address(PRIVATE_KEY_3)
 DEFAULT_CHANNEL_ID = ChannelID(0)
 
 
+def setup_channel_with_deposits(token_network: TokenNetwork):
+    token_network.handle_channel_opened_event(
+        channel_identifier=DEFAULT_CHANNEL_ID,
+        participant1=PRIVATE_KEY_1_ADDRESS,
+        participant2=PRIVATE_KEY_2_ADDRESS,
+        settle_timeout=15,
+    )
+    token_network.handle_channel_new_deposit_event(
+        channel_identifier=DEFAULT_CHANNEL_ID, receiver=PRIVATE_KEY_1_ADDRESS, total_deposit=100
+    )
+    token_network.handle_channel_new_deposit_event(
+        channel_identifier=DEFAULT_CHANNEL_ID, receiver=PRIVATE_KEY_2_ADDRESS, total_deposit=100
+    )
+    # Check that the new channel has id == 0
+    assert token_network.channel_id_to_addresses[DEFAULT_CHANNEL_ID] == (
+        PRIVATE_KEY_1_ADDRESS,
+        PRIVATE_KEY_2_ADDRESS,
+    )
+
+
 def get_updatepfs_message(
     updating_participant: Address,
     other_participant: Address,
@@ -90,11 +110,9 @@ def test_pfs_rejects_capacity_update_with_wrong_chain_id(pathfinding_service_web
 def test_pfs_rejects_capacity_update_with_wrong_token_network_address(
     pathfinding_service_web3_mock,
 ):
-    pathfinding_service_web3_mock.chain_id = ChainID(1)
-
     token_network = TokenNetwork(token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS)
-
     pathfinding_service_web3_mock.token_networks[token_network.address] = token_network
+    pathfinding_service_web3_mock.chain_id = ChainID(1)
 
     message = get_updatepfs_message(
         token_network_address=TokenNetworkAddressBytes(decode_hex("0x" + "1" * 40)),
@@ -109,10 +127,9 @@ def test_pfs_rejects_capacity_update_with_wrong_token_network_address(
 
 
 def test_pfs_rejects_capacity_update_with_wrong_channel_identifier(pathfinding_service_web3_mock):
-    pathfinding_service_web3_mock.chain_id = ChainID(1)
-
     token_network = TokenNetwork(token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS)
     pathfinding_service_web3_mock.token_networks[token_network.address] = token_network
+    pathfinding_service_web3_mock.chain_id = ChainID(1)
 
     token_network.handle_channel_opened_event(
         channel_identifier=DEFAULT_CHANNEL_ID,
@@ -142,32 +159,11 @@ def test_pfs_rejects_capacity_update_with_wrong_channel_identifier(pathfinding_s
 def test_pfs_rejects_capacity_update_with_impossible_updating_capacity(
     pathfinding_service_web3_mock,
 ):
+    token_network = TokenNetwork(token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS)
+    pathfinding_service_web3_mock.token_networks[token_network.address] = token_network
     pathfinding_service_web3_mock.chain_id = ChainID(1)
 
-    token_network = TokenNetwork(token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS)
-
-    pathfinding_service_web3_mock.token_networks[token_network.address] = token_network
-
-    token_network.handle_channel_opened_event(
-        channel_identifier=DEFAULT_CHANNEL_ID,
-        participant1=PRIVATE_KEY_1_ADDRESS,
-        participant2=PRIVATE_KEY_2_ADDRESS,
-        settle_timeout=15,
-    )
-
-    token_network.handle_channel_new_deposit_event(
-        channel_identifier=DEFAULT_CHANNEL_ID, receiver=PRIVATE_KEY_1_ADDRESS, total_deposit=100
-    )
-
-    token_network.handle_channel_new_deposit_event(
-        channel_identifier=DEFAULT_CHANNEL_ID, receiver=PRIVATE_KEY_2_ADDRESS, total_deposit=100
-    )
-
-    # Check that the new channel has id == 0
-    assert token_network.channel_id_to_addresses[DEFAULT_CHANNEL_ID] == (
-        PRIVATE_KEY_1_ADDRESS,
-        PRIVATE_KEY_2_ADDRESS,
-    )
+    setup_channel_with_deposits(token_network)
 
     with patch(
         "pathfinding_service.service.recover_signer_from_capacity_update", PRIVATE_KEY_1_ADDRESS
@@ -188,32 +184,12 @@ def test_pfs_rejects_capacity_update_with_impossible_updating_capacity(
 def test_pfs_rejects_capacity_update_with_impossible_other_capacity(
     pathfinding_service_web3_mock,
 ):
+    token_network = TokenNetwork(token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS)
+    pathfinding_service_web3_mock.token_networks[token_network.address] = token_network
     pathfinding_service_web3_mock.chain_id = ChainID(1)
 
-    token_network = TokenNetwork(token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS)
+    setup_channel_with_deposits(token_network)
 
-    pathfinding_service_web3_mock.token_networks[token_network.address] = token_network
-
-    token_network.handle_channel_opened_event(
-        channel_identifier=DEFAULT_CHANNEL_ID,
-        participant1=PRIVATE_KEY_1_ADDRESS,
-        participant2=PRIVATE_KEY_2_ADDRESS,
-        settle_timeout=15,
-    )
-
-    token_network.handle_channel_new_deposit_event(
-        channel_identifier=DEFAULT_CHANNEL_ID, receiver=PRIVATE_KEY_1_ADDRESS, total_deposit=100
-    )
-
-    token_network.handle_channel_new_deposit_event(
-        channel_identifier=DEFAULT_CHANNEL_ID, receiver=PRIVATE_KEY_2_ADDRESS, total_deposit=100
-    )
-
-    # Check that the new channel has id == 0
-    assert token_network.channel_id_to_addresses[DEFAULT_CHANNEL_ID] == (
-        PRIVATE_KEY_1_ADDRESS,
-        PRIVATE_KEY_2_ADDRESS,
-    )
     with patch(
         "pathfinding_service.service.recover_signer_from_capacity_update", PRIVATE_KEY_1_ADDRESS
     ):
@@ -233,32 +209,11 @@ def test_pfs_rejects_capacity_update_with_impossible_other_capacity(
 def test_pfs_rejects_capacity_update_with_wrong_updating_participant(
     pathfinding_service_web3_mock,
 ):
+    token_network = TokenNetwork(token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS)
+    pathfinding_service_web3_mock.token_networks[token_network.address] = token_network
     pathfinding_service_web3_mock.chain_id = ChainID(1)
 
-    token_network = TokenNetwork(token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS)
-
-    pathfinding_service_web3_mock.token_networks[token_network.address] = token_network
-
-    token_network.handle_channel_opened_event(
-        channel_identifier=DEFAULT_CHANNEL_ID,
-        participant1=PRIVATE_KEY_1_ADDRESS,
-        participant2=PRIVATE_KEY_2_ADDRESS,
-        settle_timeout=15,
-    )
-
-    token_network.handle_channel_new_deposit_event(
-        channel_identifier=DEFAULT_CHANNEL_ID, receiver=PRIVATE_KEY_1_ADDRESS, total_deposit=100
-    )
-
-    token_network.handle_channel_new_deposit_event(
-        channel_identifier=DEFAULT_CHANNEL_ID, receiver=PRIVATE_KEY_2_ADDRESS, total_deposit=100
-    )
-
-    # Check that the new channel has id == 0
-    assert token_network.channel_id_to_addresses[DEFAULT_CHANNEL_ID] == (
-        PRIVATE_KEY_1_ADDRESS,
-        PRIVATE_KEY_2_ADDRESS,
-    )
+    setup_channel_with_deposits(token_network)
 
     message = get_updatepfs_message(
         updating_participant=PRIVATE_KEY_3_ADDRESS,
@@ -272,32 +227,11 @@ def test_pfs_rejects_capacity_update_with_wrong_updating_participant(
 
 
 def test_pfs_rejects_capacity_update_with_wrong_other_participant(pathfinding_service_web3_mock):
+    token_network = TokenNetwork(token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS)
+    pathfinding_service_web3_mock.token_networks[token_network.address] = token_network
     pathfinding_service_web3_mock.chain_id = ChainID(1)
 
-    token_network = TokenNetwork(token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS)
-
-    pathfinding_service_web3_mock.token_networks[token_network.address] = token_network
-
-    token_network.handle_channel_opened_event(
-        channel_identifier=DEFAULT_CHANNEL_ID,
-        participant1=PRIVATE_KEY_1_ADDRESS,
-        participant2=PRIVATE_KEY_2_ADDRESS,
-        settle_timeout=15,
-    )
-
-    token_network.handle_channel_new_deposit_event(
-        channel_identifier=DEFAULT_CHANNEL_ID, receiver=PRIVATE_KEY_1_ADDRESS, total_deposit=100
-    )
-
-    token_network.handle_channel_new_deposit_event(
-        channel_identifier=DEFAULT_CHANNEL_ID, receiver=PRIVATE_KEY_2_ADDRESS, total_deposit=100
-    )
-
-    # Check that the new channel has id == 0
-    assert token_network.channel_id_to_addresses[DEFAULT_CHANNEL_ID] == (
-        PRIVATE_KEY_1_ADDRESS,
-        PRIVATE_KEY_2_ADDRESS,
-    )
+    setup_channel_with_deposits(token_network)
 
     message = get_updatepfs_message(
         updating_participant=PRIVATE_KEY_1_ADDRESS,
@@ -311,32 +245,11 @@ def test_pfs_rejects_capacity_update_with_wrong_other_participant(pathfinding_se
 
 
 def test_pfs_rejects_capacity_update_with_wrong_nonces(pathfinding_service_web3_mock):
+    token_network = TokenNetwork(token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS)
+    pathfinding_service_web3_mock.token_networks[token_network.address] = token_network
     pathfinding_service_web3_mock.chain_id = ChainID(1)
 
-    token_network = TokenNetwork(token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS)
-
-    pathfinding_service_web3_mock.token_networks[token_network.address] = token_network
-
-    token_network.handle_channel_opened_event(
-        channel_identifier=DEFAULT_CHANNEL_ID,
-        participant1=PRIVATE_KEY_1_ADDRESS,
-        participant2=PRIVATE_KEY_2_ADDRESS,
-        settle_timeout=15,
-    )
-
-    token_network.handle_channel_new_deposit_event(
-        channel_identifier=DEFAULT_CHANNEL_ID, receiver=PRIVATE_KEY_1_ADDRESS, total_deposit=100
-    )
-
-    token_network.handle_channel_new_deposit_event(
-        channel_identifier=DEFAULT_CHANNEL_ID, receiver=PRIVATE_KEY_2_ADDRESS, total_deposit=100
-    )
-
-    # Check that the new channel has id == 0
-    assert token_network.channel_id_to_addresses[DEFAULT_CHANNEL_ID] == (
-        PRIVATE_KEY_1_ADDRESS,
-        PRIVATE_KEY_2_ADDRESS,
-    )
+    setup_channel_with_deposits(token_network)
 
     message = get_updatepfs_message(
         updating_participant=PRIVATE_KEY_1_ADDRESS,
@@ -363,32 +276,12 @@ def test_pfs_rejects_capacity_update_with_wrong_nonces(pathfinding_service_web3_
 
 
 def test_pfs_rejects_capacity_update_with_incorrect_signature(pathfinding_service_web3_mock):
+    token_network = TokenNetwork(token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS)
+    pathfinding_service_web3_mock.token_networks[token_network.address] = token_network
     pathfinding_service_web3_mock.chain_id = ChainID(1)
 
-    token_network = TokenNetwork(token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS)
+    setup_channel_with_deposits(token_network)
 
-    pathfinding_service_web3_mock.token_networks[token_network.address] = token_network
-
-    token_network.handle_channel_opened_event(
-        channel_identifier=DEFAULT_CHANNEL_ID,
-        participant1=PRIVATE_KEY_1_ADDRESS,
-        participant2=PRIVATE_KEY_2_ADDRESS,
-        settle_timeout=15,
-    )
-
-    token_network.handle_channel_new_deposit_event(
-        channel_identifier=DEFAULT_CHANNEL_ID, receiver=PRIVATE_KEY_1_ADDRESS, total_deposit=100
-    )
-
-    token_network.handle_channel_new_deposit_event(
-        channel_identifier=DEFAULT_CHANNEL_ID, receiver=PRIVATE_KEY_2_ADDRESS, total_deposit=100
-    )
-
-    # Check that the new channel has id == 0
-    assert token_network.channel_id_to_addresses[DEFAULT_CHANNEL_ID] == (
-        PRIVATE_KEY_1_ADDRESS,
-        PRIVATE_KEY_2_ADDRESS,
-    )
     message = get_updatepfs_message(
         updating_participant=PRIVATE_KEY_1_ADDRESS,
         other_participant=PRIVATE_KEY_2_ADDRESS,
