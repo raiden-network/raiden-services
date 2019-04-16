@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import ClassVar, Dict, List, Optional, Tuple, Type
+from typing import ClassVar, Dict, List, Optional, Tuple, Type, TypeVar
 
 import marshmallow
 import pkg_resources
@@ -34,6 +34,7 @@ from raiden_libs.marshmallow import HexedBytes
 from raiden_libs.types import Address, TokenNetworkAddress
 
 log = structlog.get_logger(__name__)
+T = TypeVar('T')
 
 
 class ApiWithErrorHandler(Api):
@@ -62,6 +63,16 @@ class PathfinderResource(Resource):
             raise exceptions.UnsupportedTokenNetwork(token_network=token_network_address)
         return token_network
 
+    @staticmethod
+    def _parse_post(req_class: T) -> T:
+        json = request.get_json()
+        if not json:
+            raise exceptions.ApiException('JSON payload expected')
+        req, errors = req_class.Schema().load(json)  # type: ignore
+        if errors:
+            raise exceptions.InvalidRequest(**errors)
+        return req
+
 
 @add_schema
 @dataclass
@@ -84,23 +95,16 @@ class PathRequest:
 class PathsResource(PathfinderResource):
     def post(self, token_network_address: str) -> Tuple[dict, int]:
         token_network = self._validate_token_network_argument(token_network_address)
-
-        json = request.get_json()
-        if not json:
-            raise exceptions.ApiException('JSON payload expected')
-        path_req, errors = PathRequest.Schema().load(json)
-        if errors:
-            raise exceptions.InvalidRequest(**errors)
+        path_req = self._parse_post(PathRequest)
         process_payment(path_req.iou, self.pathfinding_service)
 
+        # only add optional args if not None, so we can use defaults
+        optional_args = {}
+        for arg in ['diversity_penalty', 'fee_penalty']:
+            value = getattr(path_req, arg)
+            if value is not None:
+                optional_args[arg] = value
         try:
-            # only optional args if not None, so we can use defaults
-            optional_args = {}
-            for arg in ['diversity_penalty', 'fee_penalty']:
-                value = getattr(path_req, arg)
-                if value is not None:
-                    optional_args[arg] = value
-
             paths = token_network.get_paths(
                 source=path_req.from_,
                 target=path_req.to,
@@ -109,19 +113,12 @@ class PathsResource(PathfinderResource):
                 **optional_args,
             )
         except (NetworkXNoPath, NodeNotFound):
-            return (
-                {
-                    'errors': 'No suitable path found for transfer from {} to {}.'.format(
-                        path_req.from_, path_req.to
-                    )
-                },
-                400,
-            )
+            raise exceptions.NoRouteFound(from_=path_req.from_, to=path_req.to)
 
         return {'result': paths}, 200
 
 
-def process_payment(iou: IOU, pathfinding_service: PathfindingService) -> None:
+def process_payment(iou: Optional[IOU], pathfinding_service: PathfindingService) -> None:
     if pathfinding_service.service_fee == 0:
         return
     if iou is None:
