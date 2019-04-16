@@ -10,32 +10,14 @@ from raiden_contracts.constants import (
     CONTRACT_TOKEN_NETWORK_REGISTRY,
     CONTRACT_USER_DEPOSIT,
 )
-from raiden_libs.events import Event, ReceiveChannelOpenedEvent, UpdatedHeadBlockEvent
+from raiden_contracts.tests.utils import get_random_address, get_random_privkey
+from raiden_libs.events import ReceiveChannelOpenedEvent, UpdatedHeadBlockEvent
+from raiden_libs.types import TokenNetworkAddress
+
+from ...libs.mocks.web3 import ContractMock, Web3Mock
 
 
-class MockBlockchainListener:  # pylint: disable=too-few-public-methods
-    def __init__(self, block_events: List[List[Event]]):
-        self.block_events = block_events
-
-    def get_events(self, chain_state, to_block: int):
-        from_block = chain_state.latest_known_block + 1
-        blocks = self.block_events[from_block : to_block + 1]
-        events = [ev for block in blocks for ev in block]  # flatten
-        return chain_state, events
-
-
-def test_crash(
-    monitoring_service: MonitoringService,  # adds stake in ServiceRegistry
-    web3,
-    contracts_manager,
-    server_private_key,
-    token_network_registry_contract,
-    monitoring_service_contract,
-    user_deposit_contract,
-    tmpdir,
-    generate_raiden_clients,
-    token_network,
-):
+def test_crash(tmpdir, generate_raiden_clients, mockchain):
     """ Process blocks and compare results with/without crash
 
     A somewhat meaninful crash handling is simulated by not including the
@@ -43,6 +25,7 @@ def test_crash(
     """
     channel_identifier = ChannelID(3)
     c1, c2 = generate_raiden_clients(2)
+    token_network_address = TokenNetworkAddress(get_random_address())
     monitor_request = c2.get_monitor_request(
         balance_proof=c1.get_balance_proof(
             channel_id=channel_identifier,
@@ -58,7 +41,7 @@ def test_crash(
     events = [
         [
             ReceiveChannelOpenedEvent(
-                token_network_address=token_network.address,
+                token_network_address=token_network_address,
                 channel_identifier=channel_identifier,
                 participant1=c1.address,
                 participant2=c2.address,
@@ -69,26 +52,30 @@ def test_crash(
         [UpdatedHeadBlockEvent(BlockNumber(1))],
         [
             ActionMonitoringTriggeredEvent(
-                token_network_address=token_network.address,
+                token_network_address=token_network_address,
                 channel_identifier=channel_identifier,
                 non_closing_participant=c2.address,
             )
         ],
         [UpdatedHeadBlockEvent(BlockNumber(3))],
     ]
+    mockchain(events)
+
+    server_private_key = get_random_privkey()
+
+    contracts = {
+        CONTRACT_TOKEN_NETWORK_REGISTRY: ContractMock(),
+        CONTRACT_MONITORING_SERVICE: ContractMock(),
+        CONTRACT_USER_DEPOSIT: ContractMock(),
+    }
 
     def new_ms(filename):
         ms = MonitoringService(
-            web3=web3,
+            web3=Web3Mock(),
             private_key=server_private_key,
-            contracts={
-                CONTRACT_TOKEN_NETWORK_REGISTRY: token_network_registry_contract,
-                CONTRACT_MONITORING_SERVICE: monitoring_service_contract,
-                CONTRACT_USER_DEPOSIT: user_deposit_contract,
-            },
+            contracts=contracts,
             db_filename=os.path.join(tmpdir, filename),
         )
-        ms.bcl = MockBlockchainListener(events)  # type: ignore
         msc = Mock()
         ms.context.monitoring_service_contract = msc
         ms.monitor_mock = msc.functions.monitor.return_value.transact  # type: ignore
@@ -100,9 +87,9 @@ def test_crash(
     crashy_ms = new_ms('crashy.db')
     for ms in [stable_ms, crashy_ms]:
         ms.database.conn.execute(
-            "INSERT INTO token_network(address) VALUES (?)", [token_network.address]
+            "INSERT INTO token_network(address) VALUES (?)", [token_network_address]
         )
-        ms.context.ms_state.blockchain_state.token_network_addresses = [token_network.address]
+        ms.context.ms_state.blockchain_state.token_network_addresses = [token_network_address]
         ms.database.upsert_monitor_request(monitor_request)
         ms.database.conn.commit()
 
