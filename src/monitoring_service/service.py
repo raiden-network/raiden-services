@@ -35,7 +35,7 @@ def check_gas_reserve(web3: Web3, private_key: str) -> None:
     gas_price = web3.eth.gasPrice
     gas_limit = GAS_REQUIRED_FOR_MS_MONITOR
     estimated_required_balance = gas_limit * gas_price * DEFAULT_GAS_BUFFER_FACTOR
-    estimated_required_balance_eth = Web3.fromWei(estimated_required_balance, 'ether')
+    estimated_required_balance_eth = Web3.fromWei(estimated_required_balance, "ether")
     current_balance = web3.eth.getBalance(private_key_to_address(private_key))
     if current_balance < estimated_required_balance:
         log.error(
@@ -47,12 +47,12 @@ def check_gas_reserve(web3: Web3, private_key: str) -> None:
 
 
 def handle_event(event: Event, context: Context) -> None:
-    log.debug('Processing event', event_=event)
+    log.debug("Processing event", event_=event)
     handler = HANDLERS.get(type(event))
 
     if handler:
         handler(event, context)
-        log.debug('Processed event', num_scheduled_events=context.db.scheduled_event_count())
+        log.debug("Processed event", num_scheduled_events=context.db.scheduled_event_count())
 
 
 class MonitoringService:  # pylint: disable=too-few-public-methods
@@ -127,7 +127,7 @@ class MonitoringService:  # pylint: disable=too-few-public-methods
             try:
                 wait_function(self.poll_interval)
             except KeyboardInterrupt:
-                log.info('Shutting down')
+                log.info("Shutting down")
                 sys.exit(0)
 
     def _process_new_blocks(self, last_block: BlockNumber) -> None:
@@ -175,15 +175,15 @@ class MonitoringService:  # pylint: disable=too-few-public-methods
             if receipt is not None:
                 self.context.db.remove_waiting_transaction(tx_hash)
 
-                if receipt['status'] == 1:
+                if receipt["status"] == 1:
                     log.info(
-                        'Transaction was mined successfully',
+                        "Transaction was mined successfully",
                         transaction_hash=tx_hash,
                         receipt=receipt,
                     )
                 else:
                     log.error(
-                        'Transaction was not mined successfully',
+                        "Transaction was not mined successfully",
                         transaction_hash=tx_hash,
                         receipt=receipt,
                     )

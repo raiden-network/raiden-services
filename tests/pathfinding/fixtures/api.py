@@ -33,7 +33,7 @@ def get_free_port(address: str, initial_port: int):
             connect_using_port = (
                 conn
                 for conn in psutil.net_connections()
-                if hasattr(conn, 'laddr') and conn.laddr[0] == address and conn.laddr[1] == port
+                if hasattr(conn, "laddr") and conn.laddr[0] == address and conn.laddr[1] == port
             )
 
             # only generate unused ports
@@ -43,14 +43,14 @@ def get_free_port(address: str, initial_port: int):
     return _unused_ports()
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def free_port() -> int:
-    return next(get_free_port('localhost', DEFAULT_API_PORT))
+    return next(get_free_port("localhost", DEFAULT_API_PORT))
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def api_url(free_port: int) -> str:
-    return 'http://localhost:{}{}'.format(free_port, API_PATH)
+    return "http://localhost:{}{}".format(free_port, API_PATH)
 
 
 @pytest.fixture

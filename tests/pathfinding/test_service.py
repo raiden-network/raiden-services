@@ -20,11 +20,11 @@ def test_save_and_load_token_networks(pathfinding_service_mock):
     pfs = pathfinding_service_mock
     pfs.token_networks = {}  # the mock does not fit this case exactly
 
-    token_address = Address('0x' + '1' * 40)
-    token_network_address = TokenNetworkAddress('0x' + '2' * 40)
+    token_address = Address("0x" + "1" * 40)
+    token_network_address = TokenNetworkAddress("0x" + "2" * 40)
     channel_id = ChannelID(1)
-    p1 = Address('0x' + '3' * 40)
-    p2 = Address('0x' + '4' * 40)
+    p1 = Address("0x" + "3" * 40)
+    p2 = Address("0x" + "4" * 40)
     events = [
         ReceiveTokenNetworkCreatedEvent(
             token_address=token_address,
@@ -54,18 +54,18 @@ def test_save_and_load_token_networks(pathfinding_service_mock):
     assert loaded.G.nodes == orig.G.nodes
 
 
-@patch('pathfinding_service.service.MatrixListener', Mock)
+@patch("pathfinding_service.service.MatrixListener", Mock)
 def test_crash(tmpdir, mockchain):
     """ Process blocks and compare results with/without crash
 
     A somewhat meaninful crash handling is simulated by not including the
     UpdatedHeadBlockEvent in every block.
     """
-    token_address = Address('0x' + '1' * 40)
-    token_network_address = TokenNetworkAddress('0x' + '2' * 40)
+    token_address = Address("0x" + "1" * 40)
+    token_network_address = TokenNetworkAddress("0x" + "2" * 40)
     channel_id = ChannelID(1)
-    p1 = Address('0x' + '3' * 40)
-    p2 = Address('0x' + '4' * 40)
+    p1 = Address("0x" + "3" * 40)
+    p2 = Address("0x" + "4" * 40)
     events = [
         [
             ReceiveTokenNetworkCreatedEvent(
@@ -105,12 +105,12 @@ def test_crash(tmpdir, mockchain):
         return service
 
     # initialize both services
-    stable_service = new_service('stable.db')
-    crashy_service = new_service('crashy.db')
+    stable_service = new_service("stable.db")
+    crashy_service = new_service("crashy.db")
 
     # process each block and compare results between crashy and stable service
     for to_block in range(len(events)):
-        crashy_service = new_service('crashy.db')  # new instance to simulate crash
+        crashy_service = new_service("crashy.db")  # new instance to simulate crash
         result_state: List[dict] = []
         for service in [stable_service, crashy_service]:
             service._process_new_blocks(to_block)

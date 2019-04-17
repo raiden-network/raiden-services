@@ -34,8 +34,8 @@ def get_random_monitor_request(get_random_identifier):
         contract_address = get_random_address()
         channel_identifier = get_random_identifier()
 
-        balance_hash_data = '%d' % random.randint(0, UINT64_MAX)
-        additional_hash_data = '%d' % random.randint(0, UINT64_MAX)
+        balance_hash_data = "%d" % random.randint(0, UINT64_MAX)
+        additional_hash_data = "%d" % random.randint(0, UINT64_MAX)
 
         balance_hash = encode_hex((balance_hash_data.encode()))
         nonce = random.randint(0, UINT64_MAX)
@@ -102,8 +102,8 @@ def test_save_and_load_channel(ms_database):
             state=random.choice(list(ChannelState)),
             closing_block=BlockNumber(random.randint(0, UINT256_MAX)),
             closing_participant=Address(get_random_address()),
-            closing_tx_hash=TransactionHash('%d' % random.randint(0, UINT64_MAX)),
-            claim_tx_hash=TransactionHash('%d' % random.randint(0, UINT64_MAX)),
+            closing_tx_hash=TransactionHash("%d" % random.randint(0, UINT64_MAX)),
+            claim_tx_hash=TransactionHash("%d" % random.randint(0, UINT64_MAX)),
             update_status=update_status,
         )
         ms_database.upsert_channel(channel)

@@ -38,14 +38,14 @@ def get_contract_addresses_and_start_block(
         contract_data = get_contracts_deployment_info(chain_id=chain_id, version=contracts_version)
     except ValueError:
         log.error(
-            'No deployed contracts were found at the default registry',
+            "No deployed contracts were found at the default registry",
             contracts_version=contracts_version,
         )
         sys.exit(1)
 
     # Get deployed addresses for those contracts which have no overwrites
     addresses = {
-        c: address_overwrites.get(c, Address(contract_data['contracts'][c]['address']))
+        c: address_overwrites.get(c, Address(contract_data["contracts"][c]["address"]))
         for c in contracts
     }
 
@@ -54,7 +54,7 @@ def get_contract_addresses_and_start_block(
         start_block = BlockNumber(0)
     else:
         start_block = BlockNumber(
-            max(0, min(contract_data['contracts'][c]['block_number'] for c in contracts))
+            max(0, min(contract_data["contracts"][c]["block_number"] for c in contracts))
         )
 
     return addresses, start_block

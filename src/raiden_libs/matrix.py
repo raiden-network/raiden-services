@@ -38,13 +38,13 @@ CLASSNAME_TO_CLASS: Dict[str, Message] = {klass.__name__: klass for klass in SER
 
 def message_from_dict(data: dict) -> Message:
     try:
-        klass: Message = CLASSNAME_TO_CLASS[data['type']]
+        klass: Message = CLASSNAME_TO_CLASS[data["type"]]
     except KeyError:
-        if 'type' in data:
+        if "type" in data:
             raise InvalidProtocolMessage(
-                'Invalid message type (data["type"] = {})'.format(data['type'])
+                'Invalid message type (data["type"] = {})'.format(data["type"])
             ) from None
-        raise InvalidProtocolMessage('Invalid message data. Can not find the data type') from None
+        raise InvalidProtocolMessage("Invalid message data. Can not find the data type") from None
 
     return klass.from_dict(data)
 
@@ -61,9 +61,9 @@ class MatrixListener(gevent.Greenlet):
 
         try:
             self.client, self.monitoring_room = self.setup_matrix(service_room_suffix)
-            self.monitoring_room.add_listener(self._handle_message, 'm.room.message')
+            self.monitoring_room.add_listener(self._handle_message, "m.room.message")
         except ConnectionError as e:
-            log.critical('Could not connect to broadcasting system.', exc=e)
+            log.critical("Could not connect to broadcasting system.", exc=e)
             sys.exit(1)
 
     def listen_forever(self) -> None:
@@ -98,7 +98,7 @@ class MatrixListener(gevent.Greenlet):
         try:
             login_or_register(client, signer=LocalSigner(private_key=decode_hex(self.private_key)))
         except (MatrixRequestError, ValueError):
-            raise ConnectionError('Could not login/register to matrix.')
+            raise ConnectionError("Could not login/register to matrix.")
 
         try:
             room_name = make_room_alias(self.chain_id, service_room_suffix)
@@ -106,18 +106,18 @@ class MatrixListener(gevent.Greenlet):
                 client=client, name=room_name, servers=available_servers
             )
         except (MatrixRequestError, TransportError):
-            raise ConnectionError('Could not join monitoring broadcasting room.')
+            raise ConnectionError("Could not join monitoring broadcasting room.")
 
         return client, monitoring_room
 
     def _get_user(self, user: Union[User, str]) -> User:
         """Creates an User from an user_id, if none, or fetch a cached User """
-        user_id: str = getattr(user, 'user_id', user)
+        user_id: str = getattr(user, "user_id", user)
         if self.monitoring_room and user_id in self.monitoring_room._members:
             duser: User = self.monitoring_room._members[user_id]
 
             # if handed a User instance with displayname set, update the discovery room cache
-            if getattr(user, 'displayname', None):
+            if getattr(user, "displayname", None):
                 assert isinstance(user, User)
                 duser.displayname = user.displayname
             user = duser
@@ -128,26 +128,26 @@ class MatrixListener(gevent.Greenlet):
 
     def _handle_message(self, room: Any, event: dict) -> bool:
         """ Handle text messages sent to listening rooms """
-        if event['type'] != 'm.room.message' or event['content']['msgtype'] != 'm.text':
+        if event["type"] != "m.room.message" or event["content"]["msgtype"] != "m.text":
             # Ignore non-messages and non-text messages
             return False
 
-        sender_id = event['sender']
+        sender_id = event["sender"]
         user = self._get_user(sender_id)
         peer_address = validate_userid_signature(user)
 
         if not peer_address:
             log.debug(
-                'Message from invalid user displayName signature',
+                "Message from invalid user displayName signature",
                 peer_user=user.user_id,
                 room=room,
             )
             return False
 
-        data = event['content']['body']
+        data = event["content"]["body"]
         if not isinstance(data, str):
             log.warning(
-                'Received message body not a string',
+                "Received message body not a string",
                 peer_user=user.user_id,
                 peer_address=to_checksum_address(peer_address),
                 room=room,
@@ -175,11 +175,11 @@ class MatrixListener(gevent.Greenlet):
                 continue
 
             if not isinstance(message, SignedMessage):
-                logger.warning('Received invalid message', message=message)
+                logger.warning("Received invalid message", message=message)
                 continue
             elif message.sender != peer_address:
                 logger.warning(
-                    'Message not signed by sender!', message=message, signer=message.sender
+                    "Message not signed by sender!", message=message, signer=message.sender
                 )
                 continue
             messages.append(message)
@@ -189,7 +189,7 @@ class MatrixListener(gevent.Greenlet):
 
         for message in messages:
             log.debug(
-                'Message received', message=message, sender=to_checksum_address(message.sender)
+                "Message received", message=message, sender=to_checksum_address(message.sender)
             )
             self.callback(message)
 

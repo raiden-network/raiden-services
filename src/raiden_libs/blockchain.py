@@ -53,12 +53,12 @@ def decode_event(abi: ABI, log_: Dict) -> Dict:
     Returns:
         The decoded event
     """
-    if isinstance(log_['topics'][0], str):
-        log_['topics'][0] = decode_hex(log_['topics'][0])
-    elif isinstance(log_['topics'][0], int):
-        log_['topics'][0] = decode_hex(hex(log_['topics'][0]))
-    event_id = log_['topics'][0]
-    events = filter_by_type('event', abi)
+    if isinstance(log_["topics"][0], str):
+        log_["topics"][0] = decode_hex(log_["topics"][0])
+    elif isinstance(log_["topics"][0], int):
+        log_["topics"][0] = decode_hex(hex(log_["topics"][0]))
+    event_id = log_["topics"][0]
+    events = filter_by_type("event", abi)
     topic_to_event_abi = {event_abi_to_log_topic(event_abi): event_abi for event_abi in events}
     event_abi = topic_to_event_abi[event_id]
     return get_event_data(event_abi, log_)
@@ -88,10 +88,10 @@ def query_blockchain_events(
         All matching events
     """
     filter_params = {
-        'fromBlock': from_block,
-        'toBlock': to_block,
-        'address': to_checksum_address(contract_address),
-        'topics': topics,
+        "fromBlock": from_block,
+        "toBlock": to_block,
+        "address": to_checksum_address(contract_address),
+        "topics": topics,
     }
 
     events = web3.eth.getLogs(filter_params)
@@ -117,7 +117,7 @@ def get_blockchain_events(
         return chain_state, []
 
     new_chain_state = deepcopy(chain_state)
-    log.info('Querying new block(s)', from_block=from_block, end_block=to_block)
+    log.info("Querying new block(s)", from_block=from_block, end_block=to_block)
 
     # first check for new token networks and add to state
     registry_events = query_blockchain_events(
@@ -132,9 +132,9 @@ def get_blockchain_events(
 
     events: List[Event] = []
     for event in registry_events:
-        token_network_address = event['args']['token_network_address']
-        token_address = event['args']['token_address']
-        block_number = event['blockNumber']
+        token_network_address = event["args"]["token_network_address"]
+        token_address = event["args"]["token_address"]
+        block_number = event["blockNumber"]
 
         events.append(
             ReceiveTokenNetworkCreatedEvent(
@@ -143,7 +143,7 @@ def get_blockchain_events(
                 block_number=block_number,
             )
         )
-        new_chain_state.token_network_addresses.append(event['args']['token_network_address'])
+        new_chain_state.token_network_addresses.append(event["args"]["token_network_address"])
 
     # then check all token networks
     for token_network_address in new_chain_state.token_network_addresses:
@@ -158,42 +158,42 @@ def get_blockchain_events(
         )
 
         for event in network_events:
-            event_name = event['event']
+            event_name = event["event"]
 
             common_infos = dict(
-                token_network_address=event['address'],
-                channel_identifier=event['args']['channel_identifier'],
-                block_number=event['blockNumber'],
+                token_network_address=event["address"],
+                channel_identifier=event["args"]["channel_identifier"],
+                block_number=event["blockNumber"],
             )
 
             if event_name == ChannelEvent.OPENED:
                 events.append(
                     ReceiveChannelOpenedEvent(
-                        participant1=event['args']['participant1'],
-                        participant2=event['args']['participant2'],
-                        settle_timeout=event['args']['settle_timeout'],
+                        participant1=event["args"]["participant1"],
+                        participant2=event["args"]["participant2"],
+                        settle_timeout=event["args"]["settle_timeout"],
                         **common_infos,
                     )
                 )
             elif event_name == ChannelEvent.DEPOSIT:
                 events.append(
                     ReceiveChannelNewDepositEvent(
-                        participant_address=event['args']['participant'],
-                        total_deposit=event['args']['total_deposit'],
+                        participant_address=event["args"]["participant"],
+                        total_deposit=event["args"]["total_deposit"],
                         **common_infos,
                     )
                 )
             elif event_name == ChannelEvent.CLOSED:
                 events.append(
                     ReceiveChannelClosedEvent(
-                        closing_participant=event['args']['closing_participant'], **common_infos
+                        closing_participant=event["args"]["closing_participant"], **common_infos
                     )
                 )
             elif event_name == ChannelEvent.BALANCE_PROOF_UPDATED:
                 events.append(
                     ReceiveNonClosingBalanceProofUpdatedEvent(
-                        closing_participant=event['args']['closing_participant'],
-                        nonce=event['args']['nonce'],
+                        closing_participant=event["args"]["closing_participant"],
+                        nonce=event["args"]["nonce"],
                         **common_infos,
                     )
                 )
@@ -236,27 +236,27 @@ def get_monitoring_blockchain_events(
 
     events: List[Event] = []
     for event in monitoring_service_events:
-        event_name = event['event']
-        block_number = event['blockNumber']
+        event_name = event["event"]
+        block_number = event["blockNumber"]
 
         if event_name == MonitoringServiceEvent.NEW_BALANCE_PROOF_RECEIVED:
             events.append(
                 ReceiveMonitoringNewBalanceProofEvent(
-                    token_network_address=event['args']['token_network_address'],
-                    channel_identifier=event['args']['channel_identifier'],
-                    reward_amount=event['args']['reward_amount'],
-                    nonce=event['args']['nonce'],
-                    ms_address=event['args']['ms_address'],
-                    raiden_node_address=event['args']['raiden_node_address'],
+                    token_network_address=event["args"]["token_network_address"],
+                    channel_identifier=event["args"]["channel_identifier"],
+                    reward_amount=event["args"]["reward_amount"],
+                    nonce=event["args"]["nonce"],
+                    ms_address=event["args"]["ms_address"],
+                    raiden_node_address=event["args"]["raiden_node_address"],
                     block_number=block_number,
                 )
             )
         elif event_name == MonitoringServiceEvent.REWARD_CLAIMED:
             events.append(
                 ReceiveMonitoringRewardClaimedEvent(
-                    ms_address=event['args']['ms_address'],
-                    amount=event['args']['amount'],
-                    reward_identifier=encode_hex(event['args']['reward_identifier']),
+                    ms_address=event["args"]["ms_address"],
+                    amount=event["args"]["amount"],
+                    reward_identifier=encode_hex(event["args"]["reward_identifier"]),
                     block_number=block_number,
                 )
             )

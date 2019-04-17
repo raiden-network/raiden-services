@@ -29,7 +29,7 @@ log = structlog.get_logger(__name__)
 
 
 def _open_keystore(keystore_file: str, password: str) -> str:
-    with open(keystore_file, 'r') as keystore:
+    with open(keystore_file, "r") as keystore:
         try:
             private_key = Account.decrypt(
                 keyfile_json=json.load(keystore), password=password
@@ -37,7 +37,7 @@ def _open_keystore(keystore_file: str, password: str) -> str:
             return private_key
         except ValueError as error:
             log.critical(
-                'Could not decode keyfile with given password. Please try again.',
+                "Could not decode keyfile with given password. Please try again.",
                 reason=str(error),
             )
             sys.exit(1)
@@ -48,7 +48,7 @@ def validate_address(_ctx: click.Context, _param: click.Parameter, value: str) -
         # None as default value allowed
         return None
     if not is_checksum_address(value):
-        raise click.BadParameter('not an EIP-55 checksummed address')
+        raise click.BadParameter("not an EIP-55 checksummed address")
     return value
 
 
@@ -67,27 +67,27 @@ def common_options(app_name: str) -> Callable:
         for option in reversed(
             [
                 click.option(
-                    '--keystore-file',
+                    "--keystore-file",
                     required=True,
                     type=click.Path(exists=True, dir_okay=False, readable=True),
-                    help='Path to a keystore file.',
+                    help="Path to a keystore file.",
                 ),
                 click.password_option(
-                    '--password',
+                    "--password",
                     confirmation_prompt=False,
-                    help='Password to unlock the keystore file.',
+                    help="Password to unlock the keystore file.",
                 ),
                 click.option(
-                    '--state-db',
-                    default=os.path.join(click.get_app_dir(app_name), 'state.db'),
+                    "--state-db",
+                    default=os.path.join(click.get_app_dir(app_name), "state.db"),
                     type=str,
-                    help='Path to SQLite3 db which stores the application state',
+                    help="Path to SQLite3 db which stores the application state",
                 ),
                 click.option(
-                    '--log-level',
-                    default='INFO',
-                    type=click.Choice(['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG']),
-                    help='Print log messages of this level and more important ones',
+                    "--log-level",
+                    default="INFO",
+                    type=click.Choice(["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"]),
+                    help="Print log messages of this level and more important ones",
                     callback=lambda ctx, param, value: setup_logging(str(value)),
                     expose_value=False,
                 ),
@@ -97,8 +97,8 @@ def common_options(app_name: str) -> Callable:
 
         @wraps(func)
         def call_with_opened_keystore(**params: Any) -> Callable:
-            params['private_key'] = _open_keystore(
-                params.pop('keystore_file'), params.pop('password')
+            params["private_key"] = _open_keystore(
+                params.pop("keystore_file"), params.pop("password")
             )
             return func(**params)
 
@@ -111,23 +111,23 @@ def blockchain_options(contracts: List[str], contracts_version: str = None) -> C
     """A decorator providing blockchain related params to a command"""
     options = [
         click.Option(
-            ['--eth-rpc'], default='http://localhost:8545', type=str, help='Ethereum node RPC URI'
+            ["--eth-rpc"], default="http://localhost:8545", type=str, help="Ethereum node RPC URI"
         )
     ]
 
     arg_for_contract = {
-        CONTRACT_TOKEN_NETWORK_REGISTRY: 'registry',
-        CONTRACT_USER_DEPOSIT: 'user-deposit-contract',
-        CONTRACT_MONITORING_SERVICE: 'monitor-contract',
-        CONTRACT_ONE_TO_N: 'one-to-n-contract',
+        CONTRACT_TOKEN_NETWORK_REGISTRY: "registry",
+        CONTRACT_USER_DEPOSIT: "user-deposit-contract",
+        CONTRACT_MONITORING_SERVICE: "monitor-contract",
+        CONTRACT_ONE_TO_N: "one-to-n-contract",
     }
 
     param_for_contract: Dict[str, str] = {}
     for c in contracts:
         option = click.Option(
-            ['--{}-address'.format(arg_for_contract[c])],
+            ["--{}-address".format(arg_for_contract[c])],
             type=str,
-            help=f'Address of the {c} contract',
+            help=f"Address of the {c} contract",
             callback=validate_address,
         )
         options.append(option)
@@ -147,8 +147,8 @@ def blockchain_options(contracts: List[str], contracts_version: str = None) -> C
                 )
                 if value is not None
             }
-            params['web3'], params['contracts'], params['start_block'] = connect_to_blockchain(
-                eth_rpc=params.pop('eth_rpc'),
+            params["web3"], params["contracts"], params["start_block"] = connect_to_blockchain(
+                eth_rpc=params.pop("eth_rpc"),
                 used_contracts=contracts,
                 address_overwrites=address_overwrites,
                 contracts_version=contracts_version,
@@ -168,15 +168,15 @@ def connect_to_blockchain(
     contracts_version: str = None,
 ) -> Tuple[Web3, Dict[str, Contract], BlockNumber]:
     try:
-        log.info('Starting Web3 client', node_address=eth_rpc)
+        log.info("Starting Web3 client", node_address=eth_rpc)
         provider = HTTPProvider(eth_rpc)
         web3 = Web3(provider)
         # Will throw ConnectionError on bad Ethereum client
         chain_id = ChainID(int(web3.net.version))
     except ConnectionError:
         log.error(
-            'Can not connect to the Ethereum client. Please check that it is running and that '
-            'your settings are correct.',
+            "Can not connect to the Ethereum client. Please check that it is running and that "
+            "your settings are correct.",
             eth_rpc=eth_rpc,
         )
         sys.exit(1)
@@ -185,10 +185,10 @@ def connect_to_blockchain(
     web3.middleware_stack.inject(geth_poa_middleware, layer=0)
 
     # give web3 some time between retries before failing
-    provider.middlewares.replace('http_retry_request', http_retry_with_backoff_middleware)
+    provider.middlewares.replace("http_retry_request", http_retry_with_backoff_middleware)
 
     if contracts_version:
-        log.info(f'Using contracts version: {contracts_version}')
+        log.info(f"Using contracts version: {contracts_version}")
 
     addresses, start_block = get_contract_addresses_and_start_block(
         chain_id=chain_id,
@@ -201,5 +201,5 @@ def connect_to_blockchain(
         for c, address in addresses.items()
     }
 
-    log.info('Contract information', addresses=addresses, start_block=start_block)
+    log.info("Contract information", addresses=addresses, start_block=start_block)
     return web3, contracts, start_block

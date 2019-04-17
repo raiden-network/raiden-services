@@ -90,7 +90,7 @@ class HashedBalanceProof:
             balance_hash_data = (transferred_amount, locked_amount, locksroot)
             assert all(x is not None for x in balance_hash_data)
             self.balance_hash = encode_hex(
-                Web3.soliditySha3(['uint256', 'uint256', 'bytes32'], balance_hash_data)
+                Web3.soliditySha3(["uint256", "uint256", "bytes32"], balance_hash_data)
             )
         else:
             self.balance_hash = balance_hash
@@ -104,7 +104,7 @@ class HashedBalanceProof:
 
     def serialize_bin(self, msg_type: MessageTypeId = MessageTypeId.BALANCE_PROOF) -> bytes:
         return pack_data(
-            ['address', 'uint256', 'uint256', 'uint256', 'bytes32', 'uint256', 'bytes32'],
+            ["address", "uint256", "uint256", "uint256", "bytes32", "uint256", "bytes32"],
             [
                 self.token_network_address,
                 self.chain_id,
@@ -151,7 +151,7 @@ class UnsignedMonitorRequest:
     @classmethod
     def from_balance_proof(
         cls, balance_proof: HashedBalanceProof, reward_amount: TokenAmount
-    ) -> 'UnsignedMonitorRequest':
+    ) -> "UnsignedMonitorRequest":
         return cls(
             channel_identifier=balance_proof.channel_identifier,
             token_network_address=balance_proof.token_network_address,
@@ -163,7 +163,7 @@ class UnsignedMonitorRequest:
             reward_amount=reward_amount,
         )
 
-    def sign(self, priv_key: str) -> 'MonitorRequest':
+    def sign(self, priv_key: str) -> "MonitorRequest":
         local_signer = LocalSigner(private_key=decode_hex(priv_key))
         return MonitorRequest(
             channel_identifier=self.channel_identifier,
@@ -182,7 +182,7 @@ class UnsignedMonitorRequest:
         self, message_type: MessageTypeId = MessageTypeId.BALANCE_PROOF
     ) -> bytes:
         return pack_data(
-            ['address', 'uint256', 'uint256', 'uint256', 'bytes32', 'uint256', 'bytes32'],
+            ["address", "uint256", "uint256", "uint256", "bytes32", "uint256", "bytes32"],
             [
                 self.token_network_address,
                 self.chain_id,
@@ -197,7 +197,7 @@ class UnsignedMonitorRequest:
     def packed_reward_proof_data(self) -> bytes:
         """Return reward proof data serialized to binary"""
         return pack_data(
-            ['uint256', 'uint256', 'address', 'uint256', 'uint256'],
+            ["uint256", "uint256", "address", "uint256", "uint256"],
             [
                 self.channel_identifier,
                 self.reward_amount,
@@ -242,18 +242,18 @@ class MonitorRequest(UnsignedMonitorRequest):
         )
 
     @classmethod
-    def deserialize(cls, data: Dict[str, Any]) -> 'MonitorRequest':
+    def deserialize(cls, data: Dict[str, Any]) -> "MonitorRequest":
         jsonschema.validate(data, MONITOR_REQUEST_SCHEMA)
         result = cls(
-            data['balance_proof']['channel_identifier'],
-            data['balance_proof']['token_network_address'],
-            data['balance_proof']['chain_id'],
-            data['balance_proof']['balance_hash'],
-            data['balance_proof']['nonce'],
-            data['balance_proof']['additional_hash'],
-            data['balance_proof']['closing_signature'],
-            data['non_closing_signature'],
-            data['reward_proof_signature'],
-            data['reward_amount'],
+            data["balance_proof"]["channel_identifier"],
+            data["balance_proof"]["token_network_address"],
+            data["balance_proof"]["chain_id"],
+            data["balance_proof"]["balance_hash"],
+            data["balance_proof"]["nonce"],
+            data["balance_proof"]["additional_hash"],
+            data["balance_proof"]["closing_signature"],
+            data["non_closing_signature"],
+            data["reward_proof_signature"],
+            data["reward_amount"],
         )
         return result

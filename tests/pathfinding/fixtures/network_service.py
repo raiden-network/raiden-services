@@ -16,7 +16,7 @@ from raiden_libs.types import Address
 from raiden_libs.utils import private_key_to_address
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def channel_descriptions_case_1() -> List:
     """ Creates a network with some edge cases.
 
@@ -189,7 +189,7 @@ def populate_token_network_random(
         )
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def populate_token_network() -> Callable:
     def populate_token_network(
         token_network: TokenNetwork, addresses: List[Address], channel_descriptions: List
@@ -284,19 +284,19 @@ def populate_token_network_case_3(
 def pathfinding_service_mock(
     contracts_manager: ContractManager, token_network_model: TokenNetwork
 ) -> Generator[PathfindingService, None, None]:
-    with patch('pathfinding_service.service.MatrixListener', new=Mock):
+    with patch("pathfinding_service.service.MatrixListener", new=Mock):
         web3_mock = Mock()
-        web3_mock.net.version = '1'
+        web3_mock.net.version = "1"
         web3_mock.eth.blockNumber = 1
 
         pathfinding_service = PathfindingService(
             web3=web3_mock,
             contracts={
-                CONTRACT_TOKEN_NETWORK_REGISTRY: Mock(address='0x' + '9' * 40),
-                CONTRACT_USER_DEPOSIT: Mock(address='0x' + '8' * 40),
+                CONTRACT_TOKEN_NETWORK_REGISTRY: Mock(address="0x" + "9" * 40),
+                CONTRACT_USER_DEPOSIT: Mock(address="0x" + "8" * 40),
             },
-            private_key='3a1076bf45ab87712ad64ccb3b10217737f7faacbf2872e88fdd9a537d8fe266',
-            db_filename=':memory:',
+            private_key="3a1076bf45ab87712ad64ccb3b10217737f7faacbf2872e88fdd9a537d8fe266",
+            db_filename=":memory:",
         )
         pathfinding_service.token_networks = {token_network_model.address: token_network_model}
         mock_udc = pathfinding_service.user_deposit_contract
@@ -310,15 +310,15 @@ def pathfinding_service_mock(
 def pathfinding_service_web3_mock(
     contracts_manager: ContractManager, web3: Web3, user_deposit_contract: Contract
 ) -> Generator[PathfindingService, None, None]:
-    with patch('pathfinding_service.service.MatrixListener', new=Mock):
+    with patch("pathfinding_service.service.MatrixListener", new=Mock):
         pathfinding_service = PathfindingService(
             web3=web3,
             contracts={
-                CONTRACT_TOKEN_NETWORK_REGISTRY: Mock(address='0x' + '9' * 40),
+                CONTRACT_TOKEN_NETWORK_REGISTRY: Mock(address="0x" + "9" * 40),
                 CONTRACT_USER_DEPOSIT: user_deposit_contract,
             },
-            private_key='3a1076bf45ab87712ad64ccb3b10217737f7faacbf2872e88fdd9a537d8fe266',
-            db_filename=':memory:',
+            private_key="3a1076bf45ab87712ad64ccb3b10217737f7faacbf2872e88fdd9a537d8fe266",
+            db_filename=":memory:",
         )
 
         yield pathfinding_service

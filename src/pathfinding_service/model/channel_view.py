@@ -62,6 +62,6 @@ class ChannelView:
         return int(self.absolute_fee + amount * self.relative_fee)
 
     def __repr__(self) -> str:
-        return '<ChannelView from={} to={} capacity={}>'.format(
+        return "<ChannelView from={} to={} capacity={}>".format(
             self.participant1, self.participant2, self.capacity
         )

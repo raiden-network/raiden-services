@@ -54,7 +54,7 @@ class Context:
 def channel_opened_event_handler(event: Event, context: Context) -> None:
     assert isinstance(event, ReceiveChannelOpenedEvent)
     log.info(
-        'Received new channel',
+        "Received new channel",
         token_network_address=event.token_network_address,
         identifier=event.channel_identifier,
         channel=event,
@@ -76,7 +76,7 @@ def channel_closed_event_handler(event: Event, context: Context) -> None:
 
     if channel is None:
         log.error(
-            'Channel not in database',
+            "Channel not in database",
             token_network_address=event.token_network_address,
             identifier=event.channel_identifier,
         )
@@ -108,7 +108,7 @@ def channel_closed_event_handler(event: Event, context: Context) -> None:
         )
 
         log.info(
-            'Channel closed, triggering monitoring check',
+            "Channel closed, triggering monitoring check",
             token_network_address=event.token_network_address,
             identifier=channel.identifier,
             scheduled_event=triggered_event,
@@ -122,7 +122,7 @@ def channel_closed_event_handler(event: Event, context: Context) -> None:
         )
     else:
         log.warning(
-            'Settle period timeout is in the past, skipping',
+            "Settle period timeout is in the past, skipping",
             token_network_address=event.token_network_address,
             identifier=channel.identifier,
             settle_period_end_block=settle_period_end_block,
@@ -141,14 +141,14 @@ def non_closing_balance_proof_updated_event_handler(event: Event, context: Conte
 
     if channel is None:
         log.error(
-            'Channel not in database',
+            "Channel not in database",
             token_network_address=event.token_network_address,
             identifier=event.channel_identifier,
         )
         return
 
     log.info(
-        'Received update event for channel',
+        "Received update event for channel",
         token_network_address=event.token_network_address,
         identifier=event.channel_identifier,
     )
@@ -159,7 +159,7 @@ def non_closing_balance_proof_updated_event_handler(event: Event, context: Conte
         non_closing_participant = channel.participant1
     else:
         log.error(
-            'Update event contains invalid closing participant',
+            "Update event contains invalid closing participant",
             participant1=channel.participant1,
             participant2=channel.participant2,
             closing_participant=event.closing_participant,
@@ -169,7 +169,7 @@ def non_closing_balance_proof_updated_event_handler(event: Event, context: Conte
     # check for known update calls and update accordingly
     if channel.update_status is None:
         log.info(
-            'Creating channel update state',
+            "Creating channel update state",
             token_network_address=channel.token_network_address,
             channel_identifier=channel.identifier,
             new_nonce=event.nonce,
@@ -184,14 +184,14 @@ def non_closing_balance_proof_updated_event_handler(event: Event, context: Conte
         # nonce not bigger, should never happen as it is checked in the contract
         if event.nonce <= channel.update_status.nonce:
             log.error(
-                'updateNonClosingBalanceProof nonce smaller than the known one, ignoring.',
+                "updateNonClosingBalanceProof nonce smaller than the known one, ignoring.",
                 know_nonce=channel.update_status.nonce,
                 received_nonce=event.nonce,
             )
             return
 
         log.info(
-            'Updating channel update state',
+            "Updating channel update state",
             token_network_address=channel.token_network_address,
             channel_identifier=channel.identifier,
             new_nonce=event.nonce,
@@ -211,14 +211,14 @@ def channel_settled_event_handler(event: Event, context: Context) -> None:
 
     if channel is None:
         log.error(
-            'Channel not in database',
+            "Channel not in database",
             token_network_address=event.token_network_address,
             identifier=event.channel_identifier,
         )
         return
 
     log.info(
-        'Received settle event for channel',
+        "Received settle event for channel",
         token_network_address=event.token_network_address,
         identifier=event.channel_identifier,
     )
@@ -233,14 +233,14 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context) -> N
 
     if channel is None:
         log.error(
-            'Channel not in database',
+            "Channel not in database",
             token_network_address=event.token_network_address,
             identifier=event.channel_identifier,
         )
         return
 
     log.info(
-        'Received MSC NewBalanceProof event',
+        "Received MSC NewBalanceProof event",
         token_network_address=event.token_network_address,
         identifier=event.channel_identifier,
         evt=event,
@@ -250,7 +250,7 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context) -> N
     update_status = channel.update_status
     if update_status is None:
         log.info(
-            'Creating channel update state',
+            "Creating channel update state",
             token_network_address=channel.token_network_address,
             channel_identifier=channel.identifier,
             new_nonce=event.nonce,
@@ -266,14 +266,14 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context) -> N
         # nonce not bigger, should never happen as it is checked in the contract
         if event.nonce < update_status.nonce:
             log.error(
-                'MSC NewBalanceProof nonce smaller than the known one, ignoring.',
+                "MSC NewBalanceProof nonce smaller than the known one, ignoring.",
                 know_nonce=update_status.nonce,
                 received_nonce=event.nonce,
             )
             return
 
         log.info(
-            'Updating channel update state',
+            "Updating channel update state",
             token_network_address=channel.token_network_address,
             channel_identifier=channel.identifier,
             new_nonce=event.nonce,
@@ -289,7 +289,7 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context) -> N
     # of `claimReward`
     # it will be checked there that our update was the latest one
     if event.ms_address == context.ms_state.address:
-        assert channel.closing_block is not None, 'closing_block not set'
+        assert channel.closing_block is not None, "closing_block not set"
         trigger_block = BlockNumber(channel.closing_block + channel.settle_timeout + 5)
 
         # trigger the claim reward action by an event
@@ -309,7 +309,7 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context) -> N
 
 def monitor_reward_claim_event_handler(event: Event, context: Context) -> None:
     assert isinstance(event, ReceiveMonitoringRewardClaimedEvent)
-    log.info('Received MSC RewardClaimed event', evt=event)
+    log.info("Received MSC RewardClaimed event", evt=event)
 
 
 def updated_head_block_event_handler(event: Event, context: Context) -> None:
@@ -325,11 +325,11 @@ def _is_mr_valid(monitor_request: MonitorRequest, channel: Channel) -> bool:
         monitor_request.signer not in channel.participants
         or monitor_request.non_closing_signer not in channel.participants
     ):
-        log.info('MR signed by unknown party', channel=channel)
+        log.info("MR signed by unknown party", channel=channel)
         return False
 
     if monitor_request.signer == monitor_request.non_closing_signer:
-        log.info('MR signed by closing party', channel=channel)
+        log.info("MR signed by closing party", channel=channel)
         return False
 
     return True
@@ -337,7 +337,7 @@ def _is_mr_valid(monitor_request: MonitorRequest, channel: Channel) -> bool:
 
 def action_monitoring_triggered_event_handler(event: Event, context: Context) -> None:
     assert isinstance(event, ActionMonitoringTriggeredEvent)
-    log.info('Triggering channel monitoring')
+    log.info("Triggering channel monitoring")
 
     monitor_request = context.db.get_monitor_request(
         token_network_address=event.token_network_address,
@@ -366,7 +366,7 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
 
     if monitor_request.reward_amount < context.min_reward:
         log.info(
-            'Monitor request not executed due to insufficient reward amount',
+            "Monitor request not executed due to insufficient reward amount",
             monitor_request=monitor_request,
             min_reward=context.min_reward,
         )
@@ -390,10 +390,10 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
                 monitor_request.reward_amount,
                 monitor_request.token_network_address,
                 monitor_request.reward_proof_signature,
-            ).transact({'from': context.ms_state.address})
+            ).transact({"from": context.ms_state.address})
 
             log.info(
-                'Sent transaction calling `monitor` for channel',
+                "Sent transaction calling `monitor` for channel",
                 token_network_address=channel.token_network_address,
                 channel_identifier=channel.identifier,
                 transaction_hash=encode_hex(tx_hash),
@@ -407,12 +407,12 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
                 channel.closing_tx_hash = tx_hash
                 context.db.upsert_channel(channel)
         except Exception as e:
-            log.error('Sending tx failed', exc_info=True, err=e)
+            log.error("Sending tx failed", exc_info=True, err=e)
 
 
 def action_claim_reward_triggered_event_handler(event: Event, context: Context) -> None:
     assert isinstance(event, ActionClaimRewardTriggeredEvent)
-    log.info('Triggering reward claim')
+    log.info("Triggering reward claim")
 
     monitor_request = context.db.get_monitor_request(
         token_network_address=event.token_network_address,
@@ -436,13 +436,13 @@ def action_claim_reward_triggered_event_handler(event: Event, context: Context) 
         and channel.update_status is not None
         and channel.update_status.update_sender_address == context.ms_state.address
     )
-    log.info('Checking if eligible for reward', reward_available=can_claim)
+    log.info("Checking if eligible for reward", reward_available=can_claim)
 
     # check if claiming will produce a reward
     has_reward = monitor_request.reward_amount > 0
     if not has_reward:
         log.warning(
-            'MonitorRequest has no reward. Skipping reward claim.',
+            "MonitorRequest has no reward. Skipping reward claim.",
             reward_amount=monitor_request.reward_amount,
             monitor_request=monitor_request,
         )
@@ -454,10 +454,10 @@ def action_claim_reward_triggered_event_handler(event: Event, context: Context) 
                 monitor_request.token_network_address,
                 monitor_request.signer,
                 monitor_request.non_closing_signer,
-            ).transact({'from': context.ms_state.address})
+            ).transact({"from": context.ms_state.address})
 
             log.info(
-                'Sent transaction calling `claimReward` for channel',
+                "Sent transaction calling `claimReward` for channel",
                 token_network_address=channel.token_network_address,
                 channel_identifier=channel.identifier,
                 transaction_hash=encode_hex(tx_hash),
@@ -471,7 +471,7 @@ def action_claim_reward_triggered_event_handler(event: Event, context: Context) 
                 channel.claim_tx_hash = tx_hash
                 context.db.upsert_channel(channel)
         except Exception as e:
-            log.error('Sending tx failed', exc_info=True, err=e)
+            log.error("Sending tx failed", exc_info=True, err=e)
 
 
 HANDLERS = {

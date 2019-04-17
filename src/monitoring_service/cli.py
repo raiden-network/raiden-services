@@ -23,18 +23,18 @@ log = structlog.get_logger(__name__)
 )
 @click.command()
 @click.option(
-    '--min-reward',
+    "--min-reward",
     default=0,
     type=click.IntRange(min=0),
-    help='Minimum reward which is required before processing requests',
+    help="Minimum reward which is required before processing requests",
 )
 @click.option(
-    '--confirmations',
+    "--confirmations",
     default=DEFAULT_REQUIRED_CONFIRMATIONS,
     type=click.IntRange(min=0),
-    help='Number of block confirmations to wait for',
+    help="Number of block confirmations to wait for",
 )
-@common_options('raiden-monitoring-service')
+@common_options("raiden-monitoring-service")
 def main(
     private_key: str,
     state_db: str,
@@ -61,5 +61,5 @@ def main(
     return 0
 
 
-if __name__ == '__main__':
-    main(auto_envvar_prefix='MS')
+if __name__ == "__main__":
+    main(auto_envvar_prefix="MS")

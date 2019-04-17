@@ -29,8 +29,8 @@ class IOU:
         return (
             Web3.toBytes(hexstr=self.sender)
             + Web3.toBytes(hexstr=self.receiver)
-            + encode_single('uint256', self.amount)
-            + encode_single('uint256', self.expiration_block)
+            + encode_single("uint256", self.amount)
+            + encode_single("uint256", self.expiration_block)
         )
 
     def is_signature_valid(self) -> bool:
@@ -47,6 +47,6 @@ class IOU:
             keccak(
                 Web3.toBytes(hexstr=self.receiver)
                 + Web3.toBytes(hexstr=self.sender)
-                + encode_single('uint256', self.expiration_block)
+                + encode_single("uint256", self.expiration_block)
             )
         )

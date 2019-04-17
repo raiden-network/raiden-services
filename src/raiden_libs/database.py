@@ -15,7 +15,7 @@ def convert_hex(raw: bytes) -> int:
     return int(raw, 16)
 
 
-sqlite3.register_converter('HEX_INT', convert_hex)
+sqlite3.register_converter("HEX_INT", convert_hex)
 
 
 def hex256(x: int) -> str:
@@ -25,7 +25,7 @@ def hex256(x: int) -> str:
     and numeric ordering are identical. This facilitates working with these
     numbers in the database without native uint256 support.
     """
-    return '0x{:064x}'.format(x)
+    return "0x{:064x}".format(x)
 
 
 class BaseDatabase:
@@ -33,19 +33,19 @@ class BaseDatabase:
     schema_filename: str
 
     def __init__(self, filename: str, allow_create: bool = False):
-        log.info('Opening database', filename=filename)
-        if filename == ':memory:':
+        log.info("Opening database", filename=filename)
+        if filename == ":memory:":
             self.conn = sqlite3.connect(
-                ':memory:',
+                ":memory:",
                 detect_types=sqlite3.PARSE_DECLTYPES,
                 isolation_level=None,  # Disable sqlite3 module’s implicit transaction management
             )
         else:
             if os.path.dirname(filename):
                 os.makedirs(os.path.dirname(filename), exist_ok=True)
-            mode = 'rwc' if allow_create else 'rw'
+            mode = "rwc" if allow_create else "rw"
             self.conn = sqlite3.connect(
-                f'file:{filename}?mode={mode}',
+                f"file:{filename}?mode={mode}",
                 detect_types=sqlite3.PARSE_DECLTYPES,
                 uri=True,
                 isolation_level=None,  # Disable sqlite3 module’s implicit transaction management
@@ -64,7 +64,7 @@ class BaseDatabase:
         assert chain_id >= 0
         assert is_checksum_address(receiver)
         for contract, address in contract_addresses.items():
-            assert is_checksum_address(address), f'Bad {contract}: {address}!'
+            assert is_checksum_address(address), f"Bad {contract}: {address}!"
 
         initialized = self.conn.execute(
             "SELECT name FROM sqlite_master WHERE type='table' AND name='blockchain'"
@@ -82,15 +82,15 @@ class BaseDatabase:
             ).fetchone()
             for key, val in settings.items():
                 old = old_settings[key]
-                assert old == val, f'DB was created with {key}={old}, got {val}!'
+                assert old == val, f"DB was created with {key}={old}, got {val}!"
         else:
             # create db schema
             with open(self.schema_filename) as schema_file:
                 self.conn.executescript(schema_file.read())
             update_stmt = "UPDATE blockchain SET {}".format(
-                ','.join(
-                    f'{key} = :{key}'
-                    for key in ['chain_id', 'receiver', 'latest_known_block']
+                ",".join(
+                    f"{key} = :{key}"
+                    for key in ["chain_id", "receiver", "latest_known_block"]
                     + list(contract_addresses)
                 )
             )
@@ -101,12 +101,12 @@ class BaseDatabase:
         token_network_addresses = [
             row[0] for row in self.conn.execute("SELECT address FROM token_network")
         ]
-        latest_known_block = blockchain['latest_known_block']
+        latest_known_block = blockchain["latest_known_block"]
 
         return BlockchainState(
-            chain_id=blockchain['chain_id'],
-            token_network_registry_address=blockchain['token_network_registry_address'],
-            monitor_contract_address=blockchain['monitor_contract_address'],
+            chain_id=blockchain["chain_id"],
+            token_network_registry_address=blockchain["token_network_registry_address"],
+            monitor_contract_address=blockchain["monitor_contract_address"],
             latest_known_block=latest_known_block,
             token_network_addresses=token_network_addresses,
         )

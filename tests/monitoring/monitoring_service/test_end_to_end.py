@@ -56,10 +56,10 @@ def test_e2e(
     # add deposit for c1
     node_deposit = 10
     custom_token.functions.approve(user_deposit_contract.address, node_deposit).transact(
-        {'from': c1.address}
+        {"from": c1.address}
     )
     user_deposit_contract.functions.deposit(c1.address, node_deposit).transact(
-        {'from': c1.address}
+        {"from": c1.address}
     )
 
     deposit = service_registry.functions.deposits(monitoring_service.address).call()
@@ -73,8 +73,8 @@ def test_e2e(
         nonce=1,
         transferred_amount=transferred_c1,
         locked_amount=0,
-        locksroot='0x%064x' % 0,
-        additional_hash='0x%064x' % 0,
+        locksroot="0x%064x" % 0,
+        additional_hash="0x%064x" % 0,
     )
     transferred_c2 = 6
     balance_proof_c2 = c2.get_balance_proof(
@@ -82,8 +82,8 @@ def test_e2e(
         nonce=2,
         transferred_amount=transferred_c2,
         locked_amount=0,
-        locksroot='0x%064x' % 0,
-        additional_hash='0x%064x' % 0,
+        locksroot="0x%064x" % 0,
+        additional_hash="0x%064x" % 0,
     )
     ms_greenlet = gevent.spawn(monitoring_service.start, gevent.sleep)
 
@@ -113,7 +113,7 @@ def test_e2e(
         c1.address,
         (transferred_c2, transferred_c1),
         (0, 0),  # locked_amount
-        ('0x%064x' % 0, '0x%064x' % 0),  # locksroot
+        ("0x%064x" % 0, "0x%064x" % 0),  # locksroot
     )
     # Wait until the ChannelSettled is confirmed
     # Let the MS claim its reward

@@ -33,23 +33,23 @@ def server_private_key(ethereum_tester):
 @pytest.fixture
 def default_cli_args_ms(default_cli_args) -> List[str]:
     return default_cli_args + [
-        '--registry-address',
-        '0x' + '1' * 40,
-        '--monitor-contract-address',
-        '0x' + '2' * 40,
-        '--user-deposit-contract-address',
-        '0x' + '3' * 40,
+        "--registry-address",
+        "0x" + "1" * 40,
+        "--monitor-contract-address",
+        "0x" + "2" * 40,
+        "--user-deposit-contract-address",
+        "0x" + "3" * 40,
     ]
 
 
 @pytest.fixture
 def ms_database():
     return Database(
-        filename=':memory:',
+        filename=":memory:",
         chain_id=1,
-        msc_address=Address('0x' + '2' * 40),
-        registry_address=Address('0x' + '3' * 40),
-        receiver=Address('0x' + '4' * 40),
+        msc_address=Address("0x" + "2" * 40),
+        registry_address=Address("0x" + "3" * 40),
+        receiver=Address("0x" + "4" * 40),
     )
 
 
@@ -70,11 +70,11 @@ def monitoring_service(
     ms_address = private_key_to_address(server_private_key)
     send_funds(ms_address)
     deposit = 10  # any amount is sufficient for regsitration, right now
-    custom_token.functions.mint(deposit).transact({'from': ms_address})
+    custom_token.functions.mint(deposit).transact({"from": ms_address})
     custom_token.functions.approve(service_registry.address, deposit).transact(
-        {'from': ms_address}
+        {"from": ms_address}
     )
-    service_registry.functions.deposit(deposit).transact({'from': ms_address})
+    service_registry.functions.deposit(deposit).transact({"from": ms_address})
 
     ms = MonitoringService(
         web3=web3,
@@ -86,7 +86,7 @@ def monitoring_service(
         },
         required_confirmations=1,  # for faster tests
         poll_interval=0.01,  # for faster tests
-        db_filename=':memory:',
+        db_filename=":memory:",
     )
     # We need a shared db between MS and RC so the MS can use MR saved by the RC
     ms.context.db = ms_database
@@ -103,7 +103,7 @@ def request_collector(
     send_funds,
     contracts_manager: ContractManager,
 ):
-    with patch('request_collector.server.MatrixListener'):
+    with patch("request_collector.server.MatrixListener"):
         rc = RequestCollector(private_key=server_private_key, state_db=ms_database)
         rc.start()
         yield rc
