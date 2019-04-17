@@ -12,7 +12,11 @@ REPOS = {
             'source': '/data/raiden-services',
             'deployment': '/data/services-dev',
         },
-        'names': ['pfs-ropsten', 'pfs-rinkeby', 'pfs-kovan'],
+        'names': [
+            'pfs-ropsten', 'pfs-rinkeby', 'pfs-kovan',
+            'ms-ropsten', 'ms-rinkeby', 'ms-kovan',
+            'msrc-ropsten', 'msrc-rinkeby', 'msrc-kovan',
+        ],
     },
 }
 
