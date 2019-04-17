@@ -234,14 +234,13 @@ class InfoResource(PathfinderResource):
     version = pkg_resources.get_distribution("raiden-services").version
 
     def get(self) -> Tuple[dict, int]:
-        price = 0
         settings = "PLACEHOLDER FOR PATHFINDER SETTINGS"
         operator = "PLACEHOLDER FOR PATHFINDER OPERATOR"
         message = "PLACEHOLDER FOR ADDITIONAL MESSAGE BY THE PFS"
 
         return (
             {
-                "price_info": price,
+                "price_info": self.pathfinding_service.service_fee,
                 "network_info": {
                     "chain_id": self.pathfinding_service.chain_id,
                     "registry_address": self.pathfinding_service.registry_address,

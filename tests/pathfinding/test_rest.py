@@ -215,12 +215,13 @@ def test_get_paths(
 
 
 def test_get_info(api_sut: ServiceApi, api_url: str, pathfinding_service_mock):
+    pathfinding_service_mock.service_fee = 123
     url = api_url + "/info"
 
     response = requests.get(url)
     assert response.status_code == 200
     assert response.json() == {
-        "price_info": 0,
+        "price_info": 123,
         "network_info": {
             "chain_id": pathfinding_service_mock.chain_id,
             "registry_address": pathfinding_service_mock.registry_address,
