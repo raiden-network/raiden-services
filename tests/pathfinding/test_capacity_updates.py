@@ -11,6 +11,7 @@ from eth_utils import decode_hex
 
 from pathfinding_service.exceptions import InvalidCapacityUpdate
 from pathfinding_service.model import TokenNetwork
+from pathfinding_service.service import PathfindingService
 from raiden.constants import UINT256_MAX
 from raiden.messages import UpdatePFS
 from raiden.utils import CanonicalIdentifier
@@ -39,24 +40,36 @@ PRIVATE_KEY_3_ADDRESS = private_key_to_address(PRIVATE_KEY_3)
 DEFAULT_CHANNEL_ID = ChannelID(0)
 
 
-def setup_channel_with_deposits(token_network: TokenNetwork):
+def setup_channel(service: PathfindingService) -> TokenNetwork:
+    token_network = TokenNetwork(token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS)
+    service.token_networks[token_network.address] = token_network
+
     token_network.handle_channel_opened_event(
         channel_identifier=DEFAULT_CHANNEL_ID,
         participant1=PRIVATE_KEY_1_ADDRESS,
         participant2=PRIVATE_KEY_2_ADDRESS,
         settle_timeout=15,
     )
+
+    # Check that the new channel has id == 0
+    assert token_network.channel_id_to_addresses[DEFAULT_CHANNEL_ID] == (
+        PRIVATE_KEY_1_ADDRESS,
+        PRIVATE_KEY_2_ADDRESS,
+    )
+
+    return token_network
+
+
+def setup_channel_with_deposits(service: PathfindingService) -> TokenNetwork:
+    token_network = setup_channel(service)
+
     token_network.handle_channel_new_deposit_event(
         channel_identifier=DEFAULT_CHANNEL_ID, receiver=PRIVATE_KEY_1_ADDRESS, total_deposit=100
     )
     token_network.handle_channel_new_deposit_event(
         channel_identifier=DEFAULT_CHANNEL_ID, receiver=PRIVATE_KEY_2_ADDRESS, total_deposit=100
     )
-    # Check that the new channel has id == 0
-    assert token_network.channel_id_to_addresses[DEFAULT_CHANNEL_ID] == (
-        PRIVATE_KEY_1_ADDRESS,
-        PRIVATE_KEY_2_ADDRESS,
-    )
+    return token_network
 
 
 def get_updatepfs_message(
@@ -94,7 +107,11 @@ def get_updatepfs_message(
     return updatepfs_message
 
 
-def test_pfs_rejects_capacity_update_with_wrong_chain_id(pathfinding_service_web3_mock):
+def test_pfs_rejects_capacity_update_with_wrong_chain_id(
+    pathfinding_service_web3_mock: PathfindingService
+):
+    setup_channel(pathfinding_service_web3_mock)
+
     message = get_updatepfs_message(
         chain_identifier=ChainID(121212),
         updating_participant=PRIVATE_KEY_1_ADDRESS,
@@ -108,11 +125,9 @@ def test_pfs_rejects_capacity_update_with_wrong_chain_id(pathfinding_service_web
 
 
 def test_pfs_rejects_capacity_update_with_wrong_token_network_address(
-    pathfinding_service_web3_mock,
+    pathfinding_service_web3_mock: PathfindingService,
 ):
-    token_network = TokenNetwork(token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS)
-    pathfinding_service_web3_mock.token_networks[token_network.address] = token_network
-    pathfinding_service_web3_mock.chain_id = ChainID(1)
+    setup_channel(pathfinding_service_web3_mock)
 
     message = get_updatepfs_message(
         token_network_address=TokenNetworkAddressBytes(decode_hex("0x" + "1" * 40)),
@@ -126,23 +141,10 @@ def test_pfs_rejects_capacity_update_with_wrong_token_network_address(
     assert "unknown token network" in str(exinfo.value)
 
 
-def test_pfs_rejects_capacity_update_with_wrong_channel_identifier(pathfinding_service_web3_mock):
-    token_network = TokenNetwork(token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS)
-    pathfinding_service_web3_mock.token_networks[token_network.address] = token_network
-    pathfinding_service_web3_mock.chain_id = ChainID(1)
-
-    token_network.handle_channel_opened_event(
-        channel_identifier=DEFAULT_CHANNEL_ID,
-        participant1=PRIVATE_KEY_1_ADDRESS,
-        participant2=PRIVATE_KEY_2_ADDRESS,
-        settle_timeout=15,
-    )
-
-    # Check that the new channel has id == 0
-    assert token_network.channel_id_to_addresses[DEFAULT_CHANNEL_ID] == (
-        PRIVATE_KEY_1_ADDRESS,
-        PRIVATE_KEY_2_ADDRESS,
-    )
+def test_pfs_rejects_capacity_update_with_wrong_channel_identifier(
+    pathfinding_service_web3_mock: PathfindingService
+):
+    setup_channel(pathfinding_service_web3_mock)
 
     message = get_updatepfs_message(
         channel_identifier=ChannelID(35),
@@ -157,13 +159,9 @@ def test_pfs_rejects_capacity_update_with_wrong_channel_identifier(pathfinding_s
 
 
 def test_pfs_rejects_capacity_update_with_impossible_updating_capacity(
-    pathfinding_service_web3_mock,
+    pathfinding_service_web3_mock: PathfindingService,
 ):
-    token_network = TokenNetwork(token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS)
-    pathfinding_service_web3_mock.token_networks[token_network.address] = token_network
-    pathfinding_service_web3_mock.chain_id = ChainID(1)
-
-    setup_channel_with_deposits(token_network)
+    setup_channel_with_deposits(pathfinding_service_web3_mock)
 
     with patch(
         "pathfinding_service.service.recover_signer_from_capacity_update", PRIVATE_KEY_1_ADDRESS
@@ -182,13 +180,9 @@ def test_pfs_rejects_capacity_update_with_impossible_updating_capacity(
 
 
 def test_pfs_rejects_capacity_update_with_impossible_other_capacity(
-    pathfinding_service_web3_mock,
+    pathfinding_service_web3_mock: PathfindingService,
 ):
-    token_network = TokenNetwork(token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS)
-    pathfinding_service_web3_mock.token_networks[token_network.address] = token_network
-    pathfinding_service_web3_mock.chain_id = ChainID(1)
-
-    setup_channel_with_deposits(token_network)
+    setup_channel_with_deposits(pathfinding_service_web3_mock)
 
     with patch(
         "pathfinding_service.service.recover_signer_from_capacity_update", PRIVATE_KEY_1_ADDRESS
@@ -207,13 +201,9 @@ def test_pfs_rejects_capacity_update_with_impossible_other_capacity(
 
 
 def test_pfs_rejects_capacity_update_with_wrong_updating_participant(
-    pathfinding_service_web3_mock,
+    pathfinding_service_web3_mock: PathfindingService,
 ):
-    token_network = TokenNetwork(token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS)
-    pathfinding_service_web3_mock.token_networks[token_network.address] = token_network
-    pathfinding_service_web3_mock.chain_id = ChainID(1)
-
-    setup_channel_with_deposits(token_network)
+    setup_channel_with_deposits(pathfinding_service_web3_mock)
 
     message = get_updatepfs_message(
         updating_participant=PRIVATE_KEY_3_ADDRESS,
@@ -226,12 +216,10 @@ def test_pfs_rejects_capacity_update_with_wrong_updating_participant(
     assert "Sender of Capacity Update does not match" in str(exinfo.value)
 
 
-def test_pfs_rejects_capacity_update_with_wrong_other_participant(pathfinding_service_web3_mock):
-    token_network = TokenNetwork(token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS)
-    pathfinding_service_web3_mock.token_networks[token_network.address] = token_network
-    pathfinding_service_web3_mock.chain_id = ChainID(1)
-
-    setup_channel_with_deposits(token_network)
+def test_pfs_rejects_capacity_update_with_wrong_other_participant(
+    pathfinding_service_web3_mock: PathfindingService
+):
+    setup_channel_with_deposits(pathfinding_service_web3_mock)
 
     message = get_updatepfs_message(
         updating_participant=PRIVATE_KEY_1_ADDRESS,
@@ -244,12 +232,10 @@ def test_pfs_rejects_capacity_update_with_wrong_other_participant(pathfinding_se
     assert "Other Participant of Capacity Update does not match" in str(exinfo.value)
 
 
-def test_pfs_rejects_capacity_update_with_wrong_nonces(pathfinding_service_web3_mock):
-    token_network = TokenNetwork(token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS)
-    pathfinding_service_web3_mock.token_networks[token_network.address] = token_network
-    pathfinding_service_web3_mock.chain_id = ChainID(1)
-
-    setup_channel_with_deposits(token_network)
+def test_pfs_rejects_capacity_update_with_wrong_nonces(
+    pathfinding_service_web3_mock: PathfindingService
+):
+    token_network = setup_channel_with_deposits(pathfinding_service_web3_mock)
 
     message = get_updatepfs_message(
         updating_participant=PRIVATE_KEY_1_ADDRESS,
@@ -275,12 +261,10 @@ def test_pfs_rejects_capacity_update_with_wrong_nonces(pathfinding_service_web3_
     assert "Capacity Update already received" in str(exinfo.value)
 
 
-def test_pfs_rejects_capacity_update_with_incorrect_signature(pathfinding_service_web3_mock):
-    token_network = TokenNetwork(token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS)
-    pathfinding_service_web3_mock.token_networks[token_network.address] = token_network
-    pathfinding_service_web3_mock.chain_id = ChainID(1)
-
-    setup_channel_with_deposits(token_network)
+def test_pfs_rejects_capacity_update_with_incorrect_signature(
+    pathfinding_service_web3_mock: PathfindingService
+):
+    setup_channel_with_deposits(pathfinding_service_web3_mock)
 
     message = get_updatepfs_message(
         updating_participant=PRIVATE_KEY_1_ADDRESS,
