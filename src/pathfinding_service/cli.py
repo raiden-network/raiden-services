@@ -2,7 +2,7 @@
 from gevent import monkey, config  # isort:skip # noqa
 
 # there were some issues with the 'thread' resolver, remove it from the options
-config.resolver = ['dnspython', 'ares', 'block']  # noqa
+config.resolver = ["dnspython", "ares", "block"]  # noqa
 monkey.patch_all()  # isort:skip # noqa
 
 from typing import Dict
@@ -25,25 +25,25 @@ DEFAULT_REQUIRED_CONFIRMATIONS = 8  # ~2min with 15s blocks
 
 
 @blockchain_options(
-    contracts_version='0.11.1', contracts=[CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT]
+    contracts_version="0.11.1", contracts=[CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT]
 )
 @click.command()
 @click.option(
-    '--host', default=DEFAULT_API_HOST, type=str, help='The host to use for serving the REST API'
+    "--host", default=DEFAULT_API_HOST, type=str, help="The host to use for serving the REST API"
 )
 @click.option(
-    '--service-fee',
+    "--service-fee",
     default=0,
     type=click.IntRange(min=0),
-    help='Service fee which is required before processing requests',
+    help="Service fee which is required before processing requests",
 )
 @click.option(
-    '--confirmations',
+    "--confirmations",
     default=DEFAULT_REQUIRED_CONFIRMATIONS,
     type=click.IntRange(min=0),
-    help='Number of block confirmations to wait for',
+    help="Number of block confirmations to wait for",
 )
-@common_options('raiden-pathfinding-service')
+@common_options("raiden-pathfinding-service")
 def main(
     private_key: str,
     state_db: str,
@@ -76,9 +76,9 @@ def main(
 
         service.run()
     except (KeyboardInterrupt, SystemExit):
-        print('Exiting...')
+        print("Exiting...")
     finally:
-        log.info('Stopping Pathfinding Service...')
+        log.info("Stopping Pathfinding Service...")
         if api:
             api.stop()
         if service:
@@ -88,4 +88,4 @@ def main(
 
 
 if __name__ == "__main__":
-    main(auto_envvar_prefix='PFS')  # pragma: no cover
+    main(auto_envvar_prefix="PFS")  # pragma: no cover

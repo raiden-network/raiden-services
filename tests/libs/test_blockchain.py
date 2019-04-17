@@ -35,8 +35,8 @@ def test_limit_inclusivity_in_query_blockchain_events(
     events = query()
     assert len(events) == 1
     event = events[0]
-    assert event['event'] == EVENT_TOKEN_NETWORK_CREATED
-    registry_event_block = BlockNumber(event['blockNumber'])
+    assert event["event"] == EVENT_TOKEN_NETWORK_CREATED
+    registry_event_block = BlockNumber(event["blockNumber"])
 
     # test to_block is inclusive
     events = query_blockchain_events(

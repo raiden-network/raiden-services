@@ -16,7 +16,7 @@ def test_edge_weight(addresses):
     participant2 = addresses[1]
     settle_timeout = 15
     view = ChannelView(
-        TokenNetworkAddress('0x11'), channel_id, participant1, participant2, settle_timeout
+        TokenNetworkAddress("0x11"), channel_id, participant1, participant2, settle_timeout
     )
     amount = TokenAmount(int(1e18))  # one RDN
 
@@ -52,17 +52,17 @@ def test_routing_benchmark(token_network_model: TokenNetwork, populate_token_net
         times.append(toc - tic)
     end = time.time()
     for path_object in paths:
-        path = path_object['path']
-        fees = path_object['estimated_fee']
+        path = path_object["path"]
+        fees = path_object["estimated_fee"]
         for node1, node2 in zip(path[:-1], path[1:]):
-            view: ChannelView = G[node1][node2]['view']
-            print('fee = ', view.absolute_fee, 'capacity = ', view.capacity)
-        print('fee sum = ', fees)
-    print('Paths: ', paths)
-    print('Mean runtime: ', sum(times) / len(times))
-    print('Min runtime: ', min(times))
-    print('Max runtime: ', max(times))
-    print('Total runtime: ', end - start)
+            view: ChannelView = G[node1][node2]["view"]
+            print("fee = ", view.absolute_fee, "capacity = ", view.capacity)
+        print("fee sum = ", fees)
+    print("Paths: ", paths)
+    print("Mean runtime: ", sum(times) / len(times))
+    print("Min runtime: ", min(times))
+    print("Max runtime: ", max(times))
+    print("Total runtime: ", end - start)
 
 
 def test_routing_simple(
@@ -70,8 +70,8 @@ def test_routing_simple(
     populate_token_network_case_1: None,
     addresses: List[Address],
 ):
-    view01: ChannelView = token_network_model.G[addresses[0]][addresses[1]]['view']
-    view10: ChannelView = token_network_model.G[addresses[1]][addresses[0]]['view']
+    view01: ChannelView = token_network_model.G[addresses[0]][addresses[1]]["view"]
+    view10: ChannelView = token_network_model.G[addresses[1]][addresses[0]]["view"]
 
     assert view01.deposit == 100
     assert view01.absolute_fee == 0
@@ -84,8 +84,8 @@ def test_routing_simple(
     )
     assert len(paths) == 1
     assert paths[0] == {
-        'path': [addresses[0], addresses[1], addresses[4], addresses[3]],
-        'estimated_fee': 0,
+        "path": [addresses[0], addresses[1], addresses[4], addresses[3]],
+        "estimated_fee": 0,
     }
 
     # Not connected.
@@ -105,7 +105,7 @@ def test_routing_result_order(
     )
     # 5 paths requested, but only 1 is available
     assert len(paths) == 1
-    assert paths[0] == {'path': [addresses[0], addresses[1], addresses[2]], 'estimated_fee': 0}
+    assert paths[0] == {"path": [addresses[0], addresses[1], addresses[2]], "estimated_fee": 0}
 
 
 def addresses_to_indexes(path, addresses):
@@ -129,7 +129,7 @@ def test_diversity_penalty(
             hop_bias=1,
             diversity_penalty=diversity_penalty,
         )
-        index_paths = [addresses_to_indexes(p['path'], addresses) for p in paths]
+        index_paths = [addresses_to_indexes(p["path"], addresses) for p in paths]
         return index_paths
 
     assert get_paths(0.1) == [

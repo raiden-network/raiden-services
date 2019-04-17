@@ -9,7 +9,7 @@ from web3.providers import HTTPProvider
 from pathfinding_service.middleware import http_retry_with_backoff_middleware
 
 
-@patch('web3.providers.rpc.make_post_request')
+@patch("web3.providers.rpc.make_post_request")
 def test_retries(make_post_request_mock):
 
     # use short backoff times to make the test run quickly
@@ -19,7 +19,7 @@ def test_retries(make_post_request_mock):
         )
 
     provider = HTTPProvider()
-    provider.middlewares.replace('http_retry_request', quick_retry_middleware)
+    provider.middlewares.replace("http_retry_request", quick_retry_middleware)
     w3 = web3.Web3(provider)
 
     # log the time since start each time the mock is called

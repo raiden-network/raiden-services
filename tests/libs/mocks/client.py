@@ -19,7 +19,7 @@ from raiden_libs.types import Address
 from raiden_libs.utils import private_key_to_address
 
 log = logging.getLogger(__name__)
-NULL_ADDRESS = '0x0000000000000000000000000000000000000000'
+NULL_ADDRESS = "0x0000000000000000000000000000000000000000"
 
 
 def get_event_logs(
@@ -78,7 +78,7 @@ class MockRaidenNode:
         self.token_contract = token_contract
         self.partner_to_channel_id: Dict[Address, ChannelID] = dict()
         self.token_network_abi = None
-        self.client_registry: Dict[Address, 'MockRaidenNode'] = dict()
+        self.client_registry: Dict[Address, "MockRaidenNode"] = dict()
         self.web3 = self.contract.web3
         self.paths_and_fees = None
         self.chain_id = chain_id
@@ -98,24 +98,24 @@ class MockRaidenNode:
             return self.partner_to_channel_id[partner_address]
         # if it doesn't exist, register new channel
         txid = self.contract.functions.openChannel(self.address, partner_address, 15).transact(
-            {'from': self.address}
+            {"from": self.address}
         )
         assert txid is not None
         tx = self.web3.eth.getTransactionReceipt(txid)
         assert tx is not None
-        assert len(tx['logs']) == 1
+        assert len(tx["logs"]) == 1
         event = get_event_data(
-            find_matching_event_abi(self.contract.abi, 'ChannelOpened'), tx['logs'][0]
+            find_matching_event_abi(self.contract.abi, "ChannelOpened"), tx["logs"][0]
         )
 
-        channel_id = event['args']['channel_identifier']
+        channel_id = event["args"]["channel_identifier"]
         assert isinstance(channel_id, T_ChannelID)
         assert 0 < channel_id <= UINT256_MAX
-        assert is_same_address(event['args']['participant1'], self.address) or is_same_address(
-            event['args']['participant2'], self.address
+        assert is_same_address(event["args"]["participant1"], self.address) or is_same_address(
+            event["args"]["participant2"], self.address
         )
-        assert is_same_address(event['args']['participant1'], partner_address) or is_same_address(
-            event['args']['participant2'], partner_address
+        assert is_same_address(event["args"]["participant1"], partner_address) or is_same_address(
+            event["args"]["participant2"], partner_address
         )
 
         self.partner_to_channel_id[partner_address] = ChannelID(channel_id)
@@ -143,20 +143,20 @@ class MockRaidenNode:
 
     def sync_open_channels(self) -> Dict[Address, Dict]:
         """Parses logs and update internal channel state to include all already open channels."""
-        entries = get_event_logs(self.web3, self.contract.abi, 'ChannelOpened')
+        entries = get_event_logs(self.web3, self.contract.abi, "ChannelOpened")
         open_channels = {
-            self.get_other_address(x['args']['participant1'], x['args']['participant2']): x[
-                'args'
-            ]['channel_identifier']
+            self.get_other_address(x["args"]["participant1"], x["args"]["participant2"]): x[
+                "args"
+            ]["channel_identifier"]
             for x in entries
-            if self.address in (x['args']['participant1'], x['args']['participant2'])
+            if self.address in (x["args"]["participant1"], x["args"]["participant2"])
         }
         # remove already closed channels from the list
-        entries = get_event_logs(self.web3, self.contract.abi, 'ChannelClosed')
+        entries = get_event_logs(self.web3, self.contract.abi, "ChannelClosed")
         closed_channels = [
-            x['args']['channel_identifier']
+            x["args"]["channel_identifier"]
             for x in entries
-            if x['args']['channel_identifier'] in open_channels.keys()
+            if x["args"]["channel_identifier"] in open_channels.keys()
         ]
         return {k: v for k, v in open_channels.items() if k not in closed_channels}
 
@@ -171,14 +171,14 @@ class MockRaidenNode:
         """
         channel_info = self.get_own_channel_info(partner_address)
         self.token_contract.functions.approve(self.contract.address, amount).transact(
-            {'from': self.address}
+            {"from": self.address}
         )
         return self.contract.functions.setTotalDeposit(
             self.partner_to_channel_id[partner_address],
             self.address,
-            amount + channel_info['deposit'],
+            amount + channel_info["deposit"],
             partner_address,
-        ).transact({'from': self.address})
+        ).transact({"from": self.address})
 
     @assert_channel_existence
     def close_channel(self, partner_address: Address, balance_proof: HashedBalanceProof):
@@ -191,7 +191,7 @@ class MockRaidenNode:
             balance_proof.nonce,
             balance_proof.additional_hash,
             balance_proof.signature,
-        ).transact({'from': self.address})
+        ).transact({"from": self.address})
 
     @assert_channel_existence
     def settle_channel(
@@ -219,7 +219,7 @@ class MockRaidenNode:
                 transferred[0],
                 locked[0],
                 locksroot[0],
-            ).transact({'from': self.address})
+            ).transact({"from": self.address})
         else:
             self.contract.functions.settleChannel(
                 self.partner_to_channel_id[partner_address],
@@ -231,7 +231,7 @@ class MockRaidenNode:
                 transferred[1],
                 locked[1],
                 locksroot[1],
-            ).transact({'from': self.address})
+            ).transact({"from": self.address})
 
     def get_balance_proof(
         self, partner_address: Address = None, channel_id: int = None, **kwargs
@@ -310,7 +310,7 @@ class MockRaidenNode:
             balance_proof.additional_hash,
             balance_proof.signature,
             non_closing_signature,
-        ).transact({'from': self.address})
+        ).transact({"from": self.address})
 
     @assert_channel_existence
     def get_partner_channel_info(self, partner_address: Address) -> Dict:
@@ -333,13 +333,13 @@ class MockRaidenNode:
             channel_identifier, participant_address, partner_address
         ).call()
         return_fields = [
-            'deposit',
-            'withdrawn_amount',
-            'is_the_closer',
-            'balance_hash',
-            'nonce',
-            'locksroot',
-            'locked_amount',
+            "deposit",
+            "withdrawn_amount",
+            "is_the_closer",
+            "balance_hash",
+            "nonce",
+            "locksroot",
+            "locked_amount",
         ]
         assert len(return_fields) == len(channel_info)
         return {field: channel_info[return_fields.index(field)] for field in return_fields}

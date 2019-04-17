@@ -40,7 +40,7 @@ class RequestCollector(gevent.Greenlet):
                 service_room_suffix=MONITORING_BROADCASTING_ROOM,
             )
         except ConnectionError as e:
-            log.critical('Could not connect to broadcasting system.', exc=e)
+            log.critical("Could not connect to broadcasting system.", exc=e)
             sys.exit(1)
 
     def listen_forever(self) -> None:
@@ -58,7 +58,7 @@ class RequestCollector(gevent.Greenlet):
         if isinstance(message, RequestMonitoring):
             self.on_monitor_request(message)
         else:
-            log.info('Ignoring unknown message type')
+            log.info("Ignoring unknown message type")
 
     def on_monitor_request(self, request_monitoring: RequestMonitoring) -> None:
         assert isinstance(request_monitoring, RequestMonitoring)
@@ -80,12 +80,12 @@ class RequestCollector(gevent.Greenlet):
                 reward_proof_signature=encode_hex(request_monitoring.signature),
             )
         except InvalidSignature:
-            log.info('Ignore MR with invalid signature', monitor_request=request_monitoring)
+            log.info("Ignore MR with invalid signature", monitor_request=request_monitoring)
             return
 
         # Validate MR
         if monitor_request.chain_id != self.chain_id:
-            log.debug('Bad chain_id', monitor_request=monitor_request, expected=self.chain_id)
+            log.debug("Bad chain_id", monitor_request=monitor_request, expected=self.chain_id)
             return
 
         # Check that received MR is newer by comparing nonces
@@ -96,7 +96,7 @@ class RequestCollector(gevent.Greenlet):
         )
         if old_mr and old_mr.nonce >= monitor_request.nonce:
             log.debug(
-                'New MR does not have a newer nonce.',
+                "New MR does not have a newer nonce.",
                 token_network_address=monitor_request.token_network_address,
                 channel_identifier=monitor_request.channel_identifier,
                 received_nonce=monitor_request.nonce,
@@ -105,7 +105,7 @@ class RequestCollector(gevent.Greenlet):
             return
 
         log.info(
-            'Received new MR',
+            "Received new MR",
             token_network_address=monitor_request.token_network_address,
             channel_identifier=monitor_request.channel_identifier,
             nonce=monitor_request.nonce,

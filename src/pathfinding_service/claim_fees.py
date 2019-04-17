@@ -19,18 +19,18 @@ log = structlog.get_logger(__name__)
 @blockchain_options(contracts=[CONTRACT_ONE_TO_N])
 @click.command()
 @click.option(
-    '--rdn-per-eth',
+    "--rdn-per-eth",
     default=0.0025,
     type=float,
-    help='Current RDN/ETH price, used to check claimed amount > transaction cost',
+    help="Current RDN/ETH price, used to check claimed amount > transaction cost",
 )
 @click.option(
-    '--expires-within',
+    "--expires-within",
     default=4 * 60 * 24 * 7,  # one week
     type=click.IntRange(min=1),
-    help='Only IOUs which expire withing this number of blocks will be claimed',
+    help="Only IOUs which expire withing this number of blocks will be claimed",
 )
-@common_options('raiden-pathfinding-service')
+@common_options("raiden-pathfinding-service")
 def main(
     private_key: str,
     state_db: str,
@@ -55,7 +55,7 @@ def main(
             claim_cost_rdn=claim_cost_rdn,
         )
     )
-    print(f'Found {len(ious)} claimable IOUs')
+    print(f"Found {len(ious)} claimable IOUs")
     _, failures = claim_ious(ious, claim_cost_rdn, one_to_n_contract, web3, database)
     if failures:
         sys.exit(1)
@@ -89,7 +89,7 @@ def claim_ious(
         )
         transferrable = claim.call()
         if transferrable < claim_cost_rdn:
-            print('Not enough user deposit to claim profitably for', iou)
+            print("Not enough user deposit to claim profitably for", iou)
             skipped += 1
             continue
         tx_hash = claim.transact()
@@ -101,12 +101,12 @@ def claim_ious(
             receipt = web3.eth.getTransactionReceipt(tx_hash)
             if receipt is not None:
                 unchecked_txs.remove((tx_hash, iou))
-                if receipt['status'] == 1:
-                    print(f'Successfully claimed {iou}.')
+                if receipt["status"] == 1:
+                    print(f"Successfully claimed {iou}.")
                     iou.claimed = True
                     database.upsert_iou(iou)
                 else:
-                    print(f'Claiming {iou} failed!')
+                    print(f"Claiming {iou} failed!")
                     failures += 1
 
     return skipped, failures

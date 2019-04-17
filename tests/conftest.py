@@ -1,7 +1,7 @@
 from gevent import monkey, config  # isort:skip # noqa
 
 # there were some issues with the 'thread' resolver, remove it from the options
-config.resolver = ['dnspython', 'ares', 'block']  # noqa
+config.resolver = ["dnspython", "ares", "block"]  # noqa
 monkey.patch_all()  # isort:skip # noqa
 
 import gc
@@ -36,7 +36,7 @@ def no_greenlets_left():
     tasks = _get_running_greenlets()
     # give all tasks the chance to clean themselves up
     for task in tasks:
-        if hasattr(task, 'stop'):
+        if hasattr(task, "stop"):
             task.stop()
     gevent.joinall(tasks, timeout=1)
     tasks = _get_running_greenlets()
@@ -47,5 +47,5 @@ def no_greenlets_left():
         pass
     tasks = [t for t in tasks if not t.dead]
     if tasks:
-        print('The following greenlets are still running after the test:', tasks)
-    assert not tasks, 'All greenlets must be stopped at the end of a test.'
+        print("The following greenlets are still running after the test:", tasks)
+    assert not tasks, "All greenlets must be stopped at the end of a test."

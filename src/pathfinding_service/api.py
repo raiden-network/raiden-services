@@ -35,7 +35,7 @@ from raiden_libs.marshmallow import HexedBytes
 from raiden_libs.types import Address, TokenNetworkAddress
 
 log = structlog.get_logger(__name__)
-T = TypeVar('T')
+T = TypeVar("T")
 # list stores max 200 last requests
 last_requests: collections.deque = collections.deque([], maxlen=200)
 
@@ -55,7 +55,7 @@ class PathfinderResource(Resource):
     def _validate_token_network_argument(self, token_network_address: str) -> TokenNetwork:
         if not is_checksum_address(token_network_address):
             raise exceptions.InvalidTokenNetwork(
-                msg='The token network needs to be given as a checksummed address',
+                msg="The token network needs to be given as a checksummed address",
                 token_network=token_network_address,
             )
 
@@ -70,7 +70,7 @@ class PathfinderResource(Resource):
     def _parse_post(req_class: T) -> T:
         json = request.get_json()
         if not json:
-            raise exceptions.ApiException('JSON payload expected')
+            raise exceptions.ApiException("JSON payload expected")
         req, errors = req_class.Schema().load(json)  # type: ignore
         if errors:
             raise exceptions.InvalidRequest(**errors)
@@ -103,7 +103,7 @@ class PathsResource(PathfinderResource):
 
         # only add optional args if not None, so we can use defaults
         optional_args = {}
-        for arg in ['diversity_penalty', 'fee_penalty']:
+        for arg in ["diversity_penalty", "fee_penalty"]:
             value = getattr(path_req, arg)
             if value is not None:
                 optional_args[arg] = value
@@ -224,10 +224,10 @@ class IOUResource(PathfinderResource):
             sender=iou_request.sender, claimed=False
         )
         if last_iou:
-            last_iou = IOU.Schema(strict=True, exclude=['claimed']).dump(last_iou)[0]
-            return {'last_iou': last_iou}, 200
+            last_iou = IOU.Schema(strict=True, exclude=["claimed"]).dump(last_iou)[0]
+            return {"last_iou": last_iou}, 200
 
-        return {'last_iou': None}, 404
+        return {"last_iou": None}, 404
 
 
 class InfoResource(PathfinderResource):
@@ -267,14 +267,14 @@ class DebugEndpoint(PathfinderResource):
         for r in last_requests:
             log.debug("Last Requests Values:", r=r)
             matches_params = is_same_address(
-                token_network_address, r['token_network_address']
-            ) and is_same_address(source_address, r['source'])
+                token_network_address, r["token_network_address"]
+            ) and is_same_address(source_address, r["source"])
             if target_address is not None:
-                matches_params = matches_params and is_same_address(target_address, r['target'])
+                matches_params = matches_params and is_same_address(target_address, r["target"])
 
             if matches_params:
                 request_count += 1
-                responses.append(dict(source=r['source'], target=r['target'], routes=r['routes']))
+                responses.append(dict(source=r["source"], target=r["target"], routes=r["routes"]))
         # log.debug("Responses:", responses=responses)
         return dict(request_count=request_count, responses=responses), 200
 
@@ -287,20 +287,20 @@ class ServiceApi:
         self.pathfinding_service = pathfinding_service
 
         resources: List[Tuple[str, Resource, Dict, str]] = [
-            ("/<token_network_address>/paths", PathsResource, {}, 'paths'),
-            ("/<token_network_address>/payment/iou", IOUResource, {}, 'payments'),
-            ("/info", InfoResource, {}, 'info'),
+            ("/<token_network_address>/paths", PathsResource, {}, "paths"),
+            ("/<token_network_address>/payment/iou", IOUResource, {}, "payments"),
+            ("/info", InfoResource, {}, "info"),
             (
                 "/_debug/routes/<token_network_address>/<source_address>",
                 DebugEndpoint,
                 {},
-                'debug1',
+                "debug1",
             ),
             (
                 "/_debug/routes/<token_network_address>/<source_address>/<target_address>",
                 DebugEndpoint,
                 {},
-                'debug2',
+                "debug2",
             ),
         ]
 

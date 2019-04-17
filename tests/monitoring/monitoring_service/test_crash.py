@@ -30,10 +30,10 @@ def test_crash(tmpdir, generate_raiden_clients, mockchain):
         balance_proof=c1.get_balance_proof(
             channel_id=channel_identifier,
             nonce=1,
-            additional_hash='0x11',
+            additional_hash="0x11",
             transferred_amount=2,
             locked_amount=0,
-            locksroot='0x00',
+            locksroot="0x00",
         ),
         reward_amount=0,
     )
@@ -83,8 +83,8 @@ def test_crash(tmpdir, generate_raiden_clients, mockchain):
         return ms
 
     # initialize both monitoring services
-    stable_ms = new_ms('stable.db')
-    crashy_ms = new_ms('crashy.db')
+    stable_ms = new_ms("stable.db")
+    crashy_ms = new_ms("crashy.db")
     for ms in [stable_ms, crashy_ms]:
         ms.database.conn.execute(
             "INSERT INTO token_network(address) VALUES (?)", [token_network_address]
@@ -95,7 +95,7 @@ def test_crash(tmpdir, generate_raiden_clients, mockchain):
 
     # process each block and compare results between crashy and stable ms
     for to_block in range(len(events)):
-        crashy_ms = new_ms('crashy.db')  # new instance to simulate crash
+        crashy_ms = new_ms("crashy.db")  # new instance to simulate crash
         stable_ms.monitor_mock.reset_mock()  # clear calls from last block
         result_state: List[dict] = []
         for ms in [stable_ms, crashy_ms]:

@@ -30,8 +30,8 @@ class TokenNetwork:
 
     def __repr__(self) -> str:
         return (
-            f'<TokenNetwork address = {self.address} '
-            f'num_channels = {len(self.channel_id_to_addresses)}>'
+            f"<TokenNetwork address = {self.address} "
+            f"num_channels = {len(self.channel_id_to_addresses)}>"
         )
 
     #
@@ -100,9 +100,9 @@ class TokenNetwork:
         try:
             participant1, participant2 = self.channel_id_to_addresses[channel_identifier]
             if receiver == participant1:
-                channel_view = self.G[participant1][participant2]['view']
+                channel_view = self.G[participant1][participant2]["view"]
             elif receiver == participant2:
-                channel_view = self.G[participant2][participant1]['view']
+                channel_view = self.G[participant2][participant1]["view"]
             else:
                 log.error("Receiver in ChannelNewDeposit does not fit the internal channel")
                 return None
@@ -142,8 +142,8 @@ class TokenNetwork:
     ) -> Tuple[ChannelView, ChannelView]:
 
         # Get the channel views from the perspective of the updating participant
-        channel_view_to_partner = self.G[updating_participant][other_participant]['view']
-        channel_view_from_partner = self.G[other_participant][updating_participant]['view']
+        channel_view_to_partner = self.G[updating_participant][other_participant]["view"]
+        channel_view_from_partner = self.G[other_participant][updating_participant]["view"]
 
         return channel_view_to_partner, channel_view_from_partner
 
@@ -181,14 +181,14 @@ class TokenNetwork:
         amount: TokenAmount,
         fee_penalty: float,
     ) -> float:
-        view: ChannelView = attr['view']
+        view: ChannelView = attr["view"]
         diversity_weight = visited.get(view.channel_id, 0)
         fee_weight = view.fee(amount) / 1e18 * fee_penalty
         return 1 + diversity_weight + fee_weight
 
     def check_path_constraints(self, value: int, path: List) -> bool:
         for node1, node2 in zip(path[:-1], path[1:]):
-            channel: ChannelView = self.G[node1][node2]['view']
+            channel: ChannelView = self.G[node1][node2]["view"]
             # check if available balance > value
             if value > channel.capacity:
                 return False
@@ -221,10 +221,10 @@ class TokenNetwork:
             # update edge weights
             for node1, node2 in self.G.edges():
                 edge = self.G[node1][node2]
-                edge['weight'] = self.edge_weight(visited, edge, value, fee_penalty)
+                edge["weight"] = self.edge_weight(visited, edge, value, fee_penalty)
 
             # find next path
-            all_paths = nx.shortest_simple_paths(self.G, source, target, weight='weight')
+            all_paths = nx.shortest_simple_paths(self.G, source, target, weight="weight")
             try:
                 # skip duplicates and invalid paths
                 path = next(
@@ -236,7 +236,7 @@ class TokenNetwork:
                 break
             # update visited penalty dict
             for node1, node2 in zip(path[:-1], path[1:]):
-                channel_id = self.G[node1][node2]['view'].channel_id
+                channel_id = self.G[node1][node2]["view"].channel_id
                 visited[channel_id] = visited.get(channel_id, 0) + diversity_penalty
 
             paths.append(path)
@@ -247,7 +247,7 @@ class TokenNetwork:
         for path in paths:
             fee = 0
             for node1, node2 in zip(path[:-1], path[1:]):
-                fee += self.G[node1][node2]['view'].fee(value)
+                fee += self.G[node1][node2]["view"].fee(value)
 
             result.append(dict(path=path, estimated_fee=fee))
         return result

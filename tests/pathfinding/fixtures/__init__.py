@@ -10,4 +10,4 @@ from .network_service import *  # noqa
 
 @pytest.fixture
 def token_network_model() -> TokenNetwork:
-    return TokenNetwork(TokenNetworkAddress('0x' + '1' * 40))
+    return TokenNetwork(TokenNetworkAddress("0x" + "1" * 40))

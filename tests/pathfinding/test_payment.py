@@ -12,15 +12,15 @@ from raiden_libs.utils import private_key_to_address
 
 def make_iou(sender_priv_key, receiver, amount=1, expiration_block=MIN_IOU_EXPIRY + 100) -> IOU:
     iou_dict = {
-        'sender': private_key_to_address(sender_priv_key),
-        'receiver': receiver,
-        'amount': amount,
-        'expiration_block': expiration_block,
+        "sender": private_key_to_address(sender_priv_key),
+        "receiver": receiver,
+        "amount": amount,
+        "expiration_block": expiration_block,
     }
-    iou_dict['signature'] = encode_hex(
+    iou_dict["signature"] = encode_hex(
         sign_one_to_n_iou(
             privatekey=sender_priv_key,
-            sender=iou_dict['sender'],
+            sender=iou_dict["sender"],
             receiver=receiver,
             amount=amount,
             expiration=expiration_block,

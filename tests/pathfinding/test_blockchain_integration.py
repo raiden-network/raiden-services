@@ -35,7 +35,7 @@ def test_pfs_with_mocked_client(
     clients = generate_raiden_clients(7)
     token_network_address = clients[0].contract.address
 
-    with patch('pathfinding_service.service.MatrixListener', new=Mock):
+    with patch("pathfinding_service.service.MatrixListener", new=Mock):
         pfs = PathfindingService(
             web3=web3,
             contracts={
@@ -43,10 +43,10 @@ def test_pfs_with_mocked_client(
                 CONTRACT_USER_DEPOSIT: user_deposit_contract,
             },
             required_confirmations=1,
-            db_filename=':memory:',
+            db_filename=":memory:",
             poll_interval=0.1,
             sync_start_block=BlockNumber(0),
-            private_key='3a1076bf45ab87712ad64ccb3b10217737f7faacbf2872e88fdd9a537d8fe266',
+            private_key="3a1076bf45ab87712ad64ccb3b10217737f7faacbf2872e88fdd9a537d8fe266",
         )
 
     # greenlet needs to be started and context switched to
@@ -105,8 +105,8 @@ def test_pfs_with_mocked_client(
     ) in enumerate(channel_descriptions_case_1):
         channel_identifier = channel_identifiers[index]
         p1_address, p2_address = token_network.channel_id_to_addresses[channel_identifier]
-        view1: ChannelView = graph[p1_address][p2_address]['view']
-        view2: ChannelView = graph[p2_address][p1_address]['view']
+        view1: ChannelView = graph[p1_address][p2_address]["view"]
+        view2: ChannelView = graph[p2_address][p1_address]["view"]
         assert view1.deposit == p1_deposit
         assert view2.deposit == p2_deposit
         assert view1.settle_timeout == 15
@@ -132,8 +132,8 @@ def test_pfs_with_mocked_client(
             nonce=1,
             transferred_amount=0,
             locked_amount=0,
-            locksroot='0x%064x' % 0,
-            additional_hash='0x%064x' % 1,
+            locksroot="0x%064x" % 0,
+            additional_hash="0x%064x" % 1,
         )
         clients[p1_index].close_channel(clients[p2_index].address, balance_proof)
 

@@ -1,6 +1,6 @@
 CODE_DIRS = src/ tests/
 ISORT_PARAMS = --ignore-whitespace --settings-path . --recursive $(CODE_DIRS)
-BLACK_PARAMS = --skip-string-normalization --line-length 99
+BLACK_PARAMS = --line-length 99
 
 all: lint
 

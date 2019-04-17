@@ -35,21 +35,21 @@ def test_claim_fees(
     # Create IOUs from `iou_inputs`
     ious: List[IOU] = []
     for iou_dict in iou_inputs:
-        local_signer = LocalSigner(private_key=decode_hex(get_private_key(iou_dict['sender'])))
+        local_signer = LocalSigner(private_key=decode_hex(get_private_key(iou_dict["sender"])))
         iou = IOU(
-            sender=iou_dict['sender'],
+            sender=iou_dict["sender"],
             receiver=pfs.address,
-            amount=TokenAmount(iou_dict['amount']),
-            expiration_block=BlockNumber(iou_dict.get('expiration_block', 100)),
+            amount=TokenAmount(iou_dict["amount"]),
+            expiration_block=BlockNumber(iou_dict.get("expiration_block", 100)),
             signature=Signature(bytes([1] * 64)),  # dummy, replaced below
-            claimed=iou_dict.get('claimed', False),
+            claimed=iou_dict.get("claimed", False),
         )
         iou.signature = Signature(local_signer.sign(iou.packed_data()))
         ious.append(iou)
         pfs.database.upsert_iou(iou)
-        if iou_dict.get('deposit', 0) > 0:
-            print(iou.sender, iou_dict['deposit'])
-            deposit_to_udc(iou.sender, iou_dict['deposit'])
+        if iou_dict.get("deposit", 0) > 0:
+            print(iou.sender, iou_dict["deposit"])
+            deposit_to_udc(iou.sender, iou_dict["deposit"])
 
     # Check if the right IOUs are considered to be claimable
     expected_claimable = ious[:4]
@@ -91,10 +91,10 @@ def mock_connect_to_blockchain(monkeypatch):
     web3_mock.net.version = 1
     web3_mock.eth.blockNumber = 1
     connect_mock = Mock(return_value=(web3_mock, MagicMock(), Mock()))
-    monkeypatch.setattr('raiden_libs.cli.connect_to_blockchain', connect_mock)
+    monkeypatch.setattr("raiden_libs.cli.connect_to_blockchain", connect_mock)
 
 
-@pytest.mark.usefixtures('mock_connect_to_blockchain')
+@pytest.mark.usefixtures("mock_connect_to_blockchain")
 def test_cli(default_cli_args):
     runner = CliRunner()
     result = runner.invoke(main, default_cli_args, catch_exceptions=False)

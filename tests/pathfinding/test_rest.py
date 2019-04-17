@@ -30,47 +30,47 @@ ID_123 = 123
 def test_get_paths_via_debug_endpoint(
     api_sut: ServiceApi, api_url: str, addresses: List[Address], token_network_model: TokenNetwork
 ):
-    url = api_url + f'/{token_network_model.address}/paths'
-    url_debug = api_url + f'/_debug/routes/{token_network_model.address}/{addresses[0]}'
+    url = api_url + f"/{token_network_model.address}/paths"
+    url_debug = api_url + f"/_debug/routes/{token_network_model.address}/{addresses[0]}"
     url_debug_incl_requested_target = (
-        api_url + f'/_debug/routes/{token_network_model.address}/{addresses[0]}/{addresses[2]}'
+        api_url + f"/_debug/routes/{token_network_model.address}/{addresses[0]}/{addresses[2]}"
     )
     url_debug_incl_unrequested_target = (
-        api_url + f'/_debug/routes/{token_network_model.address}/{addresses[0]}/{addresses[3]}'
+        api_url + f"/_debug/routes/{token_network_model.address}/{addresses[0]}/{addresses[3]}"
     )
 
-    data = {'from': addresses[0], 'to': addresses[2], 'value': 10, 'max_paths': DEFAULT_MAX_PATHS}
+    data = {"from": addresses[0], "to": addresses[2], "value": 10, "max_paths": DEFAULT_MAX_PATHS}
     response = requests.post(url, json=data)
     assert response.status_code == 200
-    paths = response.json()['result']
+    paths = response.json()["result"]
     assert len(paths) == 1
-    assert paths == [{'path': [addresses[0], addresses[1], addresses[2]], 'estimated_fee': 0}]
+    assert paths == [{"path": [addresses[0], addresses[1], addresses[2]], "estimated_fee": 0}]
 
     # now there must be a debug endpoint for that specific route
     response_debug = requests.get(url_debug)
     assert response_debug.status_code == 200
-    request_count = response_debug.json()['request_count']
+    request_count = response_debug.json()["request_count"]
     assert request_count == 1
-    responses = response_debug.json()['responses']
+    responses = response_debug.json()["responses"]
     assert responses == [
         {
-            'source': addresses[0],
-            'target': addresses[2],
-            'routes': [{'path': [addresses[0], addresses[1], addresses[2]], 'estimated_fee': 0}],
+            "source": addresses[0],
+            "target": addresses[2],
+            "routes": [{"path": [addresses[0], addresses[1], addresses[2]], "estimated_fee": 0}],
         }
     ]
 
     # now there must be a debug endpoint for that specific route and that specific target
     response_debug_incl_target = requests.get(url_debug_incl_requested_target)
     assert response_debug_incl_target.status_code == 200
-    request_count = response_debug_incl_target.json()['request_count']
+    request_count = response_debug_incl_target.json()["request_count"]
     assert request_count == 1
-    responses = response_debug.json()['responses']
+    responses = response_debug.json()["responses"]
     assert responses == [
         {
-            'source': addresses[0],
-            'target': addresses[2],
-            'routes': [{'path': [addresses[0], addresses[1], addresses[2]], 'estimated_fee': 0}],
+            "source": addresses[0],
+            "target": addresses[2],
+            "routes": [{"path": [addresses[0], addresses[1], addresses[2]], "estimated_fee": 0}],
         }
     ]
 
@@ -78,9 +78,9 @@ def test_get_paths_via_debug_endpoint(
     print(addresses)
     response_debug_incl_unrequested_target = requests.get(url_debug_incl_unrequested_target)
     assert response_debug_incl_unrequested_target.status_code == 200
-    request_count = response_debug_incl_unrequested_target.json()['request_count']
+    request_count = response_debug_incl_unrequested_target.json()["request_count"]
     assert request_count == 0
-    responses = response_debug_incl_unrequested_target.json()['responses']
+    responses = response_debug_incl_unrequested_target.json()["responses"]
     assert responses == []
     # kill all running greenlets
     gevent.killall([obj for obj in gc.get_objects() if isinstance(obj, gevent.Greenlet)])
@@ -96,8 +96,8 @@ def test_get_paths_validation(
     target_address: str,
     token_network_model: TokenNetwork,
 ):
-    url = api_url + f'/{token_network_model.address}/paths'
-    default_params = {'from': initiator_address, 'to': target_address, 'value': 5, 'max_paths': 3}
+    url = api_url + f"/{token_network_model.address}/paths"
+    default_params = {"from": initiator_address, "to": target_address, "value": 5, "max_paths": 3}
 
     def request_path_with(status_code=400, **kwargs):
         params = default_params.copy()
@@ -108,31 +108,31 @@ def test_get_paths_validation(
 
     response = requests.post(url)
     assert response.status_code == 400
-    assert response.json()['errors'].startswith('JSON payload expected')
+    assert response.json()["errors"].startswith("JSON payload expected")
 
-    for address in ['notanaddress', to_normalized_address(initiator_address)]:
-        response = request_path_with(**{'from': address})
-        assert response.json()['error_code'] == exceptions.InvalidRequest.error_code
-        assert 'from' in response.json()['error_details']
+    for address in ["notanaddress", to_normalized_address(initiator_address)]:
+        response = request_path_with(**{"from": address})
+        assert response.json()["error_code"] == exceptions.InvalidRequest.error_code
+        assert "from" in response.json()["error_details"]
 
         response = request_path_with(to=address)
-        assert response.json()['error_code'] == exceptions.InvalidRequest.error_code
-        assert 'to' in response.json()['error_details']
+        assert response.json()["error_code"] == exceptions.InvalidRequest.error_code
+        assert "to" in response.json()["error_details"]
 
     response = request_path_with(value=-10)
-    assert response.json()['error_code'] == exceptions.InvalidRequest.error_code
-    assert 'value' in response.json()['error_details']
+    assert response.json()["error_code"] == exceptions.InvalidRequest.error_code
+    assert "value" in response.json()["error_details"]
 
     response = request_path_with(max_paths=-1)
-    assert response.json()['error_code'] == exceptions.InvalidRequest.error_code
-    assert 'max_paths' in response.json()['error_details']
+    assert response.json()["error_code"] == exceptions.InvalidRequest.error_code
+    assert "max_paths" in response.json()["error_details"]
 
     # Exemplary test for payment errors. Different errors are serialized the
     # same way in the rest API. Checking for specific errors is tested in
     # payment_tests.
     api_sut.pathfinding_service.service_fee = 1
     response = request_path_with()
-    assert response.json()['error_code'] == exceptions.MissingIOU.error_code
+    assert response.json()["error_code"] == exceptions.MissingIOU.error_code
 
     # prepare iou for payment tests
     iou = make_iou(get_random_privkey(), api_sut.pathfinding_service.address)
@@ -140,15 +140,15 @@ def test_get_paths_validation(
 
     # malformed iou
     bad_iou_dict = good_iou_dict.copy()
-    del bad_iou_dict['amount']
+    del bad_iou_dict["amount"]
     response = request_path_with(iou=bad_iou_dict)
-    assert response.json()['error_code'] == exceptions.InvalidRequest.error_code
+    assert response.json()["error_code"] == exceptions.InvalidRequest.error_code
 
     # bad signature
     bad_iou_dict = good_iou_dict.copy()
-    bad_iou_dict['signature'] = hex(int(bad_iou_dict['signature'], 16) + 1)
+    bad_iou_dict["signature"] = hex(int(bad_iou_dict["signature"], 16) + 1)
     response = request_path_with(iou=bad_iou_dict)
-    assert response.json()['error_code'] == exceptions.InvalidSignature.error_code
+    assert response.json()["error_code"] == exceptions.InvalidSignature.error_code
 
     # with successful payment
     response = request_path_with(iou=good_iou_dict, status_code=200)
@@ -159,18 +159,18 @@ def test_get_paths_validation(
 
 def test_get_paths_path_validation(api_sut: ServiceApi, api_url: str):
     for url in [
-        '/1234abc/paths',
-        '/df173a5173c3d0ae5ba11dae84470c5d3f1a8413/paths',
-        '/0xdf173a5173c3d0ae5ba11dae84470c5d3f1a8413/paths',
+        "/1234abc/paths",
+        "/df173a5173c3d0ae5ba11dae84470c5d3f1a8413/paths",
+        "/0xdf173a5173c3d0ae5ba11dae84470c5d3f1a8413/paths",
     ]:
         response = requests.post(api_url + url)
         assert response.status_code == 400
-        assert response.json()['error_code'] == exceptions.InvalidTokenNetwork.error_code
+        assert response.json()["error_code"] == exceptions.InvalidTokenNetwork.error_code
 
-    url = api_url + '/0x0000000000000000000000000000000000000000/paths'
+    url = api_url + "/0x0000000000000000000000000000000000000000/paths"
     response = requests.post(url)
     assert response.status_code == 400
-    assert response.json()['error_code'] == exceptions.UnsupportedTokenNetwork.error_code
+    assert response.json()["error_code"] == exceptions.UnsupportedTokenNetwork.error_code
 
     # kill all running greenlets
 
@@ -180,30 +180,30 @@ def test_get_paths_path_validation(api_sut: ServiceApi, api_url: str):
 def test_get_paths(
     api_sut: ServiceApi, api_url: str, addresses: List[Address], token_network_model: TokenNetwork
 ):
-    url = api_url + f'/{token_network_model.address}/paths'
+    url = api_url + f"/{token_network_model.address}/paths"
 
-    data = {'from': addresses[0], 'to': addresses[2], 'value': 10, 'max_paths': DEFAULT_MAX_PATHS}
+    data = {"from": addresses[0], "to": addresses[2], "value": 10, "max_paths": DEFAULT_MAX_PATHS}
     response = requests.post(url, json=data)
     assert response.status_code == 200
-    paths = response.json()['result']
+    paths = response.json()["result"]
     assert len(paths) == 1
-    assert paths == [{'path': [addresses[0], addresses[1], addresses[2]], 'estimated_fee': 0}]
+    assert paths == [{"path": [addresses[0], addresses[1], addresses[2]], "estimated_fee": 0}]
 
     # check default value for num_path
-    data = {'from': addresses[0], 'to': addresses[2], 'value': 10}
+    data = {"from": addresses[0], "to": addresses[2], "value": 10}
     default_response = requests.post(url, json=data)
-    assert default_response.json()['result'] == response.json()['result']
+    assert default_response.json()["result"] == response.json()["result"]
 
     # impossible routes
     for source, dest in [
         (addresses[0], addresses[5]),  # no connection between 0 and 5
-        ('0x' + '1' * 40, addresses[5]),  # source not in graph
-        (addresses[0], '0x' + '1' * 40),  # dest not in graph
+        ("0x" + "1" * 40, addresses[5]),  # source not in graph
+        (addresses[0], "0x" + "1" * 40),  # dest not in graph
     ]:
-        data = {'from': source, 'to': dest, 'value': 10, 'max_paths': 3}
+        data = {"from": source, "to": dest, "value": 10, "max_paths": 3}
         response = requests.post(url, json=data)
         assert response.status_code == 404
-        assert response.json()['error_code'] == exceptions.NoRouteFound.error_code
+        assert response.json()["error_code"] == exceptions.NoRouteFound.error_code
 
     # kill all running greenlets
     gevent.killall([obj for obj in gc.get_objects() if isinstance(obj, gevent.Greenlet)])
@@ -215,20 +215,20 @@ def test_get_paths(
 
 
 def test_get_info(api_sut: ServiceApi, api_url: str, pathfinding_service_mock):
-    url = api_url + '/info'
+    url = api_url + "/info"
 
     response = requests.get(url)
     assert response.status_code == 200
     assert response.json() == {
-        'price_info': 0,
-        'network_info': {
-            'chain_id': pathfinding_service_mock.chain_id,
-            'registry_address': pathfinding_service_mock.registry_address,
+        "price_info": 0,
+        "network_info": {
+            "chain_id": pathfinding_service_mock.chain_id,
+            "registry_address": pathfinding_service_mock.registry_address,
         },
-        'settings': 'PLACEHOLDER FOR PATHFINDER SETTINGS',
-        'version': pkg_resources.require('raiden-services')[0].version,
-        'operator': 'PLACEHOLDER FOR PATHFINDER OPERATOR',
-        'message': 'PLACEHOLDER FOR ADDITIONAL MESSAGE BY THE PFS',
+        "settings": "PLACEHOLDER FOR PATHFINDER SETTINGS",
+        "version": pkg_resources.require("raiden-services")[0].version,
+        "operator": "PLACEHOLDER FOR PATHFINDER OPERATOR",
+        "message": "PLACEHOLDER FOR ADDITIONAL MESSAGE BY THE PFS",
     }
     # kill all running greenlets
     gevent.killall([obj for obj in gc.get_objects() if isinstance(obj, gevent.Greenlet)])
@@ -244,20 +244,20 @@ def test_get_iou(
 ):
     privkey = get_random_privkey()
     sender = private_key_to_address(privkey)
-    url = api_url + f'/{token_network_model.address}/payment/iou'
+    url = api_url + f"/{token_network_model.address}/payment/iou"
 
     def make_params(timestamp: datetime):
         params = {
-            'sender': sender,
-            'receiver': api_sut.pathfinding_service.address,
-            'timestamp': timestamp.isoformat(),
+            "sender": sender,
+            "receiver": api_sut.pathfinding_service.address,
+            "timestamp": timestamp.isoformat(),
         }
         local_signer = LocalSigner(private_key=decode_hex(privkey))
-        params['signature'] = encode_hex(
+        params["signature"] = encode_hex(
             local_signer.sign(
                 pack_data(
-                    ['address', 'address', 'string'],
-                    [params['sender'], params['receiver'], params['timestamp']],
+                    ["address", "address", "string"],
+                    [params["sender"], params["receiver"], params["timestamp"]],
                 )
             )
         )
@@ -267,7 +267,7 @@ def test_get_iou(
     params = make_params(datetime.utcnow())
     response = requests.get(url, params=params)
     assert response.status_code == 404, response.json()
-    assert response.json() == {'last_iou': None}
+    assert response.json() == {"last_iou": None}
 
     # Add IOU to database
     iou = make_iou(privkey, api_sut.pathfinding_service.address)
@@ -277,20 +277,20 @@ def test_get_iou(
     # Is returned IOU the one save into the db?
     response = requests.get(url, params=params)
     assert response.status_code == 200, response.json()
-    iou_dict = IOU.Schema(exclude=['claimed']).dump(iou)[0]
-    assert response.json()['last_iou'] == iou_dict
+    iou_dict = IOU.Schema(exclude=["claimed"]).dump(iou)[0]
+    assert response.json()["last_iou"] == iou_dict
 
     # Invalid signatures must fail
-    params['signature'] = encode_hex((int(params['signature'], 16) + 1).to_bytes(65, 'big'))
+    params["signature"] = encode_hex((int(params["signature"], 16) + 1).to_bytes(65, "big"))
     response = requests.get(url, params=params)
     assert response.status_code == 400, response.json()
-    assert response.json()['error_code'] == exceptions.InvalidSignature.error_code
+    assert response.json()["error_code"] == exceptions.InvalidSignature.error_code
 
     # Timestamp must no be too old to prevent replay attacks
     params = make_params(datetime.utcnow() - timedelta(days=1))
     response = requests.get(url, params=params)
     assert response.status_code == 400, response.json()
-    assert response.json()['error_code'] == exceptions.RequestOutdated.error_code
+    assert response.json()["error_code"] == exceptions.RequestOutdated.error_code
 
     # kill all running greenlets
     gevent.killall([obj for obj in gc.get_objects() if isinstance(obj, gevent.Greenlet)])

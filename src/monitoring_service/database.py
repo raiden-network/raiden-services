@@ -30,7 +30,7 @@ EVENT_TYPE_ID_MAP = {v: k for k, v in EVENT_ID_TYPE_MAP.items()}
 class SharedDatabase(BaseDatabase):
     """ DB shared by MS and request collector """
 
-    schema_filename = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'schema.sql')
+    schema_filename = os.path.join(os.path.dirname(os.path.realpath(__file__)), "schema.sql")
 
     def upsert_monitor_request(self, request: MonitorRequest) -> None:
         values = [
@@ -46,7 +46,7 @@ class SharedDatabase(BaseDatabase):
             request.non_closing_signer,
         ]
         upsert_sql = "INSERT OR REPLACE INTO monitor_request VALUES ({})".format(
-            ', '.join('?' * len(values))
+            ", ".join("?" * len(values))
         )
         self.conn.execute(upsert_sql, values)
 
@@ -69,7 +69,7 @@ class SharedDatabase(BaseDatabase):
         if row is None:
             return None
 
-        kwargs = {key: val for key, val in zip(row.keys(), row) if key != 'non_closing_signer'}
+        kwargs = {key: val for key, val in zip(row.keys(), row) if key != "non_closing_signer"}
         mr = MonitorRequest(**kwargs)
         return mr
 
@@ -98,7 +98,7 @@ class SharedDatabase(BaseDatabase):
             values += [None, None]
 
         upsert_sql = "INSERT OR REPLACE INTO channel VALUES ({})".format(
-            ', '.join('?' * len(values))
+            ", ".join("?" * len(values))
         )
         self.conn.execute(upsert_sql, values)
 
@@ -114,13 +114,13 @@ class SharedDatabase(BaseDatabase):
         if row is None:
             return None
         kwargs = {
-            key: val for key, val in zip(row.keys(), row) if not key.startswith('update_status')
+            key: val for key, val in zip(row.keys(), row) if not key.startswith("update_status")
         }
         return Channel(
             update_status=OnChainUpdateStatus(
-                update_sender_address=row['update_status_sender'], nonce=row['update_status_nonce']
+                update_sender_address=row["update_status_sender"], nonce=row["update_status_nonce"]
             )
-            if row['update_status_nonce'] is not None
+            if row["update_status_nonce"] is not None
             else None,
             **kwargs,
         )
@@ -138,7 +138,7 @@ class SharedDatabase(BaseDatabase):
             contained_event.non_closing_participant,
         ]
         upsert_sql = "INSERT OR REPLACE INTO scheduled_events VALUES ({})".format(
-            ', '.join('?' * len(values))
+            ", ".join("?" * len(values))
         )
         self.conn.execute(upsert_sql, values)
 
@@ -152,15 +152,15 @@ class SharedDatabase(BaseDatabase):
         ).fetchall()
 
         def create_scheduled_event(row: sqlite3.Row) -> ScheduledEvent:
-            event_type = EVENT_ID_TYPE_MAP[row['event_type']]
+            event_type = EVENT_ID_TYPE_MAP[row["event_type"]]
             sub_event = event_type(
-                row['token_network_address'],
-                row['channel_identifier'],
-                row['non_closing_participant'],
+                row["token_network_address"],
+                row["channel_identifier"],
+                row["non_closing_participant"],
             )
 
             return ScheduledEvent(
-                trigger_block_number=row['trigger_block_number'], event=sub_event
+                trigger_block_number=row["trigger_block_number"], event=sub_event
             )
 
         return [create_scheduled_event(row) for row in rows]
@@ -204,7 +204,7 @@ class SharedDatabase(BaseDatabase):
         """
         blockchain = self.conn.execute("SELECT * FROM blockchain").fetchone()
         ms_state = MonitoringServiceState(
-            blockchain_state=self.get_blockchain_state(), address=blockchain['receiver']
+            blockchain_state=self.get_blockchain_state(), address=blockchain["receiver"]
         )
         return ms_state
 

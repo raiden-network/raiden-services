@@ -20,7 +20,7 @@ from raiden_libs.events import Event
 log = logging.getLogger(__name__)
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def web3(patch_genesis_gas_limit, ethereum_tester):
     """Returns an initialized Web3 instance"""
     provider = EthereumTesterProvider(ethereum_tester)
@@ -33,17 +33,17 @@ def web3(patch_genesis_gas_limit, ethereum_tester):
     # make faucet rich
     ethereum_tester.send_transaction(
         {
-            'from': ethereum_tester.get_accounts()[0],
-            'to': FAUCET_ADDRESS,
-            'gas': 21000,
-            'value': FAUCET_ALLOWANCE,
+            "from": ethereum_tester.get_accounts()[0],
+            "to": FAUCET_ADDRESS,
+            "gas": 21000,
+            "value": FAUCET_ALLOWANCE,
         }
     )
 
     yield web3
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def wait_for_blocks(web3):
     """Returns a function that blocks until n blocks are mined"""
 
@@ -54,7 +54,7 @@ def wait_for_blocks(web3):
     return wait_for_blocks
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def contracts_manager():
     """Overwrites the contracts_manager from raiden_contracts to use compiled contracts """
     return ContractManager(contracts_precompiled_path())
@@ -66,7 +66,7 @@ def keystore_file(tmp_path) -> str:
 
     account = Account.create()
     keystore_json = Account.encrypt(private_key=account.privateKey, password=KEYSTORE_PASSWORD)
-    with open(keystore_file, 'w') as fp:
+    with open(keystore_file, "w") as fp:
         json.dump(keystore_json, fp)
 
     return keystore_file
@@ -78,13 +78,13 @@ def mockchain(monkeypatch):
 
     def get_events(web3, contract_manager, chain_state, to_block: int, query_ms=True):
         from_block = chain_state.latest_known_block + 1
-        blocks = state['block_events'][from_block : to_block + 1]
+        blocks = state["block_events"][from_block : to_block + 1]
         events = [ev for block in blocks for ev in block]  # flatten
         return chain_state, events
 
     def set_events(events):
-        state['block_events'] = events
+        state["block_events"] = events
 
-    monkeypatch.setattr('monitoring_service.service.get_blockchain_events', get_events)
-    monkeypatch.setattr('pathfinding_service.service.get_blockchain_events', get_events)
+    monkeypatch.setattr("monitoring_service.service.get_blockchain_events", get_events)
+    monkeypatch.setattr("pathfinding_service.service.get_blockchain_events", get_events)
     return set_events

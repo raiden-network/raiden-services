@@ -6,7 +6,7 @@ from raiden_contracts.tests.utils import get_random_address
 class ContractMock(Mock):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        if 'address' not in kwargs:
+        if "address" not in kwargs:
             self.address = get_random_address()
 
 

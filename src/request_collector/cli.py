@@ -13,7 +13,7 @@ log = structlog.get_logger(__name__)
 
 
 @click.command()
-@common_options('raiden-monitoring-service')
+@common_options("raiden-monitoring-service")
 def main(private_key: str, state_db: str) -> int:
     """ The request collector for the monitoring service. """
     log.info("Starting Raiden Monitoring Request Collector")
@@ -22,9 +22,9 @@ def main(private_key: str, state_db: str) -> int:
 
     RequestCollector(private_key=private_key, state_db=database).listen_forever()
 
-    print('Exiting...')
+    print("Exiting...")
     return 0
 
 
 if __name__ == "__main__":
-    main(auto_envvar_prefix='MSRC')  # pragma: no cover
+    main(auto_envvar_prefix="MSRC")  # pragma: no cover

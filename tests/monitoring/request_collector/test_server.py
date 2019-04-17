@@ -38,12 +38,12 @@ def test_invalid_request(ms_database, build_request_monitoring, request_collecto
         request_monitoring = build_request_monitoring(**kwargs)
         rm_dict = request_monitoring.to_dict()
         if reward_proof_signature:
-            rm_dict['reward_proof_signature'] = reward_proof_signature
+            rm_dict["reward_proof_signature"] = reward_proof_signature
         request_collector.on_monitor_request(RequestMonitoring.from_dict(rm_dict))
         return ms_database.monitor_request_count() == 1
 
     # bad signature
-    invalid_sig = '0x' + '1' * 130
+    invalid_sig = "0x" + "1" * 130
     assert not store_successful(reward_proof_signature=invalid_sig)
 
     # wrong chain_id

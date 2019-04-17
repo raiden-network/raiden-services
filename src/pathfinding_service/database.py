@@ -16,7 +16,7 @@ log = structlog.get_logger(__name__)
 class PFSDatabase(BaseDatabase):
     """ Store data that needs to persist between PFS restarts """
 
-    schema_filename = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'schema.sql')
+    schema_filename = os.path.join(os.path.dirname(os.path.realpath(__file__)), "schema.sql")
 
     def __init__(
         self,
@@ -84,7 +84,7 @@ class PFSDatabase(BaseDatabase):
 
         for row in self.conn.execute(query, args):
             iou_dict = dict(zip(row.keys(), row))
-            iou_dict['receiver'] = self.pfs_address
+            iou_dict["receiver"] = self.pfs_address
             yield IOU.Schema().load(iou_dict)[0]
 
     def get_iou(
@@ -96,7 +96,7 @@ class PFSDatabase(BaseDatabase):
             return None
 
     def upsert_channel_view(self, channel_view: ChannelView) -> None:
-        cv_dict = ChannelView.Schema(strict=True, exclude=['state']).dump(channel_view)[0]
+        cv_dict = ChannelView.Schema(strict=True, exclude=["state"]).dump(channel_view)[0]
         self.conn.execute(
             """
             INSERT OR REPLACE INTO channel_view (
