@@ -42,6 +42,7 @@ last_requests: collections.deque = collections.deque([], maxlen=200)
 
 class ApiWithErrorHandler(Api):
     def handle_error(self, e: exceptions.ApiException) -> Response:
+        log.debug("Error while handling request", error=e)
         return self.make_response(
             {"errors": e.msg, "error_code": e.error_code, "error_details": e.error_details},
             e.http_code,
@@ -180,6 +181,14 @@ def process_payment(iou: Optional[IOU], pathfinding_service: PathfindingService)
     if udc_balance < required_deposit:
         raise exceptions.DepositTooLow(required_deposit=required_deposit)
 
+    log.info(
+        "Received service fee",
+        sender=iou.sender,
+        expected_amount=expected_amount,
+        total_amount=iou.amount,
+        added_amount=expected_amount - pathfinding_service.service_fee,
+    )
+
     # Save latest IOU
     iou.claimed = False
     pathfinding_service.database.upsert_iou(iou)
@@ -274,7 +283,7 @@ class DebugEndpoint(PathfinderResource):
             if matches_params:
                 request_count += 1
                 responses.append(dict(source=r["source"], target=r["target"], routes=r["routes"]))
-        # log.debug("Responses:", responses=responses)
+
         return dict(request_count=request_count, responses=responses), 200
 
 
