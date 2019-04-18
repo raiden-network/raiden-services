@@ -25,7 +25,6 @@ from raiden_contracts.constants import (
 from raiden_libs.blockchain import get_blockchain_events
 from raiden_libs.contract_info import CONTRACT_MANAGER
 from raiden_libs.events import Event
-from raiden_libs.gevent_error_handler import register_error_handler
 from raiden_libs.utils import private_key_to_address
 
 log = structlog.get_logger(__name__)
@@ -105,7 +104,6 @@ class MonitoringService:  # pylint: disable=too-few-public-methods
     def start(
         self, wait_function: Callable = time.sleep, check_account_gas_reserve: bool = True
     ) -> None:
-        register_error_handler()
         while True:
             last_confirmed_block = self.web3.eth.blockNumber - self.required_confirmations
 
