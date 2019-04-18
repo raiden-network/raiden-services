@@ -1,19 +1,33 @@
-from typing import Any, Callable
+import sys
+import traceback
+from typing import Any
 
+import structlog
 from gevent.hub import Hub
 
+log = structlog.get_logger(__name__)
 _original_error_handler = Hub.handle_error
 
 
-def register_error_handler(error_handler: Callable) -> None:
-    """Sets the current error handler, overwriting the previous ones"""
+def error_handler(self: Any, context: Any, type: Any, value: Any, tb: Any) -> None:
+    if issubclass(type, Hub.NOT_ERROR):
+        return
+    if issubclass(type, KeyboardInterrupt):
+        log.info("Service termination requested by user.")
+        sys.exit()
 
-    def custom_handle_error(self: Any, context: Any, type: Any, value: Any, tb: Any) -> None:
-        if issubclass(type, Hub.NOT_ERROR):
-            return
-        error_handler(context, (type, value, tb))
+    log.critical(
+        "Unhandled exception. Terminating the program..."
+        "Please report this issue at "
+        "https://github.com/raiden-network/raiden-services/issues"
+    )
+    traceback.print_exception(etype=type, value=value, tb=tb)
+    sys.exit(-1)
 
-    Hub.handle_error = custom_handle_error
+
+def register_error_handler() -> None:
+    """Sets the default error handler, overwriting the previous one"""
+    Hub.handle_error = error_handler
 
 
 def unregister_error_handler() -> None:

@@ -1,6 +1,4 @@
 import sys
-import traceback
-from typing import Any
 
 import gevent
 import structlog
@@ -15,12 +13,6 @@ from raiden_libs.gevent_error_handler import register_error_handler
 from raiden_libs.matrix import MatrixListener
 
 log = structlog.get_logger(__name__)
-
-
-def error_handler(_context: Any, exc_info: tuple) -> None:
-    log.critical("Unhandled exception terminating the program")
-    traceback.print_exception(etype=exc_info[0], value=exc_info[1], tb=exc_info[2])
-    sys.exit()
 
 
 class RequestCollector(gevent.Greenlet):
@@ -47,7 +39,7 @@ class RequestCollector(gevent.Greenlet):
         self.matrix_listener.listen_forever()
 
     def _run(self) -> None:  # pylint: disable=method-hidden
-        register_error_handler(error_handler)
+        register_error_handler()
         self.matrix_listener.start()
 
     def stop(self) -> None:
