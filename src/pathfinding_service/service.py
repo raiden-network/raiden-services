@@ -1,7 +1,6 @@
 import sys
-import traceback
 from dataclasses import asdict
-from typing import Any, Dict, Optional
+from typing import Dict, Optional
 
 import gevent
 import structlog
@@ -36,16 +35,6 @@ from raiden_libs.types import Address, TokenNetworkAddress
 from raiden_libs.utils import private_key_to_address
 
 log = structlog.get_logger(__name__)
-
-
-def error_handler(context: Any, exc_info: tuple) -> None:
-    log.critical(
-        "Unhandled exception. Terminating the program..."
-        "Please report this issue at "
-        "https://github.com/raiden-network/raiden-services/issues"
-    )
-    traceback.print_exception(etype=exc_info[0], value=exc_info[1], tb=exc_info[2])
-    sys.exit()
 
 
 def recover_signer_from_capacity_update(message: UpdatePFS,) -> ChecksumAddress:
@@ -111,7 +100,7 @@ class PathfindingService(gevent.Greenlet):
         return network_for_address
 
     def _run(self) -> None:  # pylint: disable=method-hidden
-        register_error_handler(error_handler)
+        register_error_handler()
         self.matrix_listener.start()
 
         log.info(
