@@ -37,35 +37,42 @@ services:
       - "traefik.enable=true"
       - "traefik.frontend.rule=Host: pfs-kovan.services-dev.raiden.network"
 
-  # TODO: probably wrong addresses!
+  pfs-goerli:
+    <<: *defaults
+    environment:
+      - PFS_ETH_RPC=http://geth.goerli.ethnodes.brainbot.com:8545
+      - PFS_STATE_DB=/state/pfs-goerli.db
+    labels:
+      - "traefik.enable=true"
+      - "traefik.frontend.rule=Host: pfs-goerli.services-dev.raiden.network"
+
   ms-ropsten:
     << : *defaults
     command: ["python3", "-m", "monitoring_service.cli"]
     environment:
       - MS_ETH_RPC=http://geth.ropsten.ethnodes.brainbot.com:8545
-      - MS_REGISTRY_ADDRESS=0x5F7d5e025Ac85830a99D60b40e250681012ece1A
-      - MS_MONITOR_CONTRACT_ADDRESS=0xb662B2922B045c1De01Cd0F56742744c7E303bBa
       - MS_STATE_DB=/state/ms-ropsten.db
 
-  # addresses taken from https://gist.github.com/palango/d28f0313bd60d2608ddebd5ac2db562f
   ms-rinkeby:
     << : *defaults
     command: ["python3", "-m", "monitoring_service.cli"]
     environment:
       - MS_ETH_RPC=http://geth.rinkeby.ethnodes.brainbot.com:8545
-      - MS_REGISTRY_ADDRESS=0xE4769320245E4DeEAE5e816C9A827098B2988ef8
-      - MS_MONITOR_CONTRACT_ADDRESS=0xA0ED03b276cA581e8F120b5DcFe152DaAb0162d9
       - MS_STATE_DB=/state/ms-rinkeby.db
 
-  # TODO: wrong addresses!
   ms-kovan:
     << : *defaults
     command: ["python3", "-m", "monitoring_service.cli"]
     environment:
       - MS_ETH_RPC=http://parity.kovan.ethnodes.brainbot.com:8545
-      - MS_REGISTRY_ADDRESS=0x2909D985A09D04c7c7Cc0Ca12659dbA80Bb43E8e
-      - MS_MONITOR_CONTRACT_ADDRESS=0x88CeF03b85415a57FB2c8aDadD8C77B6Eaac3AE1
       - MS_STATE_DB=/state/ms-kovan.db
+
+  ms-goerli:
+    <<: *defaults
+    command: ["python3", "-m", "monitoring_service.cli"]
+    environment:
+      - MS_ETH_RPC=http://geth.goerli.ethnodes.brainbot.com:8545
+      - MS_STATE_DB=/state/ms-goerli.db
 
   msrc-ropsten:
     << : *defaults
@@ -91,6 +98,14 @@ services:
     depends_on:
       - ms-kovan
 
+  msrc-goerli:
+    << : *defaults
+    command: ["python3", "-m", "request_collector.cli"]
+    environment:
+      - MSRC_STATE_DB=/state/ms-goerli.db
+    depends_on:
+      - ms-goerli
+
   builder:
     build: ./builder
     volumes:
@@ -115,10 +130,13 @@ services:
       - pfs-ropsten
       - pfs-rinkeby
       - pfs-kovan
+      - pfs-goerli
       - ms-ropsten
       - ms-rinkeby
       - ms-kovan
+      - ms-goerli
       - msrc-ropsten
       - msrc-rinkeby
       - msrc-kovan
+      - msrc-goerli
       - builder

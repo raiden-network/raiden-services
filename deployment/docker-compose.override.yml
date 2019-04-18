@@ -25,6 +25,11 @@ services:
     ports:
       - 6003:6000
 
+  pfs-goerli:
+    <<: *defaults
+    ports:
+      - 6004:6000
+
   ms-ropsten:
     << : *defaults
 
@@ -34,6 +39,9 @@ services:
   ms-kovan:
     << : *defaults
 
+  ms-goerli:
+    <<: *defaults
+
   msrc-ropsten:
     << : *defaults
 
@@ -42,3 +50,6 @@ services:
 
   msrc-kovan:
     << : *defaults
+
+  msrc-goerli:
+    <<: *defaults
