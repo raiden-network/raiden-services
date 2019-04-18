@@ -22,7 +22,7 @@ def error_handler(self: Any, context: Any, type: Any, value: Any, tb: Any) -> No
         "https://github.com/raiden-network/raiden-services/issues"
     )
     traceback.print_exception(etype=type, value=value, tb=tb)
-    sys.exit(-1)
+    sys.exit(1)
 
 
 def register_error_handler() -> None:
