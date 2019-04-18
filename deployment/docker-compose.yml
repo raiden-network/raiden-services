@@ -11,6 +11,7 @@ x-defaults: &defaults
 services:
   pfs-ropsten:
     << : *defaults
+    build: ../
     command: ["python3", "-m", "pathfinding_service.cli"]
     environment:
       - PFS_ETH_RPC=http://geth.ropsten.ethnodes.brainbot.com:8545
