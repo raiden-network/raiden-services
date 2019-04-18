@@ -26,10 +26,13 @@ For more technical details see:
 
 The Raiden Services require Python 3.7+.
 
-To install the Raiden services run the following commands:
+Currently we recomment to use the latest development version of the services. To install them run the following commands:
 
 ```sh
+git clone git@github.com:raiden-network/raiden-services.git
+cd raiden-services
 virtualenv -p python3.7 venv
 source venv/bin/activate
-pip install raiden-services
+pip install -r requirements-dev.txt
+pip install -e .
 ```
