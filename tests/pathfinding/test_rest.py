@@ -127,6 +127,9 @@ def test_get_paths_validation(
     assert response.json()["error_code"] == exceptions.InvalidRequest.error_code
     assert "max_paths" in response.json()["error_details"]
 
+    # successful request without payment
+    response = request_path_with(status_code=200)
+
     # Exemplary test for payment errors. Different errors are serialized the
     # same way in the rest API. Checking for specific errors is tested in
     # payment_tests.
