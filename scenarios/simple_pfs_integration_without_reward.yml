@@ -26,6 +26,8 @@ nodes:
     routing-mode: pfs
     pathfinding-max-paths: 5
     pathfinding-eth-address: "0x308a33011c45bfa0a801fcd16100e80629b25e1f"
+    # use the correct eth address of the pfs when running
+    pathfinding-max-fee: 10
 
 
 scenario:
@@ -38,8 +40,11 @@ scenario:
             - open_channel: {from: 0, to: 2, total_deposit: 1000}
             - open_channel: {from: 3, to: 1, total_deposit: 1000}
             - open_channel: {from: 3, to: 2, total_deposit: 1000}
-            - open_channel: {from: 1, to: 3, total_deposit: 1000}
-            - open_channel: {from: 2, to: 3, total_deposit: 1000}
+      - parallel:
+          name: "Deposit something"
+          tasks:
+            - deposit: {from: 1, to: 3, total_deposit: 1000}
+            - deposit: {from: 2, to: 3, total_deposit: 1000}
       - serial:
           name: "Test providing routes"
           tasks:
@@ -48,34 +53,28 @@ scenario:
             - transfer: {from: 3, to: 0, amount: 10, expected_http_status: 409}
             - assert_pfs_routes: {from: 3, to: 0, amount: 10, expected_paths: 0}
 
-            # node0 two possible routes to node3
+            # node0 has two possible routes to node3
             - assert_pfs_routes: {from: 0, to: 3, amount: 10, expected_paths: 2}
             - assert_pfs_history: {source: 0, request_count: 1}
-            - assert_pfs_history: {source: 3, request_count: 1}
-            - wait: 60
-            - parallel:
-                name: "Balancing channel 0 <-> 1 <-> 3"
-                tasks:
-                  - transfer: {from: 3, to: 1, amount: 500, expected_http_status: 200}
-                  - transfer: {from: 0, to: 1, amount: 500, expected_http_status: 200}
+
+            # request_count: 2 because transfer & assert_pfs_routes request routes from the pfs
+            - assert_pfs_history: {source: 3, request_count: 2}
+
+            - transfer: {from: 0, to: 1, amount: 500, expected_http_status: 200}
             - wait: 60
             # now we expect the pfs to provide one path
             - transfer: {from: 3, to: 0, amount: 10, expected_http_status: 200}
             - assert_pfs_routes: {from: 3, to: 0, amount: 10, expected_paths: 1}
-            - parallel:
-                name: "Balancing channel 0 <-> 2 <-> 3"
-                tasks:
-                  - transfer: {from: 3, to: 2, amount: 500, expected_http_status: 200}
-                  - transfer: {from: 0, to: 2, amount: 500, expected_http_status: 200}
-            - wait: 60
 
+            - transfer: {from: 0, to: 2, amount: 500, expected_http_status: 200}
+            - wait: 60
             # now we expect the pfs to provide two paths
             - transfer: {from: 3, to: 0, amount: 10, expected_http_status: 200}
             - assert_pfs_routes: {from: 3, to: 0, amount: 10, expected_paths: 2}
 
             ## 4 requests where made from source node 3 to target node 0 and the specified number of
             ## routes have been returned
-            - assert_pfs_history: {source: 3, target: 0, request_count: 3, routes_count: [0, 0, 1, 1, 2, 2]}
+            - assert_pfs_history: {source: 3, target: 0, request_count: 6, routes_count: [0, 0, 1, 1, 2, 2]}
 
             ## The listed routes have been returned for requests from source node 0 to target node 3
             - assert_pfs_history:
