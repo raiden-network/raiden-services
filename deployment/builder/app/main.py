@@ -13,9 +13,9 @@ REPOS = {
             'deployment': '/data/services-dev',
         },
         'names': [
-            'pfs-ropsten', 'pfs-rinkeby', 'pfs-kovan',
-            'ms-ropsten', 'ms-rinkeby', 'ms-kovan',
-            'msrc-ropsten', 'msrc-rinkeby', 'msrc-kovan',
+            'pfs-ropsten', 'pfs-rinkeby', 'pfs-kovan', 'pfs-goerli',
+            'ms-ropsten', 'ms-rinkeby', 'ms-kovan', 'ms-goerli',
+            'msrc-ropsten', 'msrc-rinkeby', 'msrc-kovan', 'msrc-goerli',
         ],
     },
 }
