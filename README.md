@@ -26,7 +26,7 @@ For more technical details see:
 
 The Raiden Services require Python 3.7+.
 
-Currently we recomment to use the latest development version of the services. To install them run the following commands:
+Currently we recommend to use the latest development version of the services. To install them run the following commands:
 
 ```sh
 git clone git@github.com:raiden-network/raiden-services.git
