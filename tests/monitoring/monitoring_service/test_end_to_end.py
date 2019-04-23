@@ -3,9 +3,11 @@ from request_collector.server import RequestCollector
 from web3 import Web3
 
 from monitoring_service.service import MonitoringService
-from raiden.utils.typing import BlockNumber
+from monitoring_service.states import HashedBalanceProof
+from raiden.utils.typing import BlockNumber, Nonce, TokenAmount
 from raiden_contracts.constants import CONTRACT_MONITORING_SERVICE, MonitoringServiceEvent
 from raiden_contracts.contract_manager import ContractManager
+from raiden_contracts.tests.utils.constants import EMPTY_LOCKSROOT
 from raiden_libs.blockchain import query_blockchain_events
 from raiden_libs.types import Address
 
@@ -29,15 +31,18 @@ def create_ms_contract_events_query(
 
 def test_e2e(
     web3,
-    generate_raiden_clients,
     monitoring_service_contract,
     user_deposit_contract,
     wait_for_blocks,
-    custom_token,
     service_registry,
     monitoring_service: MonitoringService,
     request_collector: RequestCollector,
     contracts_manager,
+    deposit_to_udc,
+    create_channel,
+    token_network,
+    get_accounts,
+    get_private_key,
 ):
     """Test complete message lifecycle
         1) client opens channel & submits monitoring request
@@ -51,40 +56,43 @@ def test_e2e(
         web3, contracts_manager, monitoring_service_contract.address
     )
     initial_balance = user_deposit_contract.functions.balances(monitoring_service.address).call()
-    c1, c2 = generate_raiden_clients(2)
+    c1, c2 = get_accounts(2)
 
     # add deposit for c1
     node_deposit = 10
-    custom_token.functions.approve(user_deposit_contract.address, node_deposit).transact(
-        {"from": c1.address}
-    )
-    user_deposit_contract.functions.deposit(c1.address, node_deposit).transact(
-        {"from": c1.address}
-    )
+    deposit_to_udc(c1, node_deposit)
 
     deposit = service_registry.functions.deposits(monitoring_service.address).call()
     assert deposit > 0
 
     # each client does a transfer
-    c1.open_channel(c2.address)
-    transferred_c1 = 5
-    balance_proof_c1 = c1.get_balance_proof(
-        c2.address,
-        nonce=1,
-        transferred_amount=transferred_c1,
-        locked_amount=0,
-        locksroot="0x%064x" % 0,
+    channel_id = create_channel(c1, c2, settle_timeout=15)[
+        0
+    ]  # TODO: reduce settle_timeout to speed up test
+
+    shared_bp_args = dict(
+        channel_identifier=channel_id,
+        token_network_address=token_network.address,
+        chain_id=1,
         additional_hash="0x%064x" % 0,
+        locked_amount=0,
+        locksroot=EMPTY_LOCKSROOT,
+    )
+    transferred_c1 = 5
+    balance_proof_c1 = HashedBalanceProof(
+        nonce=Nonce(1),
+        transferred_amount=transferred_c1,
+        priv_key=get_private_key(c1),
+        **shared_bp_args
     )
     transferred_c2 = 6
-    balance_proof_c2 = c2.get_balance_proof(
-        c1.address,
-        nonce=2,
+    balance_proof_c2 = HashedBalanceProof(
+        nonce=Nonce(2),
         transferred_amount=transferred_c2,
-        locked_amount=0,
-        locksroot="0x%064x" % 0,
-        additional_hash="0x%064x" % 0,
+        priv_key=get_private_key(c2),
+        **shared_bp_args
     )
+
     ms_greenlet = gevent.spawn(monitoring_service.start, gevent.sleep)
 
     # need to wait here till the MS has some time to react
@@ -93,12 +101,21 @@ def test_e2e(
     assert monitoring_service.context.ms_state.blockchain_state.token_network_addresses
 
     # c1 asks MS to monitor the channel
-    reward_amount = 1
-    request_monitoring = c1.get_request_monitoring(balance_proof_c2, reward_amount)
+    reward_amount = TokenAmount(1)
+    request_monitoring = balance_proof_c2.get_request_monitoring(
+        get_private_key(c1), reward_amount
+    )
     request_collector.on_monitor_request(request_monitoring)
 
     # c2 closes the channel
-    c2.close_channel(c1.address, balance_proof_c1)
+    token_network.functions.closeChannel(
+        channel_id,
+        c1,
+        balance_proof_c1.balance_hash,
+        balance_proof_c1.nonce,
+        balance_proof_c1.additional_hash,
+        balance_proof_c1.signature,
+    ).transact({"from": c2})
     # Wait until the MS reacts, which it does after giving the client some time
     # to update the channel itself.
     wait_for_blocks(5)  # 30% of 15 blocks
@@ -109,12 +126,19 @@ def test_e2e(
 
     # wait for settle timeout
     wait_for_blocks(15)
-    c2.settle_channel(
-        c1.address,
-        (transferred_c2, transferred_c1),
-        (0, 0),  # locked_amount
-        ("0x%064x" % 0, "0x%064x" % 0),  # locksroot
-    )
+
+    token_network.functions.settleChannel(
+        channel_id,
+        c1,  # participant_B
+        transferred_c1,  # participant_B_transferred_amount
+        0,  # participant_B_locked_amount
+        EMPTY_LOCKSROOT,  # participant_B_locksroot
+        c2,  # participant_A
+        transferred_c2,  # participant_A_transferred_amount
+        0,  # participant_A_locked_amount
+        EMPTY_LOCKSROOT,  # participant_A_locksroot
+    ).transact()
+
     # Wait until the ChannelSettled is confirmed
     # Let the MS claim its reward
     gevent.sleep(0.1)
