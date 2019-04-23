@@ -61,3 +61,14 @@ def api_sut(
     api.run(port=free_port)
     yield api
     api.stop()
+
+
+@pytest.fixture
+def api_sut_with_debug(
+    pathfinding_service_mock, free_port: int, populate_token_network_case_1: None
+) -> Iterator[ServiceApi]:
+    pathfinding_service_mock.debug_mode_enabled = True
+    api = ServiceApi(pathfinding_service_mock)
+    api.run(port=free_port)
+    yield api
+    api.stop()

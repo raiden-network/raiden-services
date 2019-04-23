@@ -43,6 +43,13 @@ DEFAULT_REQUIRED_CONFIRMATIONS = 8  # ~2min with 15s blocks
     type=click.IntRange(min=0),
     help="Number of block confirmations to wait for",
 )
+@click.option(
+    "--enable-debug",
+    default=False,
+    is_flag=True,
+    hidden=True,
+    help="Number of block confirmations to wait for",
+)
 @common_options("raiden-pathfinding-service")
 def main(
     private_key: str,
@@ -53,6 +60,7 @@ def main(
     confirmations: int,
     host: str,
     service_fee: int,
+    enable_debug: bool,
 ) -> int:
     """ The Pathfinding service for the Raiden Network. """
     log.info("Starting Raiden Pathfinding Service")
@@ -69,6 +77,7 @@ def main(
             poll_interval=DEFAULT_POLL_INTERVALL,
             db_filename=state_db,
             service_fee=service_fee,
+            debug_mode=enable_debug,
         )
 
         api = ServiceApi(service)

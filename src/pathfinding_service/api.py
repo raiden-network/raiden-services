@@ -118,25 +118,27 @@ class PathsResource(PathfinderResource):
             )
         except (NetworkXNoPath, NodeNotFound):
             # this is for assertion via the scenario player
+            if self.pathfinding_service.debug_mode_enabled:
+                last_requests.append(
+                    dict(
+                        token_network_address=token_network_address,
+                        source=path_req.from_,
+                        target=path_req.to,
+                        routes=[],
+                    )
+                )
+            raise exceptions.NoRouteFound(from_=path_req.from_, to=path_req.to)
+
+        # this is for assertion via the scenario player
+        if self.pathfinding_service.debug_mode_enabled:
             last_requests.append(
                 dict(
                     token_network_address=token_network_address,
                     source=path_req.from_,
                     target=path_req.to,
-                    routes=[],
+                    routes=paths,
                 )
             )
-            raise exceptions.NoRouteFound(from_=path_req.from_, to=path_req.to)
-
-        # this is for assertion via the scenario player
-        last_requests.append(
-            dict(
-                token_network_address=token_network_address,
-                source=path_req.from_,
-                target=path_req.to,
-                routes=paths,
-            )
-        )
 
         return {"result": paths}, 200
 
@@ -298,19 +300,25 @@ class ServiceApi:
             ("/<token_network_address>/paths", PathsResource, {}, "paths"),
             ("/<token_network_address>/payment/iou", IOUResource, {}, "payments"),
             ("/info", InfoResource, {}, "info"),
-            (
-                "/_debug/routes/<token_network_address>/<source_address>",
-                DebugEndpoint,
-                {},
-                "debug1",
-            ),
-            (
-                "/_debug/routes/<token_network_address>/<source_address>/<target_address>",
-                DebugEndpoint,
-                {},
-                "debug2",
-            ),
         ]
+
+        if pathfinding_service.debug_mode_enabled:
+            resources.extend(
+                [
+                    (
+                        "/_debug/routes/<token_network_address>/<source_address>",
+                        DebugEndpoint,
+                        {},
+                        "debug1",
+                    ),
+                    (
+                        "/_debug/routes/<token_network_address>/<source_address>/<target_address>",
+                        DebugEndpoint,
+                        {},
+                        "debug2",
+                    ),
+                ]
+            )
 
         for endpoint_url, resource, kwargs, endpoint in resources:
             endpoint_url = API_PATH + endpoint_url
