@@ -36,7 +36,7 @@ def test_save_and_load_token_networks(pathfinding_service_mock):
             channel_identifier=channel_id,
             participant1=p1,
             participant2=p2,
-            settle_timeout=1000,
+            settle_timeout=2 ** 65,  # larger than max_uint64 to check hex storage
             block_number=BlockNumber(2),
         ),
     ]

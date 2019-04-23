@@ -38,13 +38,14 @@ class PFSDatabase(BaseDatabase):
 
     def upsert_iou(self, iou: IOU) -> None:
         iou_dict = IOU.Schema(strict=True).dump(iou)[0]
+        for key in ("amount", "expiration_block"):
+            iou_dict[key] = hex256(iou_dict[key])
         self.conn.execute(
             """
             INSERT OR REPLACE INTO iou (
                 sender, amount, expiration_block, signature, claimed
             ) VALUES (
-                :sender, printf('0x%064x', :amount), printf('0x%064x', :expiration_block),
-                :signature, :claimed
+                :sender, :amount, :expiration_block, :signature, :claimed
             )
         """,
             iou_dict,
@@ -97,6 +98,16 @@ class PFSDatabase(BaseDatabase):
 
     def upsert_channel_view(self, channel_view: ChannelView) -> None:
         cv_dict = ChannelView.Schema(strict=True, exclude=["state"]).dump(channel_view)[0]
+        for key in (
+            "channel_id",
+            "settle_timeout",
+            "capacity",
+            "reveal_timeout",
+            "deposit",
+            "update_nonce",
+            "absolute_fee",
+        ):
+            cv_dict[key] = hex256(cv_dict[key])
         self.conn.execute(
             """
             INSERT OR REPLACE INTO channel_view (
@@ -105,14 +116,14 @@ class PFSDatabase(BaseDatabase):
                 update_nonce, absolute_fee, relative_fee
             ) VALUES (
                 :token_network_address,
-                printf('0x%064x', :channel_id),
+                :channel_id,
                 :participant1, :participant2,
-                printf('0x%064x', :settle_timeout),
-                printf('0x%064x', :capacity),
-                printf('0x%064x', :reveal_timeout),
-                printf('0x%064x', :deposit),
-                printf('0x%064x', :update_nonce),
-                printf('0x%064x', :absolute_fee),
+                :settle_timeout,
+                :capacity,
+                :reveal_timeout,
+                :deposit,
+                :update_nonce,
+                :absolute_fee,
                 :relative_fee
             )
         """,
