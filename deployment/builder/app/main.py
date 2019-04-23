@@ -9,8 +9,8 @@ from flask import Flask, request
 REPOS = {
     'raiden-network/raiden-services': {
         'master': {
-            'source': '/data/raiden-services',
-            'deployment': '/data/services-dev',
+            'source': '/root/raiden-services',
+            'deployment': '/root/raiden-services/deployment',
         },
         'names': [
             'pfs-ropsten', 'pfs-rinkeby', 'pfs-kovan', 'pfs-goerli',
