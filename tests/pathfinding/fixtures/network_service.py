@@ -11,7 +11,6 @@ from pathfinding_service.model.token_network import TokenNetwork
 from pathfinding_service.service import PathfindingService
 from raiden.utils.typing import ChannelID, FeeAmount, Nonce, TokenAmount
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
-from raiden_contracts.contract_manager import ContractManager
 from raiden_libs.types import Address
 from raiden_libs.utils import private_key_to_address
 
@@ -282,7 +281,7 @@ def populate_token_network_case_3(
 
 @pytest.fixture
 def pathfinding_service_mock(
-    contracts_manager: ContractManager, token_network_model: TokenNetwork
+    token_network_model: TokenNetwork
 ) -> Generator[PathfindingService, None, None]:
     with patch("pathfinding_service.service.MatrixListener", new=Mock):
         web3_mock = Mock()
@@ -308,7 +307,7 @@ def pathfinding_service_mock(
 
 @pytest.fixture
 def pathfinding_service_web3_mock(
-    contracts_manager: ContractManager, web3: Web3, user_deposit_contract: Contract
+    web3: Web3, user_deposit_contract: Contract
 ) -> Generator[PathfindingService, None, None]:
     with patch("pathfinding_service.service.MatrixListener", new=Mock):
         pathfinding_service = PathfindingService(

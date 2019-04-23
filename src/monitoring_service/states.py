@@ -5,6 +5,7 @@ import jsonschema
 from eth_utils import decode_hex, encode_hex, is_checksum_address, to_checksum_address
 from web3 import Web3
 
+from raiden.messages import RequestMonitoring, SignedBlindedBalanceProof
 from raiden.utils.signer import LocalSigner, recover
 from raiden.utils.signing import pack_data
 from raiden.utils.typing import (
@@ -50,7 +51,7 @@ class Channel:
         return self.participant1, self.participant2
 
 
-@dataclass
+@dataclass(init=False)
 class HashedBalanceProof:
     """ A hashed balance proof with signature """
 
@@ -115,6 +116,27 @@ class HashedBalanceProof:
                 decode_hex(self.additional_hash),
             ],
         )
+
+    def get_request_monitoring(
+        self, privkey: str, reward_amount: TokenAmount
+    ) -> RequestMonitoring:
+        assert self.signature
+
+        non_closing_signer = LocalSigner(decode_hex(privkey))
+        partner_signed_self = SignedBlindedBalanceProof(
+            channel_identifier=self.channel_identifier,
+            token_network_address=decode_hex(self.token_network_address),
+            nonce=self.nonce,
+            additional_hash=decode_hex(self.additional_hash),
+            chain_id=self.chain_id,
+            signature=decode_hex(self.signature),
+            balance_hash=decode_hex(self.balance_hash),
+        )
+        request_monitoring = RequestMonitoring(
+            onchain_balance_proof=partner_signed_self, reward_amount=reward_amount
+        )
+        request_monitoring.sign(non_closing_signer)
+        return request_monitoring
 
 
 @dataclass
