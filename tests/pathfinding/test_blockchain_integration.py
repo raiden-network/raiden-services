@@ -8,13 +8,16 @@ from typing import List
 from unittest.mock import Mock, patch
 
 import gevent
+from eth_utils import encode_hex
 
+from monitoring_service.states import HashedBalanceProof
 from pathfinding_service.config import DEFAULT_REVEAL_TIMEOUT
 from pathfinding_service.model import ChannelView
 from pathfinding_service.service import PathfindingService
-from raiden.utils.typing import BlockNumber
+from raiden.utils.typing import BlockNumber, ChainID, Nonce
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
 from raiden_contracts.contract_manager import ContractManager
+from raiden_contracts.tests.utils.constants import EMPTY_LOCKSROOT
 
 
 def test_pfs_with_mocked_client(
@@ -23,17 +26,21 @@ def test_pfs_with_mocked_client(
     contracts_manager: ContractManager,
     token_network_registry_contract,
     channel_descriptions_case_1: List,
-    generate_raiden_clients,
+    get_accounts,
     wait_for_blocks,
     user_deposit_contract,
+    token_network,
+    custom_token,
+    create_channel,
+    get_private_key,
 ):
     """ Instantiates some MockClients and the PathfindingService.
 
     Mocks blockchain events to setup a token network with a given topology, specified in
     the channel_description fixture. Tests all PFS methods w.r.t. to that topology
     """
-    clients = generate_raiden_clients(7)
-    token_network_address = clients[0].contract.address
+    clients = get_accounts(7)
+    token_network_address = token_network.address
 
     with patch("pathfinding_service.service.MatrixListener", new=Mock):
         pfs = PathfindingService(
@@ -57,8 +64,8 @@ def test_pfs_with_mocked_client(
     # there should be one token network registered
     assert len(pfs.token_networks) == 1
 
-    token_network = pfs.token_networks[token_network_address]
-    graph = token_network.G
+    token_network_model = pfs.token_networks[token_network_address]
+    graph = token_network_model.G
     channel_identifiers = []
     for (
         p1_index,
@@ -74,17 +81,27 @@ def test_pfs_with_mocked_client(
         _settle_timeout,
     ) in channel_descriptions_case_1:
         # order is important here because we check order later
-        channel_identifier = clients[p1_index].open_channel(clients[p2_index].address)
-        channel_identifiers.append(channel_identifier)
+        channel_id = create_channel(clients[p1_index], clients[p2_index])[0]
+        channel_identifiers.append(channel_id)
 
-        clients[p1_index].deposit_to_channel(clients[p2_index].address, p1_deposit)
-        clients[p2_index].deposit_to_channel(clients[p1_index].address, p2_deposit)
+        for address, partner_address, amount in [
+            (clients[p1_index], clients[p2_index], p1_deposit),
+            (clients[p2_index], clients[p1_index], p2_deposit),
+        ]:
+            custom_token.functions.approve(token_network.address, amount).transact(
+                {"from": address}
+            )
+            return token_network.functions.setTotalDeposit(
+                channel_id, address, amount, partner_address
+            ).transact({"from": address})
         gevent.sleep()
     wait_for_blocks(1)
     gevent.sleep(0.1)
 
     # there should be as many open channels as described
-    assert len(token_network.channel_id_to_addresses.keys()) == len(channel_descriptions_case_1)
+    assert len(token_network_model.channel_id_to_addresses.keys()) == len(
+        channel_descriptions_case_1
+    )
 
     # check that deposits, settle_timeout and transfers got registered
     for (
@@ -104,7 +121,7 @@ def test_pfs_with_mocked_client(
         ),
     ) in enumerate(channel_descriptions_case_1):
         channel_identifier = channel_identifiers[index]
-        p1_address, p2_address = token_network.channel_id_to_addresses[channel_identifier]
+        p1_address, p2_address = token_network_model.channel_id_to_addresses[channel_identifier]
         view1: ChannelView = graph[p1_address][p2_address]["view"]
         view2: ChannelView = graph[p2_address][p1_address]["view"]
         assert view1.deposit == p1_deposit
@@ -127,15 +144,25 @@ def test_pfs_with_mocked_client(
         _p2_reveal_timeout,
         _settle_timeout,
     ) in channel_descriptions_case_1:
-        balance_proof = clients[p2_index].get_balance_proof(
-            clients[p1_index].address,
-            nonce=1,
+        balance_proof = HashedBalanceProof(
+            nonce=Nonce(1),
             transferred_amount=0,
+            priv_key=get_private_key(clients[p2_index]),
+            channel_identifier=channel_id,
+            token_network_address=token_network.address,
+            chain_id=ChainID(1),
+            additional_hash="0x%064x" % 0,
             locked_amount=0,
-            locksroot="0x%064x" % 0,
-            additional_hash="0x%064x" % 1,
+            locksroot=encode_hex(EMPTY_LOCKSROOT),
         )
-        clients[p1_index].close_channel(clients[p2_index].address, balance_proof)
+        token_network.functions.closeChannel(
+            channel_id,
+            clients[p2_index],
+            balance_proof.balance_hash,
+            balance_proof.nonce,
+            balance_proof.additional_hash,
+            balance_proof.signature,
+        ).transact({"from": clients[p1_index]})
 
     wait_for_blocks(1)
     gevent.sleep(0.1)
