@@ -2,40 +2,47 @@ import os
 from typing import List
 from unittest.mock import Mock
 
+from eth_utils import encode_hex
+
 from monitoring_service.events import ActionMonitoringTriggeredEvent
 from monitoring_service.service import MonitoringService
-from raiden.utils.typing import BlockNumber, ChannelID
+from monitoring_service.states import HashedBalanceProof
+from raiden.utils.typing import BlockNumber, ChainID, ChannelID, Nonce, TokenAmount
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
     CONTRACT_TOKEN_NETWORK_REGISTRY,
     CONTRACT_USER_DEPOSIT,
 )
 from raiden_contracts.tests.utils import get_random_address, get_random_privkey
+from raiden_contracts.tests.utils.constants import EMPTY_LOCKSROOT
 from raiden_libs.events import ReceiveChannelOpenedEvent, UpdatedHeadBlockEvent
 from raiden_libs.types import TokenNetworkAddress
 
 from ...libs.mocks.web3 import ContractMock, Web3Mock
 
 
-def test_crash(tmpdir, generate_raiden_clients, mockchain):
+def test_crash(tmpdir, get_accounts, get_private_key, mockchain):
     """ Process blocks and compare results with/without crash
 
     A somewhat meaninful crash handling is simulated by not including the
     UpdatedHeadBlockEvent in every block.
     """
     channel_identifier = ChannelID(3)
-    c1, c2 = generate_raiden_clients(2)
+    c1, c2 = get_accounts(2)
     token_network_address = TokenNetworkAddress(get_random_address())
-    monitor_request = c2.get_monitor_request(
-        balance_proof=c1.get_balance_proof(
-            channel_id=channel_identifier,
-            nonce=1,
-            additional_hash="0x11",
-            transferred_amount=2,
-            locked_amount=0,
-            locksroot="0x00",
-        ),
-        reward_amount=0,
+    balance_proof = HashedBalanceProof(
+        nonce=Nonce(1),
+        transferred_amount=TokenAmount(2),
+        priv_key=get_private_key(c1),
+        channel_identifier=channel_identifier,
+        token_network_address=token_network_address,
+        chain_id=ChainID(1),
+        additional_hash="0x%064x" % 0,
+        locked_amount=0,
+        locksroot=encode_hex(EMPTY_LOCKSROOT),
+    )
+    monitor_request = balance_proof.get_monitor_request(
+        get_private_key(c2), reward_amount=TokenAmount(0)
     )
 
     events = [
@@ -43,8 +50,8 @@ def test_crash(tmpdir, generate_raiden_clients, mockchain):
             ReceiveChannelOpenedEvent(
                 token_network_address=token_network_address,
                 channel_identifier=channel_identifier,
-                participant1=c1.address,
-                participant2=c2.address,
+                participant1=c1,
+                participant2=c2,
                 settle_timeout=20,
                 block_number=BlockNumber(0),
             )
@@ -54,7 +61,7 @@ def test_crash(tmpdir, generate_raiden_clients, mockchain):
             ActionMonitoringTriggeredEvent(
                 token_network_address=token_network_address,
                 channel_identifier=channel_identifier,
-                non_closing_participant=c2.address,
+                non_closing_participant=c2,
             )
         ],
         [UpdatedHeadBlockEvent(BlockNumber(3))],
