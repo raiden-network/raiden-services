@@ -8,16 +8,7 @@ from web3 import Web3
 from raiden.messages import RequestMonitoring, SignedBlindedBalanceProof
 from raiden.utils.signer import LocalSigner, recover
 from raiden.utils.signing import pack_data
-from raiden.utils.typing import (
-    AdditionalHash,
-    BalanceHash,
-    BlockNumber,
-    ChainID,
-    ChannelID,
-    Nonce,
-    Signature,
-    TokenAmount,
-)
+from raiden.utils.typing import BlockNumber, ChainID, ChannelID, Nonce, Signature, TokenAmount
 from raiden_contracts.constants import ChannelState, MessageTypeId
 from raiden_libs.messages.json_schema import MONITOR_REQUEST_SCHEMA
 from raiden_libs.states import BlockchainState
@@ -59,9 +50,9 @@ class HashedBalanceProof:
     token_network_address: TokenNetworkAddress
     chain_id: ChainID
 
-    balance_hash: BalanceHash
+    balance_hash: str
     nonce: Nonce
-    additional_hash: AdditionalHash
+    additional_hash: str
     signature: Signature
 
     def __init__(
@@ -70,8 +61,8 @@ class HashedBalanceProof:
         token_network_address: TokenNetworkAddress,
         chain_id: ChainID,
         nonce: Nonce,
-        additional_hash: AdditionalHash,
-        balance_hash: BalanceHash = None,
+        additional_hash: str,
+        balance_hash: str = None,
         signature: Signature = None,
         # these three parameters can be passed instead of `balance_hash`
         transferred_amount: int = None,
@@ -120,8 +111,7 @@ class HashedBalanceProof:
     def get_request_monitoring(
         self, privkey: str, reward_amount: TokenAmount
     ) -> RequestMonitoring:
-        assert self.signature
-
+        """Returns raiden client's RequestMonitoring object"""
         non_closing_signer = LocalSigner(decode_hex(privkey))
         partner_signed_self = SignedBlindedBalanceProof(
             channel_identifier=self.channel_identifier,
@@ -138,6 +128,19 @@ class HashedBalanceProof:
         request_monitoring.sign(non_closing_signer)
         return request_monitoring
 
+    def get_monitor_request(self, privkey: str, reward_amount: TokenAmount) -> "MonitorRequest":
+        """Get monitor request message for a given balance proof."""
+        return UnsignedMonitorRequest(
+            channel_identifier=self.channel_identifier,
+            token_network_address=self.token_network_address,
+            chain_id=self.chain_id,
+            balance_hash=self.balance_hash,
+            nonce=self.nonce,
+            additional_hash=self.additional_hash,
+            closing_signature=self.signature,
+            reward_amount=reward_amount,
+        ).sign(privkey)
+
 
 @dataclass
 class MonitoringServiceState:
@@ -152,9 +155,9 @@ class UnsignedMonitorRequest:
     token_network_address: TokenNetworkAddress
     chain_id: ChainID
 
-    balance_hash: BalanceHash
+    balance_hash: str
     nonce: Nonce
-    additional_hash: AdditionalHash
+    additional_hash: str
     closing_signature: Signature
 
     # reward info
