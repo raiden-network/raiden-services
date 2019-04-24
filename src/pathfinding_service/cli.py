@@ -43,13 +43,7 @@ DEFAULT_REQUIRED_CONFIRMATIONS = 8  # ~2min with 15s blocks
     type=click.IntRange(min=0),
     help="Number of block confirmations to wait for",
 )
-@click.option(
-    "--enable-debug",
-    default=False,
-    is_flag=True,
-    hidden=True,
-    help="Number of block confirmations to wait for",
-)
+@click.option("--enable-debug", default=False, is_flag=True, hidden=True)
 @common_options("raiden-pathfinding-service")
 def main(
     private_key: str,
