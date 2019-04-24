@@ -63,12 +63,13 @@ def build(branch, container_names, source, deployment, **kw):
 
         _print(f'Switching to {deployment}')
         os.chdir(deployment)
-        _print('docker build')
+        _print('Building containers: docker build')
         subprocess.check_output(["docker-compose", "build"])
-        for name in container_names:
-            _print(f'docker down: {name}')
-            subprocess.check_output(["docker-compose", "stop", name])
-        _print('docker up')
+
+        _print(f'Stopping containers: docker down: {container_names}')
+        subprocess.check_output(["docker-compose", "stop", " ".join(name for name in container_names)])
+
+        _print('Restarting containers: docker up')
         subprocess.check_output(["docker-compose", "-f", "docker-compose.yml", "up", "-d"])
     except Exception as e:
         _print(str(e))
