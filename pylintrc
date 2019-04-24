@@ -70,7 +70,6 @@ disable=
         too-many-arguments,
         redefined-outer-name,
         too-many-instance-attributes,
-        duplicate-code,
         too-many-locals,
         protected-access,
         len-as-condition,
