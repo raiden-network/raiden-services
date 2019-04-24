@@ -74,7 +74,6 @@ disable=
         too-many-locals,
         protected-access,
         redefined-builtin,
-        too-many-return-statements,
         broad-except,
 
         # checks which have false positive that need to be excluded before enabling
