@@ -27,8 +27,21 @@ ID_123 = 123
 #
 
 
-def test_get_paths_via_debug_endpoint(
+def test_get_paths_via_debug_endpoint_with_debug_disabled(
     api_sut: ServiceApi, api_url: str, addresses: List[Address], token_network_model: TokenNetwork
+):
+    url_debug = api_url + f"/_debug/routes/{token_network_model.address}/{addresses[0]}"
+
+    # now there must be a debug endpoint for that specific route
+    response_debug = requests.get(url_debug)
+    assert response_debug.status_code == 404
+
+
+def test_get_paths_via_debug_endpoint(
+    api_sut_with_debug: ServiceApi,
+    api_url: str,
+    addresses: List[Address],
+    token_network_model: TokenNetwork,
 ):
     url = api_url + f"/{token_network_model.address}/paths"
     url_debug = api_url + f"/_debug/routes/{token_network_model.address}/{addresses[0]}"

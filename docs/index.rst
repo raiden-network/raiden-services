@@ -110,6 +110,13 @@ The Pathfinding service has some additional parameters which can be set.
     Defaults to zero.
 
 
+``--enable-debug``
+    Enabled the extended REST API for debugging. We strongly advise against
+    enabling this option on nodes that are reachable on the network.
+
+    Disabled by default.
+
+
 Monitoring Service
 ^^^^^^^^^^^^^^^^^^
 
