@@ -53,8 +53,8 @@ def _print(s):
 
 def build(branch, container_names, source, deployment, **kw):
     try:
-        _print(f'Switching to {source}')
         _print(f'Container names = {container_names}')
+        _print(f'Switching to {source}')
         os.chdir(source)
         _print('git fetch')
         subprocess.check_output(["git", "fetch", "--all"])
