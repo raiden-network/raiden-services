@@ -303,6 +303,7 @@ class ServiceApi:
         ]
 
         if pathfinding_service.debug_mode_enabled:
+            log.warning("The debug REST API is enabled. Don't do this on public nodes.")
             resources.extend(
                 [
                     (
