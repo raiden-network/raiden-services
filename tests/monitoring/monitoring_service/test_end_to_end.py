@@ -1,10 +1,11 @@
 import gevent
+from eth_utils import encode_hex
 from request_collector.server import RequestCollector
 from web3 import Web3
 
 from monitoring_service.service import MonitoringService
 from monitoring_service.states import HashedBalanceProof
-from raiden.utils.typing import BlockNumber, Nonce, TokenAmount
+from raiden.utils.typing import BlockNumber, ChainID, Nonce, TokenAmount
 from raiden_contracts.constants import CONTRACT_MONITORING_SERVICE, MonitoringServiceEvent
 from raiden_contracts.contract_manager import ContractManager
 from raiden_contracts.tests.utils.constants import EMPTY_LOCKSROOT
@@ -73,10 +74,10 @@ def test_e2e(
     shared_bp_args = dict(
         channel_identifier=channel_id,
         token_network_address=token_network.address,
-        chain_id=1,
+        chain_id=ChainID(1),
         additional_hash="0x%064x" % 0,
-        locked_amount=0,
-        locksroot=EMPTY_LOCKSROOT,
+        locked_amount=TokenAmount(0),
+        locksroot=encode_hex(EMPTY_LOCKSROOT),
     )
     transferred_c1 = 5
     balance_proof_c1 = HashedBalanceProof(
