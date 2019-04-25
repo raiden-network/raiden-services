@@ -42,7 +42,7 @@ last_requests: collections.deque = collections.deque([], maxlen=200)
 
 class ApiWithErrorHandler(Api):
     def handle_error(self, e: exceptions.ApiException) -> Response:
-        log.debug("Error while handling request", error=e)
+        log.debug("Error while handling request", error=e, details=e.error_details, message=e.msg)
         return self.make_response(
             {"errors": e.msg, "error_code": e.error_code, "error_details": e.error_details},
             e.http_code,
@@ -150,7 +150,7 @@ def process_payment(iou: Optional[IOU], pathfinding_service: PathfindingService)
         raise exceptions.MissingIOU
 
     # Basic IOU validity checks
-    if iou.receiver != pathfinding_service.address:
+    if not is_same_address(iou.receiver, pathfinding_service.address):
         raise exceptions.WrongIOURecipient(expected=pathfinding_service.address)
     if not iou.is_signature_valid():
         raise exceptions.InvalidSignature
