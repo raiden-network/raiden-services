@@ -3,14 +3,7 @@ from typing import Union
 from coincurve import PrivateKey, PublicKey
 from eth_utils import keccak, to_bytes, to_checksum_address
 
-from raiden.constants import UINT256_MAX
-from raiden.utils.typing import ChannelID, T_ChannelID
 from raiden_libs.types import Address
-
-
-def is_channel_identifier(channel_identifier: ChannelID) -> bool:
-    assert isinstance(channel_identifier, T_ChannelID)
-    return 0 < channel_identifier <= UINT256_MAX
 
 
 def public_key_to_address(public_key: Union[PublicKey, bytes]) -> Address:
