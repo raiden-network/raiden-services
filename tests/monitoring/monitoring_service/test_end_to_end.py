@@ -66,7 +66,7 @@ def test_e2e(
     assert deposit > 0
 
     # each client does a transfer
-    channel_id = create_channel(c1, c2, settle_timeout=15)[
+    channel_id = create_channel(c1, c2, settle_timeout=5)[
         0
     ]  # TODO: reduce settle_timeout to speed up test
 
@@ -118,14 +118,14 @@ def test_e2e(
     ).transact({"from": c2})
     # Wait until the MS reacts, which it does after giving the client some time
     # to update the channel itself.
-    wait_for_blocks(5)  # 30% of 15 blocks
+    wait_for_blocks(3)  # 1 block for close + 30% of 5 blocks = 2
     # Now give the monitoring service a chance to submit the missing BP
     gevent.sleep(0.1)
 
     assert [e.event for e in query()] == [MonitoringServiceEvent.NEW_BALANCE_PROOF_RECEIVED.value]
 
     # wait for settle timeout
-    wait_for_blocks(15)
+    wait_for_blocks(2)  # timeout is 5, but we've already waited 3 blocks before
 
     token_network.functions.settleChannel(
         channel_id,
