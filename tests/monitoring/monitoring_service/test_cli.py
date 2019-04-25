@@ -32,7 +32,7 @@ def test_success(keystore_file, default_cli_args_ms):
 
 
 def test_wrong_password(keystore_file, default_cli_args_ms):
-    """ Calling the monitoring_service with default args should succeed after heavy mocking """
+    """ Using the wrong password should fail, but not raise an exception """
     runner = CliRunner()
     result = runner.invoke(
         main, default_cli_args_ms + ["--password", "wrong"], catch_exceptions=False
