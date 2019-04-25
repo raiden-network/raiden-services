@@ -33,7 +33,7 @@ def server_private_key(ethereum_tester):
 @pytest.fixture
 def default_cli_args_ms(default_cli_args) -> List[str]:
     return default_cli_args + [
-        "--registry-address",
+        "--token-network-registry-address",
         "0x" + "1" * 40,
         "--monitor-contract-address",
         "0x" + "2" * 40,

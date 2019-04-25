@@ -83,7 +83,9 @@ def test_registry_address(default_cli_args):
     # check validation of address format
     def fails_on_registry_check(address):
         result = runner.invoke(
-            main, default_cli_args + ["--registry-address", address], catch_exceptions=False
+            main,
+            default_cli_args + ["--token-network-registry-address", address],
+            catch_exceptions=False,
         )
         assert result.exit_code != 0
         assert "EIP-55" in result.output
