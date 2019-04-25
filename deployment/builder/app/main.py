@@ -76,9 +76,7 @@ def build(branch, container_names, source, deployment, **kw):
         subprocess.check_output(["docker-compose", "build"])
 
         _print(f"Stopping containers: docker down: {container_names}")
-        subprocess.check_output(
-            ["docker-compose", "stop", " ".join(name for name in container_names)]
-        )
+        subprocess.check_output(["docker-compose", "stop"] + container_names)
 
         _print("Restarting containers: docker up")
         subprocess.check_output(
