@@ -160,7 +160,8 @@ def populate_token_network_random(
         )
 
         # deposit to channels
-        deposit1, deposit2 = random.sample(range(1000), 2)
+        deposit1 = TokenAmount(random.randint(0, 1000))
+        deposit2 = TokenAmount(random.randint(0, 1000))
         address1, address2 = token_network_model.channel_id_to_addresses[channel_id]
         token_network_model.handle_channel_new_deposit_event(channel_id, address1, deposit1)
         token_network_model.handle_channel_new_deposit_event(channel_id, address2, deposit2)
@@ -170,8 +171,8 @@ def populate_token_network_random(
             other_participant=address2,
             updating_nonce=Nonce(1),
             other_nonce=Nonce(1),
-            updating_capacity=TokenAmount(deposit1),
-            other_capacity=TokenAmount(deposit2),
+            updating_capacity=deposit1,
+            other_capacity=deposit2,
             reveal_timeout=2,
             mediation_fee=FeeAmount(0),
         )
@@ -181,8 +182,8 @@ def populate_token_network_random(
             other_participant=address1,
             updating_nonce=Nonce(2),
             other_nonce=Nonce(1),
-            updating_capacity=TokenAmount(deposit1),
-            other_capacity=TokenAmount(deposit2),
+            updating_capacity=deposit1,
+            other_capacity=deposit2,
             reveal_timeout=2,
             mediation_fee=FeeAmount(0),
         )

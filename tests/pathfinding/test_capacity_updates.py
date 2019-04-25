@@ -64,10 +64,14 @@ def setup_channel_with_deposits(service: PathfindingService) -> TokenNetwork:
     token_network = setup_channel(service)
 
     token_network.handle_channel_new_deposit_event(
-        channel_identifier=DEFAULT_CHANNEL_ID, receiver=PRIVATE_KEY_1_ADDRESS, total_deposit=100
+        channel_identifier=DEFAULT_CHANNEL_ID,
+        receiver=PRIVATE_KEY_1_ADDRESS,
+        total_deposit=TokenAmount(100),
     )
     token_network.handle_channel_new_deposit_event(
-        channel_identifier=DEFAULT_CHANNEL_ID, receiver=PRIVATE_KEY_2_ADDRESS, total_deposit=100
+        channel_identifier=DEFAULT_CHANNEL_ID,
+        receiver=PRIVATE_KEY_2_ADDRESS,
+        total_deposit=TokenAmount(100),
     )
     return token_network
 
