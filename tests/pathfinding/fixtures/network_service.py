@@ -280,7 +280,7 @@ def populate_token_network_case_3(
 
 
 @pytest.fixture
-def pathfinding_service_mock(
+def pathfinding_service_mock_empty(
     token_network_model: TokenNetwork
 ) -> Generator[PathfindingService, None, None]:
     with patch("pathfinding_service.service.MatrixListener", new=Mock):
@@ -297,12 +297,24 @@ def pathfinding_service_mock(
             private_key="3a1076bf45ab87712ad64ccb3b10217737f7faacbf2872e88fdd9a537d8fe266",
             db_filename=":memory:",
         )
-        pathfinding_service.token_networks = {token_network_model.address: token_network_model}
         mock_udc = pathfinding_service.user_deposit_contract
         mock_udc.functions.effectiveBalance.return_value.call.return_value = 10000
 
         yield pathfinding_service
         pathfinding_service.stop()
+
+
+@pytest.fixture
+def pathfinding_service_mock(
+    token_network_model: TokenNetwork, pathfinding_service_mock_empty: PathfindingService
+) -> Generator[PathfindingService, None, None]:
+
+    pathfinding_service_mock_empty.token_networks = {
+        token_network_model.address: token_network_model
+    }
+    pathfinding_service_mock_empty.database.upsert_token_network(token_network_model.address)
+
+    yield pathfinding_service_mock_empty
 
 
 @pytest.fixture

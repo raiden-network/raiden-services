@@ -3,10 +3,12 @@ from typing import List
 from unittest.mock import Mock, patch
 
 from pathfinding_service.service import PathfindingService
-from raiden.utils.typing import BlockNumber, ChannelID
+from raiden.utils.typing import BlockNumber, ChannelID, TokenAmount
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
 from raiden_contracts.tests.utils import get_random_privkey
 from raiden_libs.events import (
+    ReceiveChannelClosedEvent,
+    ReceiveChannelNewDepositEvent,
     ReceiveChannelOpenedEvent,
     ReceiveTokenNetworkCreatedEvent,
     UpdatedHeadBlockEvent,
@@ -16,9 +18,8 @@ from raiden_libs.types import Address, TokenNetworkAddress
 from ..libs.mocks.web3 import ContractMock, Web3Mock
 
 
-def test_save_and_load_token_networks(pathfinding_service_mock):
-    pfs = pathfinding_service_mock
-    pfs.token_networks = {}  # the mock does not fit this case exactly
+def test_save_and_load_token_networks(pathfinding_service_mock_empty):
+    pfs = pathfinding_service_mock_empty
 
     token_address = Address("0x" + "1" * 40)
     token_network_address = TokenNetworkAddress("0x" + "2" * 40)
@@ -106,17 +107,137 @@ def test_crash(tmpdir, mockchain):
 
     # initialize both services
     stable_service = new_service("stable.db")
-    crashy_service = new_service("crashy.db")
 
     # process each block and compare results between crashy and stable service
     for to_block in range(len(events)):
         crashy_service = new_service("crashy.db")  # new instance to simulate crash
         result_state: List[dict] = []
         for service in [stable_service, crashy_service]:
-            service._process_new_blocks(to_block)
+            service._process_new_blocks(BlockNumber(to_block))
             result_state.append(dict(db_dump=list(service.database.conn.iterdump())))
 
         # both instances should have the same state after processing
         for stable_state, crashy_state in zip(result_state[0].values(), result_state[1].values()):
             # do asserts for each key separately to get better error messages
             assert stable_state == crashy_state
+
+
+def test_token_network_created(pathfinding_service_mock, token_network_model):
+    token_address = Address("0x" + "1" * 40)
+    token_network_address = TokenNetworkAddress("0x" + "2" * 40)
+    network_event = ReceiveTokenNetworkCreatedEvent(
+        token_address=token_address,
+        token_network_address=token_network_address,
+        block_number=BlockNumber(1),
+    )
+
+    assert not pathfinding_service_mock.follows_token_network(token_network_address)
+    assert len(pathfinding_service_mock.token_networks) == 1
+
+    pathfinding_service_mock.handle_event(network_event)
+    assert pathfinding_service_mock.follows_token_network(token_network_address)
+    assert len(pathfinding_service_mock.token_networks) == 2
+
+    # Test idempotency
+    pathfinding_service_mock.handle_event(network_event)
+    assert pathfinding_service_mock.follows_token_network(token_network_address)
+    assert len(pathfinding_service_mock.token_networks) == 2
+
+
+def test_token_channel_opened(pathfinding_service_mock, token_network_model):
+    participant1 = Address("0x" + "1" * 40)
+    participant2 = Address("0x" + "2" * 40)
+    channel_event = ReceiveChannelOpenedEvent(
+        token_network_address=token_network_model.address,
+        channel_identifier=ChannelID(1),
+        participant1=participant1,
+        participant2=participant2,
+        settle_timeout=20,
+        block_number=BlockNumber(1),
+    )
+
+    assert len(pathfinding_service_mock.token_networks) == 1
+    assert len(token_network_model.channel_id_to_addresses) == 0
+
+    pathfinding_service_mock.handle_event(channel_event)
+    assert len(pathfinding_service_mock.token_networks) == 1
+    assert len(token_network_model.channel_id_to_addresses) == 1
+
+    # Test invalid token network address
+    channel_event.token_network_address = TokenNetworkAddress("0x" + "0" * 40)
+
+    pathfinding_service_mock.handle_event(channel_event)
+    assert len(pathfinding_service_mock.token_networks) == 1
+    assert len(token_network_model.channel_id_to_addresses) == 1
+
+
+def test_token_channel_new_deposit(pathfinding_service_mock, token_network_model):
+    participant1 = Address("0x" + "1" * 40)
+    participant2 = Address("0x" + "2" * 40)
+    channel_event = ReceiveChannelOpenedEvent(
+        token_network_address=token_network_model.address,
+        channel_identifier=ChannelID(1),
+        participant1=participant1,
+        participant2=participant2,
+        settle_timeout=20,
+        block_number=BlockNumber(1),
+    )
+
+    pathfinding_service_mock.handle_event(channel_event)
+    assert len(pathfinding_service_mock.token_networks) == 1
+    assert len(token_network_model.channel_id_to_addresses) == 1
+
+    deposit_event = ReceiveChannelNewDepositEvent(
+        token_network_address=token_network_model.address,
+        channel_identifier=ChannelID(1),
+        participant_address=participant1,
+        total_deposit=TokenAmount(123),
+        block_number=BlockNumber(2),
+    )
+
+    pathfinding_service_mock.handle_event(deposit_event)
+    assert len(pathfinding_service_mock.token_networks) == 1
+    assert len(token_network_model.channel_id_to_addresses) == 1
+
+    # Test invalid token network address
+    deposit_event.token_network_address = TokenNetworkAddress("0x" + "0" * 40)
+
+    pathfinding_service_mock.handle_event(deposit_event)
+    assert len(pathfinding_service_mock.token_networks) == 1
+    assert len(token_network_model.channel_id_to_addresses) == 1
+
+
+def test_token_channel_closed(pathfinding_service_mock, token_network_model):
+    participant1 = Address("0x" + "1" * 40)
+    participant2 = Address("0x" + "2" * 40)
+    channel_event = ReceiveChannelOpenedEvent(
+        token_network_address=token_network_model.address,
+        channel_identifier=ChannelID(1),
+        participant1=participant1,
+        participant2=participant2,
+        settle_timeout=20,
+        block_number=BlockNumber(1),
+    )
+
+    pathfinding_service_mock.handle_event(channel_event)
+    assert len(pathfinding_service_mock.token_networks) == 1
+    assert len(token_network_model.channel_id_to_addresses) == 1
+
+    # Test invalid token network address
+    close_event = ReceiveChannelClosedEvent(
+        token_network_address=TokenNetworkAddress("0x" + "0" * 40),
+        channel_identifier=ChannelID(1),
+        closing_participant=participant1,
+        block_number=BlockNumber(2),
+    )
+
+    pathfinding_service_mock.handle_event(close_event)
+    assert len(pathfinding_service_mock.token_networks) == 1
+    assert len(token_network_model.channel_id_to_addresses) == 1
+
+    # Test proper token network address
+    close_event.token_network_address = token_network_model.address
+
+    pathfinding_service_mock.handle_event(close_event)
+    assert len(pathfinding_service_mock.token_networks) == 1
+    assert len(token_network_model.channel_id_to_addresses) == 0
