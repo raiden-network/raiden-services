@@ -1,15 +1,22 @@
+import json
+from unittest.mock import Mock, patch
+
 import pytest
-from eth_utils import encode_hex
+from eth_utils import encode_hex, to_canonical_address
 
 from monitoring_service.states import HashedBalanceProof
 from raiden.exceptions import InvalidProtocolMessage
+from raiden.messages import RequestMonitoring
 from raiden.utils import ChannelID
-from raiden.utils.typing import ChainID, Nonce, TokenAmount
+from raiden.utils.typing import Address as BytesAddress, ChainID, Nonce, TokenAmount
 from raiden_contracts.tests.utils import EMPTY_LOCKSROOT
-from raiden_libs.matrix import message_from_dict
+from raiden_libs.matrix import deserialize_messages, message_from_dict
+
+PEER_ADDRESS = BytesAddress(to_canonical_address("0x" + "1" * 40))
 
 
-def test_message_from_dict(token_network, get_accounts, get_private_key):
+@pytest.fixture
+def request_monitoring_message(token_network, get_accounts, get_private_key) -> RequestMonitoring:
     c1, c2 = get_accounts(2)
 
     balance_proof_c2 = HashedBalanceProof(
@@ -24,15 +31,17 @@ def test_message_from_dict(token_network, get_accounts, get_private_key):
         priv_key=get_private_key(c2),
     )
 
-    request_monitoring = balance_proof_c2.get_request_monitoring(
+    return balance_proof_c2.get_request_monitoring(
         privkey=get_private_key(c1), reward_amount=TokenAmount(1)
     )
 
-    message_json = request_monitoring.to_dict()
+
+def test_message_from_dict(request_monitoring_message):
+    message_json = request_monitoring_message.to_dict()
 
     # Test happy path
     message = message_from_dict(message_json)
-    assert message == request_monitoring
+    assert message == request_monitoring_message
 
     # Test unknown message type
     message_json["type"] = "SomeNonexistantMessage"
@@ -47,3 +56,60 @@ def test_message_from_dict(token_network, get_accounts, get_private_key):
         message_from_dict(message_json)
 
     assert "Invalid message data. Can not find the data type" in str(excinfo.value)
+
+
+def test_deserialize_messages_empty():
+    messages = deserialize_messages(data="", peer_address=PEER_ADDRESS)
+    assert len(messages) == 0
+
+
+def test_deserialize_messages_empty_lines():
+    messages = deserialize_messages(data=" \r\n ", peer_address=PEER_ADDRESS)
+    assert len(messages) == 0
+
+
+def test_deserialize_messages_invalid_json():
+    messages = deserialize_messages(data="@@@", peer_address=PEER_ADDRESS)
+    assert len(messages) == 0
+
+
+def test_deserialize_messages_invalid_message_type(request_monitoring_message):
+    message_json = request_monitoring_message.to_dict()
+    message_json["type"] = "SomeNonexistantMessage"
+
+    messages = deserialize_messages(data=json.dumps(message_json), peer_address=PEER_ADDRESS)
+    assert len(messages) == 0
+
+
+def test_deserialize_messages_invalid_message_class(request_monitoring_message):
+    message_json = request_monitoring_message.to_dict()
+
+    with patch("raiden_libs.matrix.message_from_dict", new=Mock()):
+        messages = deserialize_messages(data=json.dumps(message_json), peer_address=PEER_ADDRESS)
+        assert len(messages) == 0
+
+
+def test_deserialize_messages_invalid_sender(request_monitoring_message):
+    message_json = request_monitoring_message.to_dict()
+
+    messages = deserialize_messages(data=json.dumps(message_json), peer_address=PEER_ADDRESS)
+    assert len(messages) == 0
+
+
+def test_deserialize_messages_valid_message(request_monitoring_message):
+    message_json = request_monitoring_message.to_dict()
+
+    messages = deserialize_messages(
+        data=json.dumps(message_json), peer_address=request_monitoring_message.sender
+    )
+    assert len(messages) == 1
+
+
+def test_deserialize_messages_valid_messages(request_monitoring_message):
+    message_json = request_monitoring_message.to_dict()
+    raw_string = json.dumps(message_json) + "\n" + json.dumps(message_json)
+
+    messages = deserialize_messages(
+        data=raw_string, peer_address=request_monitoring_message.sender
+    )
+    assert len(messages) == 2
