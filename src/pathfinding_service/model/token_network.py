@@ -89,7 +89,7 @@ class TokenNetwork:
         self.G.add_edge(channel_view.participant1, channel_view.participant2, view=channel_view)
 
     def handle_channel_new_deposit_event(
-        self, channel_identifier: ChannelID, receiver: Address, total_deposit: int
+        self, channel_identifier: ChannelID, receiver: Address, total_deposit: TokenAmount
     ) -> Optional[ChannelView]:
         """ Register a new balance for the beneficiary.
 
