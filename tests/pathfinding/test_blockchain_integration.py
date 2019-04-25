@@ -15,7 +15,11 @@ from pathfinding_service.config import DEFAULT_REVEAL_TIMEOUT
 from pathfinding_service.model import ChannelView
 from pathfinding_service.service import PathfindingService
 from raiden.utils.typing import BlockNumber, ChainID, Nonce
-from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
+from raiden_contracts.constants import (
+    CONTRACT_TOKEN_NETWORK_REGISTRY,
+    CONTRACT_USER_DEPOSIT,
+    TEST_SETTLE_TIMEOUT_MIN,
+)
 from raiden_contracts.contract_manager import ContractManager
 from raiden_contracts.tests.utils.constants import EMPTY_LOCKSROOT
 
@@ -88,10 +92,11 @@ def test_pfs_with_mocked_client(
             (clients[p1_index], clients[p2_index], p1_deposit),
             (clients[p2_index], clients[p1_index], p2_deposit),
         ]:
+            custom_token.functions.mint(amount).transact({"from": address})
             custom_token.functions.approve(token_network.address, amount).transact(
                 {"from": address}
             )
-            return token_network.functions.setTotalDeposit(
+            token_network.functions.setTotalDeposit(
                 channel_id, address, amount, partner_address
             ).transact({"from": address})
         gevent.sleep()
@@ -126,24 +131,28 @@ def test_pfs_with_mocked_client(
         view2: ChannelView = graph[p2_address][p1_address]["view"]
         assert view1.deposit == p1_deposit
         assert view2.deposit == p2_deposit
-        assert view1.settle_timeout == 15
-        assert view2.settle_timeout == 15
+        assert view1.settle_timeout == TEST_SETTLE_TIMEOUT_MIN
+        assert view2.settle_timeout == TEST_SETTLE_TIMEOUT_MIN
         assert view1.reveal_timeout == DEFAULT_REVEAL_TIMEOUT
         assert view2.reveal_timeout == DEFAULT_REVEAL_TIMEOUT
     # now close all channels
     for (
-        p1_index,
-        _p1_deposit,
-        _p1_capacity,
-        _p1_fee,
-        _p1_reveal_timeout,
-        p2_index,
-        _p2_deposit,
-        _p2_capacity,
-        _p2_fee,
-        _p2_reveal_timeout,
-        _settle_timeout,
-    ) in channel_descriptions_case_1:
+        index,
+        (
+            p1_index,
+            _p1_deposit,
+            _p1_capacity,
+            _p1_fee,
+            _p1_reveal_timeout,
+            p2_index,
+            _p2_deposit,
+            _p2_capacity,
+            _p2_fee,
+            _p2_reveal_timeout,
+            _settle_timeout,
+        ),
+    ) in enumerate(channel_descriptions_case_1):
+        channel_id = channel_identifiers[index]
         balance_proof = HashedBalanceProof(
             nonce=Nonce(1),
             transferred_amount=0,
@@ -162,11 +171,11 @@ def test_pfs_with_mocked_client(
             balance_proof.nonce,
             balance_proof.additional_hash,
             balance_proof.signature,
-        ).transact({"from": clients[p1_index]})
+        ).transact({"from": clients[p1_index], "gas": 200_000})
 
     wait_for_blocks(1)
     gevent.sleep(0.1)
 
     # there should be no channels
-    assert len(token_network.channel_id_to_addresses.keys()) == 0
+    assert len(token_network_model.channel_id_to_addresses.keys()) == 0
     pfs.stop()
