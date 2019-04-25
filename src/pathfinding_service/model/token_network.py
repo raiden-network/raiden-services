@@ -140,6 +140,7 @@ class TokenNetwork:
         updating_participant: Address,
         other_participant: Address,
     ) -> Tuple[ChannelView, ChannelView]:
+        assert channel_identifier in self.channel_id_to_addresses
 
         # Get the channel views from the perspective of the updating participant
         channel_view_to_partner = self.G[updating_participant][other_participant]["view"]
