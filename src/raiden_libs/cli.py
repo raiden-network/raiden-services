@@ -94,7 +94,7 @@ def common_options(app_name: str) -> Callable:
             func = option(func)
 
         @wraps(func)
-        def call_with_opened_keystore(**params: Any) -> Callable:
+        def call_with_common_options_initialized(**params: Any) -> Callable:
             params["private_key"] = _open_keystore(
                 params.pop("keystore_file"), params.pop("password")
             )
@@ -104,7 +104,7 @@ def common_options(app_name: str) -> Callable:
             finally:
                 structlog.reset_defaults()
 
-        return call_with_opened_keystore
+        return call_with_common_options_initialized
 
     return decorator
 
