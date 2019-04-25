@@ -100,7 +100,6 @@ class PathsResource(PathfinderResource):
     def post(self, token_network_address: str) -> Tuple[dict, int]:
         token_network = self._validate_token_network_argument(token_network_address)
         path_req = self._parse_post(PathRequest)
-        log.info("Received path request", request=path_req)
         process_payment(path_req.iou, self.pathfinding_service)
 
         # only add optional args if not None, so we can use defaults
