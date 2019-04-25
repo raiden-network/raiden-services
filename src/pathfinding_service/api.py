@@ -289,6 +289,17 @@ class DebugEndpoint(PathfinderResource):
         return dict(request_count=request_count, responses=responses), 200
 
 
+class DebugEndpointIOU(PathfinderResource):
+    def get(self, source_address: Address) -> Tuple[dict, int]:
+        iou = self.pathfinding_service.database.get_iou(source_address)
+        if iou:
+            return (
+                dict(sender=iou.sender, amount=iou.amount, expiration_block=iou.expiration_block),
+                200,
+            )
+        return {}, 404
+
+
 class ServiceApi:
     def __init__(self, pathfinding_service: PathfindingService):
         self.flask_app = Flask(__name__)
@@ -318,6 +329,7 @@ class ServiceApi:
                         {},
                         "debug2",
                     ),
+                    ("/_debug/ious/<source_address>", DebugEndpointIOU, {}, "debug3"),
                 ]
             )
 

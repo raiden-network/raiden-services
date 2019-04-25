@@ -5,13 +5,14 @@ from typing import List
 import gevent
 import pkg_resources
 import requests
-from eth_utils import decode_hex, encode_hex, to_normalized_address
+from eth_utils import decode_hex, encode_hex, to_bytes, to_normalized_address
 
 import pathfinding_service.exceptions as exceptions
 from pathfinding_service.api import DEFAULT_MAX_PATHS, ServiceApi
 from pathfinding_service.model import IOU, TokenNetwork
 from raiden.utils.signer import LocalSigner
 from raiden.utils.signing import pack_data
+from raiden.utils.typing import BlockNumber, Signature, TokenAmount
 from raiden_contracts.tests.utils import get_random_privkey
 from raiden_libs.types import Address
 from raiden_libs.utils import private_key_to_address
@@ -95,6 +96,42 @@ def test_get_paths_via_debug_endpoint(
     assert request_count == 0
     responses = response_debug_incl_unrequested_target.json()["responses"]
     assert responses == []
+    # kill all running greenlets
+    gevent.killall([obj for obj in gc.get_objects() if isinstance(obj, gevent.Greenlet)])
+
+
+def test_get_ious_via_debug_endpoint(
+    api_sut_with_debug: ServiceApi,
+    api_url: str,
+    addresses: List[Address],
+    token_network_model: TokenNetwork,
+):
+    iou = IOU(
+        sender=addresses[0],
+        receiver=addresses[4],
+        amount=TokenAmount(111),
+        expiration_block=BlockNumber(7619644),
+        signature=Signature(
+            to_bytes(hexstr="118a93e9fd0a3a1c3d6edbad194b5c9d95715c754881d80e23e985793b1e13de")
+        ),
+        claimed=False,
+    )
+    api_sut_with_debug.pathfinding_service.database.upsert_iou(iou)
+
+    # now there must be an iou debug endpoint for a request of a sender in the database
+    url_iou_debug = api_url + f"/_debug/ious/{addresses[0]}"
+    response_debug = requests.get(url_iou_debug)
+    assert response_debug.status_code == 200
+    response_iou = response_debug.json()
+    assert response_iou == {"sender": addresses[0], "amount": 111, "expiration_block": 7619644}
+
+    # but there is no iou debug endpoint for a request of a sender not in the database
+    url_iou_debug = api_url + f"/_debug/ious/{addresses[1]}"
+    response_debug = requests.get(url_iou_debug)
+    assert response_debug.status_code == 404
+    ious = response_debug.json()
+    assert ious == {}
+
     # kill all running greenlets
     gevent.killall([obj for obj in gc.get_objects() if isinstance(obj, gevent.Greenlet)])
 
