@@ -12,7 +12,7 @@ from raiden.utils.typing import Address as BytesAddress, ChainID, Nonce, TokenAm
 from raiden_contracts.tests.utils import EMPTY_LOCKSROOT
 from raiden_libs.matrix import deserialize_messages, message_from_dict
 
-PEER_ADDRESS = BytesAddress(to_canonical_address("0x" + "1" * 40))
+INVALID_PEER_ADDRESS = BytesAddress(to_canonical_address("0x" + "1" * 40))
 
 
 @pytest.fixture
@@ -58,18 +58,9 @@ def test_message_from_dict(request_monitoring_message):
     assert "Invalid message data. Can not find the data type" in str(excinfo.value)
 
 
-def test_deserialize_messages_empty():
-    messages = deserialize_messages(data="", peer_address=PEER_ADDRESS)
-    assert len(messages) == 0
-
-
-def test_deserialize_messages_empty_lines():
-    messages = deserialize_messages(data=" \r\n ", peer_address=PEER_ADDRESS)
-    assert len(messages) == 0
-
-
-def test_deserialize_messages_invalid_json():
-    messages = deserialize_messages(data="@@@", peer_address=PEER_ADDRESS)
+@pytest.mark.parametrize("message_data", ["", " \r\n ", "@@@"])
+def test_deserialize_messages_empty(message_data):
+    messages = deserialize_messages(data=message_data, peer_address=INVALID_PEER_ADDRESS)
     assert len(messages) == 0
 
 
@@ -77,7 +68,9 @@ def test_deserialize_messages_invalid_message_type(request_monitoring_message):
     message_json = request_monitoring_message.to_dict()
     message_json["type"] = "SomeNonexistantMessage"
 
-    messages = deserialize_messages(data=json.dumps(message_json), peer_address=PEER_ADDRESS)
+    messages = deserialize_messages(
+        data=json.dumps(message_json), peer_address=INVALID_PEER_ADDRESS
+    )
     assert len(messages) == 0
 
 
@@ -85,14 +78,18 @@ def test_deserialize_messages_invalid_message_class(request_monitoring_message):
     message_json = request_monitoring_message.to_dict()
 
     with patch("raiden_libs.matrix.message_from_dict", new=Mock()):
-        messages = deserialize_messages(data=json.dumps(message_json), peer_address=PEER_ADDRESS)
+        messages = deserialize_messages(
+            data=json.dumps(message_json), peer_address=INVALID_PEER_ADDRESS
+        )
         assert len(messages) == 0
 
 
 def test_deserialize_messages_invalid_sender(request_monitoring_message):
     message_json = request_monitoring_message.to_dict()
 
-    messages = deserialize_messages(data=json.dumps(message_json), peer_address=PEER_ADDRESS)
+    messages = deserialize_messages(
+        data=json.dumps(message_json), peer_address=INVALID_PEER_ADDRESS
+    )
     assert len(messages) == 0
 
 
