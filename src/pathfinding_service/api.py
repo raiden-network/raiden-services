@@ -42,7 +42,7 @@ last_requests: collections.deque = collections.deque([], maxlen=200)
 
 class ApiWithErrorHandler(Api):
     def handle_error(self, e: exceptions.ApiException) -> Response:
-        log.debug("Error while handling request", error=e)
+        log.debug("Error while handling request", error=e, details=e.error_details, message=e.msg)
         return self.make_response(
             {"errors": e.msg, "error_code": e.error_code, "error_details": e.error_details},
             e.http_code,
@@ -100,6 +100,7 @@ class PathsResource(PathfinderResource):
     def post(self, token_network_address: str) -> Tuple[dict, int]:
         token_network = self._validate_token_network_argument(token_network_address)
         path_req = self._parse_post(PathRequest)
+        log.info("Received path request", request=path_req)
         process_payment(path_req.iou, self.pathfinding_service)
 
         # only add optional args if not None, so we can use defaults
@@ -150,7 +151,7 @@ def process_payment(iou: Optional[IOU], pathfinding_service: PathfindingService)
         raise exceptions.MissingIOU
 
     # Basic IOU validity checks
-    if iou.receiver != pathfinding_service.address:
+    if not is_same_address(iou.receiver, pathfinding_service.address):
         raise exceptions.WrongIOURecipient(expected=pathfinding_service.address)
     if not iou.is_signature_valid():
         raise exceptions.InvalidSignature
