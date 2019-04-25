@@ -27,7 +27,7 @@ from raiden.settings import (
 )
 from raiden.utils.cli import get_matrix_servers
 from raiden.utils.signer import LocalSigner
-from raiden.utils.typing import ChainID
+from raiden.utils.typing import Address as BytesAddress, ChainID
 
 log = structlog.get_logger(__name__)
 
@@ -47,6 +47,38 @@ def message_from_dict(data: dict) -> Message:
         raise InvalidProtocolMessage("Invalid message data. Can not find the data type") from None
 
     return klass.from_dict(data)
+
+
+def deserialize_messages(data: str, peer_address: BytesAddress) -> List[SignedMessage]:
+    messages: List[SignedMessage] = list()
+
+    for line in data.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+
+        logger = log.bind(peer_address=to_checksum_address(peer_address))
+        try:
+            message_dict = json.loads(line)
+            message = message_from_dict(message_dict)
+        except (UnicodeDecodeError, json.JSONDecodeError) as ex:
+            logger.warning("Can't parse message data JSON", message_data=line, _exc=ex)
+            continue
+        except (InvalidProtocolMessage, KeyError) as ex:
+            logger.warning("Message data JSON is not a valid message", message_data=line, _exc=ex)
+            continue
+
+        if not isinstance(message, SignedMessage):
+            logger.warning("Received invalid message", message=message)
+            continue
+
+        if message.sender != peer_address:
+            logger.warning("Message not signed by sender!", message=message, signer=message.sender)
+            continue
+
+        messages.append(message)
+
+    return messages
 
 
 class MatrixListener(gevent.Greenlet):
@@ -154,36 +186,7 @@ class MatrixListener(gevent.Greenlet):
             )
             return False
 
-        messages: List[SignedMessage] = list()
-
-        for line in data.splitlines():
-            line = line.strip()
-            if not line:
-                continue
-
-            logger = log.bind(peer_address=to_checksum_address(peer_address))
-            try:
-                message_dict = json.loads(line)
-                message = message_from_dict(message_dict)
-            except (UnicodeDecodeError, json.JSONDecodeError) as ex:
-                logger.warning("Can't parse message data JSON", message_data=line, _exc=ex)
-                continue
-            except (InvalidProtocolMessage, KeyError) as ex:
-                logger.warning(
-                    "Message data JSON is not a valid message", message_data=line, _exc=ex
-                )
-                continue
-
-            if not isinstance(message, SignedMessage):
-                logger.warning("Received invalid message", message=message)
-                continue
-            elif message.sender != peer_address:
-                logger.warning(
-                    "Message not signed by sender!", message=message, signer=message.sender
-                )
-                continue
-            messages.append(message)
-
+        messages = deserialize_messages(data, peer_address)
         if not messages:
             return False
 
