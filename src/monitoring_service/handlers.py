@@ -112,6 +112,7 @@ def channel_closed_event_handler(event: Event, context: Context) -> None:
             token_network_address=event.token_network_address,
             identifier=channel.identifier,
             scheduled_event=triggered_event,
+            trigger_block=trigger_block,
         )
 
         # Add scheduled event if it not exists yet
@@ -290,7 +291,7 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context) -> N
     # it will be checked there that our update was the latest one
     if event.ms_address == context.ms_state.address:
         assert channel.closing_block is not None, "closing_block not set"
-        trigger_block = BlockNumber(channel.closing_block + channel.settle_timeout + 5)
+        trigger_block = BlockNumber(channel.closing_block + channel.settle_timeout)
 
         # trigger the claim reward action by an event
         e = ActionClaimRewardTriggeredEvent(
