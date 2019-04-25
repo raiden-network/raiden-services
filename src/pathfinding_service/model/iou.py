@@ -41,7 +41,7 @@ class IOU:
         return is_same_address(recovered_address, self.sender)
 
     @property
-    def session_id(self) -> bytes:
+    def session_id(self) -> str:
         """Session ID as used for OneToN.settled_sessions"""
         return encode_hex(
             keccak(
