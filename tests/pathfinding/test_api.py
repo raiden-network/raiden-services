@@ -1,8 +1,6 @@
-import gc
 from datetime import datetime, timedelta
 from typing import List
 
-import gevent
 import pkg_resources
 import requests
 from eth_utils import decode_hex, encode_hex, to_bytes, to_normalized_address
@@ -96,8 +94,6 @@ def test_get_paths_via_debug_endpoint(
     assert request_count == 0
     responses = response_debug_incl_unrequested_target.json()["responses"]
     assert responses == []
-    # kill all running greenlets
-    gevent.killall([obj for obj in gc.get_objects() if isinstance(obj, gevent.Greenlet)])
 
 
 def test_get_ious_via_debug_endpoint(
@@ -131,9 +127,6 @@ def test_get_ious_via_debug_endpoint(
     assert response_debug.status_code == 404
     ious = response_debug.json()
     assert ious == {}
-
-    # kill all running greenlets
-    gevent.killall([obj for obj in gc.get_objects() if isinstance(obj, gevent.Greenlet)])
 
 
 #
@@ -206,9 +199,6 @@ def test_get_paths_validation(
     # with successful payment
     response = request_path_with(iou=good_iou_dict, status_code=200)
 
-    # kill all running greenlets
-    gevent.killall([obj for obj in gc.get_objects() if isinstance(obj, gevent.Greenlet)])
-
 
 def test_get_paths_path_validation(api_sut: ServiceApi, api_url: str):
     for url in [
@@ -224,10 +214,6 @@ def test_get_paths_path_validation(api_sut: ServiceApi, api_url: str):
     response = requests.post(url)
     assert response.status_code == 400
     assert response.json()["error_code"] == exceptions.UnsupportedTokenNetwork.error_code
-
-    # kill all running greenlets
-
-    gevent.killall([obj for obj in gc.get_objects() if isinstance(obj, gevent.Greenlet)])
 
 
 def test_get_paths(
@@ -258,9 +244,6 @@ def test_get_paths(
         assert response.status_code == 404
         assert response.json()["error_code"] == exceptions.NoRouteFound.error_code
 
-    # kill all running greenlets
-    gevent.killall([obj for obj in gc.get_objects() if isinstance(obj, gevent.Greenlet)])
-
 
 #
 # tests for /info endpoint
@@ -284,8 +267,6 @@ def test_get_info(api_sut: ServiceApi, api_url: str, pathfinding_service_mock):
         "operator": "PLACEHOLDER FOR PATHFINDER OPERATOR",
         "message": "PLACEHOLDER FOR ADDITIONAL MESSAGE BY THE PFS",
     }
-    # kill all running greenlets
-    gevent.killall([obj for obj in gc.get_objects() if isinstance(obj, gevent.Greenlet)])
 
 
 #
@@ -345,6 +326,3 @@ def test_get_iou(
     response = requests.get(url, params=params)
     assert response.status_code == 400, response.json()
     assert response.json()["error_code"] == exceptions.RequestOutdated.error_code
-
-    # kill all running greenlets
-    gevent.killall([obj for obj in gc.get_objects() if isinstance(obj, gevent.Greenlet)])

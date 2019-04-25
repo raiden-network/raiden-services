@@ -40,12 +40,6 @@ def no_greenlets_left():
             task.stop()
     gevent.joinall(tasks, timeout=1)
     tasks = _get_running_greenlets()
-    # kill greenlets, so that the following tests will have a clean state
-    try:
-        gevent.killall(tasks, timeout=2)
-    finally:
-        pass
-    tasks = [t for t in tasks if not t.dead]
     if tasks:
         print("The following greenlets are still running after the test:", tasks)
     assert not tasks, "All greenlets must be stopped at the end of a test."
