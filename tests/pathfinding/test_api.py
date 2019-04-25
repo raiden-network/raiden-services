@@ -199,7 +199,7 @@ def test_get_paths_validation(
 
     # bad signature
     bad_iou_dict = good_iou_dict.copy()
-    bad_iou_dict["signature"] = hex(int(bad_iou_dict["signature"], 16) + 1)
+    bad_iou_dict["signature"] = "0x" + "1" * 130
     response = request_path_with(iou=bad_iou_dict)
     assert response.json()["error_code"] == exceptions.InvalidSignature.error_code
 
