@@ -88,8 +88,6 @@ def common_options(app_name: str) -> Callable:
                     default="INFO",
                     type=click.Choice(["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"]),
                     help="Print log messages of this level and more important ones",
-                    callback=lambda ctx, param, value: setup_logging(str(value)),
-                    expose_value=False,
                 ),
             ]
         ):
@@ -100,7 +98,11 @@ def common_options(app_name: str) -> Callable:
             params["private_key"] = _open_keystore(
                 params.pop("keystore_file"), params.pop("password")
             )
-            return func(**params)
+            try:
+                setup_logging(params.pop("log_level"))
+                return func(**params)
+            finally:
+                structlog.reset_defaults()
 
         return call_with_opened_keystore
 
