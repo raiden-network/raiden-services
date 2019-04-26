@@ -13,6 +13,8 @@ from raiden.exceptions import InvalidProtocolMessage, TransportError
 from raiden.messages import Message, RequestMonitoring, SignedMessage, UpdatePFS
 from raiden.network.transport.matrix.client import GMatrixClient, Room
 from raiden.network.transport.matrix.utils import (
+    AddressReachability,
+    UserAddressManager,
     join_global_room,
     login_or_register,
     make_client,
@@ -83,20 +85,35 @@ def deserialize_messages(data: str, peer_address: BytesAddress) -> List[SignedMe
 
 class MatrixListener(gevent.Greenlet):
     def __init__(
-        self, private_key: str, chain_id: ChainID, callback: Callable, service_room_suffix: str
+        self,
+        private_key: str,
+        chain_id: ChainID,
+        service_room_suffix: str,
+        message_received_callback: Callable[[Message], None],
+        address_reachability_changed_callback: Callable[
+            [BytesAddress, AddressReachability], None
+        ] = None,
     ) -> None:
         super().__init__()
 
         self.private_key = private_key
         self.chain_id = chain_id
-        self.callback = callback
+        self.message_received_callback = message_received_callback
 
         try:
-            self.client, self.monitoring_room = self.setup_matrix(service_room_suffix)
-            self.monitoring_room.add_listener(self._handle_message, "m.room.message")
+            self.client, self.broadcast_room = self._setup_matrix(service_room_suffix)
         except ConnectionError as exc:
             log.critical("Could not connect to broadcasting system.", exc=exc)
             sys.exit(1)
+
+        self.broadcast_room.add_listener(self._handle_message, "m.room.message")
+
+        if address_reachability_changed_callback is not None:
+            self.user_manager = UserAddressManager(
+                client=self.client,
+                get_user_callable=self._get_user,
+                address_reachability_changed_callback=address_reachability_changed_callback,
+            )
 
     def listen_forever(self) -> None:
         self.client.listen_forever()
@@ -108,12 +125,11 @@ class MatrixListener(gevent.Greenlet):
     def stop(self) -> None:
         self.client.stop_listener_thread()
 
-    def setup_matrix(self, service_room_suffix: str) -> Tuple[GMatrixClient, Room]:
+    def _setup_matrix(self, service_room_suffix: str) -> Tuple[GMatrixClient, Room]:
         available_servers_url = DEFAULT_MATRIX_KNOWN_SERVERS[Environment.DEVELOPMENT]
         available_servers = get_matrix_servers(available_servers_url)
 
         def _http_retry_delay() -> Iterable[float]:
-            # below constants are defined in raiden.app.App.DEFAULT_CONFIG
             return udp_utils.timeout_exponential_backoff(
                 DEFAULT_TRANSPORT_RETRIES_BEFORE_BACKOFF,
                 int(DEFAULT_TRANSPORT_MATRIX_RETRY_INTERVAL / 5),
@@ -146,10 +162,10 @@ class MatrixListener(gevent.Greenlet):
         """Creates an User from an user_id, if none, or fetch a cached User """
         user_id: str = getattr(user, "user_id", user)
         if (
-            self.monitoring_room
-            and user_id in self.monitoring_room._members  # pylint: disable=protected-access
+            self.broadcast_room
+            and user_id in self.broadcast_room._members  # pylint: disable=protected-access
         ):
-            duser: User = self.monitoring_room._members[  # pylint: disable=protected-access
+            duser: User = self.broadcast_room._members[  # pylint: disable=protected-access
                 user_id
             ]
 
@@ -199,6 +215,6 @@ class MatrixListener(gevent.Greenlet):
             log.debug(
                 "Message received", message=message, sender=to_checksum_address(message.sender)
             )
-            self.callback(message)
+            self.message_received_callback(message)
 
         return True

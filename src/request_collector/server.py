@@ -8,7 +8,7 @@ from monitoring_service.database import SharedDatabase
 from monitoring_service.states import MonitorRequest
 from raiden.constants import MONITORING_BROADCASTING_ROOM
 from raiden.exceptions import InvalidSignature
-from raiden.messages import RequestMonitoring, SignedMessage
+from raiden.messages import Message, RequestMonitoring
 from raiden_libs.gevent_error_handler import register_error_handler
 from raiden_libs.matrix import MatrixListener
 
@@ -28,8 +28,8 @@ class RequestCollector(gevent.Greenlet):
             self.matrix_listener = MatrixListener(
                 private_key=private_key,
                 chain_id=self.chain_id,
-                callback=self.handle_message,
                 service_room_suffix=MONITORING_BROADCASTING_ROOM,
+                message_received_callback=self.handle_message,
             )
         except ConnectionError as exc:
             log.critical("Could not connect to broadcasting system.", exc=exc)
@@ -46,7 +46,7 @@ class RequestCollector(gevent.Greenlet):
         self.matrix_listener.stop()
         self.matrix_listener.join()
 
-    def handle_message(self, message: SignedMessage) -> None:
+    def handle_message(self, message: Message) -> None:
         if isinstance(message, RequestMonitoring):
             self.on_monitor_request(message)
         else:

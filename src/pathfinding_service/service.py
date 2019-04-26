@@ -13,8 +13,9 @@ from pathfinding_service.database import PFSDatabase
 from pathfinding_service.exceptions import InvalidCapacityUpdate
 from pathfinding_service.model import TokenNetwork
 from raiden.constants import PATH_FINDING_BROADCASTING_ROOM, UINT256_MAX
-from raiden.messages import SignedMessage, UpdatePFS
-from raiden.utils.typing import Address, BlockNumber, ChainID, TokenNetworkAddress
+from raiden.messages import Message, UpdatePFS
+from raiden.network.transport.matrix import AddressReachability
+from raiden.utils.typing import Address as BytesAddress, BlockNumber, ChainID, TokenNetworkAddress
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
 from raiden_libs.blockchain import get_blockchain_events
 from raiden_libs.contract_info import CONTRACT_MANAGER
@@ -44,7 +45,7 @@ class PathfindingService(gevent.Greenlet):
         db_filename: str,
         sync_start_block: BlockNumber = BlockNumber(0),
         required_confirmations: int = 8,
-        poll_interval: float = 10,
+        poll_interval: float = 1,
     ):
         super().__init__()
 
@@ -72,8 +73,9 @@ class PathfindingService(gevent.Greenlet):
             self.matrix_listener = MatrixListener(
                 private_key=private_key,
                 chain_id=self.chain_id,
-                callback=self.handle_message,
                 service_room_suffix=PATH_FINDING_BROADCASTING_ROOM,
+                message_received_callback=self.handle_message,
+                address_reachability_changed_callback=self.handle_reachability_change,
             )
         except ConnectionError as exc:
             log.critical("Could not connect to broadcasting system.", exc=exc)
@@ -137,6 +139,11 @@ class PathfindingService(gevent.Greenlet):
     def follows_token_network(self, token_network_address: TokenNetworkAddress) -> bool:
         """ Checks if a token network is followed by the pathfinding service. """
         return token_network_address in self.token_networks.keys()
+
+    def handle_reachability_change(  # pylint: disable=no-self-use
+        self, address: BytesAddress, state: AddressReachability
+    ) -> None:
+        log.info("Reachability change received", node=to_checksum_address(address), state=state)
 
     def get_token_network(
         self, token_network_address: TokenNetworkAddress
@@ -207,7 +214,7 @@ class PathfindingService(gevent.Greenlet):
         token_network.handle_channel_closed_event(channel_identifier=event.channel_identifier)
         self.database.delete_channel_views(event.channel_identifier)
 
-    def handle_message(self, message: SignedMessage) -> None:
+    def handle_message(self, message: Message) -> None:
         if isinstance(message, UpdatePFS):
             try:
                 self.on_pfs_update(message)
