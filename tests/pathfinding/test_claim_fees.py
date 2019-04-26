@@ -90,7 +90,7 @@ def mock_connect_to_blockchain(monkeypatch):
     web3_mock = Mock()
     web3_mock.net.version = 1
     web3_mock.eth.blockNumber = 1
-    connect_mock = Mock(return_value=(web3_mock, MagicMock(), Mock()))
+    connect_mock = Mock(return_value=(web3_mock, MagicMock(), 0))
     monkeypatch.setattr("raiden_libs.cli.connect_to_blockchain", connect_mock)
 
 

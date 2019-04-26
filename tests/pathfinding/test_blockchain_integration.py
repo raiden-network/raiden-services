@@ -20,14 +20,11 @@ from raiden_contracts.constants import (
     CONTRACT_USER_DEPOSIT,
     TEST_SETTLE_TIMEOUT_MIN,
 )
-from raiden_contracts.contract_manager import ContractManager
 from raiden_contracts.tests.utils.constants import EMPTY_LOCKSROOT
 
 
 def test_pfs_with_mocked_client(
     web3,
-    ethereum_tester,
-    contracts_manager: ContractManager,
     token_network_registry_contract,
     channel_descriptions_case_1: List,
     get_accounts,

@@ -55,7 +55,9 @@ def api_url(free_port: int) -> str:
 
 @pytest.fixture
 def api_sut(
-    pathfinding_service_mock, free_port: int, populate_token_network_case_1: None
+    pathfinding_service_mock,
+    free_port: int,
+    populate_token_network_case_1,  # pylint: disable=unused-argument
 ) -> Iterator[ServiceApi]:
     api = ServiceApi(pathfinding_service_mock)
     api.run(port=free_port)
@@ -65,7 +67,9 @@ def api_sut(
 
 @pytest.fixture
 def api_sut_with_debug(
-    pathfinding_service_mock, free_port: int, populate_token_network_case_1: None
+    pathfinding_service_mock,
+    free_port: int,
+    populate_token_network_case_1,  # pylint: disable=unused-argument
 ) -> Iterator[ServiceApi]:
     pathfinding_service_mock.debug_mode_enabled = True
     api = ServiceApi(pathfinding_service_mock)

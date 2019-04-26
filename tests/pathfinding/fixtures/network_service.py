@@ -281,9 +281,7 @@ def populate_token_network_case_3(
 
 
 @pytest.fixture
-def pathfinding_service_mock_empty(
-    token_network_model: TokenNetwork
-) -> Generator[PathfindingService, None, None]:
+def pathfinding_service_mock_empty() -> Generator[PathfindingService, None, None]:
     with patch("pathfinding_service.service.MatrixListener", new=Mock):
         web3_mock = Mock()
         web3_mock.net.version = "1"

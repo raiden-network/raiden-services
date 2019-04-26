@@ -9,7 +9,9 @@ log = structlog.get_logger(__name__)
 _original_error_handler = Hub.handle_error
 
 
-def error_handler(self: Any, context: Any, type: Any, value: Any, tb: Any) -> None:
+def error_handler(
+    self: Any, context: Any, type: Any, value: Any, tb: Any  # pylint: disable=unused-argument
+) -> None:
     if issubclass(type, Hub.NOT_ERROR):
         return
     if issubclass(type, KeyboardInterrupt):
