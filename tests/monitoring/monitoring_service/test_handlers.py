@@ -130,7 +130,7 @@ def create_default_token_network(context):
     )
 
 
-def test_event_handler_ignore_other_events(context: Context,):
+def test_event_handler_ignore_other_events(context: Context):
     event = Event()
 
     for handler in [
@@ -148,7 +148,7 @@ def test_event_handler_ignore_other_events(context: Context,):
             handler(event=event, context=context)
 
 
-def test_channel_opened_event_handler_adds_channel(context: Context,):
+def test_channel_opened_event_handler_adds_channel(context: Context):
     create_default_token_network(context)
     event = ReceiveChannelOpenedEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
@@ -166,7 +166,7 @@ def test_channel_opened_event_handler_adds_channel(context: Context,):
     assert_channel_state(context, ChannelState.OPENED)
 
 
-def test_channel_closed_event_handler_closes_existing_channel(context: Context,):
+def test_channel_closed_event_handler_closes_existing_channel(context: Context):
     context = setup_state_with_open_channel(context)
     context.last_known_block = 60
 
@@ -185,7 +185,7 @@ def test_channel_closed_event_handler_closes_existing_channel(context: Context,)
     assert_channel_state(context, ChannelState.CLOSED)
 
 
-def test_channel_closed_event_handler_idempotency(context: Context,):
+def test_channel_closed_event_handler_idempotency(context: Context):
     context = setup_state_with_open_channel(context)
     context.last_known_block = 60
 
@@ -207,7 +207,7 @@ def test_channel_closed_event_handler_idempotency(context: Context,):
     assert context.db.scheduled_event_count() == 1
 
 
-def test_channel_closed_event_handler_ignores_existing_channel_after_timeout(context: Context,):
+def test_channel_closed_event_handler_ignores_existing_channel_after_timeout(context: Context):
     context = setup_state_with_open_channel(context)
     context.last_known_block = 200
 
@@ -226,7 +226,7 @@ def test_channel_closed_event_handler_ignores_existing_channel_after_timeout(con
     assert_channel_state(context, ChannelState.CLOSED)
 
 
-def test_channel_closed_event_handler_leaves_existing_channel(context: Context,):
+def test_channel_closed_event_handler_leaves_existing_channel(context: Context):
     context = setup_state_with_open_channel(context)
 
     event = ReceiveChannelClosedEvent(
@@ -275,7 +275,7 @@ def test_channel_closed_event_handler_trigger_action_monitor_event_without_monit
     assert context.db.scheduled_event_count() == 1
 
 
-def test_channel_settled_event_handler_settles_existing_channel(context: Context,):
+def test_channel_settled_event_handler_settles_existing_channel(context: Context):
     context = setup_state_with_closed_channel(context)
 
     event = ReceiveChannelSettledEvent(
@@ -289,7 +289,7 @@ def test_channel_settled_event_handler_settles_existing_channel(context: Context
     assert_channel_state(context, ChannelState.SETTLED)
 
 
-def test_channel_settled_event_handler_leaves_existing_channel(context: Context,):
+def test_channel_settled_event_handler_leaves_existing_channel(context: Context):
     context = setup_state_with_closed_channel(context)
 
     event = ReceiveChannelSettledEvent(
@@ -303,7 +303,7 @@ def test_channel_settled_event_handler_leaves_existing_channel(context: Context,
     assert_channel_state(context, ChannelState.CLOSED)
 
 
-def test_channel_bp_updated_event_handler_sets_update_status_if_not_set(context: Context,):
+def test_channel_bp_updated_event_handler_sets_update_status_if_not_set(context: Context):
     context = setup_state_with_closed_channel(context)
 
     event_bp = ReceiveNonClosingBalanceProofUpdatedEvent(
@@ -345,7 +345,7 @@ def test_channel_bp_updated_event_handler_sets_update_status_if_not_set(context:
     assert channel.update_status.update_sender_address == DEFAULT_PARTICIPANT1
 
 
-def test_monitor_new_balance_proof_event_handler_sets_update_status(context: Context,):
+def test_monitor_new_balance_proof_event_handler_sets_update_status(context: Context):
     context = setup_state_with_closed_channel(context)
 
     new_balance_event = ReceiveMonitoringNewBalanceProofEvent(
@@ -397,7 +397,7 @@ def test_monitor_new_balance_proof_event_handler_sets_update_status(context: Con
     assert channel.update_status.update_sender_address == "D"
 
 
-def test_monitor_new_balance_proof_event_handler_idempotency(context: Context,):
+def test_monitor_new_balance_proof_event_handler_idempotency(context: Context):
     context = setup_state_with_closed_channel(context)
 
     new_balance_event = ReceiveMonitoringNewBalanceProofEvent(
@@ -605,7 +605,7 @@ def test_action_monitoring_triggered_event_handler_without_sufficient_balance_do
     assert context.monitoring_service_contract.functions.monitor.called is False
 
 
-def test_mr_available_before_channel_triggers_monitor_call(context: Context,):
+def test_mr_available_before_channel_triggers_monitor_call(context: Context):
     """ Tests that the MR is read from the DB, even if it is supplied before the channel was opened.
 
     See https://github.com/raiden-network/raiden-services/issues/26
@@ -631,7 +631,7 @@ def test_mr_available_before_channel_triggers_monitor_call(context: Context,):
     assert context.monitoring_service_contract.functions.monitor.called is True
 
 
-def test_mr_with_unknown_signatures(context: Context,):
+def test_mr_with_unknown_signatures(context: Context):
     """ The signatures are valid but don't belong to the participants.
     """
     context = setup_state_with_closed_channel(context)
