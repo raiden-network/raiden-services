@@ -260,6 +260,7 @@ class InfoResource(PathfinderResource):
                 "version": self.version,
                 "operator": operator,
                 "message": message,
+                "payment_address": self.pathfinding_service.address,
             },
             200,
         )
