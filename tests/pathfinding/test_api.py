@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 from typing import List
 
 import pkg_resources
+import pytest
 import requests
 from eth_utils import decode_hex, encode_hex, to_bytes, to_normalized_address
 
@@ -26,8 +27,9 @@ ID_123 = 123
 #
 
 
+@pytest.mark.usefixtures("api_sut")
 def test_get_paths_via_debug_endpoint_with_debug_disabled(
-    api_sut: ServiceApi, api_url: str, addresses: List[Address], token_network_model: TokenNetwork
+    api_url: str, addresses: List[Address], token_network_model: TokenNetwork
 ):
     url_debug = api_url + f"/_debug/routes/{token_network_model.address}/{addresses[0]}"
 
@@ -36,11 +38,9 @@ def test_get_paths_via_debug_endpoint_with_debug_disabled(
     assert response_debug.status_code == 404
 
 
+@pytest.mark.usefixtures("api_sut_with_debug")
 def test_get_paths_via_debug_endpoint(
-    api_sut_with_debug: ServiceApi,
-    api_url: str,
-    addresses: List[Address],
-    token_network_model: TokenNetwork,
+    api_url: str, addresses: List[Address], token_network_model: TokenNetwork
 ):
     url = api_url + f"/{token_network_model.address}/paths"
     url_debug = api_url + f"/_debug/routes/{token_network_model.address}/{addresses[0]}"
@@ -197,7 +197,8 @@ def test_get_paths_validation(
     response = request_path_with(iou=good_iou_dict, status_code=200)
 
 
-def test_get_paths_path_validation(api_sut: ServiceApi, api_url: str):
+@pytest.mark.usefixtures("api_sut")
+def test_get_paths_path_validation(api_url: str):
     for url in [
         "/1234abc/paths",
         "/df173a5173c3d0ae5ba11dae84470c5d3f1a8413/paths",
@@ -213,9 +214,8 @@ def test_get_paths_path_validation(api_sut: ServiceApi, api_url: str):
     assert response.json()["error_code"] == exceptions.UnsupportedTokenNetwork.error_code
 
 
-def test_get_paths(
-    api_sut: ServiceApi, api_url: str, addresses: List[Address], token_network_model: TokenNetwork
-):
+@pytest.mark.usefixtures("api_sut")
+def test_get_paths(api_url: str, addresses: List[Address], token_network_model: TokenNetwork):
     url = api_url + f"/{token_network_model.address}/paths"
 
     data = {"from": addresses[0], "to": addresses[2], "value": 10, "max_paths": DEFAULT_MAX_PATHS}
@@ -247,7 +247,8 @@ def test_get_paths(
 #
 
 
-def test_get_info(api_sut: ServiceApi, api_url: str, pathfinding_service_mock):
+@pytest.mark.usefixtures("api_sut")
+def test_get_info(api_url: str, pathfinding_service_mock):
     pathfinding_service_mock.service_fee = 123
     url = api_url + "/info"
 
