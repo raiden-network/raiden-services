@@ -106,7 +106,7 @@ def test_crash(tmpdir, get_accounts, get_private_key, mockchain):
         stable_ms.monitor_mock.reset_mock()  # clear calls from last block
         result_state: List[dict] = []
         for ms in [stable_ms, crashy_ms]:
-            ms._process_new_blocks(to_block)
+            ms._process_new_blocks(to_block)  # pylint: disable=protected-access
             result_state.append(
                 dict(
                     blockchain_state=ms.context.ms_state.blockchain_state,

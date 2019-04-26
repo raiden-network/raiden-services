@@ -4,8 +4,7 @@ from typing import Dict, Optional
 
 import gevent
 import structlog
-from eth_typing import ChecksumAddress
-from eth_utils import to_checksum_address
+from eth_utils import is_same_address, to_checksum_address
 from web3 import Web3
 from web3.contract import Contract
 
@@ -15,7 +14,6 @@ from pathfinding_service.exceptions import InvalidCapacityUpdate
 from pathfinding_service.model import TokenNetwork
 from raiden.constants import PATH_FINDING_BROADCASTING_ROOM, UINT256_MAX
 from raiden.messages import SignedMessage, UpdatePFS
-from raiden.utils.signer import recover
 from raiden.utils.typing import BlockNumber, ChainID
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
 from raiden_libs.blockchain import get_blockchain_events
@@ -35,13 +33,6 @@ from raiden_libs.types import Address, TokenNetworkAddress
 from raiden_libs.utils import private_key_to_address
 
 log = structlog.get_logger(__name__)
-
-
-def recover_signer_from_capacity_update(message: UpdatePFS,) -> ChecksumAddress:
-    signer = to_checksum_address(
-        recover(data=message._data_to_sign(), signature=message.signature)
-    )
-    return signer
 
 
 class PathfindingService(gevent.Greenlet):
@@ -275,8 +266,8 @@ class PathfindingService(gevent.Greenlet):
             )
 
         # check signature of Capacity Update
-        signer = recover_signer_from_capacity_update(message)
-        if signer != updating_participant:
+        signer = to_checksum_address(message.sender)  # recover address from signature
+        if not is_same_address(signer, updating_participant):
             raise InvalidCapacityUpdate("Capacity Update not signed correctly")
 
         # check if nonce is higher than current nonce
