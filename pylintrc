@@ -71,7 +71,6 @@ disable=
         too-many-arguments,
         redefined-outer-name,
         too-many-instance-attributes,
-        too-many-locals,
         redefined-builtin,
         broad-except,
 
