@@ -33,6 +33,7 @@ from raiden_libs.events import (
     ReceiveChannelOpenedEvent,
     ReceiveChannelSettledEvent,
     ReceiveMonitoringNewBalanceProofEvent,
+    ReceiveMonitoringRewardClaimedEvent,
     ReceiveNonClosingBalanceProofUpdatedEvent,
 )
 from raiden_libs.types import Address, TokenNetworkAddress
@@ -438,6 +439,24 @@ def test_monitor_new_balance_proof_event_handler_idempotency(context: Context,):
     assert channel.update_status is not None
     assert channel.update_status.nonce == 2
     assert channel.update_status.update_sender_address == "C"
+
+
+def test_monitor_reward_claimed_event_handler(context: Context, log):
+    context = setup_state_with_closed_channel(context)
+
+    claim_event = ReceiveMonitoringRewardClaimedEvent(
+        ms_address=context.ms_state.address,
+        amount=TokenAmount(1),
+        reward_identifier="REWARD",
+        block_number=BlockNumber(23),
+    )
+
+    monitor_reward_claim_event_handler(claim_event, context)
+    assert log.has("Successfully claimed reward")
+
+    claim_event.ms_address = Address("C")
+    monitor_reward_claim_event_handler(claim_event, context)
+    assert log.has("Another MS claimed reward")
 
 
 def test_action_monitoring_triggered_event_handler_does_not_trigger_monitor_call_when_nonce_to_small(  # noqa
