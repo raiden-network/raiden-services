@@ -266,6 +266,7 @@ def test_get_info(api_sut: ServiceApi, api_url: str, pathfinding_service_mock):
         "version": pkg_resources.require("raiden-services")[0].version,
         "operator": "PLACEHOLDER FOR PATHFINDER OPERATOR",
         "message": "PLACEHOLDER FOR ADDITIONAL MESSAGE BY THE PFS",
+        "payment_address": pathfinding_service_mock.address,
     }
 
 
