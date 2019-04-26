@@ -97,10 +97,7 @@ def test_get_paths_via_debug_endpoint(
 
 
 def test_get_ious_via_debug_endpoint(
-    api_sut_with_debug: ServiceApi,
-    api_url: str,
-    addresses: List[Address],
-    token_network_model: TokenNetwork,
+    api_sut_with_debug: ServiceApi, api_url: str, addresses: List[Address]
 ):
     iou = IOU(
         sender=addresses[0],
@@ -275,9 +272,7 @@ def test_get_info(api_sut: ServiceApi, api_url: str, pathfinding_service_mock):
 #
 
 
-def test_get_iou(
-    api_sut: ServiceApi, api_url: str, pathfinding_service_mock, token_network_model: TokenNetwork
-):
+def test_get_iou(api_sut: ServiceApi, api_url: str, token_network_model: TokenNetwork):
     privkey = get_random_privkey()
     sender = private_key_to_address(privkey)
     url = api_url + f"/{token_network_model.address}/payment/iou"

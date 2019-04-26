@@ -7,7 +7,7 @@ from request_collector.cli import main
 patch_args = dict(target="request_collector.cli", RequestCollector=DEFAULT)
 
 
-def test_success(keystore_file, default_cli_args):
+def test_success(default_cli_args):
     """ Calling the request_collector with default args should succeed after heavy mocking """
     runner = CliRunner()
     with patch.multiple(**patch_args):
@@ -15,7 +15,7 @@ def test_success(keystore_file, default_cli_args):
     assert result.exit_code == 0
 
 
-def test_wrong_password(keystore_file, default_cli_args):
+def test_wrong_password(default_cli_args):
     """ Calling the request_collector with default args should succeed after heavy mocking """
     runner = CliRunner()
     with patch.multiple(**patch_args):
@@ -25,7 +25,7 @@ def test_wrong_password(keystore_file, default_cli_args):
     assert result.exit_code == 1
 
 
-def test_shutdown(keystore_file, default_cli_args):
+def test_shutdown(default_cli_args):
     """ Clean shutdown after KeyboardInterrupt """
     runner = CliRunner()
     with patch.multiple(**patch_args) as mocks:
@@ -36,7 +36,7 @@ def test_shutdown(keystore_file, default_cli_args):
         assert mocks["RequestCollector"].return_value.listen_forever.called
 
 
-def test_log_level(keystore_file, default_cli_args):
+def test_log_level(default_cli_args):
     """ Setting of log level via command line switch """
     runner = CliRunner()
     with patch.multiple(**patch_args), patch("logging.basicConfig") as basicConfig:

@@ -24,14 +24,14 @@ def test_account_check(web3, capsys):
     assert "Your account's balance is below the estimated gas reserve of" in out
 
 
-def test_success(keystore_file, default_cli_args_ms):
+def test_success(default_cli_args_ms):
     """ Calling the monitoring_service with default args should succeed after heavy mocking """
     runner = CliRunner()
     result = runner.invoke(main, default_cli_args_ms, catch_exceptions=False)
     assert result.exit_code == 0
 
 
-def test_wrong_password(keystore_file, default_cli_args_ms):
+def test_wrong_password(default_cli_args_ms):
     """ Using the wrong password should fail, but not raise an exception """
     runner = CliRunner()
     result = runner.invoke(
@@ -40,7 +40,7 @@ def test_wrong_password(keystore_file, default_cli_args_ms):
     assert result.exit_code == 1
 
 
-def test_shutdown(keystore_file, default_cli_args_ms, service_mock):
+def test_shutdown(default_cli_args_ms, service_mock):
     """ Clean shutdown after KeyboardInterrupt """
     runner = CliRunner()
     service_mock.return_value.run.side_effect = KeyboardInterrupt
@@ -48,7 +48,7 @@ def test_shutdown(keystore_file, default_cli_args_ms, service_mock):
     assert result.exit_code == 0
 
 
-def test_log_level(keystore_file, default_cli_args_ms):
+def test_log_level(default_cli_args_ms):
     """ Setting of log level via command line switch """
     runner = CliRunner()
     with patch("logging.basicConfig") as basicConfig:

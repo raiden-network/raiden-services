@@ -207,7 +207,6 @@ class TokenNetwork:
         max_paths: int,
         diversity_penalty: float = DIVERSITY_PEN_DEFAULT,
         fee_penalty: float = FEE_PEN_DEFAULT,
-        **kwargs: Any,
     ) -> List[dict]:
         """ Find best routes according to given preferences
 

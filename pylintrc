@@ -78,7 +78,6 @@ disable=
 
         # checks which have false positive that need to be excluded before enabling
         invalid-name,
-        unused-argument,
 
         # checks that are done with higher accuracy by mypy
         no-member,

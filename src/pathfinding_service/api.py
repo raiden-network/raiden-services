@@ -222,7 +222,9 @@ class IOURequest:
 
 
 class IOUResource(PathfinderResource):
-    def get(self, token_network_address: TokenNetworkAddress) -> Tuple[dict, int]:
+    def get(
+        self, token_network_address: TokenNetworkAddress  # pylint: disable=unused-argument
+    ) -> Tuple[dict, int]:
         iou_request, errors = IOURequest.Schema().load(request.args)
         if errors:
             raise exceptions.InvalidRequest(**errors)

@@ -8,7 +8,7 @@ from web3.middleware.exception_retry_request import check_if_retry_on_failure
 
 def http_retry_with_backoff_middleware(
     make_request: Callable,
-    web3: Web3,
+    web3: Web3,  # pylint: disable=unused-argument
     errors: Tuple = (ConnectionError, HTTPError, Timeout, TooManyRedirects),
     retries: int = 10,
     first_backoff: float = 0.2,

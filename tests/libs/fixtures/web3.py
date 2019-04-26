@@ -76,7 +76,9 @@ def keystore_file(tmp_path) -> str:
 def mockchain(monkeypatch):
     state: Dict[str, List[List[Event]]] = dict(block_events=[])
 
-    def get_events(web3, contract_manager, chain_state, to_block: int, query_ms=True):
+    def get_events(
+        web3, contract_manager, chain_state, to_block: int, query_ms=True
+    ):  # pylint: disable=unused-argument
         from_block = chain_state.latest_known_block + 1
         blocks = state["block_events"][from_block : to_block + 1]
         events = [ev for block in blocks for ev in block]  # flatten

@@ -42,7 +42,9 @@ def main(
 ) -> None:
     pfs_address = private_key_to_address(private_key)
     chain_id = ChainID(int(web3.net.version))
-    database = PFSDatabase(filename=state_db, chain_id=chain_id, pfs_address=pfs_address)
+    database = PFSDatabase(
+        filename=state_db, chain_id=chain_id, pfs_address=pfs_address, sync_start_block=start_block
+    )
 
     one_to_n_contract = contracts[CONTRACT_ONE_TO_N]
 

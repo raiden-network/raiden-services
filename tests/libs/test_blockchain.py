@@ -1,3 +1,4 @@
+import pytest
 from web3 import Web3
 
 from raiden.utils.typing import BlockNumber
@@ -24,8 +25,9 @@ def create_tnr_contract_events_query(
     return query_callback
 
 
+@pytest.mark.usefixtures("token_network")
 def test_limit_inclusivity_in_query_blockchain_events(
-    web3, token_network, wait_for_blocks, contracts_manager, token_network_registry_contract
+    web3, wait_for_blocks, contracts_manager, token_network_registry_contract
 ):
     query = create_tnr_contract_events_query(
         web3, contracts_manager, token_network_registry_contract.address

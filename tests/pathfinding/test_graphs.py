@@ -39,7 +39,8 @@ def test_edge_weight(addresses):
     assert TokenNetwork.edge_weight(dict(), dict(view=view), amount=amount, fee_penalty=100) == 2
 
 
-def test_routing_benchmark(token_network_model: TokenNetwork, populate_token_network_random: None):
+@pytest.mark.usefixtures("populate_token_network_random")
+def test_routing_benchmark(token_network_model: TokenNetwork):
     value = TokenAmount(100)
     G = token_network_model.G
     times = []
@@ -47,7 +48,7 @@ def test_routing_benchmark(token_network_model: TokenNetwork, populate_token_net
     for _ in range(100):
         tic = time.time()
         source, target = random.sample(G.nodes, 2)
-        paths = token_network_model.get_paths(source, target, value=value, max_paths=5, bias=0.0)
+        paths = token_network_model.get_paths(source, target, value=value, max_paths=5)
         toc = time.time()
         times.append(toc - tic)
     end = time.time()
@@ -65,11 +66,8 @@ def test_routing_benchmark(token_network_model: TokenNetwork, populate_token_net
     print("Total runtime: ", end - start)
 
 
-def test_routing_simple(
-    token_network_model: TokenNetwork,
-    populate_token_network_case_1: None,
-    addresses: List[Address],
-):
+@pytest.mark.usefixtures("populate_token_network_case_1")
+def test_routing_simple(token_network_model: TokenNetwork, addresses: List[Address]):
     view01: ChannelView = token_network_model.G[addresses[0]][addresses[1]]["view"]
     view10: ChannelView = token_network_model.G[addresses[1]][addresses[0]]["view"]
 
@@ -80,7 +78,7 @@ def test_routing_simple(
 
     # 0->2->3 is the shortest path, but has no capacity, so 0->1->4->3 is used
     paths = token_network_model.get_paths(
-        addresses[0], addresses[3], value=TokenAmount(10), max_paths=1, hop_bias=1
+        addresses[0], addresses[3], value=TokenAmount(10), max_paths=1
     )
     assert len(paths) == 1
     assert paths[0] == {
@@ -95,13 +93,10 @@ def test_routing_simple(
         )
 
 
-def test_routing_result_order(
-    token_network_model: TokenNetwork,
-    populate_token_network_case_1: None,
-    addresses: List[Address],
-):
+@pytest.mark.usefixtures("populate_token_network_case_1")
+def test_routing_result_order(token_network_model: TokenNetwork, addresses: List[Address]):
     paths = token_network_model.get_paths(
-        addresses[0], addresses[2], value=TokenAmount(10), max_paths=5, hop_bias=1
+        addresses[0], addresses[2], value=TokenAmount(10), max_paths=5
     )
     # 5 paths requested, but only 1 is available
     assert len(paths) == 1
@@ -113,11 +108,8 @@ def addresses_to_indexes(path, addresses):
     return [index_of_address[a] for a in path]
 
 
-def test_diversity_penalty(
-    token_network_model: TokenNetwork,
-    populate_token_network_case_3: None,
-    addresses: List[Address],
-):
+@pytest.mark.usefixtures("populate_token_network_case_3")
+def test_diversity_penalty(token_network_model: TokenNetwork, addresses: List[Address]):
     """ Check changes in routing when increasing diversity penalty """
 
     def get_paths(diversity_penalty):
@@ -126,7 +118,6 @@ def test_diversity_penalty(
             addresses[8],
             value=TokenAmount(10),
             max_paths=5,
-            hop_bias=1,
             diversity_penalty=diversity_penalty,
         )
         index_paths = [addresses_to_indexes(p["path"], addresses) for p in paths]

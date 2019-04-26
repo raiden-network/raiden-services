@@ -125,7 +125,7 @@ def test_crash(tmpdir, mockchain):
             assert stable_state == crashy_state
 
 
-def test_token_network_created(pathfinding_service_mock, token_network_model):
+def test_token_network_created(pathfinding_service_mock):
     token_address = Address("0x" + "1" * 40)
     token_network_address = TokenNetworkAddress("0x" + "2" * 40)
     network_event = ReceiveTokenNetworkCreatedEvent(

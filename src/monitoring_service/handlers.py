@@ -308,7 +308,9 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context) -> N
         )
 
 
-def monitor_reward_claim_event_handler(event: Event, context: Context) -> None:
+def monitor_reward_claim_event_handler(
+    event: Event, context: Context  # pylint: disable=unused-argument
+) -> None:
     assert isinstance(event, ReceiveMonitoringRewardClaimedEvent)
     log.info("Received MSC RewardClaimed event", evt=event)
 

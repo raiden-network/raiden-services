@@ -13,7 +13,6 @@ from raiden_contracts.constants import (
     CONTRACT_TOKEN_NETWORK_REGISTRY,
     CONTRACT_USER_DEPOSIT,
 )
-from raiden_contracts.contract_manager import ContractManager
 from raiden_contracts.tests.utils import get_random_privkey
 from raiden_libs.types import Address
 from raiden_libs.utils import private_key_to_address
@@ -61,7 +60,6 @@ def monitoring_service(
     user_deposit_contract,
     token_network_registry_contract,
     send_funds,
-    contracts_manager: ContractManager,
     service_registry,
     custom_token,
     ms_database,
@@ -69,7 +67,7 @@ def monitoring_service(
     # register MS in ServiceRegistry
     ms_address = private_key_to_address(server_private_key)
     send_funds(ms_address)
-    deposit = 10  # any amount is sufficient for regsitration, right now
+    deposit = 10  # any amount is sufficient for registration, right now
     custom_token.functions.mint(deposit).transact({"from": ms_address})
     custom_token.functions.approve(service_registry.address, deposit).transact(
         {"from": ms_address}
@@ -94,15 +92,7 @@ def monitoring_service(
 
 
 @pytest.fixture
-def request_collector(
-    server_private_key,
-    ms_database,
-    web3,
-    monitoring_service_contract,
-    token_network_registry_contract,
-    send_funds,
-    contracts_manager: ContractManager,
-):
+def request_collector(server_private_key, ms_database):
     with patch("request_collector.server.MatrixListener"):
         rc = RequestCollector(private_key=server_private_key, state_db=ms_database)
         rc.start()
