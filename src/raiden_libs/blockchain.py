@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import structlog
 from eth_utils import encode_hex, to_checksum_address
@@ -88,6 +88,44 @@ def query_blockchain_events(
     return [decode_event(topic_to_event_abi, log_entry) for log_entry in events]
 
 
+def parse_token_network_event(event: dict) -> Optional[Event]:
+    event_name = event["event"]
+
+    common_infos = dict(
+        token_network_address=event["address"],
+        channel_identifier=event["args"]["channel_identifier"],
+        block_number=event["blockNumber"],
+    )
+
+    if event_name == ChannelEvent.OPENED:
+        return ReceiveChannelOpenedEvent(
+            participant1=event["args"]["participant1"],
+            participant2=event["args"]["participant2"],
+            settle_timeout=event["args"]["settle_timeout"],
+            **common_infos,
+        )
+    if event_name == ChannelEvent.DEPOSIT:
+        return ReceiveChannelNewDepositEvent(
+            participant_address=event["args"]["participant"],
+            total_deposit=event["args"]["total_deposit"],
+            **common_infos,
+        )
+    if event_name == ChannelEvent.CLOSED:
+        return ReceiveChannelClosedEvent(
+            closing_participant=event["args"]["closing_participant"], **common_infos
+        )
+    if event_name == ChannelEvent.BALANCE_PROOF_UPDATED:
+        return ReceiveNonClosingBalanceProofUpdatedEvent(
+            closing_participant=event["args"]["closing_participant"],
+            nonce=event["args"]["nonce"],
+            **common_infos,
+        )
+    if event_name == ChannelEvent.SETTLED:
+        return ReceiveChannelSettledEvent(**common_infos)
+
+    return None
+
+
 def get_blockchain_events(
     web3: Web3,
     contract_manager: ContractManager,
@@ -117,19 +155,15 @@ def get_blockchain_events(
     )
 
     events: List[Event] = []
-    for event in registry_events:
-        token_network_address = event["args"]["token_network_address"]
-        token_address = event["args"]["token_address"]
-        block_number = event["blockNumber"]
-
+    for event_dict in registry_events:
         events.append(
             ReceiveTokenNetworkCreatedEvent(
-                token_address=token_address,
-                token_network_address=token_network_address,
-                block_number=block_number,
+                token_network_address=event_dict["args"]["token_network_address"],
+                token_address=event_dict["args"]["token_address"],
+                block_number=event_dict["blockNumber"],
             )
         )
-        new_chain_state.token_network_addresses.append(event["args"]["token_network_address"])
+        new_chain_state.token_network_addresses.append(event_dict["args"]["token_network_address"])
 
     # then check all token networks
     for token_network_address in new_chain_state.token_network_addresses:
@@ -143,48 +177,10 @@ def get_blockchain_events(
             to_block=to_block,
         )
 
-        for event in network_events:
-            event_name = event["event"]
-
-            common_infos = dict(
-                token_network_address=event["address"],
-                channel_identifier=event["args"]["channel_identifier"],
-                block_number=event["blockNumber"],
-            )
-
-            if event_name == ChannelEvent.OPENED:
-                events.append(
-                    ReceiveChannelOpenedEvent(
-                        participant1=event["args"]["participant1"],
-                        participant2=event["args"]["participant2"],
-                        settle_timeout=event["args"]["settle_timeout"],
-                        **common_infos,
-                    )
-                )
-            elif event_name == ChannelEvent.DEPOSIT:
-                events.append(
-                    ReceiveChannelNewDepositEvent(
-                        participant_address=event["args"]["participant"],
-                        total_deposit=event["args"]["total_deposit"],
-                        **common_infos,
-                    )
-                )
-            elif event_name == ChannelEvent.CLOSED:
-                events.append(
-                    ReceiveChannelClosedEvent(
-                        closing_participant=event["args"]["closing_participant"], **common_infos
-                    )
-                )
-            elif event_name == ChannelEvent.BALANCE_PROOF_UPDATED:
-                events.append(
-                    ReceiveNonClosingBalanceProofUpdatedEvent(
-                        closing_participant=event["args"]["closing_participant"],
-                        nonce=event["args"]["nonce"],
-                        **common_infos,
-                    )
-                )
-            elif event_name == ChannelEvent.SETTLED:
-                events.append(ReceiveChannelSettledEvent(**common_infos))
+        for event_dict in network_events:
+            event = parse_token_network_event(event_dict)
+            if event:
+                events.append(event)
 
     # get events from monitoring service contract
     if query_ms:

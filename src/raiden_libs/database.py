@@ -1,5 +1,6 @@
 import os
 import sqlite3
+from typing import Any, Dict
 
 import structlog
 from eth_utils import is_checksum_address
@@ -72,17 +73,7 @@ class BaseDatabase:
         settings = dict(chain_id=chain_id, receiver=receiver, **contract_addresses)
 
         if initialized:
-            old_settings = self.conn.execute(
-                f"""
-                SELECT chain_id,
-                       {''.join(colname + ',' for colname in contract_addresses)}
-                       receiver
-                FROM blockchain
-            """
-            ).fetchone()
-            for key, val in settings.items():
-                old = old_settings[key]
-                assert old == val, f"DB was created with {key}={old}, got {val}!"
+            self._check_settings(settings, contract_addresses)
         else:
             # create db schema
             with open(self.schema_filename) as schema_file:
@@ -95,6 +86,21 @@ class BaseDatabase:
                 )
             )
             self.conn.execute(update_stmt, dict(latest_known_block=sync_start_block, **settings))
+
+    def _check_settings(
+        self, new_settings: Dict[str, Any], contract_addresses: Dict[str, Address]
+    ) -> None:
+        old_settings = self.conn.execute(
+            f"""
+            SELECT chain_id,
+                   {''.join(colname + ',' for colname in contract_addresses)}
+                   receiver
+            FROM blockchain
+        """
+        ).fetchone()
+        for key, val in new_settings.items():
+            old = old_settings[key]
+            assert old == val, f"DB was created with {key}={old}, got {val}!"
 
     def get_blockchain_state(self) -> BlockchainState:
         blockchain = self.conn.execute("SELECT * FROM blockchain").fetchone()
