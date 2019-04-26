@@ -84,7 +84,7 @@ def monitoring_service(
             CONTRACT_MONITORING_SERVICE: monitoring_service_contract,
             CONTRACT_USER_DEPOSIT: user_deposit_contract,
         },
-        required_confirmations=1,  # for faster tests
+        required_confirmations=0,  # for faster tests
         poll_interval=0.01,  # for faster tests
         db_filename=":memory:",
     )
