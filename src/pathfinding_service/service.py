@@ -15,7 +15,7 @@ from pathfinding_service.model import TokenNetwork
 from raiden.constants import PATH_FINDING_BROADCASTING_ROOM, UINT256_MAX
 from raiden.messages import Message, UpdatePFS
 from raiden.network.transport.matrix import AddressReachability
-from raiden.utils.typing import Address as BytesAddress, BlockNumber, ChainID, TokenNetworkAddress
+from raiden.utils.typing import Address as BytesAddress, BlockNumber, ChainID, TokenNetworkAddress, Address
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
 from raiden_libs.blockchain import get_blockchain_events
 from raiden_libs.contract_info import CONTRACT_MANAGER
@@ -58,6 +58,8 @@ class PathfindingService(gevent.Greenlet):
         self._poll_interval = poll_interval
         self._is_running = gevent.event.Event()
 
+        log.info("Own address", address=self.address)
+
         self.database = PFSDatabase(
             filename=db_filename,
             pfs_address=self.address,
@@ -67,16 +69,18 @@ class PathfindingService(gevent.Greenlet):
             user_deposit_contract_address=self.user_deposit_contract.address,
             allow_create=True,
         )
-        self.token_networks = self._load_token_networks()
 
+        self.matrix_listener = MatrixListener(
+            private_key=private_key,
+            chain_id=self.chain_id,
+            service_room_suffix=PATH_FINDING_BROADCASTING_ROOM,
+            message_received_callback=self.handle_message,
+            address_reachability_changed_callback=self.handle_reachability_change,
+        )
+
+        self.token_networks = self._load_token_networks()
         try:
-            self.matrix_listener = MatrixListener(
-                private_key=private_key,
-                chain_id=self.chain_id,
-                service_room_suffix=PATH_FINDING_BROADCASTING_ROOM,
-                message_received_callback=self.handle_message,
-                address_reachability_changed_callback=self.handle_reachability_change,
-            )
+            self.matrix_listener.start_client()
         except ConnectionError as exc:
             log.critical("Could not connect to broadcasting system.", exc=exc)
             sys.exit(1)
@@ -86,6 +90,11 @@ class PathfindingService(gevent.Greenlet):
         channel_views = self.database.get_channel_views()
         for cv in channel_views:
             network_for_address[cv.token_network_address].add_channel_view(cv)
+
+            # Register channel participants for presence tracking
+            self.matrix_listener.follow_address_presence(cv.participant1)
+            self.matrix_listener.follow_address_presence(cv.participant2)
+
         return network_for_address
 
     def _run(self) -> None:  # pylint: disable=method-hidden
@@ -140,10 +149,15 @@ class PathfindingService(gevent.Greenlet):
         """ Checks if a token network is followed by the pathfinding service. """
         return token_network_address in self.token_networks.keys()
 
-    def handle_reachability_change(  # pylint: disable=no-self-use
-        self, address: BytesAddress, state: AddressReachability
+    def handle_reachability_change(
+        self, address: BytesAddress, reachability: AddressReachability
     ) -> None:
-        log.info("Reachability change received", node=to_checksum_address(address), state=state)
+        hex_address = Address(to_checksum_address(address))
+        log.debug("Updating reachability", address=hex_address, status=reachability)
+
+        for token_network_model in self.token_networks.values():
+            if hex_address in token_network_model.G.nodes:
+                token_network_model.addresses_to_reachabilities[hex_address] = reachability
 
     def get_token_network(
         self, token_network_address: TokenNetworkAddress
@@ -179,6 +193,9 @@ class PathfindingService(gevent.Greenlet):
             return
 
         log.info("Received ChannelOpened event", **asdict(event))
+
+        self.matrix_listener.follow_address_presence(event.participant1)
+        self.matrix_listener.follow_address_presence(event.participant2)
 
         channel_views = token_network.handle_channel_opened_event(
             channel_identifier=event.channel_identifier,

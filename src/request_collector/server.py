@@ -24,13 +24,14 @@ class RequestCollector(gevent.Greenlet):
 
         state = self.state_db.load_state()
         self.chain_id = state.blockchain_state.chain_id
+        self.matrix_listener = MatrixListener(
+            private_key=private_key,
+            chain_id=self.chain_id,
+            service_room_suffix=MONITORING_BROADCASTING_ROOM,
+            message_received_callback=self.handle_message,
+        )
         try:
-            self.matrix_listener = MatrixListener(
-                private_key=private_key,
-                chain_id=self.chain_id,
-                service_room_suffix=MONITORING_BROADCASTING_ROOM,
-                message_received_callback=self.handle_message,
-            )
+            self.matrix_listener.start_client()
         except ConnectionError as exc:
             log.critical("Could not connect to broadcasting system.", exc=exc)
             sys.exit(1)

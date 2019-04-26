@@ -14,12 +14,13 @@ from pathfinding_service.config import (
 from pathfinding_service.model.channel_view import ChannelView
 from raiden.messages import UpdatePFS
 from raiden.utils.typing import Address, ChannelID, TokenAmount, TokenNetworkAddress
+from raiden.network.transport.matrix import AddressReachability
 
 log = structlog.get_logger(__name__)
 
 
 class Path:
-    def __init__(self, G: DiGraph, nodes: List[Address], value: float):
+    def __init__(self, G: DiGraph, nodes: List[Address], value: TokenAmount):
         self.G = G
         self.nodes = nodes
         self.value = value
@@ -67,8 +68,8 @@ class TokenNetwork:
 
         self.address = token_network_address
         self.channel_id_to_addresses: Dict[ChannelID, Tuple[Address, Address]] = dict()
+        self.addresses_to_reachabilities: Dict[Address, AddressReachability] = dict()
         self.G = DiGraph()
-        self.max_relative_fee = 0
 
     def __repr__(self) -> str:
         return (
