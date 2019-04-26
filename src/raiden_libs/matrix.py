@@ -1,10 +1,9 @@
 import json
-import sys
-from typing import Any, Callable, Dict, Iterable, List, Tuple, Union
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
 
 import gevent
 import structlog
-from eth_utils import decode_hex, to_checksum_address
+from eth_utils import decode_hex, to_canonical_address, to_checksum_address
 from matrix_client.errors import MatrixRequestError
 from matrix_client.user import User
 
@@ -30,6 +29,7 @@ from raiden.settings import (
 from raiden.utils.cli import get_matrix_servers
 from raiden.utils.signer import LocalSigner
 from raiden.utils.typing import Address as BytesAddress, ChainID
+from raiden_libs.types import Address
 
 log = structlog.get_logger(__name__)
 
@@ -98,15 +98,15 @@ class MatrixListener(gevent.Greenlet):
 
         self.private_key = private_key
         self.chain_id = chain_id
+        self.service_room_suffix = service_room_suffix
         self.message_received_callback = message_received_callback
 
-        try:
-            self.client, self.broadcast_room = self._setup_matrix(service_room_suffix)
-        except ConnectionError as exc:
-            log.critical("Could not connect to broadcasting system.", exc=exc)
-            sys.exit(1)
-
-        self.broadcast_room.add_listener(self._handle_message, "m.room.message")
+        self.available_servers = get_matrix_servers(
+            DEFAULT_MATRIX_KNOWN_SERVERS[Environment.DEVELOPMENT]
+        )
+        self.client = self._setup_client()
+        self.broadcast_room: Optional[Room] = None
+        self.user_manager: Optional[UserAddressManager] = None
 
         if address_reachability_changed_callback is not None:
             self.user_manager = UserAddressManager(
@@ -125,10 +125,30 @@ class MatrixListener(gevent.Greenlet):
     def stop(self) -> None:
         self.client.stop_listener_thread()
 
-    def _setup_matrix(self, service_room_suffix: str) -> Tuple[GMatrixClient, Room]:
-        available_servers_url = DEFAULT_MATRIX_KNOWN_SERVERS[Environment.DEVELOPMENT]
-        available_servers = get_matrix_servers(available_servers_url)
+    def start_client(self) -> None:
+        try:
+            login_or_register(
+                self.client, signer=LocalSigner(private_key=decode_hex(self.private_key))
+            )
+        except (MatrixRequestError, ValueError):
+            raise ConnectionError("Could not login/register to matrix.")
 
+        try:
+            room_name = make_room_alias(self.chain_id, self.service_room_suffix)
+            self.broadcast_room = join_global_room(
+                client=self.client, name=room_name, servers=self.available_servers
+            )
+        except (MatrixRequestError, TransportError):
+            raise ConnectionError("Could not join monitoring broadcasting room.")
+
+        self.broadcast_room.add_listener(self._handle_message, "m.room.message")
+
+    def follow_address_presence(self, address: Address) -> None:
+        if self.user_manager:
+            log.debug("Tracking address", address=address)
+            self.user_manager.add_address(to_canonical_address(address))
+
+    def _setup_client(self) -> GMatrixClient:
         def _http_retry_delay() -> Iterable[float]:
             return udp_utils.timeout_exponential_backoff(
                 DEFAULT_TRANSPORT_RETRIES_BEFORE_BACKOFF,
@@ -136,27 +156,12 @@ class MatrixListener(gevent.Greenlet):
                 int(DEFAULT_TRANSPORT_MATRIX_RETRY_INTERVAL),
             )
 
-        client = make_client(
-            servers=available_servers,
+        return make_client(
+            servers=self.available_servers,
             http_pool_maxsize=4,
             http_retry_timeout=40,
             http_retry_delay=_http_retry_delay,
         )
-
-        try:
-            login_or_register(client, signer=LocalSigner(private_key=decode_hex(self.private_key)))
-        except (MatrixRequestError, ValueError):
-            raise ConnectionError("Could not login/register to matrix.")
-
-        try:
-            room_name = make_room_alias(self.chain_id, service_room_suffix)
-            monitoring_room = join_global_room(
-                client=client, name=room_name, servers=available_servers
-            )
-        except (MatrixRequestError, TransportError):
-            raise ConnectionError("Could not join monitoring broadcasting room.")
-
-        return client, monitoring_room
 
     def _get_user(self, user: Union[User, str]) -> User:
         """Creates an User from an user_id, if none, or fetch a cached User """
@@ -165,9 +170,7 @@ class MatrixListener(gevent.Greenlet):
             self.broadcast_room
             and user_id in self.broadcast_room._members  # pylint: disable=protected-access
         ):
-            duser: User = self.broadcast_room._members[  # pylint: disable=protected-access
-                user_id
-            ]
+            duser: User = self.broadcast_room._members[user_id]  # pylint: disable=protected-access
 
             # if handed a User instance with displayname set, update the discovery room cache
             if getattr(user, "displayname", None):
