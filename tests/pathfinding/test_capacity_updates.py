@@ -4,8 +4,6 @@ The tests in this module mock Capacity Updates and call on_pfs_update().
 The Capacity Updates show different correct and incorrect values to test all edge cases
 """
 
-from unittest.mock import patch
-
 import pytest
 from eth_utils import decode_hex
 
@@ -167,20 +165,17 @@ def test_pfs_rejects_capacity_update_with_impossible_updating_capacity(
 ):
     setup_channel_with_deposits(pathfinding_service_web3_mock)
 
-    with patch(
-        "pathfinding_service.service.recover_signer_from_capacity_update", PRIVATE_KEY_1_ADDRESS
-    ):
-        message = get_updatepfs_message(
-            updating_participant=PRIVATE_KEY_1_ADDRESS,
-            other_participant=PRIVATE_KEY_2_ADDRESS,
-            updating_capacity=TokenAmount(UINT256_MAX),
-            privkey_signer=PRIVATE_KEY_1,
-        )
-        message.updating_capacity = TokenAmount(UINT256_MAX + 1)
+    message = get_updatepfs_message(
+        updating_participant=PRIVATE_KEY_1_ADDRESS,
+        other_participant=PRIVATE_KEY_2_ADDRESS,
+        updating_capacity=TokenAmount(UINT256_MAX),
+        privkey_signer=PRIVATE_KEY_1,
+    )
+    message.updating_capacity = TokenAmount(UINT256_MAX + 1)
 
-        with pytest.raises(InvalidCapacityUpdate) as exinfo:
-            pathfinding_service_web3_mock.on_pfs_update(message)
-        assert "with impossible updating_capacity" in str(exinfo.value)
+    with pytest.raises(InvalidCapacityUpdate) as exinfo:
+        pathfinding_service_web3_mock.on_pfs_update(message)
+    assert "with impossible updating_capacity" in str(exinfo.value)
 
 
 def test_pfs_rejects_capacity_update_with_impossible_other_capacity(
@@ -188,20 +183,17 @@ def test_pfs_rejects_capacity_update_with_impossible_other_capacity(
 ):
     setup_channel_with_deposits(pathfinding_service_web3_mock)
 
-    with patch(
-        "pathfinding_service.service.recover_signer_from_capacity_update", PRIVATE_KEY_1_ADDRESS
-    ):
-        message = get_updatepfs_message(
-            updating_participant=PRIVATE_KEY_1_ADDRESS,
-            other_participant=PRIVATE_KEY_2_ADDRESS,
-            other_capacity=TokenAmount(UINT256_MAX),
-            privkey_signer=PRIVATE_KEY_1,
-        )
-        message.other_capacity = TokenAmount(UINT256_MAX + 1)
+    message = get_updatepfs_message(
+        updating_participant=PRIVATE_KEY_1_ADDRESS,
+        other_participant=PRIVATE_KEY_2_ADDRESS,
+        other_capacity=TokenAmount(UINT256_MAX),
+        privkey_signer=PRIVATE_KEY_1,
+    )
+    message.other_capacity = TokenAmount(UINT256_MAX + 1)
 
-        with pytest.raises(InvalidCapacityUpdate) as exinfo:
-            pathfinding_service_web3_mock.on_pfs_update(message)
-        assert "with impossible other_capacity" in str(exinfo.value)
+    with pytest.raises(InvalidCapacityUpdate) as exinfo:
+        pathfinding_service_web3_mock.on_pfs_update(message)
+    assert "with impossible other_capacity" in str(exinfo.value)
 
 
 def test_pfs_rejects_capacity_update_with_wrong_updating_participant(

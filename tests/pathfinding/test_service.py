@@ -48,7 +48,7 @@ def test_save_and_load_token_networks(pathfinding_service_mock_empty):
         pfs.handle_event(event)
     assert len(pfs.token_networks) == 1
 
-    loaded_networks = pfs._load_token_networks()
+    loaded_networks = pfs._load_token_networks()  # pylint: disable=protected-access
     assert len(loaded_networks) == 1
 
     orig = list(pfs.token_networks.values())[0]
@@ -116,7 +116,7 @@ def test_crash(tmpdir, mockchain):
         crashy_service = new_service("crashy.db")  # new instance to simulate crash
         result_state: List[dict] = []
         for service in [stable_service, crashy_service]:
-            service._process_new_blocks(BlockNumber(to_block))
+            service._process_new_blocks(BlockNumber(to_block))  # pylint: disable=protected-access
             result_state.append(dict(db_dump=list(service.database.conn.iterdump())))
 
         # both instances should have the same state after processing

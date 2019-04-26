@@ -145,8 +145,13 @@ class MatrixListener(gevent.Greenlet):
     def _get_user(self, user: Union[User, str]) -> User:
         """Creates an User from an user_id, if none, or fetch a cached User """
         user_id: str = getattr(user, "user_id", user)
-        if self.monitoring_room and user_id in self.monitoring_room._members:
-            duser: User = self.monitoring_room._members[user_id]
+        if (
+            self.monitoring_room
+            and user_id in self.monitoring_room._members  # pylint: disable=protected-access
+        ):
+            duser: User = self.monitoring_room._members[  # pylint: disable=protected-access
+                user_id
+            ]
 
             # if handed a User instance with displayname set, update the discovery room cache
             if getattr(user, "displayname", None):

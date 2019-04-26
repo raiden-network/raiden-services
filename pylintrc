@@ -72,7 +72,6 @@ disable=
         redefined-outer-name,
         too-many-instance-attributes,
         too-many-locals,
-        protected-access,
         redefined-builtin,
         broad-except,
 
