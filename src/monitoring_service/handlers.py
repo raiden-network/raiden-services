@@ -310,7 +310,15 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context) -> N
 
 def monitor_reward_claim_event_handler(event: Event, context: Context) -> None:
     assert isinstance(event, ReceiveMonitoringRewardClaimedEvent)
-    log.info("Received MSC RewardClaimed event", evt=event)
+
+    if event.ms_address == context.ms_state.address:
+        log.info(
+            "Successfully claimed reward", amount=event.amount, reward_id=event.reward_identifier
+        )
+    else:
+        log.debug(
+            "Another MS claimed reward", amount=event.amount, reward_id=event.reward_identifier
+        )
 
 
 def updated_head_block_event_handler(event: Event, context: Context) -> None:
