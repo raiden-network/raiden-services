@@ -8,8 +8,7 @@ from os.path import basename, dirname, join, splitext
 from setuptools import find_packages, setup
 
 REQ_REPLACE = {
-    'git+https://github.com/matrix-org/matrix-python-sdk.git': 'matrix-client',
-    'git+https://github.com/raiden-network/raiden.git@6756e74e8c679216aa89685b069caef3d613ff1a': 'raiden',
+    'git+https://github.com/raiden-network/raiden.git@a5ccadf391d273b78e6af3754919bba3cb4f17c0': 'raiden',
 }
 
 DESCRIPTION = 'Raiden Services contain additional tools for the Raiden Network.'
