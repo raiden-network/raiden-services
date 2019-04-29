@@ -40,7 +40,7 @@ def test_edge_weight(addresses):
 
 
 @pytest.mark.usefixtures("populate_token_network_random")
-def test_routing_benchmark(token_network_model: TokenNetwork):
+def test_routing_benchmark(token_network_model: TokenNetwork):  # pylint: disable=too-many-locals
     value = TokenAmount(100)
     G = token_network_model.G
     times = []

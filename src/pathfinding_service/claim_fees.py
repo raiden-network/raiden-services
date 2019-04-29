@@ -46,8 +46,6 @@ def main(
         filename=state_db, chain_id=chain_id, pfs_address=pfs_address, sync_start_block=start_block
     )
 
-    one_to_n_contract = contracts[CONTRACT_ONE_TO_N]
-
     claim_cost_eth = 90897
     claim_cost_rdn = TokenAmount(int(claim_cost_eth / rdn_per_eth))
     ious = list(
@@ -58,7 +56,7 @@ def main(
         )
     )
     print(f"Found {len(ious)} claimable IOUs")
-    _, failures = claim_ious(ious, claim_cost_rdn, one_to_n_contract, web3, database)
+    _, failures = claim_ious(ious, claim_cost_rdn, contracts[CONTRACT_ONE_TO_N], web3, database)
     if failures:
         sys.exit(1)
 

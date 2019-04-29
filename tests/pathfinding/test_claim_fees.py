@@ -11,7 +11,7 @@ from raiden.utils.signer import LocalSigner
 from raiden.utils.typing import BlockNumber, Signature, TokenAmount
 
 
-def test_claim_fees(
+def test_claim_fees(  # pylint: disable=too-many-locals
     pathfinding_service_mock,
     one_to_n_contract,
     web3,

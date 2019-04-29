@@ -30,7 +30,7 @@ def create_ms_contract_events_query(
     return f
 
 
-def test_e2e(
+def test_e2e(  # pylint: disable=too-many-locals
     web3,
     monitoring_service_contract,
     user_deposit_contract,
