@@ -45,8 +45,6 @@ class PathfindingService(gevent.Greenlet):
         sync_start_block: BlockNumber = BlockNumber(0),
         required_confirmations: int = 8,
         poll_interval: float = 10,
-        service_fee: int = 0,
-        debug_mode: bool = False,
     ):
         super().__init__()
 
@@ -57,8 +55,6 @@ class PathfindingService(gevent.Greenlet):
         self.poll_interval = poll_interval
         self.chain_id = ChainID(int(web3.net.version))
         self.address = private_key_to_address(private_key)
-        self.service_fee = service_fee
-        self.debug_mode_enabled = debug_mode
         self.is_running = gevent.event.Event()
 
         self.database = PFSDatabase(

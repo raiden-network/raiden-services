@@ -173,7 +173,7 @@ def test_get_paths_validation(
     # Exemplary test for payment errors. Different errors are serialized the
     # same way in the rest API. Checking for specific errors is tested in
     # payment_tests.
-    api_sut.pathfinding_service.service_fee = 1
+    api_sut.service_fee = TokenAmount(1)
     response = request_path_with()
     assert response.json()["error_code"] == exceptions.MissingIOU.error_code
 
@@ -247,9 +247,8 @@ def test_get_paths(api_url: str, addresses: List[Address], token_network_model: 
 #
 
 
-@pytest.mark.usefixtures("api_sut")
-def test_get_info(api_url: str, pathfinding_service_mock):
-    pathfinding_service_mock.service_fee = 123
+def test_get_info(api_url: str, api_sut, pathfinding_service_mock):
+    api_sut.service_fee = 123
     url = api_url + "/info"
 
     response = requests.get(url)
