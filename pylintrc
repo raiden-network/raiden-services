@@ -71,7 +71,6 @@ disable=
         too-many-arguments,
         redefined-outer-name,
         too-many-instance-attributes,
-        redefined-builtin,
         broad-except,
 
         # checks which have false positive that need to be excluded before enabling
