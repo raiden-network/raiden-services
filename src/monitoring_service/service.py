@@ -72,7 +72,6 @@ class MonitoringService:  # pylint: disable=too-few-public-methods
         self.address = private_key_to_address(private_key)
         self.required_confirmations = required_confirmations
         self.poll_interval = poll_interval
-        self.last_gas_check_block = 0
 
         web3.middleware_stack.add(construct_sign_and_send_raw_middleware(private_key))
 
@@ -104,17 +103,18 @@ class MonitoringService:  # pylint: disable=too-few-public-methods
     def start(
         self, wait_function: Callable = time.sleep, check_account_gas_reserve: bool = True
     ) -> None:
+        last_gas_check_block = 0
         while True:
             last_confirmed_block = self.web3.eth.blockNumber - self.required_confirmations
 
             # check gas reserve
             do_gas_reserve_check = (
                 check_account_gas_reserve
-                and last_confirmed_block >= self.last_gas_check_block + DEFAULT_GAS_CHECK_BLOCKS
+                and last_confirmed_block >= last_gas_check_block + DEFAULT_GAS_CHECK_BLOCKS
             )
             if do_gas_reserve_check:
                 check_gas_reserve(self.web3, self.private_key)
-                self.last_gas_check_block = last_confirmed_block
+                last_gas_check_block = last_confirmed_block
 
             max_query_interval_end_block = (
                 self.context.ms_state.blockchain_state.latest_known_block + MAX_FILTER_INTERVAL

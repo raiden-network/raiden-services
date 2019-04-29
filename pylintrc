@@ -70,7 +70,6 @@ disable=
         # good checks that could be enabled in the future
         too-many-arguments,
         redefined-outer-name,
-        too-many-instance-attributes,
         broad-except,
 
         # checks which have false positive that need to be excluded before enabling
