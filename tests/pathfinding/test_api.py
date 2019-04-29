@@ -121,7 +121,7 @@ def test_get_ious_via_debug_endpoint(
     # but there is no iou debug endpoint for a request of a sender not in the database
     url_iou_debug = api_url + f"/_debug/ious/{addresses[1]}"
     response_debug = requests.get(url_iou_debug)
-    assert response_debug.status_code == 404
+    assert response_debug.status_code == 200
     ious = response_debug.json()
     assert ious == {}
 
