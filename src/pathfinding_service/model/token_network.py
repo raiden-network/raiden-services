@@ -1,4 +1,5 @@
-from typing import Any, Dict, List, Optional, Tuple
+from collections import defaultdict
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import networkx as nx
 import structlog
@@ -15,6 +16,21 @@ from raiden.utils.typing import ChannelID, FeeAmount, Nonce, TokenAmount
 from raiden_libs.types import Address, TokenNetworkAddress
 
 log = structlog.get_logger(__name__)
+
+
+class Path:
+    def __init__(self, G: DiGraph, nodes: List[Address], value: float):
+        self.G = G
+        self.nodes = nodes
+        self.value = value
+
+    @property
+    def edge_attrs(self) -> Iterable[dict]:
+        return (self.G[node1][node2] for node1, node2 in zip(self.nodes[:-1], self.nodes[1:]))
+
+    def to_dict(self) -> dict:
+        fee = sum(edge["view"].fee(self.value) for edge in self.edge_attrs)
+        return dict(path=self.nodes, estimated_fee=fee)
 
 
 class TokenNetwork:
@@ -199,6 +215,33 @@ class TokenNetwork:
                 return False
         return True
 
+    def _get_single_path(
+        self,
+        source: Address,
+        target: Address,
+        value: TokenAmount,
+        visited: Dict[ChannelID, float],
+        disallowed_paths: List[List[Address]],
+        fee_penalty: float,
+    ) -> Optional[Path]:
+        # update edge weights
+        for node1, node2 in self.G.edges():
+            edge = self.G[node1][node2]
+            edge["weight"] = self.edge_weight(visited, edge, value, fee_penalty)
+
+        # find next path
+        all_paths = nx.shortest_simple_paths(self.G, source, target, weight="weight")
+        try:
+            # skip duplicates and invalid paths
+            nodes = next(
+                path
+                for path in all_paths
+                if self.check_path_constraints(value, path) and path not in disallowed_paths
+            )
+            return Path(self.G, nodes, value)
+        except StopIteration:
+            return None
+
     def get_paths(
         self,
         source: Address,
@@ -214,40 +257,25 @@ class TokenNetwork:
         diversity_penalty: One previously used channel is as bad as X more hops
         fee_penalty: One RDN in fees is as bad as X more hops
         """
-        visited: Dict[ChannelID, float] = {}
-        paths: List[List[Address]] = []
+        visited: Dict[ChannelID, float] = defaultdict(lambda: 0)
+        paths: List[Path] = []
 
-        for _ in range(max_paths):
-            # update edge weights
-            for node1, node2 in self.G.edges():
-                edge = self.G[node1][node2]
-                edge["weight"] = self.edge_weight(visited, edge, value, fee_penalty)
-
-            # find next path
-            all_paths = nx.shortest_simple_paths(self.G, source, target, weight="weight")
-            try:
-                # skip duplicates and invalid paths
-                path = next(
-                    path
-                    for path in all_paths
-                    if self.check_path_constraints(value, path) and path not in paths
-                )
-            except StopIteration:
+        while len(paths) < max_paths:
+            path = self._get_single_path(
+                source=source,
+                target=target,
+                value=value,
+                visited=visited,
+                disallowed_paths=[p.nodes for p in paths],
+                fee_penalty=fee_penalty,
+            )
+            if path is None:
                 break
-            # update visited penalty dict
-            for node1, node2 in zip(path[:-1], path[1:]):
-                channel_id = self.G[node1][node2]["view"].channel_id
-                visited[channel_id] = visited.get(channel_id, 0) + diversity_penalty
-
             paths.append(path)
-            if len(paths) >= max_paths:
-                break
-        result = []
 
-        for path in paths:
-            fee = 0
-            for node1, node2 in zip(path[:-1], path[1:]):
-                fee += self.G[node1][node2]["view"].fee(value)
+            # update visited penalty dict
+            for edge in path.edge_attrs:
+                channel_id = edge["view"].channel_id
+                visited[channel_id] += diversity_penalty
 
-            result.append(dict(path=path, estimated_fee=fee))
-        return result
+        return [p.to_dict() for p in paths]
