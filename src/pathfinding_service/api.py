@@ -300,7 +300,7 @@ class DebugEndpointIOU(PathfinderResource):
                 dict(sender=iou.sender, amount=iou.amount, expiration_block=iou.expiration_block),
                 200,
             )
-        return {}, 404
+        return {}, 200
 
 
 class ServiceApi:
