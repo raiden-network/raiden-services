@@ -71,8 +71,7 @@ def api_sut_with_debug(
     free_port: int,
     populate_token_network_case_1,  # pylint: disable=unused-argument
 ) -> Iterator[ServiceApi]:
-    pathfinding_service_mock.debug_mode_enabled = True
-    api = ServiceApi(pathfinding_service_mock)
+    api = ServiceApi(pathfinding_service_mock, debug_mode=True)
     api.run(port=free_port)
     yield api
     api.stop()

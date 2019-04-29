@@ -1,7 +1,7 @@
 import collections
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import ClassVar, Dict, List, Optional, Tuple, Type, TypeVar
+from typing import Any, ClassVar, Dict, List, Optional, Tuple, Type, TypeVar
 
 import marshmallow
 import pkg_resources
@@ -50,8 +50,9 @@ class ApiWithErrorHandler(Api):
 
 
 class PathfinderResource(Resource):
-    def __init__(self, pathfinding_service: PathfindingService):
+    def __init__(self, pathfinding_service: PathfindingService, service_api: "ServiceApi"):
         self.pathfinding_service = pathfinding_service
+        self.service_api = service_api
 
     def _validate_token_network_argument(self, token_network_address: str) -> TokenNetwork:
         if not is_checksum_address(token_network_address):
@@ -97,10 +98,14 @@ class PathRequest:
 
 
 class PathsResource(PathfinderResource):
+    def __init__(self, debug_mode: bool, **kwargs: Any):
+        super().__init__(**kwargs)
+        self.debug_mode = debug_mode
+
     def post(self, token_network_address: str) -> Tuple[dict, int]:
         token_network = self._validate_token_network_argument(token_network_address)
         path_req = self._parse_post(PathRequest)
-        process_payment(path_req.iou, self.pathfinding_service)
+        process_payment(path_req.iou, self.pathfinding_service, self.service_api.service_fee)
 
         # only add optional args if not None, so we can use defaults
         optional_args = {}
@@ -118,7 +123,7 @@ class PathsResource(PathfinderResource):
             )
         except (NetworkXNoPath, NodeNotFound):
             # this is for assertion via the scenario player
-            if self.pathfinding_service.debug_mode_enabled:
+            if self.debug_mode:
                 last_requests.append(
                     dict(
                         token_network_address=token_network_address,
@@ -130,7 +135,7 @@ class PathsResource(PathfinderResource):
             raise exceptions.NoRouteFound(from_=path_req.from_, to=path_req.to)
 
         # this is for assertion via the scenario player
-        if self.pathfinding_service.debug_mode_enabled:
+        if self.debug_mode:
             last_requests.append(
                 dict(
                     token_network_address=token_network_address,
@@ -143,8 +148,10 @@ class PathsResource(PathfinderResource):
         return {"result": paths}, 200
 
 
-def process_payment(iou: Optional[IOU], pathfinding_service: PathfindingService) -> None:
-    if pathfinding_service.service_fee == 0:
+def process_payment(
+    iou: Optional[IOU], pathfinding_service: PathfindingService, service_fee: TokenAmount
+) -> None:
+    if service_fee == 0:
         return
     if iou is None:
         raise exceptions.MissingIOU
@@ -161,7 +168,7 @@ def process_payment(iou: Optional[IOU], pathfinding_service: PathfindingService)
         if active_iou.expiration_block != iou.expiration_block:
             raise exceptions.UseThisIOU(iou=active_iou)
 
-        expected_amount = active_iou.amount + pathfinding_service.service_fee
+        expected_amount = active_iou.amount + service_fee
     else:
         claimed_iou = pathfinding_service.database.get_iou(
             sender=iou.sender, expiration_block=iou.expiration_block, claimed=True
@@ -172,7 +179,7 @@ def process_payment(iou: Optional[IOU], pathfinding_service: PathfindingService)
         min_expiry = pathfinding_service.web3.eth.blockNumber + MIN_IOU_EXPIRY
         if iou.expiration_block < min_expiry:
             raise exceptions.IOUExpiredTooEarly(min_expiry=min_expiry)
-        expected_amount = pathfinding_service.service_fee
+        expected_amount = service_fee
     if iou.amount < expected_amount:
         raise exceptions.InsufficientServicePayment(expected_amount=expected_amount)
 
@@ -188,7 +195,7 @@ def process_payment(iou: Optional[IOU], pathfinding_service: PathfindingService)
         sender=iou.sender,
         expected_amount=expected_amount,
         total_amount=iou.amount,
-        added_amount=expected_amount - pathfinding_service.service_fee,
+        added_amount=expected_amount - service_fee,
     )
 
     # Save latest IOU
@@ -253,7 +260,7 @@ class InfoResource(PathfinderResource):
 
         return (
             {
-                "price_info": self.pathfinding_service.service_fee,
+                "price_info": self.service_api.service_fee,
                 "network_info": {
                     "chain_id": self.pathfinding_service.chain_id,
                     "registry_address": self.pathfinding_service.registry_address,
@@ -304,19 +311,30 @@ class DebugEndpointIOU(PathfinderResource):
 
 
 class ServiceApi:
-    def __init__(self, pathfinding_service: PathfindingService):
+    def __init__(
+        self,
+        pathfinding_service: PathfindingService,
+        service_fee: TokenAmount = TokenAmount(0),
+        debug_mode: bool = False,
+    ):
         self.flask_app = Flask(__name__)
         self.api = ApiWithErrorHandler(self.flask_app)
         self.rest_server: WSGIServer = None
         self.pathfinding_service = pathfinding_service
+        self.service_fee = service_fee
 
         resources: List[Tuple[str, Resource, Dict, str]] = [
-            ("/<token_network_address>/paths", PathsResource, {}, "paths"),
+            (
+                "/<token_network_address>/paths",
+                PathsResource,
+                dict(debug_mode=debug_mode),
+                "paths",
+            ),
             ("/<token_network_address>/payment/iou", IOUResource, {}, "payments"),
             ("/info", InfoResource, {}, "info"),
         ]
 
-        if pathfinding_service.debug_mode_enabled:
+        if debug_mode:
             log.warning("The debug REST API is enabled. Don't do this on public nodes.")
             resources.extend(
                 [
@@ -338,7 +356,7 @@ class ServiceApi:
 
         for endpoint_url, resource, kwargs, endpoint in resources:
             endpoint_url = API_PATH + endpoint_url
-            kwargs["pathfinding_service"] = pathfinding_service
+            kwargs.update({"pathfinding_service": pathfinding_service, "service_api": self})
             self.api.add_resource(
                 resource, endpoint_url, resource_class_kwargs=kwargs, endpoint=endpoint
             )

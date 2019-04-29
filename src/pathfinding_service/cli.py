@@ -15,7 +15,7 @@ from web3.contract import Contract
 from pathfinding_service.api import ServiceApi
 from pathfinding_service.config import DEFAULT_API_HOST, DEFAULT_POLL_INTERVALL
 from pathfinding_service.service import PathfindingService
-from raiden.utils.typing import BlockNumber
+from raiden.utils.typing import BlockNumber, TokenAmount
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
 from raiden_libs.cli import blockchain_options, common_options
 
@@ -53,7 +53,7 @@ def main(
     start_block: BlockNumber,
     confirmations: int,
     host: str,
-    service_fee: int,
+    service_fee: TokenAmount,
     enable_debug: bool,
 ) -> int:
     """ The Pathfinding service for the Raiden Network. """
@@ -70,11 +70,11 @@ def main(
             private_key=private_key,
             poll_interval=DEFAULT_POLL_INTERVALL,
             db_filename=state_db,
-            service_fee=service_fee,
-            debug_mode=enable_debug,
         )
 
-        api = ServiceApi(service)
+        api = ServiceApi(
+            pathfinding_service=service, service_fee=service_fee, debug_mode=enable_debug
+        )
         api.run(host=host)
 
         service.run()
