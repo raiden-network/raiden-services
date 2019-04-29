@@ -287,17 +287,17 @@ def pathfinding_service_mock_empty() -> Generator[PathfindingService, None, None
         web3_mock.net.version = "1"
         web3_mock.eth.blockNumber = 1
 
+        mock_udc = Mock(address="0x" + "8" * 40)
+        mock_udc.functions.effectiveBalance.return_value.call.return_value = 10000
         pathfinding_service = PathfindingService(
             web3=web3_mock,
             contracts={
                 CONTRACT_TOKEN_NETWORK_REGISTRY: Mock(address="0x" + "9" * 40),
-                CONTRACT_USER_DEPOSIT: Mock(address="0x" + "8" * 40),
+                CONTRACT_USER_DEPOSIT: mock_udc,
             },
             private_key="3a1076bf45ab87712ad64ccb3b10217737f7faacbf2872e88fdd9a537d8fe266",
             db_filename=":memory:",
         )
-        mock_udc = pathfinding_service.user_deposit_contract
-        mock_udc.functions.effectiveBalance.return_value.call.return_value = 10000
 
         yield pathfinding_service
         pathfinding_service.stop()
