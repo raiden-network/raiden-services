@@ -1,7 +1,7 @@
 from typing import Any, Callable, Tuple
 
 import gevent
-from requests.exceptions import ConnectionError, HTTPError, Timeout, TooManyRedirects
+import requests.exceptions
 from web3 import Web3
 from web3.middleware.exception_retry_request import check_if_retry_on_failure
 
@@ -9,7 +9,12 @@ from web3.middleware.exception_retry_request import check_if_retry_on_failure
 def http_retry_with_backoff_middleware(
     make_request: Callable,
     web3: Web3,  # pylint: disable=unused-argument
-    errors: Tuple = (ConnectionError, HTTPError, Timeout, TooManyRedirects),
+    errors: Tuple = (
+        requests.exceptions.ConnectionError,
+        requests.exceptions.HTTPError,
+        requests.exceptions.Timeout,
+        requests.exceptions.TooManyRedirects,
+    ),
     retries: int = 10,
     first_backoff: float = 0.2,
     backoff_factor: float = 2,

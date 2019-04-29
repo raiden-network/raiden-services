@@ -5,10 +5,10 @@ from functools import wraps
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import click
+import requests.exceptions
 import structlog
 from eth_account import Account
 from eth_utils import is_checksum_address
-from requests.exceptions import ConnectionError
 from web3 import HTTPProvider, Web3
 from web3.contract import Contract
 from web3.middleware import geth_poa_middleware
@@ -175,7 +175,7 @@ def connect_to_blockchain(
         web3 = Web3(provider)
         # Will throw ConnectionError on bad Ethereum client
         chain_id = ChainID(int(web3.net.version))
-    except ConnectionError:
+    except requests.exceptions.ConnectionError:
         log.error(
             "Can not connect to the Ethereum client. Please check that it is running and that "
             "your settings are correct.",

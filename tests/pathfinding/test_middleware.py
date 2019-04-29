@@ -2,8 +2,8 @@ from time import time
 from unittest.mock import patch
 
 import pytest
+import requests.exceptions
 import web3
-from requests.exceptions import ConnectionError
 from web3.providers import HTTPProvider
 
 from pathfinding_service.middleware import http_retry_with_backoff_middleware
@@ -28,12 +28,12 @@ def test_retries(make_post_request_mock):
 
     def side_effect(*args, **kwargs):
         retry_times.append(time() - start_time)
-        raise ConnectionError
+        raise requests.exceptions.ConnectionError
 
     make_post_request_mock.side_effect = side_effect
 
     # the call must fail after the number of retries is exceeded
-    with pytest.raises(ConnectionError):
+    with pytest.raises(requests.exceptions.ConnectionError):
         w3.eth.blockNumber()
 
     # check timings
@@ -44,6 +44,6 @@ def test_retries(make_post_request_mock):
     # try again to make sure that each request starts with a clean backoff
     start_time = time()
     retry_times = []
-    with pytest.raises(ConnectionError):
+    with pytest.raises(requests.exceptions.ConnectionError):
         w3.eth.blockNumber()
     assert retry_times == pytest.approx(expected_times, abs=0.002, rel=0.3)
