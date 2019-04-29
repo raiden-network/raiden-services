@@ -59,7 +59,7 @@ def test_save_and_load_token_networks(pathfinding_service_mock_empty):
 
 
 @patch("pathfinding_service.service.MatrixListener", Mock)
-def test_crash(tmpdir, mockchain):
+def test_crash(tmpdir, mockchain):  # pylint: disable=too-many-locals
     """ Process blocks and compare results with/without crash
 
     A somewhat meaninful crash handling is simulated by not including the

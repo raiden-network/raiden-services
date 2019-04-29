@@ -21,7 +21,9 @@ from raiden_libs.types import TokenNetworkAddress
 from ...libs.mocks.web3 import ContractMock, Web3Mock
 
 
-def test_crash(tmpdir, get_accounts, get_private_key, mockchain):
+def test_crash(
+    tmpdir, get_accounts, get_private_key, mockchain
+):  # pylint: disable=too-many-locals
     """ Process blocks and compare results with/without crash
 
     A somewhat meaninful crash handling is simulated by not including the
