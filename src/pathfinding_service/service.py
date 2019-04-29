@@ -36,6 +36,7 @@ log = structlog.get_logger(__name__)
 
 
 class PathfindingService(gevent.Greenlet):
+    # pylint: disable=too-many-instance-attributes
     def __init__(
         self,
         web3: Web3,
@@ -51,11 +52,11 @@ class PathfindingService(gevent.Greenlet):
         self.web3 = web3
         self.registry_address = contracts[CONTRACT_TOKEN_NETWORK_REGISTRY].address
         self.user_deposit_contract = contracts[CONTRACT_USER_DEPOSIT]
-        self.required_confirmations = required_confirmations
-        self.poll_interval = poll_interval
         self.chain_id = ChainID(int(web3.net.version))
         self.address = private_key_to_address(private_key)
-        self.is_running = gevent.event.Event()
+        self._required_confirmations = required_confirmations
+        self._poll_interval = poll_interval
+        self._is_running = gevent.event.Event()
 
         self.database = PFSDatabase(
             filename=db_filename,
@@ -95,8 +96,8 @@ class PathfindingService(gevent.Greenlet):
             registry_address=self.registry_address,
             start_block=self.database.get_latest_known_block(),
         )
-        while not self.is_running.is_set():
-            last_confirmed_block = self.web3.eth.blockNumber - self.required_confirmations
+        while not self._is_running.is_set():
+            last_confirmed_block = self.web3.eth.blockNumber - self._required_confirmations
 
             max_query_interval_end_block = (
                 self.database.get_latest_known_block() + MAX_FILTER_INTERVAL
@@ -107,7 +108,7 @@ class PathfindingService(gevent.Greenlet):
             self._process_new_blocks(last_block)
 
             try:
-                gevent.sleep(self.poll_interval)
+                gevent.sleep(self._poll_interval)
             except KeyboardInterrupt:
                 log.info("Shutting down")
                 sys.exit(0)
@@ -131,7 +132,7 @@ class PathfindingService(gevent.Greenlet):
 
     def stop(self) -> None:
         self.matrix_listener.stop()
-        self.is_running.set()
+        self._is_running.set()
         self.matrix_listener.join()
 
     def follows_token_network(self, token_network_address: TokenNetworkAddress) -> bool:
