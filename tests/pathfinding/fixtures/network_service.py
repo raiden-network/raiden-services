@@ -136,6 +136,7 @@ def channel_descriptions_case_3() -> List:
     #  /      /--- 6 ---\ / |
     # 0----- 7 --------- 8 -/
     #         \- 9 - 10 -/
+
     r = AddressReachability.REACHABLE
 
     channel_descriptions = [
