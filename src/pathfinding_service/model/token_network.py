@@ -3,7 +3,7 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import networkx as nx
 import structlog
-from eth_utils import is_checksum_address
+from eth_utils import is_checksum_address, to_checksum_address
 from networkx import DiGraph
 
 from pathfinding_service.config import (
@@ -12,7 +12,8 @@ from pathfinding_service.config import (
     FEE_PEN_DEFAULT,
 )
 from pathfinding_service.model.channel_view import ChannelView
-from raiden.utils.typing import ChannelID, FeeAmount, Nonce, TokenAmount
+from raiden.messages import UpdatePFS
+from raiden.utils.typing import ChannelID, TokenAmount
 from raiden_libs.types import Address, TokenNetworkAddress
 
 log = structlog.get_logger(__name__)
@@ -164,32 +165,23 @@ class TokenNetwork:
 
         return channel_view_to_partner, channel_view_from_partner
 
-    def handle_channel_balance_update_message(
-        self,
-        channel_identifier: ChannelID,
-        updating_participant: Address,
-        other_participant: Address,
-        updating_nonce: Nonce,
-        other_nonce: Nonce,
-        updating_capacity: TokenAmount,
-        other_capacity: TokenAmount,
-        reveal_timeout: int,
-        mediation_fee: FeeAmount,
-    ) -> None:
+    def handle_channel_balance_update_message(self, message: UpdatePFS) -> None:
         """ Sends Capacity Update to PFS including the reveal timeout """
         channel_view_to_partner, channel_view_from_partner = self.get_channel_views_for_partner(
-            channel_identifier=channel_identifier,
-            updating_participant=updating_participant,
-            other_participant=other_participant,
+            channel_identifier=message.canonical_identifier.channel_identifier,
+            updating_participant=to_checksum_address(message.updating_participant),
+            other_participant=to_checksum_address(message.other_participant),
         )
         # FIXME: Add updating only minimum if capacity updates conflict
         channel_view_to_partner.update_capacity(
-            nonce=updating_nonce,
-            capacity=updating_capacity,
-            reveal_timeout=reveal_timeout,
-            mediation_fee=mediation_fee,
+            nonce=message.updating_nonce,
+            capacity=message.updating_capacity,
+            reveal_timeout=message.reveal_timeout,
+            mediation_fee=message.mediation_fee,
         )
-        channel_view_from_partner.update_capacity(nonce=other_nonce, capacity=other_capacity)
+        channel_view_from_partner.update_capacity(
+            nonce=message.other_nonce, capacity=message.other_capacity
+        )
 
     @staticmethod
     def edge_weight(
