@@ -417,7 +417,7 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
 
                 channel.closing_tx_hash = tx_hash
                 context.db.upsert_channel(channel)
-        except Exception as exc:
+        except Exception as exc:  # pylint: disable=broad-except
             log.error("Sending tx failed", exc_info=True, err=exc)
 
 
@@ -481,7 +481,7 @@ def action_claim_reward_triggered_event_handler(event: Event, context: Context) 
 
                 channel.claim_tx_hash = tx_hash
                 context.db.upsert_channel(channel)
-        except Exception as exc:
+        except Exception as exc:  # pylint: disable=broad-except
             log.error("Sending tx failed", exc_info=True, err=exc)
 
 
