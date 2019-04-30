@@ -1,5 +1,3 @@
-import random
-import time
 from typing import List
 
 import pytest
@@ -41,33 +39,6 @@ def test_edge_weight(addresses):
     view.absolute_fee = FeeAmount(0)
     view.relative_fee = 0.01
     assert TokenNetwork.edge_weight(dict(), dict(view=view), amount=amount, fee_penalty=100) == 2
-
-
-@pytest.mark.usefixtures("populate_token_network_random")
-def test_routing_benchmark(token_network_model: TokenNetwork):  # pylint: disable=too-many-locals
-    value = TokenAmount(100)
-    G = token_network_model.G
-    times = []
-    start = time.time()
-    for _ in range(100):
-        tic = time.time()
-        source, target = random.sample(G.nodes, 2)
-        paths = token_network_model.get_paths(source, target, value=value, max_paths=5)
-        toc = time.time()
-        times.append(toc - tic)
-    end = time.time()
-    for path_object in paths:
-        path = path_object["path"]
-        fees = path_object["estimated_fee"]
-        for node1, node2 in zip(path[:-1], path[1:]):
-            view: ChannelView = G[decode_hex(node1)][decode_hex(node2)]["view"]
-            print("fee = ", view.absolute_fee, "capacity = ", view.capacity)
-        print("fee sum = ", fees)
-    print("Paths: ", paths)
-    print("Mean runtime: ", sum(times) / len(times))
-    print("Min runtime: ", min(times))
-    print("Max runtime: ", max(times))
-    print("Total runtime: ", end - start)
 
 
 @pytest.mark.usefixtures("populate_token_network_case_1")
