@@ -20,5 +20,5 @@ def private_key_to_address(private_key: Union[str, bytes]) -> Address:
         private_key = to_bytes(hexstr=private_key)
 
     assert isinstance(private_key, bytes)
-    pk = PrivateKey(private_key)
-    return public_key_to_address(pk.public_key)
+    privkey = PrivateKey(private_key)
+    return public_key_to_address(privkey.public_key)

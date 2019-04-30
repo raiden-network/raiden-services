@@ -12,13 +12,13 @@ from raiden_contracts.constants import (
     CONTRACT_USER_DEPOSIT,
 )
 
-patch_args = {
+PATCH_ARGS = {
     "target": "pathfinding_service.cli",
     "PathfindingService": DEFAULT,
     "ServiceApi": DEFAULT,
 }
 
-patch_info_args = {
+PATCH_INFO_ARGS = {
     "target": "raiden_libs.cli",
     "get_contract_addresses_and_start_block": MagicMock(
         return_value=(
@@ -64,7 +64,7 @@ def test_bad_eth_client(log, default_cli_args):
 def test_success(default_cli_args):
     """ Calling the pathfinding_service with default args should succeed after heavy mocking """
     runner = CliRunner()
-    with patch.multiple(**patch_args), patch.multiple(**patch_info_args):
+    with patch.multiple(**PATCH_ARGS), patch.multiple(**PATCH_INFO_ARGS):
         result = runner.invoke(main, default_cli_args, catch_exceptions=False)
     assert result.exit_code == 0
 
@@ -100,7 +100,7 @@ def test_registry_address(default_cli_args):
 def test_confirmations(default_cli_args):
     """ The `confirmations` parameter must reach the `PathfindingService` """
     runner = CliRunner()
-    with patch.multiple(**patch_args) as mocks, patch.multiple(**patch_info_args):
+    with patch.multiple(**PATCH_ARGS) as mocks, patch.multiple(**PATCH_INFO_ARGS):
         confirmations = 77
         result = runner.invoke(
             main,
@@ -115,7 +115,7 @@ def test_confirmations(default_cli_args):
 def test_shutdown(default_cli_args):
     """ Clean shutdown after KeyboardInterrupt """
     runner = CliRunner()
-    with patch.multiple(**patch_args) as mocks, patch.multiple(**patch_info_args):
+    with patch.multiple(**PATCH_ARGS) as mocks, patch.multiple(**PATCH_INFO_ARGS):
         mocks["PathfindingService"].return_value.run.side_effect = KeyboardInterrupt
         result = runner.invoke(main, default_cli_args, catch_exceptions=False)
         assert result.exit_code == 0
@@ -128,9 +128,9 @@ def test_shutdown(default_cli_args):
 def test_log_level(default_cli_args):
     """ Setting of log level via command line switch """
     runner = CliRunner()
-    with patch.multiple(**patch_args), patch.multiple(**patch_info_args), patch(
+    with patch.multiple(**PATCH_ARGS), patch.multiple(**PATCH_INFO_ARGS), patch(
         "logging.basicConfig"
-    ) as basicConfig:
+    ) as basic_config:
         for log_level in ("CRITICAL", "WARNING"):
             result = runner.invoke(
                 main, default_cli_args + ["--log-level", log_level], catch_exceptions=False
@@ -138,4 +138,4 @@ def test_log_level(default_cli_args):
             assert result.exit_code == 0
             # pytest already initializes logging, so basicConfig does not have
             # an effect. Use mocking to check that it's called properly.
-            assert logging.getLevelName(basicConfig.call_args[1]["level"] == log_level)
+            assert logging.getLevelName(basic_config.call_args[1]["level"] == log_level)

@@ -294,7 +294,7 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context) -> N
         trigger_block = BlockNumber(channel.closing_block + channel.settle_timeout)
 
         # trigger the claim reward action by an event
-        e = ActionClaimRewardTriggeredEvent(
+        event = ActionClaimRewardTriggeredEvent(
             token_network_address=channel.token_network_address,
             channel_identifier=channel.identifier,
             non_closing_participant=event.raiden_node_address,
@@ -304,7 +304,7 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context) -> N
         # If the event is already scheduled (e.g. after a restart) the DB takes care that
         # it is only stored once
         context.db.upsert_scheduled_event(
-            ScheduledEvent(trigger_block_number=trigger_block, event=cast(Event, e))
+            ScheduledEvent(trigger_block_number=trigger_block, event=cast(Event, event))
         )
 
 
@@ -417,8 +417,8 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
 
                 channel.closing_tx_hash = tx_hash
                 context.db.upsert_channel(channel)
-        except Exception as e:
-            log.error("Sending tx failed", exc_info=True, err=e)
+        except Exception as exc:
+            log.error("Sending tx failed", exc_info=True, err=exc)
 
 
 def action_claim_reward_triggered_event_handler(event: Event, context: Context) -> None:
@@ -481,8 +481,8 @@ def action_claim_reward_triggered_event_handler(event: Event, context: Context) 
 
                 channel.claim_tx_hash = tx_hash
                 context.db.upsert_channel(channel)
-        except Exception as e:
-            log.error("Sending tx failed", exc_info=True, err=e)
+        except Exception as exc:
+            log.error("Sending tx failed", exc_info=True, err=exc)
 
 
 HANDLERS = {

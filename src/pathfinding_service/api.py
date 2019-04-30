@@ -284,17 +284,19 @@ class DebugEndpoint(PathfinderResource):
     ) -> Tuple[dict, int]:
         request_count = 0
         responses = []
-        for r in last_requests:
-            log.debug("Last Requests Values:", r=r)
+        for req in last_requests:
+            log.debug("Last Requests Values:", req=req)
             matches_params = is_same_address(
-                token_network_address, r["token_network_address"]
-            ) and is_same_address(source_address, r["source"])
+                token_network_address, req["token_network_address"]
+            ) and is_same_address(source_address, req["source"])
             if target_address is not None:
-                matches_params = matches_params and is_same_address(target_address, r["target"])
+                matches_params = matches_params and is_same_address(target_address, req["target"])
 
             if matches_params:
                 request_count += 1
-                responses.append(dict(source=r["source"], target=r["target"], routes=r["routes"]))
+                responses.append(
+                    dict(source=req["source"], target=req["target"], routes=req["routes"])
+                )
 
         return dict(request_count=request_count, responses=responses), 200
 
