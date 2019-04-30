@@ -1,3 +1,4 @@
+# pylint: disable=redefined-outer-name
 import pytest
 from eth_utils import decode_hex, to_checksum_address
 

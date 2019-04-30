@@ -17,11 +17,11 @@ log = logging.getLogger(__name__)
 def wait_for_blocks(web3):
     """Returns a function that blocks until n blocks are mined"""
 
-    def wait_for_blocks(n):
+    def f(n):
         web3.testing.mine(n)
         gevent.sleep()
 
-    return wait_for_blocks
+    return f
 
 
 @pytest.fixture(scope="session")
@@ -32,14 +32,14 @@ def contracts_manager():
 
 @pytest.fixture
 def keystore_file(tmp_path) -> str:
-    keystore_file = tmp_path / KEYSTORE_FILE_NAME
+    filename = tmp_path / KEYSTORE_FILE_NAME
 
     account = Account.create()
     keystore_json = Account.encrypt(private_key=account.privateKey, password=KEYSTORE_PASSWORD)
-    with open(keystore_file, "w") as fp:
+    with open(filename, "w") as fp:
         json.dump(keystore_json, fp)
 
-    return keystore_file
+    return filename
 
 
 @pytest.fixture

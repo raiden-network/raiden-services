@@ -1,3 +1,4 @@
+# pylint: disable=redefined-outer-name
 import logging
 from typing import List
 from unittest.mock import patch

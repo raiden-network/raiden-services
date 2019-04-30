@@ -1,3 +1,4 @@
+# pylint: disable=redefined-outer-name
 import logging
 from unittest.mock import DEFAULT, MagicMock, Mock, patch
 
