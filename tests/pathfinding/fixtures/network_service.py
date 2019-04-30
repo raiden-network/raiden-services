@@ -1,11 +1,8 @@
 # pylint: disable=redefined-outer-name
-import random
 from typing import Callable, Generator, List
 from unittest.mock import Mock, patch
 
 import pytest
-from eth_utils import decode_hex
-from tests.pathfinding.config import NUMBER_OF_CHANNELS
 from web3 import Web3
 from web3.contract import Contract
 
@@ -23,7 +20,6 @@ from raiden.utils.typing import (
     TokenNetworkAddress,
 )
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
-from raiden_libs.utils import private_key_to_address
 
 
 @pytest.fixture(scope="session")
@@ -150,70 +146,6 @@ def channel_descriptions_case_3() -> List:
         ]
     ]
     return channel_descriptions
-
-
-@pytest.fixture
-def populate_token_network_random(
-    token_network_model: TokenNetwork, private_keys: List[str]
-) -> None:
-    # seed for pseudo-randomness from config constant, that changes from time to time
-    random.seed(NUMBER_OF_CHANNELS)
-
-    for channel_id_int in range(NUMBER_OF_CHANNELS):
-        channel_id = ChannelID(channel_id_int)
-
-        private_key1, private_key2 = random.sample(private_keys, 2)
-        address1 = Address(decode_hex(private_key_to_address(private_key1)))
-        address2 = Address(decode_hex(private_key_to_address(private_key2)))
-        settle_timeout = 15
-        token_network_model.handle_channel_opened_event(
-            channel_id, address1, address2, settle_timeout
-        )
-
-        # deposit to channels
-        deposit1 = TokenAmount(random.randint(0, 1000))
-        deposit2 = TokenAmount(random.randint(0, 1000))
-        address1, address2 = token_network_model.channel_id_to_addresses[channel_id]
-        token_network_model.handle_channel_new_deposit_event(channel_id, address1, deposit1)
-        token_network_model.handle_channel_new_deposit_event(channel_id, address2, deposit2)
-        token_network_model.handle_channel_balance_update_message(
-            UpdatePFS(
-                canonical_identifier=CanonicalIdentifier(
-                    chain_identifier=ChainID(1),
-                    channel_identifier=channel_id,
-                    token_network_address=TokenNetworkAddress(token_network_model.address),
-                ),
-                updating_participant=address1,
-                other_participant=address2,
-                updating_nonce=Nonce(1),
-                other_nonce=Nonce(1),
-                updating_capacity=deposit1,
-                other_capacity=deposit2,
-                reveal_timeout=2,
-                mediation_fee=FeeAmount(0),
-            ),
-            updating_capacity_partner=TokenAmount(0),
-            other_capacity_partner=TokenAmount(0),
-        )
-        token_network_model.handle_channel_balance_update_message(
-            UpdatePFS(
-                canonical_identifier=CanonicalIdentifier(
-                    chain_identifier=ChainID(1),
-                    channel_identifier=channel_id,
-                    token_network_address=TokenNetworkAddress(token_network_model.address),
-                ),
-                updating_participant=address2,
-                other_participant=address1,
-                updating_nonce=Nonce(2),
-                other_nonce=Nonce(1),
-                updating_capacity=deposit2,
-                other_capacity=deposit1,
-                reveal_timeout=2,
-                mediation_fee=FeeAmount(0),
-            ),
-            updating_capacity_partner=TokenAmount(deposit1),
-            other_capacity_partner=TokenAmount(deposit2),
-        )
 
 
 @pytest.fixture(scope="session")
