@@ -67,10 +67,6 @@ disable=
         fixme,
         unused-wildcard-import,
         len-as-condition,
-        # good checks that could be enabled in the future
-        broad-except,
-
-        # checks which have false positive that need to be excluded before enabling
 
         # checks that are done with higher accuracy by mypy
         no-member,
