@@ -1,4 +1,5 @@
 # pylint: disable=redefined-outer-name
+import itertools
 import json
 from unittest.mock import Mock, patch
 
@@ -11,7 +12,7 @@ from raiden.messages import RequestMonitoring
 from raiden.utils import ChannelID
 from raiden.utils.typing import Address as BytesAddress, ChainID, Nonce, TokenAmount
 from raiden_contracts.tests.utils import EMPTY_LOCKSROOT
-from raiden_libs.matrix import deserialize_messages, message_from_dict
+from raiden_libs.matrix import deserialize_messages, matrix_http_retry_delay, message_from_dict
 
 INVALID_PEER_ADDRESS = BytesAddress(to_canonical_address("0x" + "1" * 40))
 
@@ -59,8 +60,8 @@ def test_message_from_dict(request_monitoring_message):
     assert "Invalid message data. Can not find the data type" in str(excinfo.value)
 
 
-@pytest.mark.parametrize("message_data", ["", " \r\n ", "@@@"])
-def test_deserialize_messages_empty(message_data):
+@pytest.mark.parametrize("message_data", ["", " \r\n ", "\n ", "@@@"])
+def test_deserialize_messages(message_data):
     messages = deserialize_messages(data=message_data, peer_address=INVALID_PEER_ADDRESS)
     assert len(messages) == 0
 
@@ -111,3 +112,9 @@ def test_deserialize_messages_valid_messages(request_monitoring_message):
         data=raw_string, peer_address=request_monitoring_message.sender
     )
     assert len(messages) == 2
+
+
+def test_matrix_http_retry_delay():
+    delays = list(itertools.islice(matrix_http_retry_delay(), 8))
+
+    assert delays == [1, 1, 1, 1, 1, 2, 4, 5]
