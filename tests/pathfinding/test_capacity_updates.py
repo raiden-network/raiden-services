@@ -3,6 +3,7 @@ The tests in this module mock Capacity Updates and call on_pfs_update().
 
 The Capacity Updates show different correct and incorrect values to test all edge cases
 """
+from unittest.mock import call
 
 import pytest
 from eth_utils import decode_hex
@@ -297,6 +298,16 @@ def test_pfs_edge_case_capacity_updates_before_deposit(
     )
     assert view_to_partner.capacity == 90
     assert view_from_partner.capacity == 110
+
+    # Check that presence of these addresses is followed
+    pathfinding_service_web3_mock.matrix_listener.follow_address_presence.assert_has_calls(  # type: ignore # noqa
+        [call(PRIVATE_KEY_1_ADDRESS, refresh=True), call(PRIVATE_KEY_2_ADDRESS, refresh=True)]
+    )
+
+    # Send the same Capacity Update again - leads to an exception
+    with pytest.raises(InvalidCapacityUpdate) as exinfo:
+        pathfinding_service_web3_mock.on_pfs_update(message)
+    assert "Capacity Update already received" in str(exinfo.value)
 
 
 def test_pfs_min_calculation_with_capacity_updates(
