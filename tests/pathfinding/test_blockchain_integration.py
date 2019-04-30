@@ -74,11 +74,13 @@ def test_pfs_with_mocked_client(  # pylint: disable=too-many-arguments
         _p1_capacity,
         _p1_fee,
         _p1_reveal_timeout,
+        _p1_reachability,
         p2_index,
         p2_deposit,
         _p2_capacity,
         _p2_fee,
         _p2_reveal_timeout,
+        _p2_reachability,
         _settle_timeout,
     ) in channel_descriptions_case_1:
         # order is important here because we check order later
@@ -114,11 +116,13 @@ def test_pfs_with_mocked_client(  # pylint: disable=too-many-arguments
             _p1_capacity,
             _p1_fee,
             _p1_reveal_timeout,
+            _p1_reachability,
             _p2_index,
             p2_deposit,
             _p2_capacity,
             _p2_fee,
             _p2_reveal_timeout,
+            _p2_reachability,
             _settle_timeout,
         ),
     ) in enumerate(channel_descriptions_case_1):
@@ -132,6 +136,7 @@ def test_pfs_with_mocked_client(  # pylint: disable=too-many-arguments
         assert view2.settle_timeout == TEST_SETTLE_TIMEOUT_MIN
         assert view1.reveal_timeout == DEFAULT_REVEAL_TIMEOUT
         assert view2.reveal_timeout == DEFAULT_REVEAL_TIMEOUT
+
     # now close all channels
     for (
         index,
@@ -141,11 +146,13 @@ def test_pfs_with_mocked_client(  # pylint: disable=too-many-arguments
             _p1_capacity,
             _p1_fee,
             _p1_reveal_timeout,
+            _p1_reachability,
             p2_index,
             _p2_deposit,
             _p2_capacity,
             _p2_fee,
             _p2_reveal_timeout,
+            _p2_reachability,
             _settle_timeout,
         ),
     ) in enumerate(channel_descriptions_case_1):
