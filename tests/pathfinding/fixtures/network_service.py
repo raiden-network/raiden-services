@@ -3,13 +3,23 @@ from typing import Callable, Generator, List
 from unittest.mock import Mock, patch
 
 import pytest
+from eth_utils import decode_hex
 from tests.pathfinding.config import NUMBER_OF_CHANNELS
 from web3 import Web3
 from web3.contract import Contract
 
 from pathfinding_service.model.token_network import TokenNetwork
 from pathfinding_service.service import PathfindingService
-from raiden.utils.typing import ChannelID, FeeAmount, Nonce, TokenAmount
+from raiden.messages import UpdatePFS
+from raiden.utils import CanonicalIdentifier
+from raiden.utils.typing import (
+    ChainID,
+    ChannelID,
+    FeeAmount,
+    Nonce,
+    TokenAmount,
+    TokenNetworkAddress as TokenNetworkAddressBytes,
+)
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
 from raiden_libs.types import Address
 from raiden_libs.utils import private_key_to_address
@@ -166,26 +176,42 @@ def populate_token_network_random(
         token_network_model.handle_channel_new_deposit_event(channel_id, address1, deposit1)
         token_network_model.handle_channel_new_deposit_event(channel_id, address2, deposit2)
         token_network_model.handle_channel_balance_update_message(
-            channel_identifier=channel_id,
-            updating_participant=address1,
-            other_participant=address2,
-            updating_nonce=Nonce(1),
-            other_nonce=Nonce(1),
-            updating_capacity=deposit1,
-            other_capacity=deposit2,
-            reveal_timeout=2,
-            mediation_fee=FeeAmount(0),
+            UpdatePFS(
+                canonical_identifier=CanonicalIdentifier(
+                    chain_identifier=ChainID(1),
+                    channel_identifier=channel_id,
+                    token_network_address=TokenNetworkAddressBytes(
+                        decode_hex(token_network_model.address)
+                    ),
+                ),
+                updating_participant=decode_hex(address1),
+                other_participant=decode_hex(address2),
+                updating_nonce=Nonce(1),
+                other_nonce=Nonce(1),
+                updating_capacity=deposit1,
+                other_capacity=deposit2,
+                reveal_timeout=2,
+                mediation_fee=FeeAmount(0),
+            )
         )
         token_network_model.handle_channel_balance_update_message(
-            channel_identifier=channel_id,
-            updating_participant=address2,
-            other_participant=address1,
-            updating_nonce=Nonce(2),
-            other_nonce=Nonce(1),
-            updating_capacity=deposit1,
-            other_capacity=deposit2,
-            reveal_timeout=2,
-            mediation_fee=FeeAmount(0),
+            UpdatePFS(
+                canonical_identifier=CanonicalIdentifier(
+                    chain_identifier=ChainID(1),
+                    channel_identifier=channel_id,
+                    token_network_address=TokenNetworkAddressBytes(
+                        decode_hex(token_network_model.address)
+                    ),
+                ),
+                updating_participant=decode_hex(address2),
+                other_participant=decode_hex(address1),
+                updating_nonce=Nonce(2),
+                other_nonce=Nonce(1),
+                updating_capacity=deposit2,
+                other_capacity=deposit1,
+                reveal_timeout=2,
+                mediation_fee=FeeAmount(0),
+            )
         )
 
 
@@ -225,26 +251,42 @@ def populate_token_network() -> Callable:
             )
 
             token_network.handle_channel_balance_update_message(
-                channel_identifier=ChannelID(channel_id),
-                updating_participant=addresses[p1_index],
-                other_participant=addresses[p2_index],
-                updating_nonce=Nonce(1),
-                other_nonce=Nonce(1),
-                updating_capacity=p1_capacity,
-                other_capacity=p2_capacity,
-                reveal_timeout=p1_reveal_timeout,
-                mediation_fee=FeeAmount(0),
+                UpdatePFS(
+                    canonical_identifier=CanonicalIdentifier(
+                        chain_identifier=ChainID(1),
+                        channel_identifier=ChannelID(channel_id),
+                        token_network_address=TokenNetworkAddressBytes(
+                            decode_hex(token_network.address)
+                        ),
+                    ),
+                    updating_participant=decode_hex(addresses[p1_index]),
+                    other_participant=decode_hex(addresses[p2_index]),
+                    updating_nonce=Nonce(1),
+                    other_nonce=Nonce(1),
+                    updating_capacity=p1_capacity,
+                    other_capacity=p2_capacity,
+                    reveal_timeout=p1_reveal_timeout,
+                    mediation_fee=FeeAmount(0),
+                )
             )
             token_network.handle_channel_balance_update_message(
-                channel_identifier=ChannelID(channel_id),
-                updating_participant=addresses[p2_index],
-                other_participant=addresses[p1_index],
-                updating_nonce=Nonce(2),
-                other_nonce=Nonce(1),
-                updating_capacity=p2_capacity,
-                other_capacity=p1_capacity,
-                reveal_timeout=p2_reveal_timeout,
-                mediation_fee=FeeAmount(0),
+                UpdatePFS(
+                    canonical_identifier=CanonicalIdentifier(
+                        chain_identifier=ChainID(1),
+                        channel_identifier=ChannelID(channel_id),
+                        token_network_address=TokenNetworkAddressBytes(
+                            decode_hex(token_network.address)
+                        ),
+                    ),
+                    updating_participant=decode_hex(addresses[p2_index]),
+                    other_participant=decode_hex(addresses[p1_index]),
+                    updating_nonce=Nonce(2),
+                    other_nonce=Nonce(1),
+                    updating_capacity=p2_capacity,
+                    other_capacity=p1_capacity,
+                    reveal_timeout=p2_reveal_timeout,
+                    mediation_fee=FeeAmount(0),
+                )
             )
 
     return populate_token_network

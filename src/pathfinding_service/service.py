@@ -217,7 +217,7 @@ class PathfindingService(gevent.Greenlet):
         else:
             log.info("Ignoring unknown message type")
 
-    def on_pfs_update(self, message: UpdatePFS) -> None:
+    def _validate_pfs_update(self, message: UpdatePFS) -> TokenNetwork:
         token_network_address = to_checksum_address(
             message.canonical_identifier.token_network_address
         )
@@ -271,7 +271,6 @@ class PathfindingService(gevent.Greenlet):
             updating_participant=updating_participant,
             other_participant=other_participant,
         )
-
         is_nonce_pair_known = (
             message.updating_nonce <= view_to_partner.update_nonce
             and message.other_nonce <= view_from_partner.update_nonce
@@ -279,16 +278,9 @@ class PathfindingService(gevent.Greenlet):
         if is_nonce_pair_known:
             raise InvalidCapacityUpdate("Capacity Update already received")
 
-        log.info("Received Capacity Update", **message.to_dict())
+        return token_network
 
-        token_network.handle_channel_balance_update_message(
-            channel_identifier=message.canonical_identifier.channel_identifier,
-            updating_participant=updating_participant,
-            other_participant=other_participant,
-            updating_nonce=message.updating_nonce,
-            other_nonce=message.other_nonce,
-            updating_capacity=message.updating_capacity,
-            other_capacity=message.other_capacity,
-            reveal_timeout=message.reveal_timeout,
-            mediation_fee=message.mediation_fee,
-        )
+    def on_pfs_update(self, message: UpdatePFS) -> None:
+        token_network = self._validate_pfs_update(message)
+        log.info("Received Capacity Update", **message.to_dict())
+        token_network.handle_channel_balance_update_message(message)
