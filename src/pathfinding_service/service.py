@@ -37,7 +37,7 @@ log = structlog.get_logger(__name__)
 
 class PathfindingService(gevent.Greenlet):
     # pylint: disable=too-many-instance-attributes
-    def __init__(
+    def __init__(  # pylint: disable=too-many-arguments
         self,
         web3: Web3,
         contracts: Dict[str, Contract],

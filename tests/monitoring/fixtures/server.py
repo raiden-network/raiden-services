@@ -13,20 +13,16 @@ from raiden_contracts.constants import (
     CONTRACT_TOKEN_NETWORK_REGISTRY,
     CONTRACT_USER_DEPOSIT,
 )
-from raiden_contracts.tests.utils import get_random_privkey
 from raiden_libs.types import Address
-from raiden_libs.utils import private_key_to_address
 
 log = logging.getLogger(__name__)
 
 TEST_POLL_INTERVAL = 0.001
 
 
-@pytest.fixture
-def server_private_key(ethereum_tester):
-    key = get_random_privkey()
-    ethereum_tester.add_account(key)
-    return key
+@pytest.fixture(scope="session")
+def ms_address(create_account):
+    return create_account()
 
 
 @pytest.fixture
@@ -53,30 +49,33 @@ def ms_database():
 
 
 @pytest.fixture
-def monitoring_service(
-    server_private_key,
+def register_service(custom_token, service_registry):
+    def f(address, deposit=10):
+        deposit = 10  # any amount is sufficient for registration, right now
+        custom_token.functions.mint(deposit).transact({"from": address})
+        custom_token.functions.approve(service_registry.address, deposit).transact(
+            {"from": address}
+        )
+        service_registry.functions.deposit(deposit).transact({"from": address})
+
+    return f
+
+
+@pytest.fixture
+def monitoring_service(  # pylint: disable=too-many-arguments
+    ms_address,
     web3: Web3,
     monitoring_service_contract,
     user_deposit_contract,
     token_network_registry_contract,
-    send_funds,
-    service_registry,
-    custom_token,
     ms_database,
+    get_private_key,
+    register_service,
 ):
-    # register MS in ServiceRegistry
-    ms_address = private_key_to_address(server_private_key)
-    send_funds(ms_address)
-    deposit = 10  # any amount is sufficient for registration, right now
-    custom_token.functions.mint(deposit).transact({"from": ms_address})
-    custom_token.functions.approve(service_registry.address, deposit).transact(
-        {"from": ms_address}
-    )
-    service_registry.functions.deposit(deposit).transact({"from": ms_address})
-
+    register_service(ms_address)
     ms = MonitoringService(
         web3=web3,
-        private_key=server_private_key,
+        private_key=get_private_key(ms_address),
         contracts={
             CONTRACT_TOKEN_NETWORK_REGISTRY: token_network_registry_contract,
             CONTRACT_MONITORING_SERVICE: monitoring_service_contract,
@@ -92,9 +91,9 @@ def monitoring_service(
 
 
 @pytest.fixture
-def request_collector(server_private_key, ms_database):
+def request_collector(ms_address, ms_database, get_private_key):
     with patch("request_collector.server.MatrixListener"):
-        rc = RequestCollector(private_key=server_private_key, state_db=ms_database)
+        rc = RequestCollector(private_key=get_private_key(ms_address), state_db=ms_database)
         rc.start()
         yield rc
         rc.stop()

@@ -56,7 +56,7 @@ def handle_event(event: Event, context: Context) -> None:
 
 
 class MonitoringService:  # pylint: disable=too-few-public-methods
-    def __init__(
+    def __init__(  # pylint: disable=too-many-arguments
         self,
         web3: Web3,
         private_key: str,

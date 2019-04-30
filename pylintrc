@@ -68,7 +68,6 @@ disable=
         unused-wildcard-import,
         len-as-condition,
         # good checks that could be enabled in the future
-        too-many-arguments,
         redefined-outer-name,
         broad-except,
 
@@ -481,7 +480,7 @@ valid-metaclass-classmethod-first-arg=cls
 [DESIGN]
 
 # Maximum number of arguments for function / method.
-max-args=5
+max-args=7
 
 # Maximum number of attributes for a class (see R0902).
 max-attributes=7

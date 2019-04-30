@@ -45,7 +45,7 @@ DEFAULT_REQUIRED_CONFIRMATIONS = 8  # ~2min with 15s blocks
 )
 @click.option("--enable-debug", default=False, is_flag=True, hidden=True)
 @common_options("raiden-pathfinding-service")
-def main(
+def main(  # pylint: disable-msg=too-many-arguments
     private_key: str,
     state_db: str,
     web3: Web3,
