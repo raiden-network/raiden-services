@@ -243,8 +243,8 @@ def populate_token_network() -> Callable:
                 updating_capacity_partner=TokenAmount(p1_capacity),
                 other_capacity_partner=TokenAmount(p2_capacity),
             )
-            token_network.addresses_to_reachabilities[participant1] = p1_reachability
-            token_network.addresses_to_reachabilities[participant2] = p2_reachability
+            token_network.address_to_reachability[participant1] = p1_reachability
+            token_network.address_to_reachability[participant2] = p2_reachability
 
     return populate_token_network
 
