@@ -68,7 +68,6 @@ disable=
         unused-wildcard-import,
         len-as-condition,
         # good checks that could be enabled in the future
-        redefined-outer-name,
         broad-except,
 
         # checks which have false positive that need to be excluded before enabling

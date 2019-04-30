@@ -1,3 +1,4 @@
+# pylint: disable=redefined-outer-name
 import random
 from typing import Callable, Generator, List
 from unittest.mock import Mock, patch

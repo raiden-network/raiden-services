@@ -1,3 +1,4 @@
+# pylint: disable=redefined-outer-name
 from itertools import count
 from typing import Iterator
 
