@@ -10,7 +10,7 @@ from matrix_client.user import User
 from raiden.constants import Environment
 from raiden.exceptions import InvalidProtocolMessage, TransportError
 from raiden.messages import Message, RequestMonitoring, SignedMessage, UpdatePFS
-from raiden.network.transport.matrix.client import GMatrixClient, Room
+from raiden.network.transport.matrix.client import Room
 from raiden.network.transport.matrix.utils import (
     AddressReachability,
     UserAddressManager,
@@ -83,7 +83,16 @@ def deserialize_messages(data: str, peer_address: BytesAddress) -> List[SignedMe
     return messages
 
 
+def matrix_http_retry_delay() -> Iterable[float]:
+    return udp_utils.timeout_exponential_backoff(
+        DEFAULT_TRANSPORT_RETRIES_BEFORE_BACKOFF,
+        int(DEFAULT_TRANSPORT_MATRIX_RETRY_INTERVAL / 5),
+        int(DEFAULT_TRANSPORT_MATRIX_RETRY_INTERVAL),
+    )
+
+
 class MatrixListener(gevent.Greenlet):
+    # pylint: disable=too-many-instance-attributes
     def __init__(
         self,
         private_key: str,
@@ -104,7 +113,13 @@ class MatrixListener(gevent.Greenlet):
         self.available_servers = get_matrix_servers(
             DEFAULT_MATRIX_KNOWN_SERVERS[Environment.DEVELOPMENT]
         )
-        self.client = self._setup_client()
+
+        self.client = make_client(
+            servers=self.available_servers,
+            http_pool_maxsize=4,
+            http_retry_timeout=40,
+            http_retry_delay=matrix_http_retry_delay,
+        )
         self.broadcast_room: Optional[Room] = None
         self.user_manager: Optional[UserAddressManager] = None
 
@@ -147,21 +162,6 @@ class MatrixListener(gevent.Greenlet):
         if self.user_manager:
             log.debug("Tracking address", address=address)
             self.user_manager.add_address(to_canonical_address(address))
-
-    def _setup_client(self) -> GMatrixClient:
-        def _http_retry_delay() -> Iterable[float]:
-            return udp_utils.timeout_exponential_backoff(
-                DEFAULT_TRANSPORT_RETRIES_BEFORE_BACKOFF,
-                int(DEFAULT_TRANSPORT_MATRIX_RETRY_INTERVAL / 5),
-                int(DEFAULT_TRANSPORT_MATRIX_RETRY_INTERVAL),
-            )
-
-        return make_client(
-            servers=self.available_servers,
-            http_pool_maxsize=4,
-            http_retry_timeout=40,
-            http_retry_delay=_http_retry_delay,
-        )
 
     def _get_user(self, user: Union[User, str]) -> User:
         """Creates an User from an user_id, if none, or fetch a cached User """
