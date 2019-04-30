@@ -194,8 +194,8 @@ class PathfindingService(gevent.Greenlet):
 
         log.info("Received ChannelOpened event", **asdict(event))
 
-        self.matrix_listener.follow_address_presence(event.participant1)
-        self.matrix_listener.follow_address_presence(event.participant2)
+        self.matrix_listener.follow_address_presence(event.participant1, refresh=True)
+        self.matrix_listener.follow_address_presence(event.participant2, refresh=True)
 
         channel_views = token_network.handle_channel_opened_event(
             channel_identifier=event.channel_identifier,
@@ -288,8 +288,18 @@ class PathfindingService(gevent.Greenlet):
 
     def on_pfs_update(self, message: UpdatePFS) -> None:
         token_network = self._validate_pfs_update(message)
+
         log.info("Received Capacity Update", **message.to_dict())
         self.database.upsert_capacity_update(message)
+
+        # Follow presence for the channel participants
+        self.matrix_listener.follow_address_presence(
+            to_checksum_address(message.updating_participant), refresh=True
+        )
+        self.matrix_listener.follow_address_presence(
+            to_checksum_address(message.other_participant), refresh=True
+        )
+
         updating_capacity_partner, other_capacity_partner = self.database.get_capacity_updates(
             updating_participant=message.other_participant,
             token_network_address=TokenNetworkAddress(

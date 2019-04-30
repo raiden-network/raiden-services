@@ -158,10 +158,14 @@ class MatrixListener(gevent.Greenlet):
 
         self.broadcast_room.add_listener(self._handle_message, "m.room.message")
 
-    def follow_address_presence(self, address: Address) -> None:
+    def follow_address_presence(self, address: Address, refresh: bool = False) -> None:
         if self.user_manager:
             log.debug("Tracking address", address=address)
-            self.user_manager.add_address(to_canonical_address(address))
+            canonical_address = to_canonical_address(address)
+            self.user_manager.add_address(canonical_address)
+
+            if refresh:
+                self.user_manager.refresh_address_presence(canonical_address)
 
     def _get_user(self, user: Union[User, str]) -> User:
         """Creates an User from an user_id, if none, or fetch a cached User """

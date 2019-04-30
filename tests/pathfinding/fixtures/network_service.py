@@ -9,6 +9,7 @@ from web3.contract import Contract
 from pathfinding_service.model.token_network import TokenNetwork
 from pathfinding_service.service import PathfindingService
 from raiden.messages import UpdatePFS
+from raiden.network.transport.matrix import AddressReachability
 from raiden.utils import CanonicalIdentifier
 from raiden.utils.typing import (
     Address,
@@ -19,7 +20,6 @@ from raiden.utils.typing import (
     TokenAmount,
     TokenNetworkAddress,
 )
-from raiden.network.transport.matrix import AddressReachability
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
 
 
