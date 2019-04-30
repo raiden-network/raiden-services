@@ -170,17 +170,21 @@ def populate_token_network() -> Callable:
             ),
         ) in enumerate(channel_descriptions):
             token_network.handle_channel_opened_event(
-                ChannelID(channel_id),
-                addresses[p1_index],
-                addresses[p2_index],
+                channel_identifier=ChannelID(channel_id),
+                participant1=addresses[p1_index],
+                participant2=addresses[p2_index],
                 settle_timeout=settle_timeout,
             )
 
             token_network.handle_channel_new_deposit_event(
-                ChannelID(channel_id), addresses[p1_index], p1_deposit
+                channel_identifier=ChannelID(channel_id),
+                receiver=addresses[p1_index],
+                total_deposit=p1_deposit,
             )
             token_network.handle_channel_new_deposit_event(
-                ChannelID(channel_id), addresses[p2_index], p2_deposit
+                channel_identifier=ChannelID(channel_id),
+                receiver=addresses[p2_index],
+                total_deposit=p2_deposit,
             )
 
             token_network.handle_channel_balance_update_message(
