@@ -1,3 +1,4 @@
+# pylint: disable=invalid-name
 from typing import NewType
 
 T_Address = str

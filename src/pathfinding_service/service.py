@@ -76,8 +76,8 @@ class PathfindingService(gevent.Greenlet):
                 callback=self.handle_message,
                 service_room_suffix=PATH_FINDING_BROADCASTING_ROOM,
             )
-        except ConnectionError as e:
-            log.critical("Could not connect to broadcasting system.", exc=e)
+        except ConnectionError as exc:
+            log.critical("Could not connect to broadcasting system.", exc=exc)
             sys.exit(1)
 
     def _load_token_networks(self) -> Dict[TokenNetworkAddress, TokenNetwork]:

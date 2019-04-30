@@ -88,8 +88,8 @@ class TokenNetwork:
             ),
         ]
 
-        for v in views:
-            self.add_channel_view(v)
+        for cv in views:
+            self.add_channel_view(cv)
 
         return views
 

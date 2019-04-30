@@ -71,7 +71,6 @@ disable=
         broad-except,
 
         # checks which have false positive that need to be excluded before enabling
-        invalid-name,
 
         # checks that are done with higher accuracy by mypy
         no-member,
@@ -245,7 +244,23 @@ good-names=i,
            k,
            ex,
            Run,
-           _
+           _,
+           log,
+           x,
+           n,
+           tb,  # traceback
+           cv,  # channel view
+           ms,  # monitoring service
+           mr,  # monitor request
+           rc,  # request collector
+           bp,  # balance proof
+           f,   # generic function or filehandle
+           c1,  # client 1
+           c2,
+           p1,  # participant 1
+           p2,
+           G,   # graph (networkx uses G for graph as mathematicians do)
+           T,   # generic TypeVar used by mypy
 
 # Include a hint for the correct naming format with invalid-name.
 include-naming-hint=no

@@ -31,8 +31,8 @@ class RequestCollector(gevent.Greenlet):
                 callback=self.handle_message,
                 service_room_suffix=MONITORING_BROADCASTING_ROOM,
             )
-        except ConnectionError as e:
-            log.critical("Could not connect to broadcasting system.", exc=e)
+        except ConnectionError as exc:
+            log.critical("Could not connect to broadcasting system.", exc=exc)
             sys.exit(1)
 
     def listen_forever(self) -> None:

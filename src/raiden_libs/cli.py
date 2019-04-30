@@ -125,15 +125,15 @@ def blockchain_options(contracts: List[str], contracts_version: str = None) -> C
     }
 
     param_for_contract: Dict[str, str] = {}
-    for c in contracts:
+    for con in contracts:
         option = click.Option(
-            ["--{}-address".format(arg_for_contract[c])],
+            ["--{}-address".format(arg_for_contract[con])],
             type=str,
-            help=f"Address of the {c} contract",
+            help=f"Address of the {con} contract",
             callback=validate_address,
         )
         options.append(option)
-        param_for_contract[c] = option.human_readable_name
+        param_for_contract[con] = option.human_readable_name
 
     def decorator(command: click.Command) -> click.Command:
         assert command.callback

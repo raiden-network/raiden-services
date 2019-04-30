@@ -52,11 +52,11 @@ def test_shutdown(default_cli_args_ms, service_mock):
 def test_log_level(default_cli_args_ms):
     """ Setting of log level via command line switch """
     runner = CliRunner()
-    with patch("logging.basicConfig") as basicConfig:
+    with patch("logging.basicConfig") as basic_config:
         for log_level in ("CRITICAL", "WARNING"):
             runner.invoke(
                 main, default_cli_args_ms + ["--log-level", log_level], catch_exceptions=False
             )
             # pytest already initializes logging, so basicConfig does not have
             # an effect. Use mocking to check that it's called properly.
-            assert logging.getLevelName(basicConfig.call_args[1]["level"] == log_level)
+            assert logging.getLevelName(basic_config.call_args[1]["level"] == log_level)

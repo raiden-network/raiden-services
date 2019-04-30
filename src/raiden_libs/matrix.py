@@ -94,8 +94,8 @@ class MatrixListener(gevent.Greenlet):
         try:
             self.client, self.monitoring_room = self.setup_matrix(service_room_suffix)
             self.monitoring_room.add_listener(self._handle_message, "m.room.message")
-        except ConnectionError as e:
-            log.critical("Could not connect to broadcasting system.", exc=e)
+        except ConnectionError as exc:
+            log.critical("Could not connect to broadcasting system.", exc=exc)
             sys.exit(1)
 
     def listen_forever(self) -> None:

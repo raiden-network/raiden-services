@@ -6,7 +6,7 @@ import structlog
 from gevent.hub import Hub
 
 log = structlog.get_logger(__name__)
-_original_error_handler = Hub.handle_error
+ORIGINAL_ERROR_HANDLER = Hub.handle_error
 
 
 def error_handler(_self: Any, _context: Any, etype: Any, value: Any, tb: Any) -> None:
@@ -32,4 +32,4 @@ def register_error_handler() -> None:
 
 def unregister_error_handler() -> None:
     """Resets the error handler to the original gevent handler"""
-    Hub.handle_error = _original_error_handler
+    Hub.handle_error = ORIGINAL_ERROR_HANDLER
