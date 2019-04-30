@@ -157,7 +157,7 @@ class PathfindingService(gevent.Greenlet):
 
         for token_network_model in self.token_networks.values():
             if hex_address in token_network_model.G.nodes:
-                token_network_model.addresses_to_reachabilities[hex_address] = reachability
+                token_network_model.address_to_reachability[hex_address] = reachability
 
     def get_token_network(
         self, token_network_address: TokenNetworkAddress

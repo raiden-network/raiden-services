@@ -68,7 +68,7 @@ class TokenNetwork:
 
         self.address = token_network_address
         self.channel_id_to_addresses: Dict[ChannelID, Tuple[Address, Address]] = dict()
-        self.addresses_to_reachabilities: Dict[Address, AddressReachability] = dict()
+        self.address_to_reachability: Dict[Address, AddressReachability] = dict()
         self.G = DiGraph()
 
     def __repr__(self) -> str:

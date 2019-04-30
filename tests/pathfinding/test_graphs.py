@@ -205,10 +205,10 @@ def test_reachability_initiator(token_network_model: TokenNetwork, addresses: Li
         [0, 7, 6, 5, 8],
     ]
 
-    token_network_model.addresses_to_reachabilities[addresses[0]] = AddressReachability.UNREACHABLE
+    token_network_model.address_to_reachability[addresses[0]] = AddressReachability.UNREACHABLE
     assert get_paths() == []
 
-    token_network_model.addresses_to_reachabilities[addresses[0]] = AddressReachability.UNKNOWN
+    token_network_model.address_to_reachability[addresses[0]] = AddressReachability.UNKNOWN
     assert get_paths() == []
 
 
@@ -229,10 +229,10 @@ def test_reachability_mediator(token_network_model: TokenNetwork, addresses: Lis
         [0, 7, 6, 5, 8],
     ]
 
-    token_network_model.addresses_to_reachabilities[addresses[7]] = AddressReachability.UNREACHABLE
+    token_network_model.address_to_reachability[addresses[7]] = AddressReachability.UNREACHABLE
     assert get_paths() == [[0, 1, 2, 3, 4, 8]]
 
-    token_network_model.addresses_to_reachabilities[addresses[1]] = AddressReachability.UNKNOWN
+    token_network_model.address_to_reachability[addresses[1]] = AddressReachability.UNKNOWN
     assert get_paths() == []
 
 
@@ -253,8 +253,8 @@ def test_reachability_target(token_network_model: TokenNetwork, addresses: List[
         [0, 7, 6, 5, 8],
     ]
 
-    token_network_model.addresses_to_reachabilities[addresses[8]] = AddressReachability.UNREACHABLE
+    token_network_model.address_to_reachability[addresses[8]] = AddressReachability.UNREACHABLE
     assert get_paths() == []
 
-    token_network_model.addresses_to_reachabilities[addresses[8]] = AddressReachability.UNKNOWN
+    token_network_model.address_to_reachability[addresses[8]] = AddressReachability.UNKNOWN
     assert get_paths() == []
