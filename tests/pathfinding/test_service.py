@@ -1,6 +1,6 @@
 import os
 from typing import List
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, call, patch
 
 from pathfinding_service.service import PathfindingService
 from raiden.utils.typing import Address, BlockNumber, ChannelID, TokenAmount, TokenNetworkAddress
@@ -179,6 +179,14 @@ def test_token_channel_opened(pathfinding_service_mock, token_network_model):
     pathfinding_service_mock.handle_event(channel_event)
     assert len(pathfinding_service_mock.token_networks) == 1
     assert len(token_network_model.channel_id_to_addresses) == 1
+
+    # Check that presence of these addresses is followed
+    pathfinding_service_mock.matrix_listener.follow_address_presence.assert_has_calls(
+        [
+            call("0x1111111111111111111111111111111111111111", refresh=True),
+            call("0x2222222222222222222222222222222222222222", refresh=True),
+        ]
+    )
 
 
 def test_token_channel_new_deposit(pathfinding_service_mock, token_network_model):
