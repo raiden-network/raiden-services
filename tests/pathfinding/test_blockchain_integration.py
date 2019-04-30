@@ -23,7 +23,7 @@ from raiden_contracts.constants import (
 from raiden_contracts.tests.utils.constants import EMPTY_LOCKSROOT
 
 
-def test_pfs_with_mocked_client(
+def test_pfs_with_mocked_client(  # pylint: disable=too-many-arguments
     web3,
     token_network_registry_contract,
     channel_descriptions_case_1: List,

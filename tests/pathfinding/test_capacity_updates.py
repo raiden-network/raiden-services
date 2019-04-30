@@ -74,7 +74,7 @@ def setup_channel_with_deposits(service: PathfindingService) -> TokenNetwork:
     return token_network
 
 
-def get_updatepfs_message(
+def get_updatepfs_message(  # pylint: disable=too-many-arguments
     updating_participant: Address,
     other_participant: Address,
     chain_identifier=ChainID(1),

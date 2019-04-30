@@ -55,7 +55,7 @@ class HashedBalanceProof:
     additional_hash: str
     signature: Signature
 
-    def __init__(
+    def __init__(  # pylint: disable=too-many-arguments
         self,
         channel_identifier: ChannelID,
         token_network_address: TokenNetworkAddress,
