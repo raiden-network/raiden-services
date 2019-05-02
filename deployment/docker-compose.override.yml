@@ -30,6 +30,26 @@ services:
     ports:
       - 6004:6000
 
+  pfs-ropsten-with-fee:
+    << : *defaults
+    ports:
+      - 6005:6000
+
+  pfs-rinkeby-with-fee:
+    << : *defaults
+    ports:
+      - 6006:6000
+
+  pfs-kovan-with-fee:
+    << : *defaults
+    ports:
+      - 6007:6000
+
+  pfs-goerli-with-fee:
+    <<: *defaults
+    ports:
+      - 6008:6000
+
   ms-ropsten:
     << : *defaults
 
