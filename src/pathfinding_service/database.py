@@ -2,6 +2,7 @@ import os
 from typing import Iterator, Optional
 
 import structlog
+from eth_utils import decode_hex
 
 from pathfinding_service.model import IOU
 from pathfinding_service.model.channel_view import ChannelView
@@ -141,4 +142,4 @@ class PFSDatabase(BaseDatabase):
 
     def get_token_networks(self) -> Iterator[TokenNetwork]:
         for row in self.conn.execute("SELECT address FROM token_network"):
-            yield TokenNetwork(token_network_address=row[0])
+            yield TokenNetwork(token_network_address=decode_hex(row[0]))

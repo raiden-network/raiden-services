@@ -3,7 +3,7 @@ import random
 from typing import Callable
 
 import pytest
-from eth_utils import encode_hex
+from eth_utils import decode_hex, encode_hex, to_checksum_address
 
 from monitoring_service.states import (
     Channel,
@@ -12,10 +12,10 @@ from monitoring_service.states import (
     UnsignedMonitorRequest,
 )
 from raiden.constants import UINT64_MAX, UINT256_MAX
-from raiden.utils.typing import BlockNumber, ChannelID, TokenAmount
+from raiden.utils.typing import BlockNumber, ChannelID, TokenAmount, TokenNetworkAddress
 from raiden_contracts.constants import ChannelState
 from raiden_contracts.tests.utils import get_random_address, get_random_privkey
-from raiden_libs.types import Address, TokenNetworkAddress, TransactionHash
+from raiden_libs.types import Address, TransactionHash
 from raiden_libs.utils import keccak, private_key_to_address
 
 
@@ -83,9 +83,10 @@ def test_save_and_load_mr(get_random_monitor_request, ms_database):
 
 
 def test_save_and_load_channel(ms_database):
-    token_network_address = get_random_address()
+    token_network_address = decode_hex(get_random_address())
     ms_database.conn.execute(
-        "INSERT INTO token_network (address) VALUES (?)", [token_network_address]
+        "INSERT INTO token_network (address) VALUES (?)",
+        [to_checksum_address(token_network_address)],
     )
     for update_status in [
         None,

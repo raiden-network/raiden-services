@@ -3,7 +3,7 @@ from typing import List
 from unittest.mock import Mock, patch
 
 from pathfinding_service.service import PathfindingService
-from raiden.utils.typing import BlockNumber, ChannelID, TokenAmount
+from raiden.utils.typing import BlockNumber, ChannelID, TokenAmount, TokenNetworkAddress
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
 from raiden_contracts.tests.utils import get_random_privkey
 from raiden_libs.events import (
@@ -13,7 +13,7 @@ from raiden_libs.events import (
     ReceiveTokenNetworkCreatedEvent,
     UpdatedHeadBlockEvent,
 )
-from raiden_libs.types import Address, TokenNetworkAddress
+from raiden_libs.types import Address
 
 from ..libs.mocks.web3 import ContractMock, Web3Mock
 
@@ -25,7 +25,7 @@ def test_save_and_load_token_networks(pathfinding_service_mock_empty):
     pfs = pathfinding_service_mock_empty
 
     token_address = Address("0x" + "1" * 40)
-    token_network_address = TokenNetworkAddress("0x" + "2" * 40)
+    token_network_address = TokenNetworkAddress(bytes([2] * 20))
     channel_id = ChannelID(1)
     p1 = Address("0x" + "3" * 40)
     p2 = Address("0x" + "4" * 40)
@@ -66,7 +66,7 @@ def test_crash(tmpdir, mockchain):  # pylint: disable=too-many-locals
     UpdatedHeadBlockEvent in every block.
     """
     token_address = Address("0x" + "1" * 40)
-    token_network_address = TokenNetworkAddress("0x" + "2" * 40)
+    token_network_address = TokenNetworkAddress(bytes([2] * 20))
     channel_id = ChannelID(1)
     p1 = Address("0x" + "3" * 40)
     p2 = Address("0x" + "4" * 40)
@@ -127,7 +127,7 @@ def test_crash(tmpdir, mockchain):  # pylint: disable=too-many-locals
 
 def test_token_network_created(pathfinding_service_mock):
     token_address = Address("0x" + "1" * 40)
-    token_network_address = TokenNetworkAddress("0x" + "2" * 40)
+    token_network_address = TokenNetworkAddress(bytes([2] * 20))
     network_event = ReceiveTokenNetworkCreatedEvent(
         token_address=token_address,
         token_network_address=token_network_address,
@@ -168,7 +168,7 @@ def test_token_channel_opened(pathfinding_service_mock, token_network_model):
 
     # Test invalid token network address
     channel_event = ReceiveChannelOpenedEvent(
-        token_network_address=TokenNetworkAddress("0x" + "0" * 40),
+        token_network_address=TokenNetworkAddress(bytes([2] * 20)),
         channel_identifier=ChannelID(1),
         participant1=PARTICIPANT1,
         participant2=PARTICIPANT2,
@@ -197,7 +197,7 @@ def test_token_channel_new_deposit(pathfinding_service_mock, token_network_model
     assert len(token_network_model.channel_id_to_addresses) == 1
 
     # Test invalid token network address
-    deposit_event.token_network_address = TokenNetworkAddress("0x" + "0" * 40)
+    deposit_event.token_network_address = TokenNetworkAddress(bytes([0] * 20))
 
     pathfinding_service_mock.handle_event(deposit_event)
     assert len(pathfinding_service_mock.token_networks) == 1
@@ -209,7 +209,7 @@ def test_token_channel_closed(pathfinding_service_mock, token_network_model):
 
     # Test invalid token network address
     close_event = ReceiveChannelClosedEvent(
-        token_network_address=TokenNetworkAddress("0x" + "0" * 40),
+        token_network_address=TokenNetworkAddress(bytes([0] * 20)),
         channel_identifier=ChannelID(1),
         closing_participant=PARTICIPANT1,
         block_number=BlockNumber(2),

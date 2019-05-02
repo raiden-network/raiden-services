@@ -3,7 +3,7 @@ import sqlite3
 from typing import List, Optional, Union, cast
 
 import structlog
-from eth_utils import is_checksum_address
+from eth_utils import decode_hex, is_checksum_address, to_checksum_address
 
 from monitoring_service.events import (
     ActionClaimRewardTriggeredEvent,
@@ -16,7 +16,7 @@ from monitoring_service.states import (
     MonitorRequest,
     OnChainUpdateStatus,
 )
-from raiden.utils.typing import BlockNumber
+from raiden.utils.typing import BlockNumber, TokenNetworkAddress
 from raiden_libs.database import BaseDatabase
 from raiden_libs.types import Address
 
@@ -35,7 +35,7 @@ class SharedDatabase(BaseDatabase):
     def upsert_monitor_request(self, request: MonitorRequest) -> None:
         values = [
             hex(request.channel_identifier),
-            request.token_network_address,
+            to_checksum_address(request.token_network_address),
             request.balance_hash,
             hex(request.nonce),
             request.additional_hash,
@@ -51,9 +51,8 @@ class SharedDatabase(BaseDatabase):
         self.conn.execute(upsert_sql, values)
 
     def get_monitor_request(
-        self, token_network_address: str, channel_id: int, non_closing_signer: str
+        self, token_network_address: TokenNetworkAddress, channel_id: int, non_closing_signer: str
     ) -> Optional[MonitorRequest]:
-        assert is_checksum_address(token_network_address)
         assert is_checksum_address(non_closing_signer)
         row = self.conn.execute(
             """
@@ -64,7 +63,7 @@ class SharedDatabase(BaseDatabase):
                   AND token_network_address = ?
                   AND non_closing_signer = ?
             """,
-            [hex(channel_id), token_network_address, non_closing_signer],
+            [hex(channel_id), to_checksum_address(token_network_address), non_closing_signer],
         ).fetchone()
         if row is None:
             return None
@@ -78,7 +77,7 @@ class SharedDatabase(BaseDatabase):
 
     def upsert_channel(self, channel: Channel) -> None:
         values = [
-            channel.token_network_address,
+            to_checksum_address(channel.token_network_address),
             hex(channel.identifier),
             channel.participant1,
             channel.participant2,
@@ -102,13 +101,15 @@ class SharedDatabase(BaseDatabase):
         )
         self.conn.execute(upsert_sql, values)
 
-    def get_channel(self, token_network_address: str, channel_id: int) -> Optional[Channel]:
+    def get_channel(
+        self, token_network_address: TokenNetworkAddress, channel_id: int
+    ) -> Optional[Channel]:
         row = self.conn.execute(
             """
                 SELECT * FROM channel
                 WHERE identifier = ? AND token_network_address = ?
             """,
-            [hex(channel_id), token_network_address],
+            [hex(channel_id), to_checksum_address(token_network_address)],
         ).fetchone()
 
         if row is None:
@@ -116,6 +117,7 @@ class SharedDatabase(BaseDatabase):
         kwargs = {
             key: val for key, val in zip(row.keys(), row) if not key.startswith("update_status")
         }
+        kwargs["token_network_address"] = decode_hex(kwargs["token_network_address"])
         return Channel(
             update_status=OnChainUpdateStatus(
                 update_sender_address=row["update_status_sender"], nonce=row["update_status_nonce"]
@@ -133,7 +135,7 @@ class SharedDatabase(BaseDatabase):
         values = [
             hex(event.trigger_block_number),
             EVENT_TYPE_ID_MAP[type(contained_event)],
-            contained_event.token_network_address,
+            to_checksum_address(contained_event.token_network_address),
             hex(contained_event.channel_identifier),
             contained_event.non_closing_participant,
         ]
@@ -154,7 +156,7 @@ class SharedDatabase(BaseDatabase):
         def create_scheduled_event(row: sqlite3.Row) -> ScheduledEvent:
             event_type = EVENT_ID_TYPE_MAP[row["event_type"]]
             sub_event = event_type(
-                row["token_network_address"],
+                decode_hex(row["token_network_address"]),
                 row["channel_identifier"],
                 row["non_closing_participant"],
             )
@@ -169,7 +171,7 @@ class SharedDatabase(BaseDatabase):
         contained_event: SubEvent = cast(SubEvent, event.event)
         values = [
             hex(event.trigger_block_number),
-            contained_event.token_network_address,
+            to_checksum_address(contained_event.token_network_address),
             hex(contained_event.channel_identifier),
             contained_event.non_closing_participant,
         ]

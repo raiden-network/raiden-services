@@ -6,7 +6,7 @@ from typing import Any, ClassVar, Dict, List, Optional, Tuple, Type, TypeVar
 import marshmallow
 import pkg_resources
 import structlog
-from eth_utils import is_checksum_address, is_same_address
+from eth_utils import decode_hex, is_checksum_address, is_same_address
 from flask import Flask, Response, request
 from flask_restful import Api, Resource
 from gevent.pywsgi import WSGIServer
@@ -30,9 +30,9 @@ from pathfinding_service.model.token_network import TokenNetwork
 from pathfinding_service.service import PathfindingService
 from raiden.exceptions import InvalidSignature
 from raiden.utils.signer import recover
-from raiden.utils.typing import Signature, TokenAmount
+from raiden.utils.typing import Signature, TokenAmount, TokenNetworkAddress
 from raiden_libs.marshmallow import HexedBytes
-from raiden_libs.types import Address, TokenNetworkAddress
+from raiden_libs.types import Address
 
 log = structlog.get_logger(__name__)
 T = TypeVar("T")
@@ -62,7 +62,7 @@ class PathfinderResource(Resource):
             )
 
         token_network = self.pathfinding_service.get_token_network(
-            TokenNetworkAddress(token_network_address)
+            TokenNetworkAddress(decode_hex(token_network_address))
         )
         if token_network is None:
             raise exceptions.UnsupportedTokenNetwork(token_network=token_network_address)
@@ -230,7 +230,7 @@ class IOURequest:
 
 class IOUResource(PathfinderResource):
     def get(
-        self, token_network_address: TokenNetworkAddress  # pylint: disable=unused-argument
+        self, token_network_address: str  # pylint: disable=unused-argument
     ) -> Tuple[dict, int]:
         iou_request, errors = IOURequest.Schema().load(request.args)
         if errors:
@@ -277,10 +277,7 @@ class InfoResource(PathfinderResource):
 
 class DebugEndpoint(PathfinderResource):
     def get(  # pylint: disable=no-self-use
-        self,
-        token_network_address: TokenNetworkAddress,
-        source_address: Address,
-        target_address: Address = None,
+        self, token_network_address: str, source_address: Address, target_address: Address = None
     ) -> Tuple[dict, int]:
         request_count = 0
         responses = []

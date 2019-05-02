@@ -14,7 +14,7 @@ from pathfinding_service.exceptions import InvalidCapacityUpdate
 from pathfinding_service.model import TokenNetwork
 from raiden.constants import PATH_FINDING_BROADCASTING_ROOM, UINT256_MAX
 from raiden.messages import SignedMessage, UpdatePFS
-from raiden.utils.typing import BlockNumber, ChainID
+from raiden.utils.typing import BlockNumber, ChainID, TokenNetworkAddress
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
 from raiden_libs.blockchain import get_blockchain_events
 from raiden_libs.contract_info import CONTRACT_MANAGER
@@ -29,7 +29,7 @@ from raiden_libs.events import (
 from raiden_libs.gevent_error_handler import register_error_handler
 from raiden_libs.matrix import MatrixListener
 from raiden_libs.states import BlockchainState
-from raiden_libs.types import Address, TokenNetworkAddress
+from raiden_libs.types import Address
 from raiden_libs.utils import private_key_to_address
 
 log = structlog.get_logger(__name__)
@@ -218,7 +218,7 @@ class PathfindingService(gevent.Greenlet):
             log.info("Ignoring unknown message type")
 
     def _validate_pfs_update(self, message: UpdatePFS) -> TokenNetwork:
-        token_network_address = to_checksum_address(
+        token_network_address = TokenNetworkAddress(
             message.canonical_identifier.token_network_address
         )
 

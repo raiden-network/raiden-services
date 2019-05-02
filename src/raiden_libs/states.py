@@ -1,8 +1,8 @@
 from dataclasses import dataclass, field
 from typing import List
 
-from raiden.utils.typing import BlockNumber, ChainID
-from raiden_libs.types import Address, TokenNetworkAddress
+from raiden.utils.typing import BlockNumber, ChainID, TokenNetworkAddress
+from raiden_libs.types import Address
 
 
 @dataclass

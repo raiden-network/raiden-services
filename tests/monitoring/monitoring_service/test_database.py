@@ -1,16 +1,22 @@
+from eth_utils import to_checksum_address
+
 from monitoring_service.events import ActionMonitoringTriggeredEvent, ScheduledEvent
-from raiden.utils.typing import BlockNumber, ChannelID
-from raiden_libs.types import Address, TokenNetworkAddress
+from raiden.utils.typing import BlockNumber, ChannelID, TokenNetworkAddress
+from raiden_libs.types import Address
 
 
 def test_scheduled_events(ms_database):
     # Add token network used as foreign key
-    ms_database.conn.execute("INSERT INTO token_network(address) VALUES (?)", ["a"])
+    token_network_address = TokenNetworkAddress(bytes([1] * 20))
+    ms_database.conn.execute(
+        "INSERT INTO token_network(address) VALUES (?)",
+        [to_checksum_address(token_network_address)],
+    )
 
     event1 = ScheduledEvent(
         trigger_block_number=BlockNumber(23),
         event=ActionMonitoringTriggeredEvent(
-            token_network_address=TokenNetworkAddress("a"),
+            token_network_address=token_network_address,
             channel_identifier=ChannelID(1),
             non_closing_participant=Address("b"),
         ),
@@ -23,7 +29,7 @@ def test_scheduled_events(ms_database):
     event2 = ScheduledEvent(
         trigger_block_number=BlockNumber(24),
         event=ActionMonitoringTriggeredEvent(
-            token_network_address=TokenNetworkAddress("a"),
+            token_network_address=token_network_address,
             channel_identifier=ChannelID(1),
             non_closing_participant=Address("b"),
         ),

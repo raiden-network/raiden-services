@@ -2,17 +2,26 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, Iterable, Optional
 
 import jsonschema
-from eth_utils import decode_hex, encode_hex, is_checksum_address, to_checksum_address
+from eth_utils import decode_hex, encode_hex, to_checksum_address
 from web3 import Web3
 
 from raiden.messages import RequestMonitoring, SignedBlindedBalanceProof
 from raiden.utils.signer import LocalSigner, recover
 from raiden.utils.signing import pack_data
-from raiden.utils.typing import BlockNumber, ChainID, ChannelID, Nonce, Signature, TokenAmount
+from raiden.utils.typing import (
+    BlockNumber,
+    ChainID,
+    ChannelID,
+    Nonce,
+    Signature,
+    TokenAmount,
+    TokenNetworkAddress,
+    TokenNetworkID,
+)
 from raiden_contracts.constants import ChannelState, MessageTypeId
 from raiden_libs.messages.json_schema import MONITOR_REQUEST_SCHEMA
 from raiden_libs.states import BlockchainState
-from raiden_libs.types import Address, TokenNetworkAddress, TransactionHash
+from raiden_libs.types import Address, TransactionHash
 
 
 @dataclass
@@ -115,7 +124,7 @@ class HashedBalanceProof:
         non_closing_signer = LocalSigner(decode_hex(privkey))
         partner_signed_self = SignedBlindedBalanceProof(
             channel_identifier=self.channel_identifier,
-            token_network_address=decode_hex(self.token_network_address),
+            token_network_address=TokenNetworkID(self.token_network_address),
             nonce=self.nonce,
             additional_hash=decode_hex(self.additional_hash),
             chain_id=self.chain_id,
@@ -252,7 +261,6 @@ class MonitorRequest(UnsignedMonitorRequest):
 
     def __post_init__(self) -> None:
         super(MonitorRequest, self).__post_init__()
-        assert is_checksum_address(self.token_network_address)
         self.non_closing_signer = to_checksum_address(
             recover(
                 data=self.packed_non_closing_data(),
