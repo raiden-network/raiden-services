@@ -52,16 +52,16 @@ def channel_descriptions_case_1() -> List:
     # 0 -- 1 -- 2 -- 3 -- 4    5 -- 6
     #  \-------/
 
-    r = AddressReachability.REACHABLE
+    reach = AddressReachability.REACHABLE
 
     channel_descriptions = [
-        (0, 100, 90, 10, 2, r, 1, 50, 60, 15, 2, r, 14),  # capacities  90 --  60
-        (1, 40, 130, 8, 2, r, 2, 130, 40, 12, 2, r, 14),  # capacities 130 --  40
-        (2, 90, 80, 7, 2, r, 3, 10, 20, 10, 2, r, 3),  # capacities  80 --  20
-        (3, 50, 50, 11, 2, r, 4, 50, 50, 11, 2, r, 14),  # capacities  50 --  50
-        (0, 40, 0, 15, 2, r, 2, 80, 120, 25, 2, r, 14),  # capacities   0 -- 120
-        (1, 30, 35, 100, 2, r, 4, 40, 35, 18, 2, r, 14),  # capacities  35 --  35
-        (5, 500, 550, 30, 2, r, 6, 750, 700, 40, 2, r, 14),  # capacities 550 -- 700
+        (0, 100, 90, 10, 2, reach, 1, 50, 60, 15, 2, reach, 14),  # capacities  90 --  60
+        (1, 40, 130, 8, 2, reach, 2, 130, 40, 12, 2, reach, 14),  # capacities 130 --  40
+        (2, 90, 80, 7, 2, reach, 3, 10, 20, 10, 2, reach, 3),  # capacities  80 --  20
+        (3, 50, 50, 11, 2, reach, 4, 50, 50, 11, 2, reach, 14),  # capacities  50 --  50
+        (0, 40, 0, 15, 2, reach, 2, 80, 120, 25, 2, reach, 14),  # capacities   0 -- 120
+        (1, 30, 35, 100, 2, reach, 4, 40, 35, 18, 2, reach, 14),  # capacities  35 --  35
+        (5, 500, 550, 30, 2, reach, 6, 750, 700, 40, 2, reach, 14),  # capacities 550 -- 700
     ]
     return channel_descriptions
 
@@ -95,16 +95,16 @@ def channel_descriptions_case_2() -> List:
     # 0 -- 2 -- 3 -- 4
     #       \-- 5 --/
 
-    r = AddressReachability.REACHABLE
+    reach = AddressReachability.REACHABLE
 
     channel_descriptions = [
-        (0, 100, 90, 3000, 2, r, 1, 50, 60, 3000, 2, r, 15),  # capacities  90 --  60
-        (1, 40, 130, 2000, 2, r, 4, 130, 40, 2000, 2, r, 15),  # capacities 130 --  40
-        (0, 90, 80, 1000, 2, r, 2, 10, 10, 1000, 2, r, 15),  # capacities  80 --  10
-        (2, 50, 50, 1500, 2, r, 3, 50, 50, 1500, 2, r, 15),  # capacities  50 --  50
-        (3, 100, 60, 1000, 2, r, 4, 80, 120, 1000, 2, r, 15),  # capacities  60 -- 120
-        (2, 30, 35, 1000, 2, r, 5, 40, 35, 1000, 2, r, 15),  # capacities  35 --  35
-        (5, 500, 550, 1000, 2, r, 4, 750, 700, 1000, 2, r, 15),  # capacities 550 -- 700
+        (0, 100, 90, 3000, 2, reach, 1, 50, 60, 3000, 2, reach, 15),  # capacities  90 --  60
+        (1, 40, 130, 2000, 2, reach, 4, 130, 40, 2000, 2, reach, 15),  # capacities 130 --  40
+        (0, 90, 80, 1000, 2, reach, 2, 10, 10, 1000, 2, reach, 15),  # capacities  80 --  10
+        (2, 50, 50, 1500, 2, reach, 3, 50, 50, 1500, 2, reach, 15),  # capacities  50 --  50
+        (3, 100, 60, 1000, 2, reach, 4, 80, 120, 1000, 2, reach, 15),  # capacities  60 -- 120
+        (2, 30, 35, 1000, 2, reach, 5, 40, 35, 1000, 2, reach, 15),  # capacities  35 --  35
+        (5, 500, 550, 1000, 2, reach, 4, 750, 700, 1000, 2, reach, 15),  # capacities 550 -- 700
     ]
     return channel_descriptions
 
@@ -137,10 +137,10 @@ def channel_descriptions_case_3() -> List:
     # 0----- 7 --------- 8 -/
     #         \- 9 - 10 -/
 
-    r = AddressReachability.REACHABLE
+    reach = AddressReachability.REACHABLE
 
     channel_descriptions = [
-        (a, 100, 100, 0, 2, r, b, 100, 100, 0, 2, r, 15)
+        (a, 100, 100, 0, 2, reach, b, 100, 100, 0, 2, reach, 15)
         for a, b in [
             (0, 1),
             (1, 2),
