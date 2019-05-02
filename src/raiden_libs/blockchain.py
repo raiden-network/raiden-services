@@ -2,7 +2,7 @@ from copy import deepcopy
 from typing import Dict, List, Optional, Tuple
 
 import structlog
-from eth_utils import encode_hex, to_checksum_address
+from eth_utils import decode_hex, encode_hex, to_checksum_address
 from eth_utils.abi import event_abi_to_log_topic
 from web3 import Web3
 from web3.contract import get_event_data
@@ -92,7 +92,7 @@ def parse_token_network_event(event: dict) -> Optional[Event]:
     event_name = event["event"]
 
     common_infos = dict(
-        token_network_address=event["address"],
+        token_network_address=decode_hex(event["address"]),
         channel_identifier=event["args"]["channel_identifier"],
         block_number=event["blockNumber"],
     )
@@ -158,7 +158,7 @@ def get_blockchain_events(
     for event_dict in registry_events:
         events.append(
             ReceiveTokenNetworkCreatedEvent(
-                token_network_address=event_dict["args"]["token_network_address"],
+                token_network_address=decode_hex(event_dict["args"]["token_network_address"]),
                 token_address=event_dict["args"]["token_address"],
                 block_number=event_dict["blockNumber"],
             )
@@ -170,7 +170,7 @@ def get_blockchain_events(
         network_events = query_blockchain_events(
             web3=web3,
             contract_manager=contract_manager,
-            contract_address=Address(token_network_address),
+            contract_address=Address(to_checksum_address(token_network_address)),
             contract_name=CONTRACT_TOKEN_NETWORK,
             topics=[None],
             from_block=from_block,

@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import ClassVar, Type
 
 import marshmallow
@@ -6,8 +6,9 @@ from eth_utils import is_checksum_address
 from marshmallow_dataclass import add_schema
 
 from pathfinding_service.config import DEFAULT_REVEAL_TIMEOUT
-from raiden.utils.typing import ChannelID, FeeAmount, Nonce, TokenAmount
-from raiden_libs.types import Address, TokenNetworkAddress
+from raiden.utils.typing import ChannelID, FeeAmount, Nonce, TokenAmount, TokenNetworkAddress
+from raiden_libs.marshmallow import ChecksumAddress
+from raiden_libs.types import Address
 
 
 @add_schema
@@ -17,11 +18,13 @@ class ChannelView:
     Unidirectional view of a bidirectional channel.
     """
 
-    token_network_address: TokenNetworkAddress
     channel_id: ChannelID
     participant1: Address
     participant2: Address
     settle_timeout: int
+    token_network_address: TokenNetworkAddress = field(
+        metadata={"marshmallow_field": ChecksumAddress(required=True)}
+    )
     capacity: TokenAmount = None  # type: ignore
     reveal_timeout: int = DEFAULT_REVEAL_TIMEOUT
     deposit: TokenAmount = TokenAmount(0)

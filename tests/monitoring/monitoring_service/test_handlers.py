@@ -25,7 +25,7 @@ from monitoring_service.states import (
     OnChainUpdateStatus,
     UnsignedMonitorRequest,
 )
-from raiden.utils.typing import BlockNumber, ChannelID, Nonce, TokenAmount
+from raiden.utils.typing import BlockNumber, ChannelID, Nonce, TokenAmount, TokenNetworkAddress
 from raiden_contracts.constants import ChannelState
 from raiden_contracts.tests.utils import get_random_privkey
 from raiden_libs.events import (
@@ -37,10 +37,10 @@ from raiden_libs.events import (
     ReceiveMonitoringRewardClaimedEvent,
     ReceiveNonClosingBalanceProofUpdatedEvent,
 )
-from raiden_libs.types import Address, TokenNetworkAddress
-from raiden_libs.utils import private_key_to_address
+from raiden_libs.types import Address
+from raiden_libs.utils import private_key_to_address, to_checksum_address
 
-DEFAULT_TOKEN_NETWORK_ADDRESS = TokenNetworkAddress("0x0000000000000000000000000000000000000000")
+DEFAULT_TOKEN_NETWORK_ADDRESS = TokenNetworkAddress(bytes([1] * 20))
 DEFAULT_CHANNEL_IDENTIFIER = ChannelID(3)
 DEFAULT_PRIVATE_KEY1 = "0x" + "1" * 64
 DEFAULT_PRIVATE_KEY2 = "0x" + "2" * 64
@@ -127,7 +127,8 @@ def context(ms_database):
 
 def create_default_token_network(context):
     context.db.conn.execute(
-        "INSERT INTO token_network (address) VALUES (?)", [DEFAULT_TOKEN_NETWORK_ADDRESS]
+        "INSERT INTO token_network (address) VALUES (?)",
+        [to_checksum_address(DEFAULT_TOKEN_NETWORK_ADDRESS)],
     )
 
 

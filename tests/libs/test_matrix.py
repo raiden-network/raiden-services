@@ -3,7 +3,7 @@ import json
 from unittest.mock import Mock, patch
 
 import pytest
-from eth_utils import encode_hex, to_canonical_address
+from eth_utils import decode_hex, encode_hex, to_canonical_address
 
 from monitoring_service.states import HashedBalanceProof
 from raiden.exceptions import InvalidProtocolMessage
@@ -21,7 +21,7 @@ def request_monitoring_message(token_network, get_accounts, get_private_key) -> 
     c1, c2 = get_accounts(2)
 
     balance_proof_c2 = HashedBalanceProof(
-        token_network_address=token_network.address,
+        token_network_address=decode_hex(token_network.address),
         channel_identifier=ChannelID(1),
         chain_id=ChainID(1),
         nonce=Nonce(2),

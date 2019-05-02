@@ -8,7 +8,7 @@ from typing import List
 from unittest.mock import Mock, patch
 
 import gevent
-from eth_utils import encode_hex
+from eth_utils import decode_hex, encode_hex
 
 from monitoring_service.states import HashedBalanceProof
 from pathfinding_service.config import DEFAULT_REVEAL_TIMEOUT
@@ -41,7 +41,7 @@ def test_pfs_with_mocked_client(  # pylint: disable=too-many-arguments
     the channel_description fixture. Tests all PFS methods w.r.t. to that topology
     """
     clients = get_accounts(7)
-    token_network_address = token_network.address
+    token_network_address = decode_hex(token_network.address)
 
     with patch("pathfinding_service.service.MatrixListener", new=Mock):
         pfs = PathfindingService(

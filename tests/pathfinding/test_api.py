@@ -4,7 +4,7 @@ from typing import List
 import pkg_resources
 import pytest
 import requests
-from eth_utils import decode_hex, encode_hex, to_bytes, to_normalized_address
+from eth_utils import decode_hex, encode_hex, to_bytes, to_checksum_address, to_normalized_address
 
 import pathfinding_service.exceptions as exceptions
 from pathfinding_service.api import DEFAULT_MAX_PATHS, ServiceApi
@@ -42,17 +42,25 @@ def test_get_paths_via_debug_endpoint_with_debug_disabled(
 def test_get_paths_via_debug_endpoint(
     api_url: str, addresses: List[Address], token_network_model: TokenNetwork
 ):
-    url = api_url + f"/{token_network_model.address}/paths"
-    url_debug = api_url + f"/_debug/routes/{token_network_model.address}/{addresses[0]}"
+    token_network_address = to_checksum_address(token_network_model.address)
+    url = api_url + f"/{token_network_address}/paths"
+    url_debug = api_url + f"/_debug/routes/{token_network_address}/{addresses[0]}"
     url_debug_incl_requested_target = (
-        api_url + f"/_debug/routes/{token_network_model.address}/{addresses[0]}/{addresses[2]}"
+        api_url + f"/_debug/routes/{token_network_address}/{addresses[0]}/{addresses[2]}"
     )
     url_debug_incl_unrequested_target = (
-        api_url + f"/_debug/routes/{token_network_model.address}/{addresses[0]}/{addresses[3]}"
+        api_url + f"/_debug/routes/{token_network_address}/{addresses[0]}/{addresses[3]}"
     )
 
-    data = {"from": addresses[0], "to": addresses[2], "value": 10, "max_paths": DEFAULT_MAX_PATHS}
-    response = requests.post(url, json=data)
+    response = requests.post(
+        url,
+        json={
+            "from": addresses[0],
+            "to": addresses[2],
+            "value": 10,
+            "max_paths": DEFAULT_MAX_PATHS,
+        },
+    )
     assert response.status_code == 200
     paths = response.json()["result"]
     assert len(paths) == 1
@@ -136,7 +144,7 @@ def test_get_paths_validation(
     target_address: str,
     token_network_model: TokenNetwork,
 ):
-    url = api_url + f"/{token_network_model.address}/paths"
+    url = api_url + "/" + to_checksum_address(token_network_model.address) + "/paths"
     default_params = {"from": initiator_address, "to": target_address, "value": 5, "max_paths": 3}
 
     def request_path_with(status_code=400, **kwargs):
@@ -216,7 +224,7 @@ def test_get_paths_path_validation(api_url: str):
 
 @pytest.mark.usefixtures("api_sut")
 def test_get_paths(api_url: str, addresses: List[Address], token_network_model: TokenNetwork):
-    url = api_url + f"/{token_network_model.address}/paths"
+    url = api_url + "/" + to_checksum_address(token_network_model.address) + "/paths"
 
     data = {"from": addresses[0], "to": addresses[2], "value": 10, "max_paths": DEFAULT_MAX_PATHS}
     response = requests.post(url, json=data)

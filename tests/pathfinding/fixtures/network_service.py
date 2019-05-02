@@ -19,7 +19,7 @@ from raiden.utils.typing import (
     FeeAmount,
     Nonce,
     TokenAmount,
-    TokenNetworkAddress as TokenNetworkAddressBytes,
+    TokenNetworkAddress,
 )
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
 from raiden_libs.types import Address
@@ -181,9 +181,7 @@ def populate_token_network_random(
                 canonical_identifier=CanonicalIdentifier(
                     chain_identifier=ChainID(1),
                     channel_identifier=channel_id,
-                    token_network_address=TokenNetworkAddressBytes(
-                        decode_hex(token_network_model.address)
-                    ),
+                    token_network_address=TokenNetworkAddress(token_network_model.address),
                 ),
                 updating_participant=decode_hex(address1),
                 other_participant=decode_hex(address2),
@@ -200,9 +198,7 @@ def populate_token_network_random(
                 canonical_identifier=CanonicalIdentifier(
                     chain_identifier=ChainID(1),
                     channel_identifier=channel_id,
-                    token_network_address=TokenNetworkAddressBytes(
-                        decode_hex(token_network_model.address)
-                    ),
+                    token_network_address=TokenNetworkAddress(token_network_model.address),
                 ),
                 updating_participant=decode_hex(address2),
                 other_participant=decode_hex(address1),
@@ -256,9 +252,7 @@ def populate_token_network() -> Callable:
                     canonical_identifier=CanonicalIdentifier(
                         chain_identifier=ChainID(1),
                         channel_identifier=ChannelID(channel_id),
-                        token_network_address=TokenNetworkAddressBytes(
-                            decode_hex(token_network.address)
-                        ),
+                        token_network_address=TokenNetworkAddress(token_network.address),
                     ),
                     updating_participant=decode_hex(addresses[p1_index]),
                     other_participant=decode_hex(addresses[p2_index]),
@@ -275,9 +269,7 @@ def populate_token_network() -> Callable:
                     canonical_identifier=CanonicalIdentifier(
                         chain_identifier=ChainID(1),
                         channel_identifier=ChannelID(channel_id),
-                        token_network_address=TokenNetworkAddressBytes(
-                            decode_hex(token_network.address)
-                        ),
+                        token_network_address=TokenNetworkAddress(token_network.address),
                     ),
                     updating_participant=decode_hex(addresses[p2_index]),
                     other_participant=decode_hex(addresses[p1_index]),

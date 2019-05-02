@@ -13,8 +13,8 @@ from pathfinding_service.config import (
 )
 from pathfinding_service.model.channel_view import ChannelView
 from raiden.messages import UpdatePFS
-from raiden.utils.typing import ChannelID, TokenAmount
-from raiden_libs.types import Address, TokenNetworkAddress
+from raiden.utils.typing import ChannelID, TokenAmount, TokenNetworkAddress
+from raiden_libs.types import Address
 
 log = structlog.get_logger(__name__)
 

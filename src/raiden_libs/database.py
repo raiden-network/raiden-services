@@ -3,11 +3,11 @@ import sqlite3
 from typing import Any, Dict
 
 import structlog
-from eth_utils import is_checksum_address
+from eth_utils import is_checksum_address, to_checksum_address
 
-from raiden.utils.typing import BlockNumber
+from raiden.utils.typing import BlockNumber, TokenNetworkAddress
 from raiden_libs.states import BlockchainState
-from raiden_libs.types import Address, TokenNetworkAddress
+from raiden_libs.types import Address
 
 log = structlog.get_logger(__name__)
 
@@ -129,5 +129,6 @@ class BaseDatabase:
 
     def upsert_token_network(self, token_network_address: TokenNetworkAddress) -> None:
         self.conn.execute(
-            "INSERT OR REPLACE INTO token_network VALUES (?)", [token_network_address]
+            "INSERT OR REPLACE INTO token_network VALUES (?)",
+            [to_checksum_address(token_network_address)],
         )

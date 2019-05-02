@@ -2,12 +2,19 @@ import os
 from typing import List
 from unittest.mock import Mock
 
-from eth_utils import encode_hex
+from eth_utils import decode_hex, encode_hex
 
 from monitoring_service.events import ActionMonitoringTriggeredEvent
 from monitoring_service.service import MonitoringService
 from monitoring_service.states import HashedBalanceProof
-from raiden.utils.typing import BlockNumber, ChainID, ChannelID, Nonce, TokenAmount
+from raiden.utils.typing import (
+    BlockNumber,
+    ChainID,
+    ChannelID,
+    Nonce,
+    TokenAmount,
+    TokenNetworkAddress,
+)
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
     CONTRACT_TOKEN_NETWORK_REGISTRY,
@@ -16,7 +23,6 @@ from raiden_contracts.constants import (
 from raiden_contracts.tests.utils import get_random_address, get_random_privkey
 from raiden_contracts.tests.utils.constants import EMPTY_LOCKSROOT
 from raiden_libs.events import ReceiveChannelOpenedEvent, UpdatedHeadBlockEvent
-from raiden_libs.types import TokenNetworkAddress
 
 from ...libs.mocks.web3 import ContractMock, Web3Mock
 
@@ -31,7 +37,7 @@ def test_crash(
     """
     channel_identifier = ChannelID(3)
     c1, c2 = get_accounts(2)
-    token_network_address = TokenNetworkAddress(get_random_address())
+    token_network_address = TokenNetworkAddress(decode_hex(get_random_address()))
     balance_proof = HashedBalanceProof(
         nonce=Nonce(1),
         transferred_amount=TokenAmount(2),

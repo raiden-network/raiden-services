@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
-from raiden.utils.typing import BlockNumber, ChannelID, Nonce, TokenAmount
-from raiden_libs.types import Address, TokenNetworkAddress
+from raiden.utils.typing import BlockNumber, ChannelID, Nonce, TokenAmount, TokenNetworkAddress
+from raiden_libs.types import Address
 
 
 @dataclass
