@@ -10,9 +10,9 @@ ORIGINAL_ERROR_HANDLER = Hub.handle_error
 
 
 def error_handler(_self: Any, _context: Any, etype: Any, value: Any, tb: Any) -> None:
-    if issubclass(type, Hub.NOT_ERROR):
+    if issubclass(etype, Hub.NOT_ERROR):
         return
-    if issubclass(type, KeyboardInterrupt):
+    if issubclass(etype, KeyboardInterrupt):
         log.info("Service termination requested by user.")
         sys.exit()
 
