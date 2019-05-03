@@ -1,5 +1,5 @@
 import os
-from typing import Iterator, Optional
+from typing import Iterator, Optional, Tuple
 
 import structlog
 from eth_utils import decode_hex, to_checksum_address
@@ -7,7 +7,8 @@ from eth_utils import decode_hex, to_checksum_address
 from pathfinding_service.model import IOU
 from pathfinding_service.model.channel_view import ChannelView
 from pathfinding_service.model.token_network import TokenNetwork
-from raiden.utils.typing import Address, BlockNumber, ChannelID, TokenAmount
+from raiden.messages import UpdatePFS
+from raiden.utils.typing import Address, BlockNumber, ChannelID, TokenAmount, TokenNetworkAddress
 from raiden_libs.database import BaseDatabase, hex256
 
 log = structlog.get_logger(__name__)
@@ -50,6 +51,59 @@ class PFSDatabase(BaseDatabase):
         """,
             iou_dict,
         )
+
+    def upsert_capacity_update(self, message: UpdatePFS) -> None:
+        capacity_update_dict = dict(
+            updating_participant=to_checksum_address(message.updating_participant),
+            token_network_address=to_checksum_address(
+                message.canonical_identifier.token_network_address
+            ),
+            channel_id=hex256(message.canonical_identifier.channel_identifier),
+            updating_capacity=hex256(message.updating_capacity),
+            other_capacity=hex256(message.other_capacity),
+        )
+        self.conn.execute(
+            """
+            INSERT OR REPLACE INTO capacity_update (
+                updating_participant,
+                token_network_address,
+                channel_id,
+                updating_capacity,
+                other_capacity
+            ) VALUES (
+                :updating_participant,
+                :token_network_address,
+                :channel_id,
+                :updating_capacity,
+                :other_capacity
+            )
+        """,
+            capacity_update_dict,
+        )
+
+    def get_capacity_updates(
+        self,
+        updating_participant: Address,
+        token_network_address: TokenNetworkAddress,
+        channel_id: int,
+    ) -> Tuple[TokenAmount, TokenAmount]:
+        capacity_list = self.conn.execute(
+            """
+            SELECT updating_capacity, other_capacity
+            FROM capacity_update WHERE updating_participant=?
+            AND token_network_address=?
+            AND channel_id=?
+        """,
+            [
+                to_checksum_address(updating_participant),
+                to_checksum_address(token_network_address),
+                hex256(channel_id),
+            ],
+        )
+        try:
+            return next(capacity_list)
+        except StopIteration:
+            return TokenAmount(0), TokenAmount(0)
 
     def get_latest_known_block(self) -> BlockNumber:
         return self.conn.execute("SELECT latest_known_block FROM blockchain").fetchone()[0]

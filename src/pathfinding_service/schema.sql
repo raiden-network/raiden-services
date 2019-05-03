@@ -36,5 +36,15 @@ CREATE TABLE iou (
     claimed BOOL NOT NULL,
     PRIMARY KEY (sender, expiration_block)
 );
+
+CREATE TABLE capacity_update (
+    updating_participant CHAR(42) NOT NULL,
+    token_network_address CHAR(42) NOT NULL,
+    channel_id HEX_INT NOT NULL,
+    updating_capacity HEX_INT NOT NULL,
+    other_capacity HEX_INT NOT NULL,
+    PRIMARY KEY (updating_participant, token_network_address, channel_id)
+);
+
 CREATE UNIQUE INDEX one_active_session_per_sender
     ON iou(sender) WHERE NOT claimed;

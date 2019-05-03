@@ -191,7 +191,9 @@ def populate_token_network_random(
                 other_capacity=deposit2,
                 reveal_timeout=2,
                 mediation_fee=FeeAmount(0),
-            )
+            ),
+            updating_capacity_partner=TokenAmount(0),
+            other_capacity_partner=TokenAmount(0),
         )
         token_network_model.handle_channel_balance_update_message(
             UpdatePFS(
@@ -208,7 +210,9 @@ def populate_token_network_random(
                 other_capacity=deposit1,
                 reveal_timeout=2,
                 mediation_fee=FeeAmount(0),
-            )
+            ),
+            updating_capacity_partner=TokenAmount(deposit1),
+            other_capacity_partner=TokenAmount(deposit2),
         )
 
 
@@ -262,7 +266,9 @@ def populate_token_network() -> Callable:
                     other_capacity=p2_capacity,
                     reveal_timeout=p1_reveal_timeout,
                     mediation_fee=FeeAmount(0),
-                )
+                ),
+                updating_capacity_partner=TokenAmount(0),
+                other_capacity_partner=TokenAmount(0),
             )
             token_network.handle_channel_balance_update_message(
                 UpdatePFS(
@@ -279,7 +285,9 @@ def populate_token_network() -> Callable:
                     other_capacity=p1_capacity,
                     reveal_timeout=p2_reveal_timeout,
                     mediation_fee=FeeAmount(0),
-                )
+                ),
+                updating_capacity_partner=TokenAmount(p1_capacity),
+                other_capacity_partner=TokenAmount(p2_capacity),
             )
 
     return populate_token_network

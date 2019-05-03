@@ -123,7 +123,7 @@ class TokenNetwork:
             )
             return None
 
-        channel_view.update_capacity(deposit=total_deposit)
+        channel_view.update_deposit(total_deposit=total_deposit)
         return channel_view
 
     def handle_channel_closed_event(self, channel_identifier: ChannelID) -> None:
@@ -158,22 +158,27 @@ class TokenNetwork:
 
         return channel_view_to_partner, channel_view_from_partner
 
-    def handle_channel_balance_update_message(self, message: UpdatePFS) -> None:
+    def handle_channel_balance_update_message(
+        self,
+        message: UpdatePFS,
+        updating_capacity_partner: TokenAmount,
+        other_capacity_partner: TokenAmount,
+    ) -> None:
         """ Sends Capacity Update to PFS including the reveal timeout """
         channel_view_to_partner, channel_view_from_partner = self.get_channel_views_for_partner(
             channel_identifier=message.canonical_identifier.channel_identifier,
             updating_participant=message.updating_participant,
             other_participant=message.other_participant,
         )
-        # FIXME: Add updating only minimum if capacity updates conflict
         channel_view_to_partner.update_capacity(
             nonce=message.updating_nonce,
-            capacity=message.updating_capacity,
+            capacity=min(message.updating_capacity, other_capacity_partner),
             reveal_timeout=message.reveal_timeout,
             mediation_fee=message.mediation_fee,
         )
         channel_view_from_partner.update_capacity(
-            nonce=message.other_nonce, capacity=message.other_capacity
+            nonce=message.other_nonce,
+            capacity=min(message.other_capacity, updating_capacity_partner),
         )
 
     @staticmethod

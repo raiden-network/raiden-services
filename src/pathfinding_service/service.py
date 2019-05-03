@@ -260,22 +260,21 @@ class PathfindingService(gevent.Greenlet):
         if message.sender != message.updating_participant:
             raise InvalidCapacityUpdate("Capacity Update not signed correctly")
 
-        # check if nonce is higher than current nonce
-        view_to_partner, view_from_partner = token_network.get_channel_views_for_partner(
-            channel_identifier=channel_identifier,
-            updating_participant=message.updating_participant,
-            other_participant=message.other_participant,
-        )
-        is_nonce_pair_known = (
-            message.updating_nonce <= view_to_partner.update_nonce
-            and message.other_nonce <= view_from_partner.update_nonce
-        )
-        if is_nonce_pair_known:
-            raise InvalidCapacityUpdate("Capacity Update already received")
-
         return token_network
 
     def on_pfs_update(self, message: UpdatePFS) -> None:
         token_network = self._validate_pfs_update(message)
         log.info("Received Capacity Update", **message.to_dict())
-        token_network.handle_channel_balance_update_message(message)
+        self.database.upsert_capacity_update(message)
+        updating_capacity_partner, other_capacity_partner = self.database.get_capacity_updates(
+            updating_participant=message.other_participant,
+            token_network_address=TokenNetworkAddress(
+                message.canonical_identifier.token_network_address
+            ),
+            channel_id=message.canonical_identifier.channel_identifier,
+        )
+        token_network.handle_channel_balance_update_message(
+            message=message,
+            updating_capacity_partner=updating_capacity_partner,
+            other_capacity_partner=other_capacity_partner,
+        )
