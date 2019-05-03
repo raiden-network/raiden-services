@@ -3,7 +3,7 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import networkx as nx
 import structlog
-from eth_utils import is_checksum_address, to_checksum_address
+from eth_utils import to_checksum_address
 from networkx import DiGraph
 
 from pathfinding_service.config import (
@@ -13,8 +13,7 @@ from pathfinding_service.config import (
 )
 from pathfinding_service.model.channel_view import ChannelView
 from raiden.messages import UpdatePFS
-from raiden.utils.typing import ChannelID, TokenAmount, TokenNetworkAddress
-from raiden_libs.types import Address
+from raiden.utils.typing import Address, ChannelID, TokenAmount, TokenNetworkAddress
 
 log = structlog.get_logger(__name__)
 
@@ -31,7 +30,7 @@ class Path:
 
     def to_dict(self) -> dict:
         fee = sum(edge["view"].fee(self.value) for edge in self.edge_attrs)
-        return dict(path=self.nodes, estimated_fee=fee)
+        return dict(path=[to_checksum_address(node) for node in self.nodes], estimated_fee=fee)
 
 
 class TokenNetwork:
@@ -65,10 +64,6 @@ class TokenNetwork:
         """ Register the channel in the graph, add participents to graph if necessary.
 
         Corresponds to the ChannelOpened event. Called by the contract event listener. """
-
-        assert is_checksum_address(participant1)
-        assert is_checksum_address(participant2)
-
         views = [
             ChannelView(
                 token_network_address=self.address,
@@ -111,8 +106,6 @@ class TokenNetwork:
         """ Register a new balance for the beneficiary.
 
         Corresponds to the ChannelNewDeposit event. Called by the contract event listener. """
-
-        assert is_checksum_address(receiver)
 
         try:
             participant1, participant2 = self.channel_id_to_addresses[channel_identifier]
@@ -169,8 +162,8 @@ class TokenNetwork:
         """ Sends Capacity Update to PFS including the reveal timeout """
         channel_view_to_partner, channel_view_from_partner = self.get_channel_views_for_partner(
             channel_identifier=message.canonical_identifier.channel_identifier,
-            updating_participant=to_checksum_address(message.updating_participant),
-            other_participant=to_checksum_address(message.other_participant),
+            updating_participant=message.updating_participant,
+            other_participant=message.other_participant,
         )
         # FIXME: Add updating only minimum if capacity updates conflict
         channel_view_to_partner.update_capacity(

@@ -2,13 +2,14 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, Iterable, Optional
 
 import jsonschema
-from eth_utils import decode_hex, encode_hex, to_checksum_address
+from eth_utils import decode_hex, encode_hex
 from web3 import Web3
 
 from raiden.messages import RequestMonitoring, SignedBlindedBalanceProof
 from raiden.utils.signer import LocalSigner, recover
 from raiden.utils.signing import pack_data
 from raiden.utils.typing import (
+    Address,
     BlockNumber,
     ChainID,
     ChannelID,
@@ -21,7 +22,7 @@ from raiden.utils.typing import (
 from raiden_contracts.constants import ChannelState, MessageTypeId
 from raiden_libs.messages.json_schema import MONITOR_REQUEST_SCHEMA
 from raiden_libs.states import BlockchainState
-from raiden_libs.types import Address, TransactionHash
+from raiden_libs.types import TransactionHash
 
 
 @dataclass
@@ -176,10 +177,8 @@ class UnsignedMonitorRequest:
     signer: Address = field(init=False)
 
     def __post_init__(self) -> None:
-        self.signer = to_checksum_address(
-            recover(
-                data=self.packed_balance_proof_data(), signature=decode_hex(self.closing_signature)
-            )
+        self.signer = recover(
+            data=self.packed_balance_proof_data(), signature=decode_hex(self.closing_signature)
         )
 
     @classmethod
@@ -261,17 +260,11 @@ class MonitorRequest(UnsignedMonitorRequest):
 
     def __post_init__(self) -> None:
         super(MonitorRequest, self).__post_init__()
-        self.non_closing_signer = to_checksum_address(
-            recover(
-                data=self.packed_non_closing_data(),
-                signature=decode_hex(self.non_closing_signature),
-            )
+        self.non_closing_signer = recover(
+            data=self.packed_non_closing_data(), signature=decode_hex(self.non_closing_signature)
         )
-        self.reward_proof_signer = to_checksum_address(
-            recover(
-                data=self.packed_reward_proof_data(),
-                signature=decode_hex(self.reward_proof_signature),
-            )
+        self.reward_proof_signer = recover(
+            data=self.packed_reward_proof_data(), signature=decode_hex(self.reward_proof_signature)
         )
 
     @classmethod
@@ -279,7 +272,7 @@ class MonitorRequest(UnsignedMonitorRequest):
         jsonschema.validate(data, MONITOR_REQUEST_SCHEMA)
         result = cls(
             data["balance_proof"]["channel_identifier"],
-            data["balance_proof"]["token_network_address"],
+            decode_hex(data["balance_proof"]["token_network_address"]),
             data["balance_proof"]["chain_id"],
             data["balance_proof"]["balance_hash"],
             data["balance_proof"]["nonce"],

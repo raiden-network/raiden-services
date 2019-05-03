@@ -6,7 +6,7 @@ from typing import Any, ClassVar, Dict, List, Optional, Tuple, Type, TypeVar
 import marshmallow
 import pkg_resources
 import structlog
-from eth_utils import decode_hex, is_checksum_address, is_same_address
+from eth_utils import decode_hex, is_checksum_address, is_same_address, to_checksum_address
 from flask import Flask, Response, request
 from flask_restful import Api, Resource
 from gevent.pywsgi import WSGIServer
@@ -30,9 +30,8 @@ from pathfinding_service.model.token_network import TokenNetwork
 from pathfinding_service.service import PathfindingService
 from raiden.exceptions import InvalidSignature
 from raiden.utils.signer import recover
-from raiden.utils.typing import Signature, TokenAmount, TokenNetworkAddress
-from raiden_libs.marshmallow import HexedBytes
-from raiden_libs.types import Address
+from raiden.utils.typing import Address, Signature, TokenAmount, TokenNetworkAddress
+from raiden_libs.marshmallow import ChecksumAddress, HexedBytes
 
 log = structlog.get_logger(__name__)
 T = TypeVar("T")
@@ -42,11 +41,15 @@ last_requests: collections.deque = collections.deque([], maxlen=200)
 
 class ApiWithErrorHandler(Api):
     def handle_error(self, e: exceptions.ApiException) -> Response:
-        log.debug("Error while handling request", error=e, details=e.error_details, message=e.msg)
-        return self.make_response(
-            {"errors": e.msg, "error_code": e.error_code, "error_details": e.error_details},
-            e.http_code,
-        )
+        if isinstance(e, exceptions.ApiException):
+            log.debug(
+                "Error while handling request", error=e, details=e.error_details, message=e.msg
+            )
+            return self.make_response(
+                {"errors": e.msg, "error_code": e.error_code, "error_details": e.error_details},
+                e.http_code,
+            )
+        return super().handle_error(e)
 
 
 class PathfinderResource(Resource):
@@ -84,8 +87,10 @@ class PathfinderResource(Resource):
 class PathRequest:
     """A HTTP request to PathsResource"""
 
-    from_: Address = field(metadata=dict(load_from="from", validate=is_checksum_address))
-    to: Address = field(metadata=dict(validate=is_checksum_address))
+    from_: Address = field(
+        metadata=dict(marshmallow_field=ChecksumAddress(required=True, load_from="from"))
+    )
+    to: Address = field(metadata=dict(marshmallow_field=ChecksumAddress(required=True)))
     value: TokenAmount = field(metadata=dict(validate=marshmallow.validate.Range(min=1)))
     max_paths: int = field(
         default=DEFAULT_MAX_PATHS,
@@ -126,21 +131,23 @@ class PathsResource(PathfinderResource):
             if self.debug_mode:
                 last_requests.append(
                     dict(
-                        token_network_address=token_network_address,
-                        source=path_req.from_,
-                        target=path_req.to,
+                        token_network_address=to_checksum_address(token_network_address),
+                        source=to_checksum_address(path_req.from_),
+                        target=to_checksum_address(path_req.to),
                         routes=[],
                     )
                 )
-            raise exceptions.NoRouteFound(from_=path_req.from_, to=path_req.to)
+            raise exceptions.NoRouteFound(
+                from_=to_checksum_address(path_req.from_), to=to_checksum_address(path_req.to)
+            )
 
         # this is for assertion via the scenario player
         if self.debug_mode:
             last_requests.append(
                 dict(
-                    token_network_address=token_network_address,
-                    source=path_req.from_,
-                    target=path_req.to,
+                    token_network_address=to_checksum_address(token_network_address),
+                    source=to_checksum_address(path_req.from_),
+                    target=to_checksum_address(path_req.to),
                     routes=paths,
                 )
             )
@@ -208,19 +215,15 @@ def process_payment(
 class IOURequest:
     """A HTTP request to IOUResource"""
 
-    sender: Address
-    receiver: Address
+    sender: Address = field(metadata={"marshmallow_field": ChecksumAddress(required=True)})
+    receiver: Address = field(metadata={"marshmallow_field": ChecksumAddress(required=True)})
     timestamp: datetime
     timestamp_str: str = field(metadata={"load_from": "timestamp"})
     signature: Signature = field(metadata={"marshmallow_field": HexedBytes()})
     Schema: ClassVar[Type[marshmallow.Schema]]
 
     def is_signature_valid(self) -> bool:
-        packed_data = (
-            Web3.toBytes(hexstr=self.sender)
-            + Web3.toBytes(hexstr=self.receiver)
-            + Web3.toBytes(text=self.timestamp_str)
-        )
+        packed_data = self.sender + self.receiver + Web3.toBytes(text=self.timestamp_str)
         try:
             recovered_address = recover(packed_data, self.signature)
         except InvalidSignature:
@@ -263,13 +266,15 @@ class InfoResource(PathfinderResource):
                 "price_info": self.service_api.service_fee,
                 "network_info": {
                     "chain_id": self.pathfinding_service.chain_id,
-                    "registry_address": self.pathfinding_service.registry_address,
+                    "registry_address": to_checksum_address(
+                        self.pathfinding_service.registry_address
+                    ),
                 },
                 "settings": settings,
                 "version": self.version,
                 "operator": operator,
                 "message": message,
-                "payment_address": self.pathfinding_service.address,
+                "payment_address": to_checksum_address(self.pathfinding_service.address),
             },
             200,
         )
@@ -303,7 +308,11 @@ class DebugEndpointIOU(PathfinderResource):
         iou = self.pathfinding_service.database.get_iou(source_address)
         if iou:
             return (
-                dict(sender=iou.sender, amount=iou.amount, expiration_block=iou.expiration_block),
+                dict(
+                    sender=to_checksum_address(iou.sender),
+                    amount=iou.amount,
+                    expiration_block=iou.expiration_block,
+                ),
                 200,
             )
         return {}, 200

@@ -1,20 +1,23 @@
 import pytest
-from eth_utils import encode_hex
+from eth_utils import encode_hex, to_checksum_address
 
 import pathfinding_service.exceptions as exceptions
 from pathfinding_service.api import process_payment
 from pathfinding_service.config import MIN_IOU_EXPIRY, UDC_SECURITY_MARGIN_FACTOR
 from pathfinding_service.model import IOU
-from raiden.utils.typing import TokenAmount
-from raiden_contracts.tests.utils import get_random_address, get_random_privkey
+from raiden.utils.typing import Address, TokenAmount
+from raiden_contracts.tests.utils import get_random_privkey
 from raiden_contracts.utils import sign_one_to_n_iou
 from raiden_libs.utils import private_key_to_address
 
 
-def make_iou(sender_priv_key, receiver, amount=1, expiration_block=MIN_IOU_EXPIRY + 100) -> IOU:
+def make_iou(
+    sender_priv_key, receiver: Address, amount=1, expiration_block=MIN_IOU_EXPIRY + 100
+) -> IOU:
+    receiver_hex: str = to_checksum_address(receiver)
     iou_dict = {
         "sender": private_key_to_address(sender_priv_key),
-        "receiver": receiver,
+        "receiver": receiver_hex,
         "amount": amount,
         "expiration_block": expiration_block,
     }
@@ -22,17 +25,17 @@ def make_iou(sender_priv_key, receiver, amount=1, expiration_block=MIN_IOU_EXPIR
         sign_one_to_n_iou(
             privatekey=sender_priv_key,
             sender=iou_dict["sender"],
-            receiver=receiver,
+            receiver=receiver_hex,
             amount=amount,
             expiration=expiration_block,
         )
     )
-    iou = IOU.Schema().load(iou_dict)[0]
+    iou = IOU.Schema(strict=True).load(iou_dict)[0]
     iou.claimed = False
     return iou
 
 
-def test_load_and_save_iou(pathfinding_service_mock):
+def test_save_and_load_iou(pathfinding_service_mock):
     pfs = pathfinding_service_mock
     iou = make_iou(get_random_privkey(), pfs.address)
     pfs.database.upsert_iou(iou)
@@ -62,7 +65,7 @@ def test_process_payment_errors(
     process_payment(iou, pfs, service_fee=TokenAmount(1))
 
     # wrong recipient
-    iou = make_iou(privkey, get_random_address())
+    iou = make_iou(privkey, Address(bytes([6] * 20)))
     with pytest.raises(exceptions.WrongIOURecipient):
         process_payment(iou, pfs, service_fee=TokenAmount(1))
 

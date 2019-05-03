@@ -1,16 +1,15 @@
 import gevent
-from eth_utils import encode_hex
+from eth_utils import decode_hex, encode_hex, to_checksum_address
 from request_collector.server import RequestCollector
 from web3 import Web3
 
 from monitoring_service.service import MonitoringService
 from monitoring_service.states import HashedBalanceProof
-from raiden.utils.typing import BlockNumber, ChainID, Nonce, TokenAmount
+from raiden.utils.typing import Address, BlockNumber, ChainID, Nonce, TokenAmount
 from raiden_contracts.constants import CONTRACT_MONITORING_SERVICE, MonitoringServiceEvent
 from raiden_contracts.contract_manager import ContractManager
 from raiden_contracts.tests.utils.constants import EMPTY_LOCKSROOT
 from raiden_libs.blockchain import query_blockchain_events
-from raiden_libs.types import Address
 
 
 def create_ms_contract_events_query(
@@ -56,14 +55,15 @@ def test_e2e(  # pylint: disable=too-many-arguments,too-many-locals
     query = create_ms_contract_events_query(
         web3, contracts_manager, monitoring_service_contract.address
     )
-    initial_balance = user_deposit_contract.functions.balances(monitoring_service.address).call()
+    ms_address_hex = to_checksum_address(monitoring_service.address)
+    initial_balance = user_deposit_contract.functions.balances(ms_address_hex).call()
     c1, c2 = get_accounts(2)
 
     # add deposit for c1
     node_deposit = 10
     deposit_to_udc(c1, node_deposit)
 
-    deposit = service_registry.functions.deposits(monitoring_service.address).call()
+    deposit = service_registry.functions.deposits(ms_address_hex).call()
     assert deposit > 0
 
     # each client does a transfer
@@ -73,7 +73,7 @@ def test_e2e(  # pylint: disable=too-many-arguments,too-many-locals
 
     shared_bp_args = dict(
         channel_identifier=channel_id,
-        token_network_address=token_network.address,
+        token_network_address=decode_hex(token_network.address),
         chain_id=ChainID(1),
         additional_hash="0x%064x" % 0,
         locked_amount=TokenAmount(0),
@@ -148,7 +148,7 @@ def test_e2e(  # pylint: disable=too-many-arguments,too-many-locals
         MonitoringServiceEvent.REWARD_CLAIMED,
     ]
 
-    final_balance = user_deposit_contract.functions.balances(monitoring_service.address).call()
+    final_balance = user_deposit_contract.functions.balances(ms_address_hex).call()
     assert final_balance == (initial_balance + reward_amount)
 
     ms_greenlet.kill()

@@ -14,6 +14,7 @@ from pathfinding_service.service import PathfindingService
 from raiden.messages import UpdatePFS
 from raiden.utils import CanonicalIdentifier
 from raiden.utils.typing import (
+    Address,
     ChainID,
     ChannelID,
     FeeAmount,
@@ -22,7 +23,6 @@ from raiden.utils.typing import (
     TokenNetworkAddress,
 )
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
-from raiden_libs.types import Address
 from raiden_libs.utils import private_key_to_address
 
 
@@ -163,8 +163,8 @@ def populate_token_network_random(
         channel_id = ChannelID(channel_id_int)
 
         private_key1, private_key2 = random.sample(private_keys, 2)
-        address1 = Address(private_key_to_address(private_key1))
-        address2 = Address(private_key_to_address(private_key2))
+        address1 = Address(decode_hex(private_key_to_address(private_key1)))
+        address2 = Address(decode_hex(private_key_to_address(private_key2)))
         settle_timeout = 15
         token_network_model.handle_channel_opened_event(
             channel_id, address1, address2, settle_timeout
@@ -183,8 +183,8 @@ def populate_token_network_random(
                     channel_identifier=channel_id,
                     token_network_address=TokenNetworkAddress(token_network_model.address),
                 ),
-                updating_participant=decode_hex(address1),
-                other_participant=decode_hex(address2),
+                updating_participant=address1,
+                other_participant=address2,
                 updating_nonce=Nonce(1),
                 other_nonce=Nonce(1),
                 updating_capacity=deposit1,
@@ -200,8 +200,8 @@ def populate_token_network_random(
                     channel_identifier=channel_id,
                     token_network_address=TokenNetworkAddress(token_network_model.address),
                 ),
-                updating_participant=decode_hex(address2),
-                other_participant=decode_hex(address1),
+                updating_participant=address2,
+                other_participant=address1,
                 updating_nonce=Nonce(2),
                 other_nonce=Nonce(1),
                 updating_capacity=deposit2,
@@ -254,8 +254,8 @@ def populate_token_network() -> Callable:
                         channel_identifier=ChannelID(channel_id),
                         token_network_address=TokenNetworkAddress(token_network.address),
                     ),
-                    updating_participant=decode_hex(addresses[p1_index]),
-                    other_participant=decode_hex(addresses[p2_index]),
+                    updating_participant=addresses[p1_index],
+                    other_participant=addresses[p2_index],
                     updating_nonce=Nonce(1),
                     other_nonce=Nonce(1),
                     updating_capacity=p1_capacity,
@@ -271,8 +271,8 @@ def populate_token_network() -> Callable:
                         channel_identifier=ChannelID(channel_id),
                         token_network_address=TokenNetworkAddress(token_network.address),
                     ),
-                    updating_participant=decode_hex(addresses[p2_index]),
-                    other_participant=decode_hex(addresses[p1_index]),
+                    updating_participant=addresses[p2_index],
+                    other_participant=addresses[p1_index],
                     updating_nonce=Nonce(2),
                     other_nonce=Nonce(1),
                     updating_capacity=p2_capacity,
@@ -322,12 +322,12 @@ def pathfinding_service_mock_empty() -> Generator[PathfindingService, None, None
         web3_mock.net.version = "1"
         web3_mock.eth.blockNumber = 1
 
-        mock_udc = Mock(address="0x" + "8" * 40)
+        mock_udc = Mock(address=bytes([8] * 20))
         mock_udc.functions.effectiveBalance.return_value.call.return_value = 10000
         pathfinding_service = PathfindingService(
             web3=web3_mock,
             contracts={
-                CONTRACT_TOKEN_NETWORK_REGISTRY: Mock(address="0x" + "9" * 40),
+                CONTRACT_TOKEN_NETWORK_REGISTRY: Mock(address=bytes([9] * 20)),
                 CONTRACT_USER_DEPOSIT: mock_udc,
             },
             private_key="3a1076bf45ab87712ad64ccb3b10217737f7faacbf2872e88fdd9a537d8fe266",

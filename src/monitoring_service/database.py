@@ -3,7 +3,7 @@ import sqlite3
 from typing import List, Optional, Union, cast
 
 import structlog
-from eth_utils import decode_hex, is_checksum_address, to_checksum_address
+from eth_utils import decode_hex, to_checksum_address
 
 from monitoring_service.events import (
     ActionClaimRewardTriggeredEvent,
@@ -16,9 +16,8 @@ from monitoring_service.states import (
     MonitorRequest,
     OnChainUpdateStatus,
 )
-from raiden.utils.typing import BlockNumber, TokenNetworkAddress
+from raiden.utils.typing import Address, BlockNumber, TokenNetworkAddress
 from raiden_libs.database import BaseDatabase
-from raiden_libs.types import Address
 
 SubEvent = Union[ActionMonitoringTriggeredEvent, ActionClaimRewardTriggeredEvent]
 
@@ -43,7 +42,7 @@ class SharedDatabase(BaseDatabase):
             request.non_closing_signature,
             hex(request.reward_amount),
             request.reward_proof_signature,
-            request.non_closing_signer,
+            to_checksum_address(request.non_closing_signer),
         ]
         upsert_sql = "INSERT OR REPLACE INTO monitor_request VALUES ({})".format(
             ", ".join("?" * len(values))
@@ -51,9 +50,11 @@ class SharedDatabase(BaseDatabase):
         self.conn.execute(upsert_sql, values)
 
     def get_monitor_request(
-        self, token_network_address: TokenNetworkAddress, channel_id: int, non_closing_signer: str
+        self,
+        token_network_address: TokenNetworkAddress,
+        channel_id: int,
+        non_closing_signer: Address,
     ) -> Optional[MonitorRequest]:
-        assert is_checksum_address(non_closing_signer)
         row = self.conn.execute(
             """
                 SELECT *,
@@ -63,7 +64,11 @@ class SharedDatabase(BaseDatabase):
                   AND token_network_address = ?
                   AND non_closing_signer = ?
             """,
-            [hex(channel_id), to_checksum_address(token_network_address), non_closing_signer],
+            [
+                hex(channel_id),
+                to_checksum_address(token_network_address),
+                to_checksum_address(non_closing_signer),
+            ],
         ).fetchone()
         if row is None:
             return None
@@ -79,8 +84,8 @@ class SharedDatabase(BaseDatabase):
         values = [
             to_checksum_address(channel.token_network_address),
             hex(channel.identifier),
-            channel.participant1,
-            channel.participant2,
+            to_checksum_address(channel.participant1),
+            to_checksum_address(channel.participant2),
             hex(channel.settle_timeout),
             channel.state,
             hex(channel.closing_block) if channel.closing_block else None,
@@ -90,7 +95,7 @@ class SharedDatabase(BaseDatabase):
         ]
         if channel.update_status:
             values += [
-                channel.update_status.update_sender_address,
+                to_checksum_address(channel.update_status.update_sender_address),
                 hex(channel.update_status.nonce),
             ]
         else:
@@ -118,9 +123,12 @@ class SharedDatabase(BaseDatabase):
             key: val for key, val in zip(row.keys(), row) if not key.startswith("update_status")
         }
         kwargs["token_network_address"] = decode_hex(kwargs["token_network_address"])
+        kwargs["participant1"] = decode_hex(kwargs["participant1"])
+        kwargs["participant2"] = decode_hex(kwargs["participant2"])
         return Channel(
             update_status=OnChainUpdateStatus(
-                update_sender_address=row["update_status_sender"], nonce=row["update_status_nonce"]
+                update_sender_address=decode_hex(row["update_status_sender"]),
+                nonce=row["update_status_nonce"],
             )
             if row["update_status_nonce"] is not None
             else None,
@@ -206,7 +214,8 @@ class SharedDatabase(BaseDatabase):
         """
         blockchain = self.conn.execute("SELECT * FROM blockchain").fetchone()
         ms_state = MonitoringServiceState(
-            blockchain_state=self.get_blockchain_state(), address=blockchain["receiver"]
+            blockchain_state=self.get_blockchain_state(),
+            address=decode_hex(blockchain["receiver"]),
         )
         return ms_state
 
@@ -220,7 +229,7 @@ class Database(SharedDatabase):
         chain_id: int,
         msc_address: Address,
         registry_address: Address,
-        receiver: str,
+        receiver: Address,
         sync_start_block: BlockNumber = BlockNumber(0),
     ) -> None:
         super(Database, self).__init__(filename, allow_create=True)

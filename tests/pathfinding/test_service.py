@@ -3,7 +3,7 @@ from typing import List
 from unittest.mock import Mock, patch
 
 from pathfinding_service.service import PathfindingService
-from raiden.utils.typing import BlockNumber, ChannelID, TokenAmount, TokenNetworkAddress
+from raiden.utils.typing import Address, BlockNumber, ChannelID, TokenAmount, TokenNetworkAddress
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
 from raiden_contracts.tests.utils import get_random_privkey
 from raiden_libs.events import (
@@ -13,22 +13,21 @@ from raiden_libs.events import (
     ReceiveTokenNetworkCreatedEvent,
     UpdatedHeadBlockEvent,
 )
-from raiden_libs.types import Address
 
 from ..libs.mocks.web3 import ContractMock, Web3Mock
 
-PARTICIPANT1 = Address("0x" + "1" * 40)
-PARTICIPANT2 = Address("0x" + "2" * 40)
+PARTICIPANT1 = Address(bytes([1] * 20))
+PARTICIPANT2 = Address(bytes([2] * 20))
 
 
 def test_save_and_load_token_networks(pathfinding_service_mock_empty):
     pfs = pathfinding_service_mock_empty
 
-    token_address = Address("0x" + "1" * 40)
+    token_address = Address(bytes([1] * 20))
     token_network_address = TokenNetworkAddress(bytes([2] * 20))
     channel_id = ChannelID(1)
-    p1 = Address("0x" + "3" * 40)
-    p2 = Address("0x" + "4" * 40)
+    p1 = Address(bytes([3] * 20))
+    p2 = Address(bytes([4] * 20))
     events = [
         ReceiveTokenNetworkCreatedEvent(
             token_address=token_address,
@@ -65,11 +64,11 @@ def test_crash(tmpdir, mockchain):  # pylint: disable=too-many-locals
     A somewhat meaninful crash handling is simulated by not including the
     UpdatedHeadBlockEvent in every block.
     """
-    token_address = Address("0x" + "1" * 40)
+    token_address = Address(bytes([1] * 20))
     token_network_address = TokenNetworkAddress(bytes([2] * 20))
     channel_id = ChannelID(1)
-    p1 = Address("0x" + "3" * 40)
-    p2 = Address("0x" + "4" * 40)
+    p1 = Address(bytes([3] * 20))
+    p2 = Address(bytes([4] * 20))
     events = [
         [
             ReceiveTokenNetworkCreatedEvent(
@@ -126,8 +125,8 @@ def test_crash(tmpdir, mockchain):  # pylint: disable=too-many-locals
 
 
 def test_token_network_created(pathfinding_service_mock):
-    token_address = Address("0x" + "1" * 40)
-    token_network_address = TokenNetworkAddress(bytes([2] * 20))
+    token_address = Address(bytes([1] * 20))
+    token_network_address = TokenNetworkAddress(bytes(bytes([2] * 20)))
     network_event = ReceiveTokenNetworkCreatedEvent(
         token_address=token_address,
         token_network_address=token_network_address,

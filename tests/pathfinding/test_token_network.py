@@ -1,8 +1,7 @@
 from typing import List
 
 from pathfinding_service.model import TokenNetwork
-from raiden.utils.typing import ChannelID
-from raiden_libs.types import Address
+from raiden.utils.typing import Address, ChannelID
 
 
 def test_tn_idempotency_of_channel_openings(

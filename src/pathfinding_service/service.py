@@ -4,7 +4,7 @@ from typing import Dict, Optional
 
 import gevent
 import structlog
-from eth_utils import is_same_address, to_checksum_address
+from eth_utils import decode_hex
 from web3 import Web3
 from web3.contract import Contract
 
@@ -14,7 +14,7 @@ from pathfinding_service.exceptions import InvalidCapacityUpdate
 from pathfinding_service.model import TokenNetwork
 from raiden.constants import PATH_FINDING_BROADCASTING_ROOM, UINT256_MAX
 from raiden.messages import SignedMessage, UpdatePFS
-from raiden.utils.typing import BlockNumber, ChainID, TokenNetworkAddress
+from raiden.utils.typing import Address, BlockNumber, ChainID, TokenNetworkAddress
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
 from raiden_libs.blockchain import get_blockchain_events
 from raiden_libs.contract_info import CONTRACT_MANAGER
@@ -29,7 +29,6 @@ from raiden_libs.events import (
 from raiden_libs.gevent_error_handler import register_error_handler
 from raiden_libs.matrix import MatrixListener
 from raiden_libs.states import BlockchainState
-from raiden_libs.types import Address
 from raiden_libs.utils import private_key_to_address
 
 log = structlog.get_logger(__name__)
@@ -53,7 +52,7 @@ class PathfindingService(gevent.Greenlet):
         self.registry_address = contracts[CONTRACT_TOKEN_NETWORK_REGISTRY].address
         self.user_deposit_contract = contracts[CONTRACT_USER_DEPOSIT]
         self.chain_id = ChainID(int(web3.net.version))
-        self.address = private_key_to_address(private_key)
+        self.address = decode_hex(private_key_to_address(private_key))
         self._required_confirmations = required_confirmations
         self._poll_interval = poll_interval
         self._is_running = gevent.event.Event()
@@ -121,7 +120,7 @@ class PathfindingService(gevent.Greenlet):
                 latest_known_block=self.database.get_latest_known_block(),
                 token_network_addresses=list(self.token_networks.keys()),
                 token_network_registry_address=self.registry_address,
-                monitor_contract_address=Address(""),  # FIXME
+                monitor_contract_address=Address(bytes([1] * 20)),  # FIXME
                 chain_id=self.chain_id,
             ),
             to_block=last_block,
@@ -222,9 +221,6 @@ class PathfindingService(gevent.Greenlet):
             message.canonical_identifier.token_network_address
         )
 
-        updating_participant = to_checksum_address(message.updating_participant)
-        other_participant = to_checksum_address(message.other_participant)
-
         # check if chain_id matches
         if message.canonical_identifier.chain_identifier != self.chain_id:
             raise InvalidCapacityUpdate("Received Capacity Update with unknown chain identifier")
@@ -251,25 +247,24 @@ class PathfindingService(gevent.Greenlet):
 
         # check if participants fit to channel id
         participants = token_network.channel_id_to_addresses[channel_identifier]
-        if updating_participant not in participants:
+        if message.updating_participant not in participants:
             raise InvalidCapacityUpdate(
                 "Sender of Capacity Update does not match the internal channel"
             )
-        if other_participant not in participants:
+        if message.other_participant not in participants:
             raise InvalidCapacityUpdate(
                 "Other Participant of Capacity Update does not match the internal channel"
             )
 
         # check signature of Capacity Update
-        signer = to_checksum_address(message.sender)  # recover address from signature
-        if not is_same_address(signer, updating_participant):
+        if message.sender != message.updating_participant:
             raise InvalidCapacityUpdate("Capacity Update not signed correctly")
 
         # check if nonce is higher than current nonce
         view_to_partner, view_from_partner = token_network.get_channel_views_for_partner(
             channel_identifier=channel_identifier,
-            updating_participant=updating_participant,
-            other_participant=other_participant,
+            updating_participant=message.updating_participant,
+            other_participant=message.other_participant,
         )
         is_nonce_pair_known = (
             message.updating_nonce <= view_to_partner.update_nonce

@@ -1,8 +1,7 @@
 from eth_utils import to_checksum_address
 
 from monitoring_service.events import ActionMonitoringTriggeredEvent, ScheduledEvent
-from raiden.utils.typing import BlockNumber, ChannelID, TokenNetworkAddress
-from raiden_libs.types import Address
+from raiden.utils.typing import Address, BlockNumber, ChannelID, TokenNetworkAddress
 
 
 def test_scheduled_events(ms_database):
@@ -18,7 +17,7 @@ def test_scheduled_events(ms_database):
         event=ActionMonitoringTriggeredEvent(
             token_network_address=token_network_address,
             channel_identifier=ChannelID(1),
-            non_closing_participant=Address("b"),
+            non_closing_participant=Address(bytes([1] * 20)),
         ),
     )
 
@@ -31,7 +30,7 @@ def test_scheduled_events(ms_database):
         event=ActionMonitoringTriggeredEvent(
             token_network_address=token_network_address,
             channel_identifier=ChannelID(1),
-            non_closing_participant=Address("b"),
+            non_closing_participant=Address(bytes([1] * 20)),
         ),
     )
 

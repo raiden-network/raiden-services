@@ -8,7 +8,7 @@ from web3 import Web3
 from web3.contract import get_event_data
 from web3.utils.abi import filter_by_type
 
-from raiden.utils.typing import BlockNumber
+from raiden.utils.typing import Address, BlockNumber
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
     CONTRACT_TOKEN_NETWORK,
@@ -31,7 +31,6 @@ from raiden_libs.events import (
     UpdatedHeadBlockEvent,
 )
 from raiden_libs.states import BlockchainState
-from raiden_libs.types import Address
 
 log = structlog.get_logger(__name__)
 
@@ -116,7 +115,7 @@ def parse_token_network_event(event: dict) -> Optional[Event]:
         )
     if event_name == ChannelEvent.BALANCE_PROOF_UPDATED:
         return ReceiveNonClosingBalanceProofUpdatedEvent(
-            closing_participant=event["args"]["closing_participant"],
+            closing_participant=decode_hex(event["args"]["closing_participant"]),
             nonce=event["args"]["nonce"],
             **common_infos,
         )
@@ -170,7 +169,7 @@ def get_blockchain_events(
         network_events = query_blockchain_events(
             web3=web3,
             contract_manager=contract_manager,
-            contract_address=Address(to_checksum_address(token_network_address)),
+            contract_address=Address(token_network_address),
             contract_name=CONTRACT_TOKEN_NETWORK,
             topics=[None],
             from_block=from_block,
@@ -224,11 +223,11 @@ def get_monitoring_blockchain_events(
         if event_name == MonitoringServiceEvent.NEW_BALANCE_PROOF_RECEIVED:
             events.append(
                 ReceiveMonitoringNewBalanceProofEvent(
-                    token_network_address=event["args"]["token_network_address"],
+                    token_network_address=decode_hex(event["args"]["token_network_address"]),
                     channel_identifier=event["args"]["channel_identifier"],
                     reward_amount=event["args"]["reward_amount"],
                     nonce=event["args"]["nonce"],
-                    ms_address=event["args"]["ms_address"],
+                    ms_address=decode_hex(event["args"]["ms_address"]),
                     raiden_node_address=event["args"]["raiden_node_address"],
                     block_number=block_number,
                 )
@@ -236,7 +235,7 @@ def get_monitoring_blockchain_events(
         elif event_name == MonitoringServiceEvent.REWARD_CLAIMED:
             events.append(
                 ReceiveMonitoringRewardClaimedEvent(
-                    ms_address=event["args"]["ms_address"],
+                    ms_address=decode_hex(event["args"]["ms_address"]),
                     amount=event["args"]["amount"],
                     reward_identifier=encode_hex(event["args"]["reward_identifier"]),
                     block_number=block_number,

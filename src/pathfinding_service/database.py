@@ -2,14 +2,13 @@ import os
 from typing import Iterator, Optional
 
 import structlog
-from eth_utils import decode_hex
+from eth_utils import decode_hex, to_checksum_address
 
 from pathfinding_service.model import IOU
 from pathfinding_service.model.channel_view import ChannelView
 from pathfinding_service.model.token_network import TokenNetwork
-from raiden.utils.typing import BlockNumber, ChannelID, TokenAmount
+from raiden.utils.typing import Address, BlockNumber, ChannelID, TokenAmount
 from raiden_libs.database import BaseDatabase, hex256
-from raiden_libs.types import Address
 
 log = structlog.get_logger(__name__)
 
@@ -70,7 +69,7 @@ class PFSDatabase(BaseDatabase):
         args: list = []
         if sender is not None:
             query += " AND sender = ?"
-            args.append(sender)
+            args.append(to_checksum_address(sender))
         if expiration_block is not None:
             query += " AND expiration_block = ?"
             args.append(hex256(expiration_block))
@@ -86,8 +85,8 @@ class PFSDatabase(BaseDatabase):
 
         for row in self.conn.execute(query, args):
             iou_dict = dict(zip(row.keys(), row))
-            iou_dict["receiver"] = self.pfs_address
-            yield IOU.Schema().load(iou_dict)[0]
+            iou_dict["receiver"] = to_checksum_address(self.pfs_address)
+            yield IOU.Schema(strict=True).load(iou_dict)[0]
 
     def get_iou(
         self, sender: Address, expiration_block: BlockNumber = None, claimed: bool = None
