@@ -40,7 +40,7 @@ last_requests: collections.deque = collections.deque([], maxlen=200)
 
 
 class ApiWithErrorHandler(Api):
-    def handle_error(self, e: exceptions.ApiException) -> Response:
+    def handle_error(self, e: Exception) -> Response:
         if isinstance(e, exceptions.ApiException):
             log.debug(
                 "Error while handling request", error=e, details=e.error_details, message=e.msg
@@ -282,7 +282,7 @@ class InfoResource(PathfinderResource):
 
 class DebugEndpoint(PathfinderResource):
     def get(  # pylint: disable=no-self-use
-        self, token_network_address: str, source_address: Address, target_address: Address = None
+        self, token_network_address: str, source_address: str, target_address: str = None
     ) -> Tuple[dict, int]:
         request_count = 0
         responses = []
