@@ -1,7 +1,6 @@
 from dataclasses import dataclass, field
-from typing import Any, Dict, Iterable, Optional
+from typing import Iterable, Optional
 
-import jsonschema
 from eth_utils import decode_hex, encode_hex
 from web3 import Web3
 
@@ -20,7 +19,6 @@ from raiden.utils.typing import (
     TokenNetworkID,
 )
 from raiden_contracts.constants import ChannelState, MessageTypeId
-from raiden_libs.messages.json_schema import MONITOR_REQUEST_SCHEMA
 from raiden_libs.states import BlockchainState
 from raiden_libs.types import TransactionHash
 
@@ -266,20 +264,3 @@ class MonitorRequest(UnsignedMonitorRequest):
         self.reward_proof_signer = recover(
             data=self.packed_reward_proof_data(), signature=decode_hex(self.reward_proof_signature)
         )
-
-    @classmethod
-    def deserialize(cls, data: Dict[str, Any]) -> "MonitorRequest":
-        jsonschema.validate(data, MONITOR_REQUEST_SCHEMA)
-        result = cls(
-            data["balance_proof"]["channel_identifier"],
-            decode_hex(data["balance_proof"]["token_network_address"]),
-            data["balance_proof"]["chain_id"],
-            data["balance_proof"]["balance_hash"],
-            data["balance_proof"]["nonce"],
-            data["balance_proof"]["additional_hash"],
-            data["balance_proof"]["closing_signature"],
-            data["non_closing_signature"],
-            data["reward_proof_signature"],
-            data["reward_amount"],
-        )
-        return result
