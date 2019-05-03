@@ -8,13 +8,13 @@ import click
 import requests.exceptions
 import structlog
 from eth_account import Account
-from eth_utils import is_checksum_address
+from eth_utils import decode_hex, is_checksum_address
 from web3 import HTTPProvider, Web3
 from web3.contract import Contract
 from web3.middleware import geth_poa_middleware
 
 from pathfinding_service.middleware import http_retry_with_backoff_middleware
-from raiden.utils.typing import BlockNumber, ChainID
+from raiden.utils.typing import Address, BlockNumber, ChainID
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
     CONTRACT_ONE_TO_N,
@@ -23,7 +23,6 @@ from raiden_contracts.constants import (
 )
 from raiden_libs.contract_info import CONTRACT_MANAGER, get_contract_addresses_and_start_block
 from raiden_libs.logging import setup_logging
-from raiden_libs.types import Address
 
 log = structlog.get_logger(__name__)
 
@@ -49,7 +48,7 @@ def validate_address(_ctx: click.Context, _param: click.Parameter, value: str) -
         return None
     if not is_checksum_address(value):
         raise click.BadParameter("not an EIP-55 checksummed address")
-    return value
+    return decode_hex(value)
 
 
 def common_options(app_name: str) -> Callable:

@@ -3,11 +3,10 @@ import sqlite3
 from typing import Any, Dict
 
 import structlog
-from eth_utils import is_checksum_address, to_checksum_address
+from eth_utils import to_checksum_address
 
-from raiden.utils.typing import BlockNumber, TokenNetworkAddress
+from raiden.utils.typing import Address, BlockNumber, TokenNetworkAddress
 from raiden_libs.states import BlockchainState
-from raiden_libs.types import Address
 
 log = structlog.get_logger(__name__)
 
@@ -57,23 +56,23 @@ class BaseDatabase:
     def _setup(
         self,
         chain_id: int,
-        receiver: str,
+        receiver: Address,
         sync_start_block: BlockNumber,
         **contract_addresses: Address,
     ) -> None:
         """ Make sure that the db is initialized an matches the given settings """
         assert chain_id >= 0
-        assert is_checksum_address(receiver)
-        for contract, address in contract_addresses.items():
-            assert is_checksum_address(address), f"Bad {contract}: {address}!"
+        hex_addresses: Dict[str, str] = {
+            con: to_checksum_address(addr) for con, addr in contract_addresses.items()
+        }
 
         initialized = self.conn.execute(
             "SELECT name FROM sqlite_master WHERE type='table' AND name='blockchain'"
         ).fetchone()
-        settings = dict(chain_id=chain_id, receiver=receiver, **contract_addresses)
+        settings = dict(chain_id=chain_id, receiver=to_checksum_address(receiver), **hex_addresses)
 
         if initialized:
-            self._check_settings(settings, contract_addresses)
+            self._check_settings(settings, hex_addresses)
         else:
             # create db schema
             with open(self.schema_filename) as schema_file:
@@ -81,14 +80,13 @@ class BaseDatabase:
             update_stmt = "UPDATE blockchain SET {}".format(
                 ",".join(
                     f"{key} = :{key}"
-                    for key in ["chain_id", "receiver", "latest_known_block"]
-                    + list(contract_addresses)
+                    for key in ["chain_id", "receiver", "latest_known_block"] + list(hex_addresses)
                 )
             )
             self.conn.execute(update_stmt, dict(latest_known_block=sync_start_block, **settings))
 
     def _check_settings(
-        self, new_settings: Dict[str, Any], contract_addresses: Dict[str, Address]
+        self, new_settings: Dict[str, Any], contract_addresses: Dict[str, str]
     ) -> None:
         old_settings = self.conn.execute(
             f"""

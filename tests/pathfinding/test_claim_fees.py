@@ -20,7 +20,7 @@ def test_claim_fees(  # pylint: disable=too-many-locals
     get_private_key,
 ):
     # Prepare test data
-    accounts = get_accounts(6)
+    accounts = [decode_hex(acc) for acc in get_accounts(6)]
     pfs = pathfinding_service_mock
     iou_inputs: List[dict] = [
         dict(sender=accounts[0], amount=100, deposit=200),
@@ -48,7 +48,6 @@ def test_claim_fees(  # pylint: disable=too-many-locals
         ious.append(iou)
         pfs.database.upsert_iou(iou)
         if iou_dict.get("deposit", 0) > 0:
-            print(iou.sender, iou_dict["deposit"])
             deposit_to_udc(iou.sender, iou_dict["deposit"])
 
     # Check if the right IOUs are considered to be claimable

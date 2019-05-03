@@ -3,11 +3,11 @@ import time
 from typing import List
 
 import pytest
+from eth_utils import decode_hex, to_checksum_address
 from networkx import NetworkXNoPath
 
 from pathfinding_service.model import ChannelView, TokenNetwork
-from raiden.utils.typing import ChannelID, FeeAmount, TokenAmount, TokenNetworkAddress
-from raiden_libs.types import Address
+from raiden.utils.typing import Address, ChannelID, FeeAmount, TokenAmount, TokenNetworkAddress
 
 
 def test_edge_weight(addresses):
@@ -60,7 +60,7 @@ def test_routing_benchmark(token_network_model: TokenNetwork):  # pylint: disabl
         path = path_object["path"]
         fees = path_object["estimated_fee"]
         for node1, node2 in zip(path[:-1], path[1:]):
-            view: ChannelView = G[node1][node2]["view"]
+            view: ChannelView = G[decode_hex(node1)][decode_hex(node2)]["view"]
             print("fee = ", view.absolute_fee, "capacity = ", view.capacity)
         print("fee sum = ", fees)
     print("Paths: ", paths)
@@ -72,6 +72,7 @@ def test_routing_benchmark(token_network_model: TokenNetwork):  # pylint: disabl
 
 @pytest.mark.usefixtures("populate_token_network_case_1")
 def test_routing_simple(token_network_model: TokenNetwork, addresses: List[Address]):
+    hex_addrs = [to_checksum_address(addr) for addr in addresses]
     view01: ChannelView = token_network_model.G[addresses[0]][addresses[1]]["view"]
     view10: ChannelView = token_network_model.G[addresses[1]][addresses[0]]["view"]
 
@@ -86,7 +87,7 @@ def test_routing_simple(token_network_model: TokenNetwork, addresses: List[Addre
     )
     assert len(paths) == 1
     assert paths[0] == {
-        "path": [addresses[0], addresses[1], addresses[4], addresses[3]],
+        "path": [hex_addrs[0], hex_addrs[1], hex_addrs[4], hex_addrs[3]],
         "estimated_fee": 0,
     }
 
@@ -99,17 +100,18 @@ def test_routing_simple(token_network_model: TokenNetwork, addresses: List[Addre
 
 @pytest.mark.usefixtures("populate_token_network_case_1")
 def test_routing_result_order(token_network_model: TokenNetwork, addresses: List[Address]):
+    hex_addrs = [to_checksum_address(addr) for addr in addresses]
     paths = token_network_model.get_paths(
         addresses[0], addresses[2], value=TokenAmount(10), max_paths=5
     )
     # 5 paths requested, but only 1 is available
     assert len(paths) == 1
-    assert paths[0] == {"path": [addresses[0], addresses[1], addresses[2]], "estimated_fee": 0}
+    assert paths[0] == {"path": [hex_addrs[0], hex_addrs[1], hex_addrs[2]], "estimated_fee": 0}
 
 
 def addresses_to_indexes(path, addresses):
     index_of_address = {a: i for i, a in enumerate(addresses)}
-    return [index_of_address[a] for a in path]
+    return [index_of_address[decode_hex(a)] for a in path]
 
 
 @pytest.mark.usefixtures("populate_token_network_case_3")

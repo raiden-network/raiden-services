@@ -2,6 +2,7 @@
 from unittest.mock import Mock
 
 import pytest
+from eth_utils import decode_hex
 
 from monitoring_service.events import (
     ActionClaimRewardTriggeredEvent,
@@ -25,7 +26,14 @@ from monitoring_service.states import (
     OnChainUpdateStatus,
     UnsignedMonitorRequest,
 )
-from raiden.utils.typing import BlockNumber, ChannelID, Nonce, TokenAmount, TokenNetworkAddress
+from raiden.utils.typing import (
+    Address,
+    BlockNumber,
+    ChannelID,
+    Nonce,
+    TokenAmount,
+    TokenNetworkAddress,
+)
 from raiden_contracts.constants import ChannelState
 from raiden_contracts.tests.utils import get_random_privkey
 from raiden_libs.events import (
@@ -37,15 +45,14 @@ from raiden_libs.events import (
     ReceiveMonitoringRewardClaimedEvent,
     ReceiveNonClosingBalanceProofUpdatedEvent,
 )
-from raiden_libs.types import Address
 from raiden_libs.utils import private_key_to_address, to_checksum_address
 
 DEFAULT_TOKEN_NETWORK_ADDRESS = TokenNetworkAddress(bytes([1] * 20))
 DEFAULT_CHANNEL_IDENTIFIER = ChannelID(3)
 DEFAULT_PRIVATE_KEY1 = "0x" + "1" * 64
 DEFAULT_PRIVATE_KEY2 = "0x" + "2" * 64
-DEFAULT_PARTICIPANT1 = Address(private_key_to_address(DEFAULT_PRIVATE_KEY1))
-DEFAULT_PARTICIPANT2 = Address(private_key_to_address(DEFAULT_PRIVATE_KEY2))
+DEFAULT_PARTICIPANT1 = Address(decode_hex(private_key_to_address(DEFAULT_PRIVATE_KEY1)))
+DEFAULT_PARTICIPANT2 = Address(decode_hex(private_key_to_address(DEFAULT_PRIVATE_KEY2)))
 DEFAULT_REWARD_AMOUNT = TokenAmount(1)
 DEFAULT_SETTLE_TIMEOUT = 100
 
@@ -355,7 +362,7 @@ def test_monitor_new_balance_proof_event_handler_sets_update_status(context: Con
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
         reward_amount=TokenAmount(1),
         nonce=Nonce(2),
-        ms_address=Address("C"),
+        ms_address=Address(bytes([4] * 20)),
         raiden_node_address=DEFAULT_PARTICIPANT2,
         block_number=BlockNumber(23),
     )
@@ -375,14 +382,14 @@ def test_monitor_new_balance_proof_event_handler_sets_update_status(context: Con
     assert channel
     assert channel.update_status is not None
     assert channel.update_status.nonce == 2
-    assert channel.update_status.update_sender_address == "C"
+    assert channel.update_status.update_sender_address == bytes([4] * 20)
 
     new_balance_event2 = ReceiveMonitoringNewBalanceProofEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
         reward_amount=TokenAmount(1),
         nonce=Nonce(5),
-        ms_address=Address("D"),
+        ms_address=Address(bytes([4] * 20)),
         raiden_node_address=DEFAULT_PARTICIPANT2,
         block_number=BlockNumber(23),
     )
@@ -396,7 +403,7 @@ def test_monitor_new_balance_proof_event_handler_sets_update_status(context: Con
     assert channel
     assert channel.update_status is not None
     assert channel.update_status.nonce == 5
-    assert channel.update_status.update_sender_address == "D"
+    assert channel.update_status.update_sender_address == bytes([4] * 20)
 
 
 def test_monitor_new_balance_proof_event_handler_idempotency(context: Context):
@@ -407,7 +414,7 @@ def test_monitor_new_balance_proof_event_handler_idempotency(context: Context):
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
         reward_amount=TokenAmount(1),
         nonce=Nonce(2),
-        ms_address=Address("C"),
+        ms_address=Address(bytes([3] * 20)),
         raiden_node_address=DEFAULT_PARTICIPANT2,
         block_number=BlockNumber(23),
     )
@@ -428,7 +435,7 @@ def test_monitor_new_balance_proof_event_handler_idempotency(context: Context):
     assert channel
     assert channel.update_status is not None
     assert channel.update_status.nonce == 2
-    assert channel.update_status.update_sender_address == "C"
+    assert channel.update_status.update_sender_address == bytes([3] * 20)
 
     monitor_new_balance_proof_event_handler(new_balance_event, context)
 
@@ -440,7 +447,7 @@ def test_monitor_new_balance_proof_event_handler_idempotency(context: Context):
     assert channel
     assert channel.update_status is not None
     assert channel.update_status.nonce == 2
-    assert channel.update_status.update_sender_address == "C"
+    assert channel.update_status.update_sender_address == bytes([3] * 20)
 
 
 def test_monitor_reward_claimed_event_handler(context: Context, log):
@@ -456,7 +463,7 @@ def test_monitor_reward_claimed_event_handler(context: Context, log):
     monitor_reward_claim_event_handler(claim_event, context)
     assert log.has("Successfully claimed reward")
 
-    claim_event.ms_address = Address("C")
+    claim_event.ms_address = Address(bytes([3] * 20))
     monitor_reward_claim_event_handler(claim_event, context)
     assert log.has("Another MS claimed reward")
 
@@ -471,7 +478,7 @@ def test_action_monitoring_triggered_event_handler_does_not_trigger_monitor_call
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
         reward_amount=TokenAmount(1),
         nonce=Nonce(5),
-        ms_address=Address("C"),
+        ms_address=Address(bytes([3] * 20)),
         raiden_node_address=DEFAULT_PARTICIPANT2,
         block_number=BlockNumber(23),
     )
@@ -752,7 +759,7 @@ def test_action_claim_reward_triggered_event_handler_without_update_state_doesnt
 
     # Set update state
     channel.update_status = OnChainUpdateStatus(
-        update_sender_address=Address("0x" + "1" * 40), nonce=Nonce(6)
+        update_sender_address=Address(bytes([1] * 20)), nonce=Nonce(6)
     )
     context.db.upsert_channel(channel)
 

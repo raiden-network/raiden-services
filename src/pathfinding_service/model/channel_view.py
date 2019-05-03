@@ -2,13 +2,18 @@ from dataclasses import dataclass, field
 from typing import ClassVar, Type
 
 import marshmallow
-from eth_utils import is_checksum_address
 from marshmallow_dataclass import add_schema
 
 from pathfinding_service.config import DEFAULT_REVEAL_TIMEOUT
-from raiden.utils.typing import ChannelID, FeeAmount, Nonce, TokenAmount, TokenNetworkAddress
+from raiden.utils.typing import (
+    Address,
+    ChannelID,
+    FeeAmount,
+    Nonce,
+    TokenAmount,
+    TokenNetworkAddress,
+)
 from raiden_libs.marshmallow import ChecksumAddress
-from raiden_libs.types import Address
 
 
 @add_schema
@@ -19,8 +24,8 @@ class ChannelView:
     """
 
     channel_id: ChannelID
-    participant1: Address
-    participant2: Address
+    participant1: Address = field(metadata={"marshmallow_field": ChecksumAddress(required=True)})
+    participant2: Address = field(metadata={"marshmallow_field": ChecksumAddress(required=True)})
     settle_timeout: int
     token_network_address: TokenNetworkAddress = field(
         metadata={"marshmallow_field": ChecksumAddress(required=True)}
@@ -34,8 +39,6 @@ class ChannelView:
     Schema: ClassVar[Type[marshmallow.Schema]]
 
     def __post_init__(self) -> None:
-        assert is_checksum_address(self.participant1)
-        assert is_checksum_address(self.participant2)
         if self.capacity is None:
             self.capacity = self.deposit
 

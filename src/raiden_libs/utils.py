@@ -3,7 +3,7 @@ from typing import Union
 from coincurve import PrivateKey, PublicKey
 from eth_utils import keccak, to_bytes, to_checksum_address
 
-from raiden_libs.types import Address
+from raiden.utils.typing import Address
 
 
 def public_key_to_address(public_key: Union[PublicKey, bytes]) -> Address:

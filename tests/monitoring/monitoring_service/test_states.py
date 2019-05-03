@@ -12,10 +12,10 @@ from monitoring_service.states import (
     UnsignedMonitorRequest,
 )
 from raiden.constants import UINT64_MAX, UINT256_MAX
-from raiden.utils.typing import BlockNumber, ChannelID, TokenAmount, TokenNetworkAddress
+from raiden.utils.typing import Address, BlockNumber, ChannelID, TokenAmount, TokenNetworkAddress
 from raiden_contracts.constants import ChannelState
 from raiden_contracts.tests.utils import get_random_address, get_random_privkey
-from raiden_libs.types import Address, TransactionHash
+from raiden_libs.types import TransactionHash
 from raiden_libs.utils import keccak, private_key_to_address
 
 
@@ -66,9 +66,9 @@ def get_random_monitor_request(get_random_identifier):
 def test_monitor_request_properties(get_random_monitor_request):
     request, p1, p2 = get_random_monitor_request()
 
-    assert request.signer == private_key_to_address(p1)
-    assert request.non_closing_signer == private_key_to_address(p2)
-    assert request.reward_proof_signer == private_key_to_address(p2)
+    assert request.signer == decode_hex(private_key_to_address(p1))
+    assert request.non_closing_signer == decode_hex(private_key_to_address(p2))
+    assert request.reward_proof_signer == decode_hex(private_key_to_address(p2))
 
 
 def test_save_and_load_mr(get_random_monitor_request, ms_database):
@@ -91,19 +91,18 @@ def test_save_and_load_channel(ms_database):
     for update_status in [
         None,
         OnChainUpdateStatus(
-            update_sender_address=Address(get_random_address()),
-            nonce=random.randint(0, UINT256_MAX),
+            update_sender_address=Address(bytes([1] * 20)), nonce=random.randint(0, UINT256_MAX)
         ),
     ]:
         channel = Channel(
             token_network_address=TokenNetworkAddress(token_network_address),
             identifier=ChannelID(random.randint(0, UINT256_MAX)),
-            participant1=Address(get_random_address()),
-            participant2=Address(get_random_address()),
+            participant1=Address(bytes([1] * 20)),
+            participant2=Address(bytes([2] * 20)),
             settle_timeout=random.randint(0, UINT256_MAX),
             state=random.choice(list(ChannelState)),
             closing_block=BlockNumber(random.randint(0, UINT256_MAX)),
-            closing_participant=Address(get_random_address()),
+            closing_participant=Address(bytes([1] * 20)),
             closing_tx_hash=TransactionHash("%d" % random.randint(0, UINT64_MAX)),
             claim_tx_hash=TransactionHash("%d" % random.randint(0, UINT64_MAX)),
             update_status=update_status,

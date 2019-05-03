@@ -15,6 +15,7 @@ from raiden.messages import UpdatePFS
 from raiden.utils import CanonicalIdentifier
 from raiden.utils.signer import LocalSigner
 from raiden.utils.typing import (
+    Address,
     ChainID,
     ChannelID,
     FeeAmount,
@@ -22,18 +23,17 @@ from raiden.utils.typing import (
     TokenAmount,
     TokenNetworkAddress,
 )
-from raiden_libs.types import Address
 from raiden_libs.utils import private_key_to_address
 
 DEFAULT_TOKEN_NETWORK_ADDRESS = TokenNetworkAddress(
     decode_hex("0x6e46B62a245D9EE7758B8DdCCDD1B85fF56B9Bc9")
 )
 PRIVATE_KEY_1 = bytes([1] * 32)
-PRIVATE_KEY_1_ADDRESS = private_key_to_address(PRIVATE_KEY_1)
+PRIVATE_KEY_1_ADDRESS = decode_hex(private_key_to_address(PRIVATE_KEY_1))
 PRIVATE_KEY_2 = bytes([2] * 32)
-PRIVATE_KEY_2_ADDRESS = private_key_to_address(PRIVATE_KEY_2)
+PRIVATE_KEY_2_ADDRESS = decode_hex(private_key_to_address(PRIVATE_KEY_2))
 PRIVATE_KEY_3 = bytes([3] * 32)
-PRIVATE_KEY_3_ADDRESS = private_key_to_address(PRIVATE_KEY_3)
+PRIVATE_KEY_3_ADDRESS = decode_hex(private_key_to_address(PRIVATE_KEY_3))
 DEFAULT_CHANNEL_ID = ChannelID(0)
 
 
@@ -93,8 +93,8 @@ def get_updatepfs_message(  # pylint: disable=too-many-arguments
             channel_identifier=channel_identifier,
             token_network_address=token_network_address,
         ),
-        updating_participant=decode_hex(updating_participant),
-        other_participant=decode_hex(other_participant),
+        updating_participant=updating_participant,
+        other_participant=other_participant,
         updating_nonce=updating_nonce,
         other_nonce=other_nonce,
         updating_capacity=updating_capacity,

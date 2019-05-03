@@ -5,20 +5,18 @@ import marshmallow
 from eth_abi import encode_single
 from eth_utils import encode_hex, is_same_address, keccak
 from marshmallow_dataclass import add_schema
-from web3 import Web3
 
 from raiden.exceptions import InvalidSignature
 from raiden.utils.signer import recover
-from raiden.utils.typing import BlockNumber, Signature, TokenAmount
-from raiden_libs.marshmallow import HexedBytes
-from raiden_libs.types import Address
+from raiden.utils.typing import Address, BlockNumber, Signature, TokenAmount
+from raiden_libs.marshmallow import ChecksumAddress, HexedBytes
 
 
 @add_schema
 @dataclass
 class IOU:
-    sender: Address
-    receiver: Address
+    sender: Address = field(metadata={"marshmallow_field": ChecksumAddress()})
+    receiver: Address = field(metadata={"marshmallow_field": ChecksumAddress()})
     amount: TokenAmount
     expiration_block: BlockNumber
     signature: Signature = field(metadata={"marshmallow_field": HexedBytes()})
@@ -27,8 +25,8 @@ class IOU:
 
     def packed_data(self) -> bytes:
         return (
-            Web3.toBytes(hexstr=self.sender)
-            + Web3.toBytes(hexstr=self.receiver)
+            self.sender
+            + self.receiver
             + encode_single("uint256", self.amount)
             + encode_single("uint256", self.expiration_block)
         )
@@ -44,9 +42,5 @@ class IOU:
     def session_id(self) -> str:
         """Session ID as used for OneToN.settled_sessions"""
         return encode_hex(
-            keccak(
-                Web3.toBytes(hexstr=self.receiver)
-                + Web3.toBytes(hexstr=self.sender)
-                + encode_single("uint256", self.expiration_block)
-            )
+            keccak(self.receiver + self.sender + encode_single("uint256", self.expiration_block))
         )
