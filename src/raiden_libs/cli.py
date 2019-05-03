@@ -8,7 +8,7 @@ import click
 import requests.exceptions
 import structlog
 from eth_account import Account
-from eth_utils import decode_hex, is_checksum_address
+from eth_utils import decode_hex, is_checksum_address, to_checksum_address
 from web3 import HTTPProvider, Web3
 from web3.contract import Contract
 from web3.middleware import geth_poa_middleware
@@ -202,5 +202,6 @@ def connect_to_blockchain(
         for c, address in addresses.items()
     }
 
-    log.info("Contract information", addresses=addresses, start_block=start_block)
+    hex_addresses = {key: to_checksum_address(value) for key, value in addresses.items()}
+    log.info("Contract information", addresses=hex_addresses, start_block=start_block)
     return web3, contracts, start_block

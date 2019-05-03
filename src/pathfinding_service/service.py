@@ -4,7 +4,7 @@ from typing import Dict, Optional
 
 import gevent
 import structlog
-from eth_utils import decode_hex
+from eth_utils import decode_hex, to_checksum_address
 from web3 import Web3
 from web3.contract import Contract
 
@@ -92,7 +92,7 @@ class PathfindingService(gevent.Greenlet):
 
         log.info(
             "Listening to token network registry",
-            registry_address=self.registry_address,
+            registry_address=to_checksum_address(self.registry_address),
             start_block=self.database.get_latest_known_block(),
         )
         while not self._is_running.is_set():
