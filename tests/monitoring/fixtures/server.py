@@ -10,7 +10,7 @@ from web3 import Web3
 
 from monitoring_service.database import Database
 from monitoring_service.service import MonitoringService
-from raiden.utils.typing import Address
+from raiden.utils.typing import Address, ChainID
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
     CONTRACT_TOKEN_NETWORK_REGISTRY,
@@ -43,7 +43,7 @@ def default_cli_args_ms(default_cli_args) -> List[str]:
 def ms_database():
     return Database(
         filename=":memory:",
-        chain_id=1,
+        chain_id=ChainID(1),
         msc_address=Address(bytes([2] * 20)),
         registry_address=Address(bytes([3] * 20)),
         receiver=Address(bytes([4] * 20)),

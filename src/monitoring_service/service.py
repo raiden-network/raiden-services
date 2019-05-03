@@ -16,7 +16,7 @@ from monitoring_service.constants import (
 )
 from monitoring_service.database import Database
 from monitoring_service.handlers import HANDLERS, Context
-from raiden.utils.typing import BlockNumber
+from raiden.utils.typing import BlockNumber, ChainID
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
     CONTRACT_TOKEN_NETWORK_REGISTRY,
@@ -79,7 +79,7 @@ class MonitoringService:  # pylint: disable=too-few-public-methods
         monitoring_contract = contracts[CONTRACT_MONITORING_SERVICE]
         user_deposit_contract = contracts[CONTRACT_USER_DEPOSIT]
 
-        chain_id = int(web3.net.version)
+        chain_id = ChainID(int(web3.net.version))
         self.database = Database(
             filename=db_filename,
             chain_id=chain_id,

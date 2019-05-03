@@ -8,7 +8,14 @@ from pathfinding_service.model import IOU
 from pathfinding_service.model.channel_view import ChannelView
 from pathfinding_service.model.token_network import TokenNetwork
 from raiden.messages import UpdatePFS
-from raiden.utils.typing import Address, BlockNumber, ChannelID, TokenAmount, TokenNetworkAddress
+from raiden.utils.typing import (
+    Address,
+    BlockNumber,
+    ChainID,
+    ChannelID,
+    TokenAmount,
+    TokenNetworkAddress,
+)
 from raiden_libs.database import BaseDatabase, hex256
 
 log = structlog.get_logger(__name__)
@@ -22,7 +29,7 @@ class PFSDatabase(BaseDatabase):
     def __init__(
         self,
         filename: str,
-        chain_id: int,
+        chain_id: ChainID,
         pfs_address: Address,
         sync_start_block: BlockNumber = BlockNumber(0),
         allow_create: bool = False,

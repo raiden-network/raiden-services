@@ -5,7 +5,7 @@ from typing import Any, Dict
 import structlog
 from eth_utils import to_checksum_address
 
-from raiden.utils.typing import Address, BlockNumber, TokenNetworkAddress
+from raiden.utils.typing import Address, BlockNumber, ChainID, TokenNetworkAddress
 from raiden_libs.states import BlockchainState
 
 log = structlog.get_logger(__name__)
@@ -55,7 +55,7 @@ class BaseDatabase:
 
     def _setup(
         self,
-        chain_id: int,
+        chain_id: ChainID,
         receiver: Address,
         sync_start_block: BlockNumber,
         **contract_addresses: Address,
