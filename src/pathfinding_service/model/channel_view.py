@@ -42,25 +42,22 @@ class ChannelView:
         if self.capacity is None:
             self.capacity = self.deposit
 
-    # TODO: define another function update_deposit
+    def update_deposit(self, total_deposit: TokenAmount) -> None:
+        if total_deposit > self.deposit:
+            self.capacity = TokenAmount(self.capacity + total_deposit - self.deposit)
+            self.deposit = TokenAmount(total_deposit)
+
     def update_capacity(
         self,
+        capacity: TokenAmount,
         nonce: Nonce = Nonce(0),
-        capacity: TokenAmount = TokenAmount(0),
         reveal_timeout: int = None,
-        deposit: TokenAmount = None,
         mediation_fee: FeeAmount = FeeAmount(0),
     ) -> None:
         self.update_nonce = nonce
         self.capacity = capacity
         if reveal_timeout is not None:
             self.reveal_timeout = reveal_timeout
-        # FIXME: think about edge cases
-        if deposit is not None:
-            self.deposit = deposit
-            if self.capacity is not None:
-                self.capacity = TokenAmount(self.capacity + deposit)
-
         self.absolute_fee = mediation_fee
 
     def fee(self, amount: TokenAmount) -> int:
