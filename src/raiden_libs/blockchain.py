@@ -98,20 +98,20 @@ def parse_token_network_event(event: dict) -> Optional[Event]:
 
     if event_name == ChannelEvent.OPENED:
         return ReceiveChannelOpenedEvent(
-            participant1=event["args"]["participant1"],
-            participant2=event["args"]["participant2"],
+            participant1=decode_hex(event["args"]["participant1"]),
+            participant2=decode_hex(event["args"]["participant2"]),
             settle_timeout=event["args"]["settle_timeout"],
             **common_infos,
         )
     if event_name == ChannelEvent.DEPOSIT:
         return ReceiveChannelNewDepositEvent(
-            participant_address=event["args"]["participant"],
+            participant_address=decode_hex(event["args"]["participant"]),
             total_deposit=event["args"]["total_deposit"],
             **common_infos,
         )
     if event_name == ChannelEvent.CLOSED:
         return ReceiveChannelClosedEvent(
-            closing_participant=event["args"]["closing_participant"], **common_infos
+            closing_participant=decode_hex(event["args"]["closing_participant"]), **common_infos
         )
     if event_name == ChannelEvent.BALANCE_PROOF_UPDATED:
         return ReceiveNonClosingBalanceProofUpdatedEvent(
@@ -158,7 +158,7 @@ def get_blockchain_events(
         events.append(
             ReceiveTokenNetworkCreatedEvent(
                 token_network_address=decode_hex(event_dict["args"]["token_network_address"]),
-                token_address=event_dict["args"]["token_address"],
+                token_address=decode_hex(event_dict["args"]["token_address"]),
                 block_number=event_dict["blockNumber"],
             )
         )
@@ -228,7 +228,7 @@ def get_monitoring_blockchain_events(
                     reward_amount=event["args"]["reward_amount"],
                     nonce=event["args"]["nonce"],
                     ms_address=decode_hex(event["args"]["ms_address"]),
-                    raiden_node_address=event["args"]["raiden_node_address"],
+                    raiden_node_address=decode_hex(event["args"]["raiden_node_address"]),
                     block_number=block_number,
                 )
             )
