@@ -16,7 +16,7 @@ from monitoring_service.states import (
     MonitorRequest,
     OnChainUpdateStatus,
 )
-from raiden.utils.typing import Address, BlockNumber, TokenNetworkAddress
+from raiden.utils.typing import Address, BlockNumber, ChainID, ChannelID, TokenNetworkAddress
 from raiden_libs.database import BaseDatabase
 
 SubEvent = Union[ActionMonitoringTriggeredEvent, ActionClaimRewardTriggeredEvent]
@@ -52,7 +52,7 @@ class SharedDatabase(BaseDatabase):
     def get_monitor_request(
         self,
         token_network_address: TokenNetworkAddress,
-        channel_id: int,
+        channel_id: ChannelID,
         non_closing_signer: Address,
     ) -> Optional[MonitorRequest]:
         row = self.conn.execute(
@@ -107,7 +107,7 @@ class SharedDatabase(BaseDatabase):
         self.conn.execute(upsert_sql, values)
 
     def get_channel(
-        self, token_network_address: TokenNetworkAddress, channel_id: int
+        self, token_network_address: TokenNetworkAddress, channel_id: ChannelID
     ) -> Optional[Channel]:
         row = self.conn.execute(
             """
@@ -226,7 +226,7 @@ class Database(SharedDatabase):
     def __init__(
         self,
         filename: str,
-        chain_id: int,
+        chain_id: ChainID,
         msc_address: Address,
         registry_address: Address,
         receiver: Address,
