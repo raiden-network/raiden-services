@@ -37,6 +37,9 @@ CREATE TABLE iou (
     PRIMARY KEY (sender, expiration_block)
 );
 
+CREATE UNIQUE INDEX one_active_session_per_sender
+    ON iou(sender) WHERE NOT claimed;
+
 CREATE TABLE capacity_update (
     updating_participant CHAR(42) NOT NULL,
     token_network_address CHAR(42) NOT NULL,
@@ -48,9 +51,6 @@ CREATE TABLE capacity_update (
 
 CREATE TABLE feedback_token (
     token_id CHAR(32) NOT NULL,
-    expiry TIMESTAMP NOT NULL,
+    creation_time TIMESTAMP NOT NULL,
     PRIMARY KEY (token_id)
 );
-
-CREATE UNIQUE INDEX one_active_session_per_sender
-    ON iou(sender) WHERE NOT claimed;

@@ -206,14 +206,14 @@ class PFSDatabase(BaseDatabase):
             yield TokenNetwork(token_network_address=decode_hex(row[0]))
 
     def insert_feedback_token(self, token: FeedbackToken) -> None:
-        token_dict = dict(token_id=token.id.hex, expiry=token.expiry)
+        token_dict = dict(token_id=token.id.hex, creation_time=token.creation_time)
         self.conn.execute(
             """
             INSERT INTO feedback_token (
-                token_id, expiry
+                token_id, creation_time
             ) VALUES (
                 :token_id,
-                :expiry
+                :creation_time
             )
         """,
             token_dict,
@@ -225,6 +225,6 @@ class PFSDatabase(BaseDatabase):
         ).fetchone()
 
         if token:
-            return FeedbackToken(id=UUID(token["token_id"]), expiry=token["expiry"])
+            return FeedbackToken(id=UUID(token["token_id"]), creation_time=token["creation_time"])
 
         return None
