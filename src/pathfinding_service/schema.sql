@@ -29,10 +29,10 @@ CREATE TABLE channel_view (
 );
 
 CREATE TABLE iou (
-    sender TEXT NOT NULL,
+    sender CHAR(42) NOT NULL,
     amount HEX_INT NOT NULL,
     expiration_block HEX_INT NOT NULL,
-    signature TEXT NOT NULL,
+    signature CHAR(132) NOT NULL,
     claimed BOOL NOT NULL,
     PRIMARY KEY (sender, expiration_block)
 );
@@ -44,6 +44,12 @@ CREATE TABLE capacity_update (
     updating_capacity HEX_INT NOT NULL,
     other_capacity HEX_INT NOT NULL,
     PRIMARY KEY (updating_participant, token_network_address, channel_id)
+);
+
+CREATE TABLE feedback_token (
+    token_id CHAR(32) NOT NULL,
+    expiry TIMESTAMP NOT NULL,
+    PRIMARY KEY (token_id)
 );
 
 CREATE UNIQUE INDEX one_active_session_per_sender
