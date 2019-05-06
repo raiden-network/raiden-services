@@ -12,4 +12,4 @@ __all__ = ["ChannelView", "TokenNetwork", "IOU", "FeedbackToken"]
 @dataclass
 class FeedbackToken:
     id: UUID
-    expiry: datetime
+    creation_time: datetime
