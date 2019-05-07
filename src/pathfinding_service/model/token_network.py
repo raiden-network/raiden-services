@@ -211,13 +211,18 @@ class TokenNetwork:
     def edge_weight(
         visited: Dict[ChannelID, float],
         attr: Dict[str, Any],
+        attr_backwards: Dict[str, Any],
         amount: TokenAmount,
         fee_penalty: float,
     ) -> float:
         view: ChannelView = attr["view"]
+        view_from_partner: ChannelView = attr_backwards["view"]
         diversity_weight = visited.get(view.channel_id, 0)
         fee_weight = view.fee(amount) / 1e18 * fee_penalty
-        return 1 + diversity_weight + fee_weight
+        no_refund_weight = 0
+        if view_from_partner.capacity < int(float(amount) * 1.1):
+            no_refund_weight = 1
+        return 1 + diversity_weight + fee_weight + no_refund_weight
 
     def _get_single_path(
         self,
@@ -231,7 +236,8 @@ class TokenNetwork:
         # update edge weights
         for node1, node2 in self.G.edges():
             edge = self.G[node1][node2]
-            edge["weight"] = self.edge_weight(visited, edge, value, fee_penalty)
+            backwards_edge = self.G[node2][node1]
+            edge["weight"] = self.edge_weight(visited, edge, backwards_edge, value, fee_penalty)
 
         # find next path
         all_paths: Iterable[List[Address]] = nx.shortest_simple_paths(

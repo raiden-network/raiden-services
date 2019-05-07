@@ -13,33 +13,70 @@ def test_edge_weight(addresses):
     channel_id = ChannelID(1)
     participant1 = addresses[0]
     participant2 = addresses[1]
+    capacity = TokenAmount(int(20 * 1e18))
+    capacity_partner = TokenAmount(int(10 * 1e18))
     settle_timeout = 15
     view = ChannelView(
         token_network_address=TokenNetworkAddress(bytes([1])),
         channel_id=channel_id,
         participant1=participant1,
         participant2=participant2,
+        capacity=capacity,
+        settle_timeout=settle_timeout,
+    )
+    view_partner = ChannelView(
+        token_network_address=TokenNetworkAddress(bytes([1])),
+        channel_id=channel_id,
+        participant1=participant2,
+        participant2=participant1,
+        capacity=capacity_partner,
         settle_timeout=settle_timeout,
     )
     amount = TokenAmount(int(1e18))  # one RDN
 
     # no penalty
-    assert TokenNetwork.edge_weight(dict(), dict(view=view), amount=amount, fee_penalty=0) == 1
+    assert (
+        TokenNetwork.edge_weight(
+            dict(), dict(view=view), dict(view=view_partner), amount=amount, fee_penalty=0
+        )
+        == 1
+    )
 
     # channel already used in a previous route
     assert (
-        TokenNetwork.edge_weight({channel_id: 2}, dict(view=view), amount=amount, fee_penalty=0)
+        TokenNetwork.edge_weight(
+            {channel_id: 2}, dict(view=view), dict(view=view_partner), amount=amount, fee_penalty=0
+        )
         == 3
     )
 
     # absolute fee
     view.absolute_fee = FeeAmount(int(0.03e18))
-    assert TokenNetwork.edge_weight(dict(), dict(view=view), amount=amount, fee_penalty=100) == 4
+    assert (
+        TokenNetwork.edge_weight(
+            dict(), dict(view=view), dict(view=view_partner), amount=amount, fee_penalty=100
+        )
+        == 4
+    )
 
     # relative fee
     view.absolute_fee = FeeAmount(0)
     view.relative_fee = 0.01
-    assert TokenNetwork.edge_weight(dict(), dict(view=view), amount=amount, fee_penalty=100) == 2
+    assert (
+        TokenNetwork.edge_weight(
+            dict(), dict(view=view), dict(view=view_partner), amount=amount, fee_penalty=100
+        )
+        == 2
+    )
+
+    # partner has not enough capacity for refund (no_refund_weight) -> edge weight +1
+    view_partner.capacity = TokenAmount(0)
+    assert (
+        TokenNetwork.edge_weight(
+            dict(), dict(view=view), dict(view=view_partner), amount=amount, fee_penalty=100
+        )
+        == 3
+    )
 
 
 @pytest.mark.usefixtures("populate_token_network_case_1")
