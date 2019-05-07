@@ -161,7 +161,7 @@ class PathsResource(PathfinderResource):
             token_network_address=token_network.address,
         )
 
-        return {"result": {"paths": paths, "feedback_token": feedback_token.id.hex}}, 200
+        return {"result": paths, "feedback_token": feedback_token.id.hex}, 200
 
 
 def create_and_store_feedback_token(
@@ -301,11 +301,9 @@ class FeedbackResource(PathfinderResource):
         )
 
         # The client doesn't need to know whether the feedback was accepted or not,
-        # so in case the token is invalid we still return HTTP 200
-        if not feedback_token:
-            return {}, 200
-        if not feedback_token.is_valid():
-            return {}, 200
+        # so in case the token is invalid we return HTTP 400 without further infos
+        if not feedback_token or not feedback_token.is_valid():
+            return {}, 400
 
         log.info("Received feedback", feedback=feedback_request)
         token_network.feedback.append(
