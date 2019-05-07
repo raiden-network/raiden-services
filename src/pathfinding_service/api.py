@@ -2,7 +2,7 @@ import collections
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, ClassVar, Dict, List, Optional, Tuple, Type, TypeVar, cast
-from uuid import UUID, uuid4
+from uuid import UUID
 
 import marshmallow
 import pkg_resources
@@ -167,9 +167,7 @@ class PathsResource(PathfinderResource):
 def create_and_store_feedback_token(
     pathfinding_service: PathfindingService, token_network_address: TokenNetworkAddress
 ) -> FeedbackToken:
-    feedback_token = FeedbackToken(
-        id=uuid4(), creation_time=datetime.utcnow(), token_network_address=token_network_address
-    )
+    feedback_token = FeedbackToken(token_network_address=token_network_address)
     pathfinding_service.database.insert_feedback_token(feedback_token)
 
     return feedback_token

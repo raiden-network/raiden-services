@@ -355,11 +355,7 @@ def test_feedback(api_sut: ServiceApi, api_url: str, token_network_model: TokenN
     assert response.json()["error_code"] == exceptions.InvalidRequest.error_code
 
     # Test valid IOU, but not in PFS DB
-    token = FeedbackToken(
-        id=uuid4(),
-        creation_time=datetime.utcnow(),
-        token_network_address=token_network_model.address,
-    )
+    token = FeedbackToken(token_network_address=token_network_model.address)
 
     response = make_request(token_id=token.id.hex)
     assert response.status_code == 200
@@ -367,7 +363,6 @@ def test_feedback(api_sut: ServiceApi, api_url: str, token_network_model: TokenN
 
     # Test old IOU
     old_token = FeedbackToken(
-        id=uuid4(),
         creation_time=datetime.utcnow() - timedelta(hours=1),
         token_network_address=token_network_model.address,
     )
@@ -378,11 +373,7 @@ def test_feedback(api_sut: ServiceApi, api_url: str, token_network_model: TokenN
     assert len(token_network_model.feedback) == 0
 
     # Test working IOU
-    token = FeedbackToken(
-        id=uuid4(),
-        creation_time=datetime.utcnow(),
-        token_network_address=token_network_model.address,
-    )
+    token = FeedbackToken(token_network_address=token_network_model.address)
     api_sut.pathfinding_service.database.insert_feedback_token(token)
 
     response = make_request(token_id=token.id.hex)
