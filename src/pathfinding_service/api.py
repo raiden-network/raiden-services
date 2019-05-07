@@ -1,7 +1,8 @@
 import collections
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, ClassVar, Dict, List, Optional, Tuple, Type, TypeVar
+from typing import Any, ClassVar, Dict, List, Optional, Tuple, Type, TypeVar, cast
+from uuid import UUID, uuid4
 
 import marshmallow
 import pkg_resources
@@ -10,6 +11,7 @@ from eth_utils import decode_hex, is_checksum_address, is_same_address, to_check
 from flask import Flask, Response, request
 from flask_restful import Api, Resource
 from gevent.pywsgi import WSGIServer
+from marshmallow import fields, validate
 from marshmallow_dataclass import add_schema
 from networkx.exception import NetworkXNoPath, NodeNotFound
 from web3 import Web3
@@ -25,7 +27,7 @@ from pathfinding_service.config import (
     MIN_IOU_EXPIRY,
     UDC_SECURITY_MARGIN_FACTOR,
 )
-from pathfinding_service.model import IOU
+from pathfinding_service.model import IOU, FeedbackToken
 from pathfinding_service.model.token_network import TokenNetwork
 from pathfinding_service.service import PathfindingService
 from raiden.exceptions import InvalidSignature
@@ -253,6 +255,47 @@ class IOUResource(PathfinderResource):
         return {"last_iou": None}, 404
 
 
+@add_schema
+@dataclass
+class FeedbackRequest:
+    """A HTTP request to FeedbackResource"""
+
+    token: UUID = field(metadata={"required": True})
+    status: str = field(
+        metadata={
+            "marshmallow_field": fields.Str(
+                validate=validate.OneOf(("success", "failure")), required=True
+            )
+        }
+    )
+    path: List[Address] = field(
+        metadata={"marshmallow_field": fields.List(ChecksumAddress, many=True), "required": True}
+    )
+    Schema: ClassVar[Type[marshmallow.Schema]]
+
+
+class FeedbackResource(PathfinderResource):
+    def post(
+        self, token_network_address: str  # pylint: disable=unused-argument
+    ) -> Tuple[dict, int]:
+        # token_network = self._validate_token_network_argument(token_network_address)
+        feedback_request = self._parse_post(FeedbackRequest)
+        feedback_token = self.pathfinding_service.database.get_feedback_token(
+            token_id=feedback_request.token
+        )
+
+        # The client doesn't need to know whether the feedback was accepted or not,
+        # so in case the token is invalid we still return HTTP 200
+        if not feedback_token:
+            return {}, 200
+        if not feedback_token.is_valid():
+            return {}, 200
+
+        log.info("Received feedback", feedback=feedback_request)
+
+        return {}, 200
+
+
 class InfoResource(PathfinderResource):
     version = pkg_resources.get_distribution("raiden-services").version
 
@@ -324,10 +367,10 @@ class ServiceApi:
         pathfinding_service: PathfindingService,
         service_fee: TokenAmount = TokenAmount(0),
         debug_mode: bool = False,
-    ):
+    ) -> None:
         self.flask_app = Flask(__name__)
         self.api = ApiWithErrorHandler(self.flask_app)
-        self.rest_server: WSGIServer = None
+        self.rest_server: Optional[WSGIServer] = None
         self.pathfinding_service = pathfinding_service
         self.service_fee = service_fee
 
@@ -339,6 +382,7 @@ class ServiceApi:
                 "paths",
             ),
             ("/<token_network_address>/payment/iou", IOUResource, {}, "payments"),
+            ("/<token_network_address>/feedback", FeedbackResource, {}, "feedback"),
             ("/info", InfoResource, {}, "info"),
         ]
 
@@ -348,7 +392,7 @@ class ServiceApi:
                 [
                     (
                         "/_debug/routes/<token_network_address>/<source_address>",
-                        DebugEndpoint,
+                        cast(Resource, DebugEndpoint),
                         {},
                         "debug1",
                     ),
@@ -376,4 +420,5 @@ class ServiceApi:
         log.info("Running endpoint", endpoint=f"{host}:{port}")
 
     def stop(self) -> None:
-        self.rest_server.stop()
+        if self.rest_server:
+            self.rest_server.stop()

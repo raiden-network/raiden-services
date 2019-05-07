@@ -22,6 +22,7 @@ DEFAULT_POLL_INTERVALL = 10
 MIN_IOU_EXPIRY: int = 7 * 24 * 60 * 4
 
 MAX_AGE_OF_IOU_REQUESTS: timedelta = timedelta(hours=1)
+MAX_AGE_OF_FEEDBACK_REQUESTS: timedelta = timedelta(minutes=10)
 
 # Since the UDC deposits are not double spend safe, you want a higher deposit
 # than you're able to claim to reduce the possibility of double spends.
