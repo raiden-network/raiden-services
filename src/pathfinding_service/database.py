@@ -235,9 +235,9 @@ class PFSDatabase(BaseDatabase):
 
         if token:
             return FeedbackToken(
+                token_network_address=decode_hex(token["token_network_address"]),
                 id=UUID(token["token_id"]),
                 creation_time=token["creation_time"],
-                token_network_address=decode_hex(token["token_network_address"]),
             )
 
         return None

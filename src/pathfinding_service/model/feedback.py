@@ -1,7 +1,7 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import List
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from pathfinding_service.config import MAX_AGE_OF_FEEDBACK_REQUESTS
 from raiden.utils import Address, TokenNetworkAddress
@@ -9,9 +9,9 @@ from raiden.utils import Address, TokenNetworkAddress
 
 @dataclass
 class FeedbackToken:
-    id: UUID
-    creation_time: datetime
     token_network_address: TokenNetworkAddress
+    id: UUID = field(default_factory=uuid4)
+    creation_time: datetime = field(default_factory=datetime.utcnow)
 
     def is_valid(self) -> bool:
         """ Checks if the token is valid."""
