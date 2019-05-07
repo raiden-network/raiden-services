@@ -35,17 +35,17 @@ class InvalidRequest(ApiException):
 
 class InvalidSignature(ApiException):
     error_code = 2001
-    msg = "The signature did not match the signed content"
+    msg = "The signature did not match the signed content."
 
 
 class RequestOutdated(ApiException):
     error_code = 2002
-    msg = "The request contains too old timestamps or nonces"
+    msg = "The request contains too old timestamps or nonces."
 
 
 class InvalidTokenNetwork(ApiException):
     error_code = 2003
-    msg = "Invalid token network"
+    msg = "Invalid token network."
 
 
 class UnsupportedTokenNetwork(ApiException):
@@ -62,22 +62,22 @@ class BadIOU(ApiException):
 
 class MissingIOU(BadIOU):
     error_code = 2101
-    msg = "No IOU for service fees has been provided"
+    msg = "No IOU for service fees has been provided."
 
 
 class WrongIOURecipient(BadIOU):
     error_code = 2102
-    msg = "IOU not addressed to the correct receiver"
+    msg = "IOU not addressed to the correct receiver."
 
 
 class IOUExpiredTooEarly(BadIOU):
     error_code = 2103
-    msg = "Please use a higher `expiration_block`"
+    msg = "Please use a higher `expiration_block`."
 
 
 class InsufficientServicePayment(BadIOU):
     error_code = 2104
-    msg = "The provided payment is lower than service fee"
+    msg = "The provided payment is lower than service fee."
 
 
 class IOUAlreadyClaimed(BadIOU):
@@ -101,4 +101,4 @@ class DepositTooLow(BadIOU):
 class NoRouteFound(ApiException):
     error_code = 2201
     http_code = 404
-    msg = "No route between nodes found"
+    msg = "No route between nodes found."
