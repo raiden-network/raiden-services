@@ -9,7 +9,8 @@ from eth_utils import decode_hex, encode_hex, to_bytes, to_checksum_address, to_
 
 import pathfinding_service.exceptions as exceptions
 from pathfinding_service.api import DEFAULT_MAX_PATHS, ServiceApi
-from pathfinding_service.model import IOU, FeedbackToken, TokenNetwork
+from pathfinding_service.model import IOU, TokenNetwork
+from pathfinding_service.model.feedback import FeedbackToken
 from raiden.utils.signer import LocalSigner
 from raiden.utils.signing import pack_data
 from raiden.utils.typing import Address, BlockNumber, Signature, TokenAmount
@@ -354,21 +355,36 @@ def test_feedback(api_sut: ServiceApi, api_url: str, token_network_model: TokenN
     assert response.json()["error_code"] == exceptions.InvalidRequest.error_code
 
     # Test valid IOU, but not in PFS DB
-    token = FeedbackToken(id=uuid4(), creation_time=datetime.utcnow())
+    token = FeedbackToken(
+        id=uuid4(),
+        creation_time=datetime.utcnow(),
+        token_network_address=token_network_model.address,
+    )
 
     response = make_request(token_id=token.id.hex)
     assert response.status_code == 200
+    assert len(token_network_model.feedback) == 0
 
     # Test old IOU
-    old_token = FeedbackToken(id=uuid4(), creation_time=datetime.utcnow() - timedelta(hours=1))
+    old_token = FeedbackToken(
+        id=uuid4(),
+        creation_time=datetime.utcnow() - timedelta(hours=1),
+        token_network_address=token_network_model.address,
+    )
     api_sut.pathfinding_service.database.insert_feedback_token(old_token)
 
     response = make_request(token_id=old_token.id.hex)
     assert response.status_code == 200
+    assert len(token_network_model.feedback) == 0
 
     # Test working IOU
-    token = FeedbackToken(id=uuid4(), creation_time=datetime.utcnow())
+    token = FeedbackToken(
+        id=uuid4(),
+        creation_time=datetime.utcnow(),
+        token_network_address=token_network_model.address,
+    )
     api_sut.pathfinding_service.database.insert_feedback_token(token)
 
     response = make_request(token_id=token.id.hex)
     assert response.status_code == 200
+    assert len(token_network_model.feedback) == 1
