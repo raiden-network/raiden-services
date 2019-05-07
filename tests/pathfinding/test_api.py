@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from typing import List
+from uuid import uuid4
 
 import pkg_resources
 import pytest
@@ -8,7 +9,7 @@ from eth_utils import decode_hex, encode_hex, to_bytes, to_checksum_address, to_
 
 import pathfinding_service.exceptions as exceptions
 from pathfinding_service.api import DEFAULT_MAX_PATHS, ServiceApi
-from pathfinding_service.model import IOU, TokenNetwork
+from pathfinding_service.model import IOU, FeedbackToken, TokenNetwork
 from raiden.utils.signer import LocalSigner
 from raiden.utils.signing import pack_data
 from raiden.utils.typing import Address, BlockNumber, Signature, TokenAmount
@@ -24,8 +25,6 @@ ID_123 = 123
 #
 # tests for /_debug endpoint
 #
-
-
 @pytest.mark.usefixtures("api_sut")
 def test_get_paths_via_debug_endpoint_with_debug_disabled(
     api_url: str, addresses: List[Address], token_network_model: TokenNetwork
@@ -173,7 +172,7 @@ def test_get_paths_validation(
     assert "max_paths" in response.json()["error_details"]
 
     # successful request without payment
-    response = request_path_with(status_code=200)
+    request_path_with(status_code=200)
 
     # Exemplary test for payment errors. Different errors are serialized the
     # same way in the rest API. Checking for specific errors is tested in
@@ -199,7 +198,7 @@ def test_get_paths_validation(
     assert response.json()["error_code"] == exceptions.InvalidSignature.error_code
 
     # with successful payment
-    response = request_path_with(iou=good_iou_dict, status_code=200)
+    request_path_with(iou=good_iou_dict, status_code=200)
 
 
 @pytest.mark.usefixtures("api_sut")
@@ -251,8 +250,6 @@ def test_get_paths(api_url: str, addresses: List[Address], token_network_model: 
 #
 # tests for /info endpoint
 #
-
-
 def test_get_info(api_url: str, api_sut, pathfinding_service_mock):
     api_sut.service_fee = 123
     url = api_url + "/info"
@@ -274,10 +271,8 @@ def test_get_info(api_url: str, api_sut, pathfinding_service_mock):
 
 
 #
-# tests for iou endpoint
+# tests for /payment/iou endpoint
 #
-
-
 def test_get_iou(api_sut: ServiceApi, api_url: str, token_network_model: TokenNetwork):
     privkey = get_random_privkey()
     sender = decode_hex(private_key_to_address(privkey))
@@ -328,3 +323,52 @@ def test_get_iou(api_sut: ServiceApi, api_url: str, token_network_model: TokenNe
     response = requests.get(url, params=params)
     assert response.status_code == 400, response.json()
     assert response.json()["error_code"] == exceptions.RequestOutdated.error_code
+
+
+#
+# tests for /feedback endpoint
+#
+def test_feedback(api_sut: ServiceApi, api_url: str, token_network_model: TokenNetwork):
+    def make_request(token_id: str = None, status: str = None, path: List[str] = None):
+        url = api_url + f"/{to_checksum_address(token_network_model.address)}/feedback"
+
+        token_id = token_id or uuid4().hex
+        status = status or "success"
+        path = path or ["0x" + "1" * 40, "0x" + "2" * 40, "0x" + "3" * 40]
+        data = {"token": token_id, "status": status, "path": path}
+        return requests.post(url, json=data)
+
+    # Request with invalid UUID
+    response = make_request(token_id="abc")
+    assert response.status_code == 400
+    assert response.json()["error_code"] == exceptions.InvalidRequest.error_code
+
+    # Request with invalid status
+    response = make_request(status="abc")
+    assert response.status_code == 400
+    assert response.json()["error_code"] == exceptions.InvalidRequest.error_code
+
+    # Request with invalid path
+    response = make_request(path="abc")  # type: ignore
+    assert response.status_code == 400
+    assert response.json()["error_code"] == exceptions.InvalidRequest.error_code
+
+    # Test valid IOU, but not in PFS DB
+    token = FeedbackToken(id=uuid4(), creation_time=datetime.utcnow())
+
+    response = make_request(token_id=token.id.hex)
+    assert response.status_code == 200
+
+    # Test old IOU
+    old_token = FeedbackToken(id=uuid4(), creation_time=datetime.utcnow() - timedelta(hours=1))
+    api_sut.pathfinding_service.database.insert_feedback_token(old_token)
+
+    response = make_request(token_id=old_token.id.hex)
+    assert response.status_code == 200
+
+    # Test working IOU
+    token = FeedbackToken(id=uuid4(), creation_time=datetime.utcnow())
+    api_sut.pathfinding_service.database.insert_feedback_token(token)
+
+    response = make_request(token_id=token.id.hex)
+    assert response.status_code == 200
