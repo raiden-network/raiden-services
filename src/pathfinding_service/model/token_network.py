@@ -32,6 +32,32 @@ class Path:
         fee = sum(edge["view"].fee(self.value) for edge in self.edge_attrs)
         return dict(path=[to_checksum_address(node) for node in self.nodes], estimated_fee=fee)
 
+    @property
+    def is_valid(self) -> bool:
+        """ Check capacity and settle timeout
+
+        Capacity: The capacity for the last channel must be at least
+        the payment value. The previous channel's capacity has to be larger
+        than value + last channel's capacity, etc.
+
+        Settle timeout: The raiden client will not forward payments if the
+        channel over which they receive has a too low settle_timeout. So we
+        should not use such routes. See
+        https://github.com/raiden-network/raiden-services/issues/5.
+        """
+        required_capacity = self.value
+        for edge in reversed(list(self.edge_attrs)):
+            # check capacity
+            if edge["view"].capacity < required_capacity:
+                return False
+            required_capacity += edge["view"].fee(self.value)
+
+            # check if settle_timeout / reveal_timeout >= default ratio
+            ratio = edge["view"].settle_timeout / edge["view"].reveal_timeout
+            if ratio < DEFAULT_SETTLE_TO_REVEAL_TIMEOUT_RATIO:
+                return False
+        return True
+
 
 class TokenNetwork:
     """ Manages a token network for pathfinding. """
@@ -193,18 +219,6 @@ class TokenNetwork:
         fee_weight = view.fee(amount) / 1e18 * fee_penalty
         return 1 + diversity_weight + fee_weight
 
-    def check_path_constraints(self, value: int, path: List) -> bool:
-        for node1, node2 in zip(path[:-1], path[1:]):
-            channel: ChannelView = self.G[node1][node2]["view"]
-            # check if available balance > value
-            if value > channel.capacity:
-                return False
-            # check if settle_timeout / reveal_timeout >= default ratio
-            ratio = channel.settle_timeout / channel.reveal_timeout
-            if ratio < DEFAULT_SETTLE_TO_REVEAL_TIMEOUT_RATIO:
-                return False
-        return True
-
     def _get_single_path(
         self,
         source: Address,
@@ -220,15 +234,17 @@ class TokenNetwork:
             edge["weight"] = self.edge_weight(visited, edge, value, fee_penalty)
 
         # find next path
-        all_paths = nx.shortest_simple_paths(self.G, source, target, weight="weight")
+        all_paths: Iterable[List[Address]] = nx.shortest_simple_paths(
+            self.G, source, target, weight="weight"
+        )
         try:
             # skip duplicates and invalid paths
-            nodes = next(
-                path
-                for path in all_paths
-                if self.check_path_constraints(value, path) and path not in disallowed_paths
+            path = next(
+                p
+                for p in (Path(self.G, nodes, value) for nodes in all_paths)
+                if p.is_valid and p.nodes not in disallowed_paths
             )
-            return Path(self.G, nodes, value)
+            return path
         except StopIteration:
             return None
 
