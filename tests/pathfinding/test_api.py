@@ -61,7 +61,7 @@ def test_get_paths_via_debug_endpoint(
         },
     )
     assert response.status_code == 200
-    paths = response.json()["result"]
+    paths = response.json()["result"]["paths"]
     assert len(paths) == 1
     assert paths == [{"path": [hex_addrs[0], hex_addrs[1], hex_addrs[2]], "estimated_fee": 0}]
 
@@ -227,14 +227,14 @@ def test_get_paths(api_url: str, addresses: List[Address], token_network_model: 
     data = {"from": hex_addrs[0], "to": hex_addrs[2], "value": 10, "max_paths": DEFAULT_MAX_PATHS}
     response = requests.post(url, json=data)
     assert response.status_code == 200
-    paths = response.json()["result"]
+    paths = response.json()["result"]["paths"]
     assert len(paths) == 1
     assert paths == [{"path": [hex_addrs[0], hex_addrs[1], hex_addrs[2]], "estimated_fee": 0}]
 
     # check default value for num_path
     data = {"from": hex_addrs[0], "to": hex_addrs[2], "value": 10}
     default_response = requests.post(url, json=data)
-    assert default_response.json()["result"] == response.json()["result"]
+    assert default_response.json()["result"]["paths"] == response.json()["result"]["paths"]
 
     # impossible routes
     for source, dest in [

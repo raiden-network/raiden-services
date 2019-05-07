@@ -160,9 +160,8 @@ class PathsResource(PathfinderResource):
             pathfinding_service=self.pathfinding_service,
             token_network_address=token_network.address,
         )
-        assert feedback_token
 
-        return {"result": paths}, 200
+        return {"result": {"paths": paths, "feedback_token": feedback_token.id.hex}}, 200
 
 
 def create_and_store_feedback_token(
