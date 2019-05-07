@@ -61,7 +61,7 @@ def test_get_paths_via_debug_endpoint(
         },
     )
     assert response.status_code == 200
-    paths = response.json()["result"]["paths"]
+    paths = response.json()["result"]
     assert len(paths) == 1
     assert paths == [{"path": [hex_addrs[0], hex_addrs[1], hex_addrs[2]], "estimated_fee": 0}]
 
@@ -227,14 +227,14 @@ def test_get_paths(api_url: str, addresses: List[Address], token_network_model: 
     data = {"from": hex_addrs[0], "to": hex_addrs[2], "value": 10, "max_paths": DEFAULT_MAX_PATHS}
     response = requests.post(url, json=data)
     assert response.status_code == 200
-    paths = response.json()["result"]["paths"]
+    paths = response.json()["result"]
     assert len(paths) == 1
     assert paths == [{"path": [hex_addrs[0], hex_addrs[1], hex_addrs[2]], "estimated_fee": 0}]
 
     # check default value for num_path
     data = {"from": hex_addrs[0], "to": hex_addrs[2], "value": 10}
     default_response = requests.post(url, json=data)
-    assert default_response.json()["result"]["paths"] == response.json()["result"]["paths"]
+    assert default_response.json()["result"] == response.json()["result"]
 
     # impossible routes
     for source, dest in [
@@ -354,14 +354,14 @@ def test_feedback(api_sut: ServiceApi, api_url: str, token_network_model: TokenN
     assert response.status_code == 400
     assert response.json()["error_code"] == exceptions.InvalidRequest.error_code
 
-    # Test valid IOU, but not in PFS DB
+    # Test valid token, which is not stored in PFS DB
     token = FeedbackToken(token_network_address=token_network_model.address)
 
     response = make_request(token_id=token.id.hex)
-    assert response.status_code == 200
+    assert response.status_code == 400
     assert len(token_network_model.feedback) == 0
 
-    # Test old IOU
+    # Test expired token
     old_token = FeedbackToken(
         creation_time=datetime.utcnow() - timedelta(hours=1),
         token_network_address=token_network_model.address,
@@ -369,10 +369,10 @@ def test_feedback(api_sut: ServiceApi, api_url: str, token_network_model: TokenN
     api_sut.pathfinding_service.database.insert_feedback_token(old_token)
 
     response = make_request(token_id=old_token.id.hex)
-    assert response.status_code == 200
+    assert response.status_code == 400
     assert len(token_network_model.feedback) == 0
 
-    # Test working IOU
+    # Test valid token
     token = FeedbackToken(token_network_address=token_network_model.address)
     api_sut.pathfinding_service.database.insert_feedback_token(token)
 
