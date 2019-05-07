@@ -2,15 +2,20 @@ from datetime import datetime, timedelta
 from uuid import uuid4
 
 from pathfinding_service.config import MAX_AGE_OF_FEEDBACK_REQUESTS
-from pathfinding_service.model import FeedbackToken
+from pathfinding_service.model.feedback import FeedbackToken
+from raiden.utils import TokenNetworkAddress
 
 
 def test_feedback_token_validity():
-    valid_token = FeedbackToken(id=uuid4(), creation_time=datetime.utcnow())
+    token_network_address = TokenNetworkAddress(b"1" * 20)
+    valid_token = FeedbackToken(
+        id=uuid4(), creation_time=datetime.utcnow(), token_network_address=token_network_address
+    )
     assert valid_token.is_valid()
 
     invalid_token = FeedbackToken(
         id=uuid4(),
         creation_time=datetime.utcnow() - MAX_AGE_OF_FEEDBACK_REQUESTS - timedelta(seconds=1),
+        token_network_address=token_network_address,
     )
     assert not invalid_token.is_valid()

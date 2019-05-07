@@ -5,8 +5,9 @@ from uuid import UUID
 import structlog
 from eth_utils import decode_hex, to_checksum_address
 
-from pathfinding_service.model import IOU, FeedbackToken
+from pathfinding_service.model import IOU
 from pathfinding_service.model.channel_view import ChannelView
+from pathfinding_service.model.feedback import FeedbackToken
 from pathfinding_service.model.token_network import TokenNetwork
 from raiden.messages import UpdatePFS
 from raiden.utils.typing import (
@@ -206,25 +207,37 @@ class PFSDatabase(BaseDatabase):
             yield TokenNetwork(token_network_address=decode_hex(row[0]))
 
     def insert_feedback_token(self, token: FeedbackToken) -> None:
-        token_dict = dict(token_id=token.id.hex, creation_time=token.creation_time)
+        token_dict = dict(
+            token_id=token.id.hex,
+            creation_time=token.creation_time,
+            token_network_address=to_checksum_address(token.token_network_address),
+        )
         self.conn.execute(
             """
             INSERT INTO feedback_token (
-                token_id, creation_time
+                token_id, creation_time, token_network_address
             ) VALUES (
                 :token_id,
-                :creation_time
+                :creation_time,
+                :token_network_address
             )
         """,
             token_dict,
         )
 
-    def get_feedback_token(self, token_id: UUID) -> Optional[FeedbackToken]:
+    def get_feedback_token(
+        self, token_id: UUID, token_network_address: TokenNetworkAddress
+    ) -> Optional[FeedbackToken]:
         token = self.conn.execute(
-            "SELECT * FROM feedback_token WHERE token_id = ?", [token_id.hex]
+            "SELECT * FROM feedback_token WHERE token_id = ? AND token_network_address = ?",
+            [token_id.hex, to_checksum_address(token_network_address)],
         ).fetchone()
 
         if token:
-            return FeedbackToken(id=UUID(token["token_id"]), creation_time=token["creation_time"])
+            return FeedbackToken(
+                id=UUID(token["token_id"]),
+                creation_time=token["creation_time"],
+                token_network_address=decode_hex(token["token_network_address"]),
+            )
 
         return None

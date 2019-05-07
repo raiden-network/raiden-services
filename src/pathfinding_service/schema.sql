@@ -52,5 +52,6 @@ CREATE TABLE capacity_update (
 CREATE TABLE feedback_token (
     token_id CHAR(32) NOT NULL,
     creation_time TIMESTAMP NOT NULL,
+    token_network_address CHAR(42) NOT NULL,
     PRIMARY KEY (token_id)
 );

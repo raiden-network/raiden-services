@@ -12,6 +12,7 @@ from pathfinding_service.config import (
     FEE_PEN_DEFAULT,
 )
 from pathfinding_service.model.channel_view import ChannelView
+from pathfinding_service.model.feedback import RouteFeedback
 from raiden.messages import UpdatePFS
 from raiden.utils.typing import Address, ChannelID, TokenAmount, TokenNetworkAddress
 
@@ -43,6 +44,7 @@ class TokenNetwork:
         self.channel_id_to_addresses: Dict[ChannelID, Tuple[Address, Address]] = dict()
         self.G = DiGraph()
         self.max_relative_fee = 0
+        self.feedback: List[RouteFeedback] = []
 
     def __repr__(self) -> str:
         return (

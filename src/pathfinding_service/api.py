@@ -27,7 +27,8 @@ from pathfinding_service.config import (
     MIN_IOU_EXPIRY,
     UDC_SECURITY_MARGIN_FACTOR,
 )
-from pathfinding_service.model import IOU, FeedbackToken
+from pathfinding_service.model import IOU
+from pathfinding_service.model.feedback import FeedbackToken, RouteFeedback
 from pathfinding_service.model.token_network import TokenNetwork
 from pathfinding_service.service import PathfindingService
 from raiden.exceptions import InvalidSignature
@@ -154,7 +155,25 @@ class PathsResource(PathfinderResource):
                 )
             )
 
+        # Create a feedback token and store it to the DB
+        feedback_token = create_and_store_feedback_token(
+            pathfinding_service=self.pathfinding_service,
+            token_network_address=token_network.address,
+        )
+        assert feedback_token
+
         return {"result": paths}, 200
+
+
+def create_and_store_feedback_token(
+    pathfinding_service: PathfindingService, token_network_address: TokenNetworkAddress
+) -> FeedbackToken:
+    feedback_token = FeedbackToken(
+        id=uuid4(), creation_time=datetime.utcnow(), token_network_address=token_network_address
+    )
+    pathfinding_service.database.insert_feedback_token(feedback_token)
+
+    return feedback_token
 
 
 def process_payment(
@@ -278,10 +297,10 @@ class FeedbackResource(PathfinderResource):
     def post(
         self, token_network_address: str  # pylint: disable=unused-argument
     ) -> Tuple[dict, int]:
-        # token_network = self._validate_token_network_argument(token_network_address)
+        token_network = self._validate_token_network_argument(token_network_address)
         feedback_request = self._parse_post(FeedbackRequest)
         feedback_token = self.pathfinding_service.database.get_feedback_token(
-            token_id=feedback_request.token
+            token_id=feedback_request.token, token_network_address=token_network.address
         )
 
         # The client doesn't need to know whether the feedback was accepted or not,
@@ -292,6 +311,13 @@ class FeedbackResource(PathfinderResource):
             return {}, 200
 
         log.info("Received feedback", feedback=feedback_request)
+        token_network.feedback.append(
+            RouteFeedback(
+                status=feedback_request.status,
+                received_time=datetime.utcnow(),
+                path=feedback_request.path,
+            )
+        )
 
         return {}, 200
 
