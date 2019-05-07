@@ -1,3 +1,4 @@
+from copy import deepcopy
 from typing import List
 
 import pytest
@@ -67,6 +68,30 @@ def test_routing_simple(token_network_model: TokenNetwork, addresses: List[Addre
         token_network_model.get_paths(
             addresses[0], addresses[5], value=TokenAmount(10), max_paths=1
         )
+
+
+@pytest.mark.usefixtures("populate_token_network_case_1")
+def test_capacity_check(token_network_model: TokenNetwork, addresses: List[Address]):
+    """ The that the mediation fees are included in the capacity check """
+    # First get a path without mediation fees. This must return the shortest path: 4->1->0
+    paths = token_network_model.get_paths(
+        addresses[4], addresses[0], value=TokenAmount(35), max_paths=1
+    )
+    index_paths = [addresses_to_indexes(p["path"], addresses) for p in paths]
+    assert index_paths == [[4, 1, 0]]
+
+    # New let's add mediation fees to the channel 0->1.
+    model_with_fees = deepcopy(token_network_model)
+    model_with_fees.G[addresses[1]][addresses[0]]["view"].absolute_fee = 1
+    # The transfer from 4->1 must now include 1 Token for the mediation fee
+    # which will be payed for the 1->0 channel in addition to the payment
+    # value of 35. But 35 + 1 exceeds the capacity for channel 4->1, which is
+    # 35. So we should now get the next best route instead.
+    paths = model_with_fees.get_paths(
+        addresses[4], addresses[0], value=TokenAmount(35), max_paths=1, fee_penalty=0
+    )
+    index_paths = [addresses_to_indexes(p["path"], addresses) for p in paths]
+    assert index_paths == [[4, 1, 2, 0]]
 
 
 @pytest.mark.usefixtures("populate_token_network_case_1")
