@@ -1,5 +1,7 @@
+import json
 import os
-from typing import Iterator, Optional, Tuple
+from datetime import datetime
+from typing import Iterator, List, Optional, Tuple
 from uuid import UUID
 
 import structlog
@@ -206,31 +208,84 @@ class PFSDatabase(BaseDatabase):
         for row in self.conn.execute("SELECT address FROM token_network"):
             yield TokenNetwork(token_network_address=decode_hex(row[0]))
 
-    def insert_feedback_token(self, token: FeedbackToken) -> None:
+    def prepare_feedback(self, token: FeedbackToken, route: List[Address]) -> None:
+        hexed_route = [to_checksum_address(e) for e in route]
         token_dict = dict(
             token_id=token.id.hex,
             creation_time=token.creation_time,
             token_network_address=to_checksum_address(token.token_network_address),
+            route=json.dumps(hexed_route),
         )
         self.conn.execute(
             """
-            INSERT INTO feedback_token (
-                token_id, creation_time, token_network_address
+            INSERT INTO feedback (
+                token_id, creation_time, token_network_address, route
             ) VALUES (
                 :token_id,
                 :creation_time,
-                :token_network_address
+                :token_network_address,
+                :route
             )
         """,
             token_dict,
         )
 
+    def has_feedback_for(self, token: FeedbackToken, route: List[Address]) -> bool:
+        hexed_route = [to_checksum_address(e) for e in route]
+        feedback = self.conn.execute(
+            """SELECT successful FROM feedback WHERE
+                token_id = ? AND
+                token_network_address = ? AND
+                route = ?;
+            """,
+            [
+                token.id.hex,
+                to_checksum_address(token.token_network_address),
+                json.dumps(hexed_route),
+            ],
+        ).fetchone()
+
+        if feedback:
+            return feedback["successful"] is not None
+
+        return False
+
+    def update_feedback(
+        self, token: FeedbackToken, route: List[Address], successful: bool
+    ) -> None:
+        hexed_route = [to_checksum_address(e) for e in route]
+        token_dict = dict(
+            token_id=token.id.hex,
+            token_network_address=to_checksum_address(token.token_network_address),
+            route=json.dumps(hexed_route),
+            successful=successful,
+            feedback_time=datetime.utcnow(),
+        )
+        self.conn.execute(
+            """
+            UPDATE feedback
+            SET
+                successful = :successful,
+                feedback_time = :feedback_time
+            WHERE
+                token_id = :token_id AND
+                token_network_address = :token_network_address AND
+                route = :route;
+        """,
+            token_dict,
+        )
+
     def get_feedback_token(
-        self, token_id: UUID, token_network_address: TokenNetworkAddress
+        self, token_id: UUID, token_network_address: TokenNetworkAddress, route: List[Address]
     ) -> Optional[FeedbackToken]:
+        hexed_route = [to_checksum_address(e) for e in route]
         token = self.conn.execute(
-            "SELECT * FROM feedback_token WHERE token_id = ? AND token_network_address = ?",
-            [token_id.hex, to_checksum_address(token_network_address)],
+            """SELECT * FROM feedback WHERE
+                token_id = ? AND
+                token_network_address = ? AND
+                route = ?;
+            """,
+            [token_id.hex, to_checksum_address(token_network_address), json.dumps(hexed_route)],
         ).fetchone()
 
         if token:

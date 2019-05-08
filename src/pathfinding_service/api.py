@@ -28,7 +28,7 @@ from pathfinding_service.config import (
     UDC_SECURITY_MARGIN_FACTOR,
 )
 from pathfinding_service.model import IOU
-from pathfinding_service.model.feedback import FeedbackToken, RouteFeedback
+from pathfinding_service.model.feedback import FeedbackToken
 from pathfinding_service.model.token_network import TokenNetwork
 from pathfinding_service.service import PathfindingService
 from raiden.exceptions import InvalidSignature
@@ -156,19 +156,24 @@ class PathsResource(PathfinderResource):
             )
 
         # Create a feedback token and store it to the DB
-        feedback_token = create_and_store_feedback_token(
+        feedback_token = create_and_store_feedback_tokens(
             pathfinding_service=self.pathfinding_service,
             token_network_address=token_network.address,
+            routes=paths,
         )
 
         return {"result": paths, "feedback_token": feedback_token.id.hex}, 200
 
 
-def create_and_store_feedback_token(
-    pathfinding_service: PathfindingService, token_network_address: TokenNetworkAddress
+def create_and_store_feedback_tokens(
+    pathfinding_service: PathfindingService,
+    token_network_address: TokenNetworkAddress,
+    routes: List[Dict],
 ) -> FeedbackToken:
     feedback_token = FeedbackToken(token_network_address=token_network_address)
-    pathfinding_service.database.insert_feedback_token(feedback_token)
+
+    for route in routes:
+        pathfinding_service.database.prepare_feedback(token=feedback_token, route=route["path"])
 
     return feedback_token
 
@@ -297,7 +302,9 @@ class FeedbackResource(PathfinderResource):
         token_network = self._validate_token_network_argument(token_network_address)
         feedback_request = self._parse_post(FeedbackRequest)
         feedback_token = self.pathfinding_service.database.get_feedback_token(
-            token_id=feedback_request.token, token_network_address=token_network.address
+            token_id=feedback_request.token,
+            token_network_address=token_network.address,
+            route=feedback_request.path,
         )
 
         # The client doesn't need to know whether the feedback was accepted or not,
@@ -306,13 +313,16 @@ class FeedbackResource(PathfinderResource):
             return {}, 400
 
         log.info("Received feedback", feedback=feedback_request)
-        token_network.feedback.append(
-            RouteFeedback(
-                status=feedback_request.status,
-                received_time=datetime.utcnow(),
-                path=feedback_request.path,
-            )
+
+        has_feedback_for_request = self.pathfinding_service.database.has_feedback_for(
+            token=feedback_token, route=feedback_request.path
         )
+
+        if not has_feedback_for_request:
+            success = feedback_request.status == "successful"
+            self.pathfinding_service.database.update_feedback(
+                token=feedback_token, route=feedback_request.path, successful=success
+            )
 
         return {}, 200
 
