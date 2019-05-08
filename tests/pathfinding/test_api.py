@@ -280,7 +280,7 @@ def test_get_info(api_url: str, api_sut, pathfinding_service_mock):
 
 def test_get_iou(api_sut: ServiceApi, api_url: str, token_network_model: TokenNetwork):
     privkey = get_random_privkey()
-    sender = decode_hex(private_key_to_address(privkey))
+    sender = private_key_to_address(privkey)
     url = api_url + f"/{to_checksum_address(token_network_model.address)}/payment/iou"
 
     def make_params(timestamp: datetime):

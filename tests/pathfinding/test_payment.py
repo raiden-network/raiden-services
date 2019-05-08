@@ -16,7 +16,7 @@ def make_iou(
 ) -> IOU:
     receiver_hex: str = to_checksum_address(receiver)
     iou_dict = {
-        "sender": private_key_to_address(sender_priv_key),
+        "sender": to_checksum_address(private_key_to_address(sender_priv_key)),
         "receiver": receiver_hex,
         "amount": amount,
         "expiration_block": expiration_block,

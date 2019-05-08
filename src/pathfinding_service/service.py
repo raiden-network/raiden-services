@@ -4,7 +4,7 @@ from typing import Dict, Optional
 
 import gevent
 import structlog
-from eth_utils import decode_hex, to_checksum_address
+from eth_utils import to_checksum_address
 from web3 import Web3
 from web3.contract import Contract
 
@@ -52,7 +52,7 @@ class PathfindingService(gevent.Greenlet):
         self.registry_address = contracts[CONTRACT_TOKEN_NETWORK_REGISTRY].address
         self.user_deposit_contract = contracts[CONTRACT_USER_DEPOSIT]
         self.chain_id = ChainID(int(web3.net.version))
-        self.address = decode_hex(private_key_to_address(private_key))
+        self.address = private_key_to_address(private_key)
         self._required_confirmations = required_confirmations
         self._poll_interval = poll_interval
         self._is_running = gevent.event.Event()

@@ -2,7 +2,7 @@
 from unittest.mock import Mock
 
 import pytest
-from eth_utils import decode_hex
+from eth_utils import to_checksum_address
 
 from monitoring_service.events import (
     ActionClaimRewardTriggeredEvent,
@@ -45,14 +45,14 @@ from raiden_libs.events import (
     ReceiveMonitoringRewardClaimedEvent,
     ReceiveNonClosingBalanceProofUpdatedEvent,
 )
-from raiden_libs.utils import private_key_to_address, to_checksum_address
+from raiden_libs.utils import private_key_to_address
 
 DEFAULT_TOKEN_NETWORK_ADDRESS = TokenNetworkAddress(bytes([1] * 20))
 DEFAULT_CHANNEL_IDENTIFIER = ChannelID(3)
 DEFAULT_PRIVATE_KEY1 = "0x" + "1" * 64
 DEFAULT_PRIVATE_KEY2 = "0x" + "2" * 64
-DEFAULT_PARTICIPANT1 = Address(decode_hex(private_key_to_address(DEFAULT_PRIVATE_KEY1)))
-DEFAULT_PARTICIPANT2 = Address(decode_hex(private_key_to_address(DEFAULT_PRIVATE_KEY2)))
+DEFAULT_PARTICIPANT1 = private_key_to_address(DEFAULT_PRIVATE_KEY1)
+DEFAULT_PARTICIPANT2 = private_key_to_address(DEFAULT_PRIVATE_KEY2)
 DEFAULT_REWARD_AMOUNT = TokenAmount(1)
 DEFAULT_SETTLE_TIMEOUT = 100
 
