@@ -330,12 +330,16 @@ def test_get_iou(api_sut: ServiceApi, api_url: str, token_network_model: TokenNe
 # tests for /feedback endpoint
 #
 def test_feedback(api_sut: ServiceApi, api_url: str, token_network_model: TokenNetwork):
+    database = api_sut.pathfinding_service.database
+    default_path_hex = ["0x" + "1" * 40, "0x" + "2" * 40, "0x" + "3" * 40]
+    default_path = [decode_hex(e) for e in default_path_hex]
+
     def make_request(token_id: str = None, status: str = None, path: List[str] = None):
         url = api_url + f"/{to_checksum_address(token_network_model.address)}/feedback"
 
         token_id = token_id or uuid4().hex
         status = status or "success"
-        path = path or ["0x" + "1" * 40, "0x" + "2" * 40, "0x" + "3" * 40]
+        path = path or default_path_hex
         data = {"token": token_id, "status": status, "path": path}
         return requests.post(url, json=data)
 
@@ -359,23 +363,23 @@ def test_feedback(api_sut: ServiceApi, api_url: str, token_network_model: TokenN
 
     response = make_request(token_id=token.id.hex)
     assert response.status_code == 400
-    assert len(token_network_model.feedback) == 0
+    assert not database.has_feedback_for(token, default_path)
 
     # Test expired token
     old_token = FeedbackToken(
         creation_time=datetime.utcnow() - timedelta(hours=1),
         token_network_address=token_network_model.address,
     )
-    api_sut.pathfinding_service.database.insert_feedback_token(old_token)
+    database.prepare_feedback(old_token, default_path)
 
     response = make_request(token_id=old_token.id.hex)
     assert response.status_code == 400
-    assert len(token_network_model.feedback) == 0
+    assert not database.has_feedback_for(token, default_path)
 
     # Test valid token
     token = FeedbackToken(token_network_address=token_network_model.address)
-    api_sut.pathfinding_service.database.insert_feedback_token(token)
+    database.prepare_feedback(token, default_path)
 
     response = make_request(token_id=token.id.hex)
     assert response.status_code == 200
-    assert len(token_network_model.feedback) == 1
+    assert database.has_feedback_for(token, default_path)

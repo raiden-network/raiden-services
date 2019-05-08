@@ -49,9 +49,12 @@ CREATE TABLE capacity_update (
     PRIMARY KEY (updating_participant, token_network_address, channel_id)
 );
 
-CREATE TABLE feedback_token (
+CREATE TABLE feedback (
     token_id CHAR(32) NOT NULL,
     creation_time TIMESTAMP NOT NULL,
     token_network_address CHAR(42) NOT NULL,
-    PRIMARY KEY (token_id)
+    route TEXT NOT NULL,
+    successful BOOLEAN CHECK (successful IN (0,1)),
+    feedback_time TIMESTAMP,
+    PRIMARY KEY (token_id, token_network_address, route)
 );
