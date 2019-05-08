@@ -3,7 +3,6 @@ import time
 from typing import Callable, Dict
 
 import structlog
-from eth_utils import decode_hex
 from web3 import Web3
 from web3.contract import Contract
 from web3.middleware import construct_sign_and_send_raw_middleware
@@ -70,7 +69,7 @@ class MonitoringService:  # pylint: disable=too-few-public-methods
     ):
         self.web3 = web3
         self.private_key = private_key
-        self.address = decode_hex(private_key_to_address(private_key))
+        self.address = private_key_to_address(private_key)
         self.required_confirmations = required_confirmations
         self.poll_interval = poll_interval
 

@@ -66,9 +66,9 @@ def get_random_monitor_request(get_random_identifier):
 def test_monitor_request_properties(get_random_monitor_request):
     request, p1, p2 = get_random_monitor_request()
 
-    assert request.signer == decode_hex(private_key_to_address(p1))
-    assert request.non_closing_signer == decode_hex(private_key_to_address(p2))
-    assert request.reward_proof_signer == decode_hex(private_key_to_address(p2))
+    assert request.signer == private_key_to_address(p1)
+    assert request.non_closing_signer == private_key_to_address(p2)
+    assert request.reward_proof_signer == private_key_to_address(p2)
 
 
 def test_save_and_load_mr(get_random_monitor_request, ms_database):

@@ -2,7 +2,7 @@
 from typing import List
 
 import pytest
-from eth_utils import decode_hex, encode_hex, keccak
+from eth_utils import encode_hex, keccak
 from tests.pathfinding.config import NUMBER_OF_NODES
 
 from raiden.utils.typing import Address
@@ -17,6 +17,4 @@ def private_keys() -> List[str]:
 
 @pytest.fixture(scope="session")
 def addresses(private_keys: List[str]) -> List[Address]:
-    return [
-        Address(decode_hex(private_key_to_address(private_key))) for private_key in private_keys
-    ]
+    return [private_key_to_address(private_key) for private_key in private_keys]
