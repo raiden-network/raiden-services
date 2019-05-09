@@ -8,7 +8,7 @@ from os.path import basename, dirname, join, splitext
 from setuptools import find_packages, setup
 
 REQ_REPLACE = {
-    'git+https://github.com/raiden-network/raiden.git@a5ccadf391d273b78e6af3754919bba3cb4f17c0': 'raiden',
+    'git+https://github.com/raiden-network/raiden.git@0f3b278ae2f20b05a692c94f77d17e365926e9b8': 'raiden',
 }
 
 DESCRIPTION = 'Raiden Services contain additional tools for the Raiden Network.'

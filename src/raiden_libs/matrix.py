@@ -3,7 +3,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
 
 import gevent
 import structlog
-from eth_utils import decode_hex, to_canonical_address, to_checksum_address
+from eth_utils import decode_hex, to_checksum_address
 from matrix_client.errors import MatrixRequestError
 from matrix_client.user import User
 
@@ -160,11 +160,10 @@ class MatrixListener(gevent.Greenlet):
     def follow_address_presence(self, address: Address, refresh: bool = False) -> None:
         if self.user_manager:
             log.debug("Tracking address", address=address)
-            canonical_address = to_canonical_address(address)
-            self.user_manager.add_address(canonical_address)
+            self.user_manager.add_address(address)
 
             if refresh:
-                self.user_manager.refresh_address_presence(canonical_address)
+                self.user_manager.refresh_address_presence(address)
 
     def _get_user(self, user: Union[User, str]) -> User:
         """Creates an User from an user_id, if none, or fetch a cached User """

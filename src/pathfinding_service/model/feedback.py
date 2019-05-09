@@ -3,7 +3,7 @@ from datetime import datetime
 from uuid import UUID, uuid4
 
 from pathfinding_service.config import MAX_AGE_OF_FEEDBACK_REQUESTS
-from raiden.utils import TokenNetworkAddress
+from raiden.utils.typing import TokenNetworkAddress
 
 
 @dataclass

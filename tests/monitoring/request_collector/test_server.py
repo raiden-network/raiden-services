@@ -3,7 +3,7 @@ import pytest
 from eth_utils import decode_hex, to_checksum_address
 
 from raiden.messages import RequestMonitoring, SignedBlindedBalanceProof
-from raiden.tests.utils.messages import make_balance_proof
+from raiden.tests.utils import factories
 from raiden.utils.signer import LocalSigner
 from raiden.utils.typing import TokenAmount
 from raiden_contracts.tests.utils import get_random_privkey
@@ -11,12 +11,11 @@ from raiden_contracts.tests.utils import get_random_privkey
 
 @pytest.fixture
 def build_request_monitoring():
-    signer = LocalSigner(decode_hex(get_random_privkey()))
     non_closing_signer = LocalSigner(decode_hex(get_random_privkey()))
 
     def f(chain_id=1, **kwargs):
-        balance_proof = make_balance_proof(signer=signer, **kwargs)
-        balance_proof.chain_id = chain_id
+        balance_proof = factories.create(factories.BalanceProofSignedStateProperties(**kwargs))
+        balance_proof.canonical_identifier.chain_identifier = chain_id
         partner_signed_balance_proof = SignedBlindedBalanceProof.from_balance_proof_signed_state(
             balance_proof
         )
@@ -56,7 +55,7 @@ def test_invalid_request(ms_database, build_request_monitoring, request_collecto
 
 def test_ignore_old_nonce(ms_database, build_request_monitoring, request_collector):
     def stored_mr_after_proccessing(amount, nonce):
-        request_monitoring = build_request_monitoring(amount=amount, nonce=nonce)
+        request_monitoring = build_request_monitoring(transferred_amount=amount, nonce=nonce)
         request_collector.on_monitor_request(request_monitoring)
         return ms_database.get_monitor_request(
             token_network_address=to_checksum_address(
