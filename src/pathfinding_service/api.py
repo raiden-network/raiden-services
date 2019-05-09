@@ -172,6 +172,7 @@ def create_and_store_feedback_tokens(
 ) -> FeedbackToken:
     feedback_token = FeedbackToken(token_network_address=token_network_address)
 
+    # TODO: use executemany here
     for route in routes:
         pathfinding_service.database.prepare_feedback(token=feedback_token, route=route["path"])
 
@@ -312,17 +313,13 @@ class FeedbackResource(PathfinderResource):
         if not feedback_token or not feedback_token.is_valid():
             return {}, 400
 
-        log.info("Received feedback", feedback=feedback_request)
-
-        has_feedback_for_request = self.pathfinding_service.database.has_feedback_for(
-            token=feedback_token, route=feedback_request.path
+        success = feedback_request.status == "successful"
+        updated_rows = self.pathfinding_service.database.update_feedback(
+            token=feedback_token, route=feedback_request.path, successful=success
         )
 
-        if not has_feedback_for_request:
-            success = feedback_request.status == "successful"
-            self.pathfinding_service.database.update_feedback(
-                token=feedback_token, route=feedback_request.path, successful=success
-            )
+        if updated_rows > 0:
+            log.info("Received feedback", feedback=feedback_request)
 
         return {}, 200
 

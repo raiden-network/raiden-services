@@ -1,7 +1,29 @@
+import json
+from typing import List
 from uuid import uuid4
 
+from eth_utils import to_checksum_address
+
+from pathfinding_service.database import PFSDatabase
 from pathfinding_service.model.feedback import FeedbackToken
 from raiden.utils import Address, TokenNetworkAddress
+
+
+def db_has_feedback_for(database: PFSDatabase, token: FeedbackToken, route: List[Address]) -> bool:
+    hexed_route = [to_checksum_address(e) for e in route]
+    feedback = database.conn.execute(
+        """SELECT successful FROM feedback WHERE
+            token_id = ? AND
+            token_network_address = ? AND
+            route = ?;
+        """,
+        [token.id.hex, to_checksum_address(token.token_network_address), json.dumps(hexed_route)],
+    ).fetchone()
+
+    if feedback:
+        return feedback["successful"] is not None
+
+    return False
 
 
 def test_insert_feedback_token(pathfinding_service_mock):
@@ -54,16 +76,20 @@ def test_feedback(pathfinding_service_mock):
     other_token = FeedbackToken(token_network_address=token_network_address)
 
     database = pathfinding_service_mock.database
-    assert not database.has_feedback_for(token=token, route=route)
-    assert not database.has_feedback_for(token=token, route=other_route)
-    assert not database.has_feedback_for(token=other_token, route=route)
+    assert not db_has_feedback_for(database=database, token=token, route=route)
+    assert not db_has_feedback_for(database=database, token=token, route=other_route)
+    assert not db_has_feedback_for(database=database, token=other_token, route=route)
 
     database.prepare_feedback(token=token, route=route)
-    assert not database.has_feedback_for(token=token, route=route)
-    assert not database.has_feedback_for(token=other_token, route=route)
-    assert not database.has_feedback_for(token=token, route=other_route)
+    assert not db_has_feedback_for(database=database, token=token, route=route)
+    assert not db_has_feedback_for(database=database, token=other_token, route=route)
+    assert not db_has_feedback_for(database=database, token=token, route=other_route)
 
-    database.update_feedback(token=token, route=route, successful=True)
-    assert database.has_feedback_for(token=token, route=route)
-    assert not database.has_feedback_for(token=other_token, route=route)
-    assert not database.has_feedback_for(token=token, route=other_route)
+    rowcount = database.update_feedback(token=token, route=route, successful=True)
+    assert rowcount == 1
+    assert db_has_feedback_for(database=database, token=token, route=route)
+    assert not db_has_feedback_for(database=database, token=other_token, route=route)
+    assert not db_has_feedback_for(database=database, token=token, route=other_route)
+
+    rowcount = database.update_feedback(token=token, route=route, successful=True)
+    assert rowcount == 0
