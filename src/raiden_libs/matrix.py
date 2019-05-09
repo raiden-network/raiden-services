@@ -28,8 +28,7 @@ from raiden.settings import (
 )
 from raiden.utils.cli import get_matrix_servers
 from raiden.utils.signer import LocalSigner
-from raiden.utils.typing import Address as BytesAddress, ChainID
-from raiden_libs.types import Address
+from raiden.utils.typing import Address, ChainID
 
 log = structlog.get_logger(__name__)
 
@@ -51,7 +50,7 @@ def message_from_dict(data: dict) -> Message:
     return klass.from_dict(data)
 
 
-def deserialize_messages(data: str, peer_address: BytesAddress) -> List[SignedMessage]:
+def deserialize_messages(data: str, peer_address: Address) -> List[SignedMessage]:
     messages: List[SignedMessage] = list()
 
     for line in data.splitlines():
@@ -100,7 +99,7 @@ class MatrixListener(gevent.Greenlet):
         service_room_suffix: str,
         message_received_callback: Callable[[Message], None],
         address_reachability_changed_callback: Callable[
-            [BytesAddress, AddressReachability], None
+            [Address, AddressReachability], None
         ] = None,
     ) -> None:
         super().__init__()

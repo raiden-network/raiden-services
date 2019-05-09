@@ -3,8 +3,8 @@ from typing import List
 from unittest.mock import Mock, call, patch
 
 from pathfinding_service.service import PathfindingService
-from raiden.utils.typing import Address, BlockNumber, ChannelID, TokenAmount, TokenNetworkAddress
 from raiden.network.transport.matrix import AddressReachability
+from raiden.utils.typing import Address, BlockNumber, ChannelID, TokenAmount, TokenNetworkAddress
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
 from raiden_contracts.tests.utils import get_random_privkey, to_canonical_address
 from raiden_libs.events import (
@@ -182,10 +182,7 @@ def test_token_channel_opened(pathfinding_service_mock, token_network_model):
 
     # Check that presence of these addresses is followed
     pathfinding_service_mock.matrix_listener.follow_address_presence.assert_has_calls(
-        [
-            call("0x1111111111111111111111111111111111111111", refresh=True),
-            call("0x2222222222222222222222222222222222222222", refresh=True),
-        ]
+        [call(bytes([1] * 20), refresh=True), call(bytes([2] * 20), refresh=True)]
     )
 
 
@@ -247,8 +244,8 @@ def test_handle_reachability_change(pathfinding_service_mock, token_network_mode
         token_network_model.address_to_reachability[PARTICIPANT1] == AddressReachability.REACHABLE
     )
 
-    token_address = Address("0x" + "8" * 40)
-    token_network_address = TokenNetworkAddress("0x" + "9" * 40)
+    token_address = Address(b"8" * 20)
+    token_network_address = TokenNetworkAddress(b"9" * 20)
     network_event = ReceiveTokenNetworkCreatedEvent(
         token_address=token_address,
         token_network_address=token_network_address,
