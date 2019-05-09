@@ -7,6 +7,7 @@ import pytest
 
 from pathfinding_service.api import ServiceApi
 from pathfinding_service.config import API_PATH, DEFAULT_API_PORT
+from raiden.utils.typing import Address
 
 
 def get_free_port(address: str, initial_port: int):
@@ -60,7 +61,7 @@ def api_sut(
     free_port: int,
     populate_token_network_case_1,  # pylint: disable=unused-argument
 ) -> Iterator[ServiceApi]:
-    api = ServiceApi(pathfinding_service_mock)
+    api = ServiceApi(pathfinding_service_mock, one_to_n_address=Address(bytes([1] * 20)))
     api.run(port=free_port)
     yield api
     api.stop()
@@ -72,7 +73,9 @@ def api_sut_with_debug(
     free_port: int,
     populate_token_network_case_1,  # pylint: disable=unused-argument
 ) -> Iterator[ServiceApi]:
-    api = ServiceApi(pathfinding_service_mock, debug_mode=True)
+    api = ServiceApi(
+        pathfinding_service_mock, one_to_n_address=Address(bytes([1] * 20)), debug_mode=True
+    )
     api.run(port=free_port)
     yield api
     api.stop()

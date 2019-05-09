@@ -100,6 +100,18 @@ class BaseDatabase:
             old = old_settings[key]
             assert old == val, f"DB was created with {key}={old}, got {val}!"
 
+    def insert(
+        self, table_name: str, fields_by_colname: Dict[str, Any], keyword: str = "INSERT"
+    ) -> sqlite3.Cursor:
+        cols = ", ".join(fields_by_colname.keys())
+        values = ", ".join(":" + col_name for col_name in fields_by_colname)
+        return self.conn.execute(
+            f"{keyword} INTO {table_name}({cols}) VALUES ({values})", fields_by_colname
+        )
+
+    def upsert(self, table_name: str, fields_by_colname: Dict[str, Any]) -> sqlite3.Cursor:
+        return self.insert(table_name, fields_by_colname, keyword="INSERT OR REPLACE")
+
     def get_blockchain_state(self) -> BlockchainState:
         blockchain = self.conn.execute("SELECT * FROM blockchain").fetchone()
         token_network_addresses = [

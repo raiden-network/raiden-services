@@ -34,6 +34,7 @@ CREATE TABLE iou (
     expiration_block HEX_INT NOT NULL,
     signature CHAR(132) NOT NULL,
     claimed BOOL NOT NULL,
+    one_to_n_address CHAR(42) NOT NULL,
     PRIMARY KEY (sender, expiration_block)
 );
 

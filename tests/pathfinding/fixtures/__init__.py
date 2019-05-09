@@ -5,6 +5,7 @@ from raiden.utils.typing import TokenNetworkAddress
 
 from .accounts import *  # noqa
 from .api import *  # noqa
+from .iou import *  # noqa
 from .network_service import *  # noqa
 
 

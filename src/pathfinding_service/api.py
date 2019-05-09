@@ -113,7 +113,12 @@ class PathsResource(PathfinderResource):
     def post(self, token_network_address: str) -> Tuple[dict, int]:
         token_network = self._validate_token_network_argument(token_network_address)
         path_req = self._parse_post(PathRequest)
-        process_payment(path_req.iou, self.pathfinding_service, self.service_api.service_fee)
+        process_payment(
+            path_req.iou,
+            self.pathfinding_service,
+            self.service_api.service_fee,
+            self.service_api.one_to_n_address,
+        )
 
         # only add optional args if not None, so we can use defaults
         optional_args = {}
@@ -179,8 +184,11 @@ def create_and_store_feedback_tokens(
     return feedback_token
 
 
-def process_payment(
-    iou: Optional[IOU], pathfinding_service: PathfindingService, service_fee: TokenAmount
+def process_payment(  # pylint: disable=too-many-branches
+    iou: Optional[IOU],
+    pathfinding_service: PathfindingService,
+    service_fee: TokenAmount,
+    one_to_n_address: Address,
 ) -> None:
     if service_fee == 0:
         return
@@ -190,6 +198,10 @@ def process_payment(
     # Basic IOU validity checks
     if not is_same_address(iou.receiver, pathfinding_service.address):
         raise exceptions.WrongIOURecipient(expected=pathfinding_service.address)
+    if iou.chain_id != pathfinding_service.chain_id:
+        raise exceptions.UnsupportedChainID(expected=pathfinding_service.chain_id)
+    if iou.one_to_n_address != one_to_n_address:
+        raise exceptions.WrongOneToNAddress(expected=one_to_n_address, got=iou.one_to_n_address)
     if not iou.is_signature_valid():
         raise exceptions.InvalidSignature
 
@@ -393,12 +405,14 @@ class ServiceApi:
     def __init__(
         self,
         pathfinding_service: PathfindingService,
+        one_to_n_address: Address,
         service_fee: TokenAmount = TokenAmount(0),
         debug_mode: bool = False,
     ) -> None:
         self.flask_app = Flask(__name__)
         self.api = ApiWithErrorHandler(self.flask_app)
         self.rest_server: Optional[WSGIServer] = None
+        self.one_to_n_address = one_to_n_address
         self.pathfinding_service = pathfinding_service
         self.service_fee = service_fee
 

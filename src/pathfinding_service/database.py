@@ -48,21 +48,6 @@ class PFSDatabase(BaseDatabase):
             **contract_addresses,
         )
 
-    def upsert_iou(self, iou: IOU) -> None:
-        iou_dict = IOU.Schema(strict=True).dump(iou)[0]
-        for key in ("amount", "expiration_block"):
-            iou_dict[key] = hex256(iou_dict[key])
-        self.conn.execute(
-            """
-            INSERT OR REPLACE INTO iou (
-                sender, amount, expiration_block, signature, claimed
-            ) VALUES (
-                :sender, :amount, :expiration_block, :signature, :claimed
-            )
-        """,
-            iou_dict,
-        )
-
     def upsert_capacity_update(self, message: UpdatePFS) -> None:
         capacity_update_dict = dict(
             updating_participant=to_checksum_address(message.updating_participant),
@@ -122,6 +107,13 @@ class PFSDatabase(BaseDatabase):
     def update_lastest_known_block(self, latest_known_block: BlockNumber) -> None:
         self.conn.execute("UPDATE blockchain SET latest_known_block = ?", [latest_known_block])
 
+    def upsert_iou(self, iou: IOU) -> None:
+        iou_dict = IOU.Schema(strict=True, exclude=["receiver", "chain_id"]).dump(iou)[0]
+        iou_dict["one_to_n_address"] = to_checksum_address(iou_dict["one_to_n_address"])
+        for key in ("amount", "expiration_block"):
+            iou_dict[key] = hex256(iou_dict[key])
+        self.upsert("iou", iou_dict)
+
     def get_ious(
         self,
         sender: Address = None,
@@ -130,7 +122,11 @@ class PFSDatabase(BaseDatabase):
         expires_before: BlockNumber = None,
         amount_at_least: TokenAmount = None,
     ) -> Iterator[IOU]:
-        query = "SELECT * FROM iou WHERE 1=1"
+        query = """
+            SELECT *, (SELECT chain_id FROM blockchain) AS chain_id
+            FROM iou
+            WHERE 1=1
+        """
         args: list = []
         if sender is not None:
             query += " AND sender = ?"
