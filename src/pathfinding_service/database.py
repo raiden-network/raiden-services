@@ -58,24 +58,7 @@ class PFSDatabase(BaseDatabase):
             updating_capacity=hex256(message.updating_capacity),
             other_capacity=hex256(message.other_capacity),
         )
-        self.conn.execute(
-            """
-            INSERT OR REPLACE INTO capacity_update (
-                updating_participant,
-                token_network_address,
-                channel_id,
-                updating_capacity,
-                other_capacity
-            ) VALUES (
-                :updating_participant,
-                :token_network_address,
-                :channel_id,
-                :updating_capacity,
-                :other_capacity
-            )
-        """,
-            capacity_update_dict,
-        )
+        self.upsert("capacity_update", capacity_update_dict)
 
     def get_capacity_updates(
         self,
@@ -169,27 +152,7 @@ class PFSDatabase(BaseDatabase):
             "absolute_fee",
         ):
             cv_dict[key] = hex256(cv_dict[key])
-        self.conn.execute(
-            """
-            INSERT OR REPLACE INTO channel_view (
-                token_network_address, channel_id, participant1, participant2,
-                settle_timeout, capacity, reveal_timeout, deposit,
-                update_nonce, absolute_fee, relative_fee
-            ) VALUES (
-                :token_network_address,
-                :channel_id,
-                :participant1, :participant2,
-                :settle_timeout,
-                :capacity,
-                :reveal_timeout,
-                :deposit,
-                :update_nonce,
-                :absolute_fee,
-                :relative_fee
-            )
-        """,
-            cv_dict,
-        )
+        self.upsert("channel_view", cv_dict)
 
     def get_channel_views(self) -> Iterator[ChannelView]:
         query = "SELECT * FROM channel_view"
@@ -212,19 +175,7 @@ class PFSDatabase(BaseDatabase):
             token_network_address=to_checksum_address(token.token_network_address),
             route=json.dumps(hexed_route),
         )
-        self.conn.execute(
-            """
-            INSERT INTO feedback (
-                token_id, creation_time, token_network_address, route
-            ) VALUES (
-                :token_id,
-                :creation_time,
-                :token_network_address,
-                :route
-            )
-        """,
-            token_dict,
-        )
+        self.insert("feedback", token_dict)
 
     def update_feedback(self, token: FeedbackToken, route: List[Address], successful: bool) -> int:
         hexed_route = [to_checksum_address(e) for e in route]
