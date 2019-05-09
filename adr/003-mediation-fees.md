@@ -25,7 +25,9 @@ Mediating nodes demand fees for their mediation services. These fees should not 
 
 Chosen option: **Option 3**, but with some important additions (see below).
 
-Option 1 would be sufficient for the short very term, but does not incentivize rebalancing. Option 2 does not work because no objective balance measure could be found that is valid across all business models / user interests. Option 4 would work but require sending a changed fee schedule after every transfer or mediation. Since this information is broadcast, that's a non-negligible amount of traffic.
+* Option 1 would be sufficient for the short very term, but does not incentivize rebalancing.
+* Option 2 does not work because no objective balance measure could be found that is valid across all business models / user interests.
+* Option 4 would work but require sending a changed fee schedule after every transfer or mediation. Since this information is broadcast, that's a non-negligible amount of traffic.
 
 ### Positive Consequences
 
@@ -33,6 +35,7 @@ Option 1 would be sufficient for the short very term, but does not incentivize r
 * Both in- and outgoing channels can be rebalanced
 * Fully exhausting a channel can be punished more strongly than just moving into the wrong direction
 * Fee schedules only have to be changed when the node's strategy changes or the on-chain capacity changes via `deposit` or `withdraw`
+* Fee components are optional. A node only using flat fees does not have to submit complicated functions.
 
 ### Negative Consequences
 
@@ -40,7 +43,7 @@ Option 1 would be sufficient for the short very term, but does not incentivize r
 
 ## Detailed analysis
 
-One important detail is that fees are not only calculated for the channel over which the mediation payment is sent, but also for the channel over which the payment is received. Without this, a node could not incentivize receiving through a certain channel, which is just as important for rebalancing as sending through the right channel. So the total mediation fee for a node is
+One important detail is that fees are not only calculated for the channel over which the mediation payment is sent, but also for the channel over which the payment is received. Without this, a node could not incentivize receiving through a certain channel, which is just as important for rebalancing as sending through the right channel (see the next section for a detailed example). So the total mediation fee for a node is
 
 `MF_total = MF_in_channel + MF_out_channel`
 
@@ -50,7 +53,7 @@ where for each channel
 
 where `IP` is the "Imbalance Penalty" function and `C_before/after` are the channel capacities before and after the payment. The channel capacity is the node's free capacity as reported to the PFS with the UpdatePFS messages.
 
-The IP function is a function that describes how much a node is willing to pay to move away from an undesirable channel capacity. If a node prefers to have a channel capacity of 5 while the total capacity of that channel is 10 (so that it could mediate up to 5 tokens in both directions) the IP function might look like
+The IP function is a function that describes how much a node is willing to pay (in absolute values/wad) to move away from an undesirable channel capacity. If a node prefers to have a channel capacity of 5 while the total capacity of that channel is 10 (so that it could mediate up to 5 tokens in both directions) the IP function might look like
 
 ```
 IP
@@ -73,6 +76,24 @@ IP
 If the node currently has a capacity of 6 and is asked to mediate a payment of 3 tokens coming from this channel, it will get into the less desired position of 9 capacity. To compensate for this, it will demand an imbalance fee of `dIP = IP(C_before) - IP(C_after)`. If the situation was reversed and the capacity would go from 9 to 6, the absolute value would be the same, but this time it would be negative and thus incentivize moving towards the preferred state. By viewing the channel balances in this way, the imbalance fee is a zero sum game in the long term. All tokens which are earned by going into a bad state will be spent for moving into a good state again, later.
 
 Only mediating nodes demand mediation fees. The initiator and target could theoretically benefit if their IP was taken into account during routing, but this aspect is left out for now to avoid additional complexity.
+
+### Why apply fees for the incoming channel?
+
+At a first glance, calculating fees for the incoming channel does not make any sense, since the mediating node itself only sends money over the outgoing channel. But taking part in the mediation will modify both channels channels, so the choice of the incoming channel is relevant to the mediating node. To demonstrate that you can't reliably influence the balancing of your channel if you only apply fees to the outgoing channel, let's look at one example:
+
+A mediating node has three channels. The channel to C is nearly exhausted, while the other channels have a free capacity of 9 tokens left (of 10 tokens which are deposited in that channel). This node wants to have
+a similar amount of free capacity for all channel, so that it has more mediation opportunities. To achieve this, it must receive tokens over channel C.
+
+++: desirable transfer (point of view of the mediating node)<br/>
+--: undesirable transfer<br/>
+
+| from\to | A   | B   | C   |
+| ---     | --- | --- | --- |
+| A 1/10  |     | -   | --  |
+| B 1/10  | -   |     | --  |
+| C 9/10  | ++  | ++  |     |
+
+To incentivize rebalancing, the node could reduce fees for channel A and B to a negative value. But this might lead to mediating transfers A&rarr;B and B&rarr;A, both of which are not intended! The problem is visible in the table above: by changing fees for outgoing channels, you can only incentivize all transfers in a single column. But all desirable transfers are in a single row, meaning the we must incentivize usage of an incoming channel.
 
 ### Economic Aspects
 
@@ -134,11 +155,11 @@ The message format still has to be defined in detail, but the payload will look 
     // we have to deal with float values anyway, due to the interpolation
     'proportional': 0.0001,  // factor of transfer amount
     'imbalance_penalty': [
-        (0, 1000),
-        (1000, 500),
-        (3000, 0),
-        (5300, 600),
-        (6000, 1000),
+        [0, 1000],
+        [1000, 500],
+        [3000, 0],
+        [5300, 600],
+        [6000, 1000],
     ],
 }
 ```
