@@ -15,7 +15,7 @@ from pathfinding_service.model import TokenNetwork
 from raiden.constants import PATH_FINDING_BROADCASTING_ROOM, UINT256_MAX
 from raiden.messages import Message, UpdatePFS
 from raiden.network.transport.matrix import AddressReachability
-from raiden.utils.typing import Address as BytesAddress, BlockNumber, ChainID, TokenNetworkAddress, Address
+from raiden.utils.typing import Address, BlockNumber, ChainID, TokenNetworkAddress
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
 from raiden_libs.blockchain import get_blockchain_events
 from raiden_libs.contract_info import CONTRACT_MANAGER
@@ -45,7 +45,7 @@ class PathfindingService(gevent.Greenlet):
         db_filename: str,
         sync_start_block: BlockNumber = BlockNumber(0),
         required_confirmations: int = 8,
-        poll_interval: float = 1,
+        poll_interval: float = 10,
     ):
         super().__init__()
 
@@ -150,14 +150,13 @@ class PathfindingService(gevent.Greenlet):
         return token_network_address in self.token_networks.keys()
 
     def handle_reachability_change(
-        self, address: BytesAddress, reachability: AddressReachability
+        self, address: Address, reachability: AddressReachability
     ) -> None:
-        hex_address = Address(to_checksum_address(address))
-        log.debug("Updating reachability", address=hex_address, status=reachability)
+        log.debug("Updating reachability", address=address, status=reachability)
 
         for token_network_model in self.token_networks.values():
-            if hex_address in token_network_model.G.nodes:
-                token_network_model.address_to_reachability[hex_address] = reachability
+            if address in token_network_model.G.nodes:
+                token_network_model.address_to_reachability[address] = reachability
 
     def get_token_network(
         self, token_network_address: TokenNetworkAddress
@@ -293,12 +292,8 @@ class PathfindingService(gevent.Greenlet):
         self.database.upsert_capacity_update(message)
 
         # Follow presence for the channel participants
-        self.matrix_listener.follow_address_presence(
-            to_checksum_address(message.updating_participant), refresh=True
-        )
-        self.matrix_listener.follow_address_presence(
-            to_checksum_address(message.other_participant), refresh=True
-        )
+        self.matrix_listener.follow_address_presence(message.updating_participant, refresh=True)
+        self.matrix_listener.follow_address_presence(message.other_participant, refresh=True)
 
         updating_capacity_partner, other_capacity_partner = self.database.get_capacity_updates(
             updating_participant=message.other_participant,

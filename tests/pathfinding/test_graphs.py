@@ -6,8 +6,8 @@ from eth_utils import decode_hex, to_checksum_address
 from networkx import NetworkXNoPath
 
 from pathfinding_service.model import ChannelView, TokenNetwork
-from raiden.utils.typing import Address, ChannelID, FeeAmount, TokenAmount, TokenNetworkAddress
 from raiden.network.transport.matrix import AddressReachability
+from raiden.utils.typing import Address, ChannelID, FeeAmount, TokenAmount, TokenNetworkAddress
 
 
 def test_edge_weight(addresses):

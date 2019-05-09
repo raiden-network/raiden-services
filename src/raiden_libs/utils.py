@@ -8,9 +8,8 @@ from raiden.utils.typing import Address
 
 def public_key_to_address(public_key: PublicKey) -> Address:
     """ Converts a public key to an Ethereum address. """
-    public_key = public_key.format(compressed=False)
-    assert isinstance(public_key, bytes)
-    return Address(keccak(public_key[1:])[-20:])
+    key_bytes = public_key.format(compressed=False)
+    return Address(keccak(key_bytes[1:])[-20:])
 
 
 def private_key_to_address(private_key: Union[str, bytes]) -> Address:

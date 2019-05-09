@@ -304,11 +304,6 @@ def test_pfs_edge_case_capacity_updates_before_deposit(
         [call(PRIVATE_KEY_1_ADDRESS, refresh=True), call(PRIVATE_KEY_2_ADDRESS, refresh=True)]
     )
 
-    # Send the same Capacity Update again - leads to an exception
-    with pytest.raises(InvalidCapacityUpdate) as exinfo:
-        pathfinding_service_web3_mock.on_pfs_update(message)
-    assert "Capacity Update already received" in str(exinfo.value)
-
 
 def test_pfs_min_calculation_with_capacity_updates(
     pathfinding_service_web3_mock: PathfindingService

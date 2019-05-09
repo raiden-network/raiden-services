@@ -13,17 +13,24 @@ from pathfinding_service.config import (
 )
 from pathfinding_service.model.channel_view import ChannelView
 from raiden.messages import UpdatePFS
-from raiden.utils.typing import Address, ChannelID, TokenAmount, TokenNetworkAddress
 from raiden.network.transport.matrix import AddressReachability
+from raiden.utils.typing import Address, ChannelID, TokenAmount, TokenNetworkAddress
 
 log = structlog.get_logger(__name__)
 
 
 class Path:
-    def __init__(self, G: DiGraph, nodes: List[Address], value: TokenAmount):
+    def __init__(
+        self,
+        G: DiGraph,
+        nodes: List[Address],
+        value: TokenAmount,
+        address_to_reachability: Dict[Address, AddressReachability],
+    ):
         self.G = G
         self.nodes = nodes
         self.value = value
+        self.address_to_reachability = address_to_reachability
 
     @property
     def edge_attrs(self) -> Iterable[dict]:
@@ -57,6 +64,13 @@ class Path:
             ratio = edge["view"].settle_timeout / edge["view"].reveal_timeout
             if ratio < DEFAULT_SETTLE_TO_REVEAL_TIMEOUT_RATIO:
                 return False
+
+        # check node reachabilities
+        for node in self.nodes:
+            node_reachability = self.address_to_reachability.get(node, AddressReachability.UNKNOWN)
+            if node_reachability != AddressReachability.REACHABLE:
+                return False
+
         return True
 
 
@@ -248,7 +262,9 @@ class TokenNetwork:
             # skip duplicates and invalid paths
             path = next(
                 p
-                for p in (Path(self.G, nodes, value) for nodes in all_paths)
+                for p in (
+                    Path(self.G, nodes, value, self.address_to_reachability) for nodes in all_paths
+                )
                 if p.is_valid and p.nodes not in disallowed_paths
             )
             return path
