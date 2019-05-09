@@ -10,7 +10,7 @@ from pathfinding_service.model.token_network import TokenNetwork
 from pathfinding_service.service import PathfindingService
 from raiden.messages import UpdatePFS
 from raiden.network.transport.matrix import AddressReachability
-from raiden.utils import CanonicalIdentifier
+from raiden.transfer.identifiers import CanonicalIdentifier
 from raiden.utils.typing import (
     Address,
     ChainID,

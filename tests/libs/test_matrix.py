@@ -9,8 +9,7 @@ from eth_utils import decode_hex, encode_hex, to_canonical_address
 from monitoring_service.states import HashedBalanceProof
 from raiden.exceptions import InvalidProtocolMessage
 from raiden.messages import RequestMonitoring
-from raiden.utils import ChannelID
-from raiden.utils.typing import Address as BytesAddress, ChainID, Nonce, TokenAmount
+from raiden.utils.typing import Address as BytesAddress, ChainID, ChannelID, Nonce, TokenAmount
 from raiden_contracts.tests.utils import EMPTY_LOCKSROOT
 from raiden_libs.matrix import deserialize_messages, matrix_http_retry_delay, message_from_dict
 

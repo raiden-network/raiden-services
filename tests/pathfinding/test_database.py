@@ -6,7 +6,7 @@ from eth_utils import to_checksum_address
 
 from pathfinding_service.database import PFSDatabase
 from pathfinding_service.model.feedback import FeedbackToken
-from raiden.utils import Address, TokenNetworkAddress
+from raiden.utils.typing import Address, TokenNetworkAddress
 
 
 def db_has_feedback_for(database: PFSDatabase, token: FeedbackToken, route: List[Address]) -> bool:

@@ -13,7 +13,7 @@ from pathfinding_service.model import TokenNetwork
 from pathfinding_service.service import PathfindingService
 from raiden.constants import UINT256_MAX
 from raiden.messages import UpdatePFS
-from raiden.utils import CanonicalIdentifier
+from raiden.transfer.identifiers import CanonicalIdentifier
 from raiden.utils.signer import LocalSigner
 from raiden.utils.typing import (
     Address,
