@@ -6,6 +6,7 @@ import pkg_resources
 import pytest
 import requests
 from eth_utils import decode_hex, encode_hex, to_bytes, to_checksum_address, to_normalized_address
+from tests.pathfinding.test_database import db_has_feedback_for
 
 import pathfinding_service.exceptions as exceptions
 from pathfinding_service.api import DEFAULT_MAX_PATHS, ServiceApi
@@ -363,7 +364,7 @@ def test_feedback(api_sut: ServiceApi, api_url: str, token_network_model: TokenN
 
     response = make_request(token_id=token.id.hex)
     assert response.status_code == 400
-    assert not database.has_feedback_for(token, default_path)
+    assert not db_has_feedback_for(database, token, default_path)
 
     # Test expired token
     old_token = FeedbackToken(
@@ -374,7 +375,7 @@ def test_feedback(api_sut: ServiceApi, api_url: str, token_network_model: TokenN
 
     response = make_request(token_id=old_token.id.hex)
     assert response.status_code == 400
-    assert not database.has_feedback_for(token, default_path)
+    assert not db_has_feedback_for(database, token, default_path)
 
     # Test valid token
     token = FeedbackToken(token_network_address=token_network_model.address)
@@ -382,4 +383,4 @@ def test_feedback(api_sut: ServiceApi, api_url: str, token_network_model: TokenN
 
     response = make_request(token_id=token.id.hex)
     assert response.status_code == 200
-    assert database.has_feedback_for(token, default_path)
+    assert db_has_feedback_for(database, token, default_path)

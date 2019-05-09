@@ -230,29 +230,7 @@ class PFSDatabase(BaseDatabase):
             token_dict,
         )
 
-    def has_feedback_for(self, token: FeedbackToken, route: List[Address]) -> bool:
-        hexed_route = [to_checksum_address(e) for e in route]
-        feedback = self.conn.execute(
-            """SELECT successful FROM feedback WHERE
-                token_id = ? AND
-                token_network_address = ? AND
-                route = ?;
-            """,
-            [
-                token.id.hex,
-                to_checksum_address(token.token_network_address),
-                json.dumps(hexed_route),
-            ],
-        ).fetchone()
-
-        if feedback:
-            return feedback["successful"] is not None
-
-        return False
-
-    def update_feedback(
-        self, token: FeedbackToken, route: List[Address], successful: bool
-    ) -> None:
+    def update_feedback(self, token: FeedbackToken, route: List[Address], successful: bool) -> int:
         hexed_route = [to_checksum_address(e) for e in route]
         token_dict = dict(
             token_id=token.id.hex,
@@ -261,7 +239,7 @@ class PFSDatabase(BaseDatabase):
             successful=successful,
             feedback_time=datetime.utcnow(),
         )
-        self.conn.execute(
+        updated_rows = self.conn.execute(
             """
             UPDATE feedback
             SET
@@ -270,10 +248,13 @@ class PFSDatabase(BaseDatabase):
             WHERE
                 token_id = :token_id AND
                 token_network_address = :token_network_address AND
-                route = :route;
+                route = :route AND
+                successful IS NULL;
         """,
             token_dict,
-        )
+        ).rowcount
+
+        return updated_rows
 
     def get_feedback_token(
         self, token_id: UUID, token_network_address: TokenNetworkAddress, route: List[Address]
