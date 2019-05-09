@@ -8,7 +8,7 @@ from eth_utils import decode_hex
 from pathfinding_service.claim_fees import claim_ious, get_claimable_ious, main
 from pathfinding_service.model import IOU
 from raiden.utils.signer import LocalSigner
-from raiden.utils.typing import BlockNumber, Signature, TokenAmount
+from raiden.utils.typing import BlockNumber, ChainID, Signature, TokenAmount
 
 
 def test_claim_fees(  # pylint: disable=too-many-locals
@@ -42,6 +42,8 @@ def test_claim_fees(  # pylint: disable=too-many-locals
             amount=TokenAmount(iou_dict["amount"]),
             expiration_block=BlockNumber(iou_dict.get("expiration_block", 100)),
             signature=Signature(bytes([1] * 64)),  # dummy, replaced below
+            chain_id=ChainID(1),
+            one_to_n_address=decode_hex(one_to_n_contract.address),
             claimed=iou_dict.get("claimed", False),
         )
         iou.signature = Signature(local_signer.sign(iou.packed_data()))

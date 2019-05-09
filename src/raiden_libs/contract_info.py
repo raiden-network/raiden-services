@@ -34,9 +34,8 @@ def get_contract_addresses_and_start_block(
 
     Returns: A dictionary with the contract addresses and start block for the given information
     """
-    try:
-        contract_data = get_contracts_deployment_info(chain_id=chain_id, version=contracts_version)
-    except ValueError:
+    contract_data = get_contracts_deployment_info(chain_id=chain_id, version=contracts_version)
+    if not contract_data:
         log.error(
             "No deployed contracts were found at the default registry",
             contracts_version=contracts_version,

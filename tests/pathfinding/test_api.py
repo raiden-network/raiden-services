@@ -14,11 +14,9 @@ from pathfinding_service.model import IOU, TokenNetwork
 from pathfinding_service.model.feedback import FeedbackToken
 from raiden.utils.signer import LocalSigner
 from raiden.utils.signing import pack_data
-from raiden.utils.typing import Address, BlockNumber, Signature, TokenAmount
+from raiden.utils.typing import Address, BlockNumber, ChainID, Signature, TokenAmount
 from raiden_contracts.tests.utils import get_random_privkey
 from raiden_libs.utils import private_key_to_address
-
-from .test_payment import make_iou
 
 ID_12 = 12
 ID_123 = 123
@@ -116,6 +114,8 @@ def test_get_ious_via_debug_endpoint(
             to_bytes(hexstr="118a93e9fd0a3a1c3d6edbad194b5c9d95715c754881d80e23e985793b1e13de")
         ),
         claimed=False,
+        chain_id=ChainID(1),
+        one_to_n_address=api_sut_with_debug.one_to_n_address,
     )
     api_sut_with_debug.pathfinding_service.database.upsert_iou(iou)
 
@@ -138,7 +138,11 @@ def test_get_ious_via_debug_endpoint(
 # tests for /paths endpoint
 #
 def test_get_paths_validation(
-    api_sut: ServiceApi, api_url: str, addresses: List[Address], token_network_model: TokenNetwork
+    api_sut: ServiceApi,
+    api_url: str,
+    addresses: List[Address],
+    token_network_model: TokenNetwork,
+    make_iou,
 ):
     initiator_address = to_checksum_address(addresses[0])
     target_address = to_checksum_address(addresses[1])
@@ -184,7 +188,11 @@ def test_get_paths_validation(
     assert response.json()["error_code"] == exceptions.MissingIOU.error_code
 
     # prepare iou for payment tests
-    iou = make_iou(get_random_privkey(), api_sut.pathfinding_service.address)
+    iou = make_iou(
+        get_random_privkey(),
+        api_sut.pathfinding_service.address,
+        one_to_n_address=api_sut.one_to_n_address,
+    )
     good_iou_dict = iou.Schema().dump(iou)[0]
 
     # malformed iou
@@ -275,7 +283,7 @@ def test_get_info(api_url: str, api_sut, pathfinding_service_mock):
 #
 # tests for /payment/iou endpoint
 #
-def test_get_iou(api_sut: ServiceApi, api_url: str, token_network_model: TokenNetwork):
+def test_get_iou(api_sut: ServiceApi, api_url: str, token_network_model: TokenNetwork, make_iou):
     privkey = get_random_privkey()
     sender = private_key_to_address(privkey)
     url = api_url + f"/{to_checksum_address(token_network_model.address)}/payment/iou"
@@ -304,7 +312,9 @@ def test_get_iou(api_sut: ServiceApi, api_url: str, token_network_model: TokenNe
     assert response.json() == {"last_iou": None}
 
     # Add IOU to database
-    iou = make_iou(privkey, api_sut.pathfinding_service.address)
+    iou = make_iou(
+        privkey, api_sut.pathfinding_service.address, one_to_n_address=api_sut.one_to_n_address
+    )
     iou.claimed = False
     api_sut.pathfinding_service.database.upsert_iou(iou)
 

@@ -8,7 +8,7 @@ from marshmallow_dataclass import add_schema
 
 from raiden.exceptions import InvalidSignature
 from raiden.utils.signer import recover
-from raiden.utils.typing import Address, BlockNumber, Signature, TokenAmount
+from raiden.utils.typing import Address, BlockNumber, ChainID, Signature, TokenAmount
 from raiden_libs.marshmallow import ChecksumAddress, HexedBytes
 
 
@@ -19,6 +19,8 @@ class IOU:
     receiver: Address = field(metadata={"marshmallow_field": ChecksumAddress()})
     amount: TokenAmount
     expiration_block: BlockNumber
+    one_to_n_address: Address = field(metadata={"marshmallow_field": ChecksumAddress()})
+    chain_id: ChainID
     signature: Signature = field(metadata={"marshmallow_field": HexedBytes()})
     claimed: Optional[bool] = None
     Schema: ClassVar[Type[marshmallow.Schema]]
@@ -29,6 +31,8 @@ class IOU:
             + self.receiver
             + encode_single("uint256", self.amount)
             + encode_single("uint256", self.expiration_block)
+            + self.one_to_n_address
+            + encode_single("uint256", self.chain_id)
         )
 
     def is_signature_valid(self) -> bool:

@@ -8,6 +8,7 @@ from click.testing import CliRunner
 from pathfinding_service.cli import main
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
+    CONTRACT_ONE_TO_N,
     CONTRACT_TOKEN_NETWORK_REGISTRY,
     CONTRACT_USER_DEPOSIT,
 )
@@ -26,6 +27,7 @@ PATCH_INFO_ARGS = {
                 CONTRACT_TOKEN_NETWORK_REGISTRY: "0xde1fAa1385403f05C20a8ca5a0D5106163A35B6e",
                 CONTRACT_MONITORING_SERVICE: "0x58c73CabCFB3c55B420E3F60a4b06098e9D1960E",
                 CONTRACT_USER_DEPOSIT: "0x85F2c5eA50861DF5eA2EBd3651fAB091e14B849C",
+                CONTRACT_ONE_TO_N: "0x1717727737777777777777777777777777777777",
             },
             5235346,
         )

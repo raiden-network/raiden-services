@@ -16,7 +16,11 @@ from pathfinding_service.api import ServiceApi
 from pathfinding_service.config import DEFAULT_API_HOST, DEFAULT_POLL_INTERVALL
 from pathfinding_service.service import PathfindingService
 from raiden.utils.typing import BlockNumber, TokenAmount
-from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
+from raiden_contracts.constants import (
+    CONTRACT_ONE_TO_N,
+    CONTRACT_TOKEN_NETWORK_REGISTRY,
+    CONTRACT_USER_DEPOSIT,
+)
 from raiden_libs.cli import blockchain_options, common_options
 
 log = structlog.get_logger(__name__)
@@ -25,7 +29,8 @@ DEFAULT_REQUIRED_CONFIRMATIONS = 8  # ~2min with 15s blocks
 
 
 @blockchain_options(
-    contracts_version="0.11.1", contracts=[CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT]
+    contracts_version="0.11.1",
+    contracts=[CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT, CONTRACT_ONE_TO_N],
 )
 @click.command()
 @click.option(
@@ -73,7 +78,10 @@ def main(  # pylint: disable-msg=too-many-arguments
         )
 
         api = ServiceApi(
-            pathfinding_service=service, service_fee=service_fee, debug_mode=enable_debug
+            pathfinding_service=service,
+            service_fee=service_fee,
+            debug_mode=enable_debug,
+            one_to_n_address=contracts[CONTRACT_ONE_TO_N].address,
         )
         api.run(host=host)
 

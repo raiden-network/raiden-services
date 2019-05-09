@@ -53,6 +53,11 @@ class UnsupportedTokenNetwork(ApiException):
     msg = "This service does not work on the given token network."
 
 
+class UnsupportedChainID(ApiException):
+    error_code = 2005
+    msg = "This service does not work on the given blockchain."
+
+
 # ### BadIOU 21xx ###
 
 
@@ -93,6 +98,11 @@ class UseThisIOU(BadIOU):
 class DepositTooLow(BadIOU):
     error_code = 2107
     msg = "Not enough deposit in UserDeposit contract."
+
+
+class WrongOneToNAddress(BadIOU):
+    error_code = 2108
+    msg = "The IOU uses a different OneToN contract than the service"
 
 
 # ### PFS specific errors 22xx ###
