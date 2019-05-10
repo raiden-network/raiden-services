@@ -17,7 +17,7 @@ from monitoring_service.states import (
     OnChainUpdateStatus,
 )
 from raiden.utils.typing import Address, BlockNumber, ChainID, ChannelID, TokenNetworkAddress
-from raiden_libs.database import BaseDatabase
+from raiden_libs.database import BaseDatabase, hex256
 
 SubEvent = Union[ActionMonitoringTriggeredEvent, ActionClaimRewardTriggeredEvent]
 
@@ -33,14 +33,14 @@ class SharedDatabase(BaseDatabase):
 
     def upsert_monitor_request(self, request: MonitorRequest) -> None:
         values = [
-            hex(request.channel_identifier),
+            hex256(request.channel_identifier),
             to_checksum_address(request.token_network_address),
             request.balance_hash,
-            hex(request.nonce),
+            hex256(request.nonce),
             request.additional_hash,
             request.closing_signature,
             request.non_closing_signature,
-            hex(request.reward_amount),
+            hex256(request.reward_amount),
             request.reward_proof_signature,
             to_checksum_address(request.non_closing_signer),
         ]
@@ -65,7 +65,7 @@ class SharedDatabase(BaseDatabase):
                   AND non_closing_signer = ?
             """,
             [
-                hex(channel_id),
+                hex256(channel_id),
                 to_checksum_address(token_network_address),
                 to_checksum_address(non_closing_signer),
             ],
@@ -83,12 +83,12 @@ class SharedDatabase(BaseDatabase):
     def upsert_channel(self, channel: Channel) -> None:
         values = [
             to_checksum_address(channel.token_network_address),
-            hex(channel.identifier),
+            hex256(channel.identifier),
             to_checksum_address(channel.participant1),
             to_checksum_address(channel.participant2),
-            hex(channel.settle_timeout),
+            hex256(channel.settle_timeout),
             channel.state,
-            hex(channel.closing_block) if channel.closing_block else None,
+            hex256(channel.closing_block) if channel.closing_block else None,
             channel.closing_participant,
             channel.closing_tx_hash,
             channel.claim_tx_hash,
@@ -96,7 +96,7 @@ class SharedDatabase(BaseDatabase):
         if channel.update_status:
             values += [
                 to_checksum_address(channel.update_status.update_sender_address),
-                hex(channel.update_status.nonce),
+                hex256(channel.update_status.nonce),
             ]
         else:
             values += [None, None]
@@ -114,7 +114,7 @@ class SharedDatabase(BaseDatabase):
                 SELECT * FROM channel
                 WHERE identifier = ? AND token_network_address = ?
             """,
-            [hex(channel_id), to_checksum_address(token_network_address)],
+            [hex256(channel_id), to_checksum_address(token_network_address)],
         ).fetchone()
 
         if row is None:
@@ -141,10 +141,10 @@ class SharedDatabase(BaseDatabase):
     def upsert_scheduled_event(self, event: ScheduledEvent) -> None:
         contained_event: SubEvent = cast(SubEvent, event.event)
         values = [
-            hex(event.trigger_block_number),
+            hex256(event.trigger_block_number),
             EVENT_TYPE_ID_MAP[type(contained_event)],
             to_checksum_address(contained_event.token_network_address),
-            hex(contained_event.channel_identifier),
+            hex256(contained_event.channel_identifier),
             contained_event.non_closing_participant,
         ]
         upsert_sql = "INSERT OR REPLACE INTO scheduled_events VALUES ({})".format(
@@ -158,7 +158,7 @@ class SharedDatabase(BaseDatabase):
                 SELECT * FROM scheduled_events
                 WHERE trigger_block_number <= ?
             """,
-            [hex(max_trigger_block)],
+            [hex256(max_trigger_block)],
         ).fetchall()
 
         def create_scheduled_event(row: sqlite3.Row) -> ScheduledEvent:
@@ -178,9 +178,9 @@ class SharedDatabase(BaseDatabase):
     def remove_scheduled_event(self, event: ScheduledEvent) -> None:
         contained_event: SubEvent = cast(SubEvent, event.event)
         values = [
-            hex(event.trigger_block_number),
+            hex256(event.trigger_block_number),
             to_checksum_address(contained_event.token_network_address),
-            hex(contained_event.channel_identifier),
+            hex256(contained_event.channel_identifier),
             contained_event.non_closing_participant,
         ]
         self.conn.execute(
