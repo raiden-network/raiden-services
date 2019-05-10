@@ -30,18 +30,18 @@ class RequestCollector(gevent.Greenlet):
             service_room_suffix=MONITORING_BROADCASTING_ROOM,
             message_received_callback=self.handle_message,
         )
-        try:
-            self.matrix_listener.start_client()
-        except ConnectionError as exc:
-            log.critical("Could not connect to broadcasting system.", exc=exc)
-            sys.exit(1)
 
     def listen_forever(self) -> None:
         self.matrix_listener.listen_forever()
 
     def _run(self) -> None:  # pylint: disable=method-hidden
         register_error_handler()
-        self.matrix_listener.start()
+
+        try:
+            self.matrix_listener.start()
+        except ConnectionError as exc:
+            log.critical("Could not connect to broadcasting system.", exc=exc)
+            sys.exit(1)
 
     def stop(self) -> None:
         self.matrix_listener.stop()
