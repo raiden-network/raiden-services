@@ -133,13 +133,15 @@ class MatrixListener(gevent.Greenlet):
         self.client.listen_forever()
 
     def _run(self) -> None:  # pylint: disable=method-hidden
+        self._start_client()
+
         self.client.start_listener_thread()
         self.client.sync_thread.get()
 
     def stop(self) -> None:
         self.client.stop_listener_thread()
 
-    def start_client(self) -> None:
+    def _start_client(self) -> None:
         try:
             login_or_register(
                 self.client, signer=LocalSigner(private_key=decode_hex(self.private_key))
@@ -159,7 +161,7 @@ class MatrixListener(gevent.Greenlet):
 
     def follow_address_presence(self, address: Address, refresh: bool = False) -> None:
         if self.user_manager:
-            log.debug("Tracking address", address=address)
+            log.debug("Tracking address", address=to_checksum_address(address))
             self.user_manager.add_address(address)
 
             if refresh:

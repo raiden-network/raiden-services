@@ -58,7 +58,7 @@ class PathfindingService(gevent.Greenlet):
         self._poll_interval = poll_interval
         self._is_running = gevent.event.Event()
 
-        log.info("Own address", address=self.address)
+        log.info("PFS payment address", address=to_checksum_address(self.address))
 
         self.database = PFSDatabase(
             filename=db_filename,
@@ -79,11 +79,6 @@ class PathfindingService(gevent.Greenlet):
         )
 
         self.token_networks = self._load_token_networks()
-        try:
-            self.matrix_listener.start_client()
-        except ConnectionError as exc:
-            log.critical("Could not connect to broadcasting system.", exc=exc)
-            sys.exit(1)
 
     def _load_token_networks(self) -> Dict[TokenNetworkAddress, TokenNetwork]:
         network_for_address = {n.address: n for n in self.database.get_token_networks()}
@@ -99,7 +94,11 @@ class PathfindingService(gevent.Greenlet):
 
     def _run(self) -> None:  # pylint: disable=method-hidden
         register_error_handler()
-        self.matrix_listener.start()
+        try:
+            self.matrix_listener.start()
+        except ConnectionError as exc:
+            log.critical("Could not connect to broadcasting system.", exc=exc)
+            sys.exit(1)
 
         log.info(
             "Listening to token network registry",
@@ -152,8 +151,6 @@ class PathfindingService(gevent.Greenlet):
     def handle_reachability_change(
         self, address: Address, reachability: AddressReachability
     ) -> None:
-        log.debug("Updating reachability", address=address, status=reachability)
-
         for token_network_model in self.token_networks.values():
             if address in token_network_model.G.nodes:
                 token_network_model.address_to_reachability[address] = reachability
