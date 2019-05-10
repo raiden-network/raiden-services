@@ -79,10 +79,10 @@ Only mediating nodes demand mediation fees. The initiator and target could theor
 
 ### Why apply fees for the incoming channel?
 
-At a first glance, calculating fees for the incoming channel does not make any sense, since the mediating node itself only sends money over the outgoing channel. But taking part in the mediation will modify both channels channels, so the choice of the incoming channel is relevant to the mediating node. To demonstrate that you can't reliably influence the balancing of your channel if you only apply fees to the outgoing channel, let's look at one example:
+At a first glance, calculating fees for the incoming channel does not make any sense, since the mediating node itself only sends money over the outgoing channel. But taking part in the mediation will modify both channels, so the choice of the incoming channel is relevant to the mediating node. To demonstrate that you can't reliably influence the balancing of your channels if you only apply fees to the outgoing channel, let's look at one example:
 
 A mediating node has three channels. The channel to C is nearly exhausted, while the other channels have a free capacity of 9 tokens left (of 10 tokens which are deposited in that channel). This node wants to have
-a similar amount of free capacity for all channel, so that it has more mediation opportunities. To achieve this, it must receive tokens over channel C.
+a similar amount of free capacity for all channels, so that it has more mediation opportunities. To achieve this, it must receive tokens over channel C.
 
 ++: desirable transfer (point of view of the mediating node)<br/>
 --: undesirable transfer<br/>
@@ -93,7 +93,7 @@ a similar amount of free capacity for all channel, so that it has more mediation
 | B 1/10  | -   |     | --  |
 | C 9/10  | ++  | ++  |     |
 
-To incentivize rebalancing, the node could reduce fees for channel A and B to a negative value. But this might lead to mediating transfers A&rarr;B and B&rarr;A, both of which are not intended! The problem is visible in the table above: by changing fees for outgoing channels, you can only incentivize all transfers in a single column. But all desirable transfers are in a single row, meaning the we must incentivize usage of an incoming channel.
+To incentivize rebalancing, the node could reduce fees for channels A and B to a negative value. But this might lead to mediating transfers A&rarr;B and B&rarr;A, both of which are not intended! The problem is visible in the table above: by changing fees for outgoing channels, you can only incentivize all transfers in a single column. But all desirable transfers are in a single row, meaning the we must incentivize usage of an incoming channel.
 
 ### Economic Aspects
 
