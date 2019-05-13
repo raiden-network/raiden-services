@@ -2,14 +2,11 @@ from dataclasses import dataclass
 from typing import cast
 
 import structlog
-from eth_utils import encode_hex
+from eth_utils import encode_hex, to_checksum_address
 from web3 import Web3
 from web3.contract import Contract
 
-from monitoring_service.constants import (
-    DEFAULT_PAYMENT_RISK_FAKTOR,
-    RATIO_OF_SETTLE_TIMEOUT_BEFORE_MONITOR,
-)
+from monitoring_service.constants import DEFAULT_PAYMENT_RISK_FAKTOR
 from monitoring_service.database import Database
 from monitoring_service.events import (
     ActionClaimRewardTriggeredEvent,
@@ -22,9 +19,10 @@ from monitoring_service.states import (
     MonitorRequest,
     OnChainUpdateStatus,
 )
-from raiden.utils.typing import BlockNumber
-from raiden_contracts.constants import ChannelState
+from raiden.utils.typing import BlockNumber, TokenNetworkAddress
+from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK, ChannelState
 from raiden_contracts.contract_manager import ContractManager
+from raiden_libs.contract_info import CONTRACT_MANAGER
 from raiden_libs.events import (
     Event,
     ReceiveChannelClosedEvent,
@@ -70,6 +68,33 @@ def channel_opened_event_handler(event: Event, context: Context) -> None:
     )
 
 
+def _first_allowed_block_to_monitor(
+    token_network_address: TokenNetworkAddress, channel: Channel, context: Context
+) -> BlockNumber:
+    # Get token_network_contract
+    abi = CONTRACT_MANAGER.get_contract(CONTRACT_TOKEN_NETWORK)["abi"]
+    token_network_contract = context.w3.eth.contract(abi=abi, address=token_network_address)
+
+    # Use the same assumptions as the MS contract, which can't get the real
+    # channel timeout and close block.
+    (settle_block_number, _) = token_network_contract.functions.getChannelInfo(
+        channel.identifier, channel.participant1, channel.participant2
+    ).call()
+    assumed_settle_timeout = token_network_contract.functions.settlement_timeout_min().call()
+    assumed_close_block = settle_block_number - assumed_settle_timeout
+
+    # Call smart contract to use its firstBlockAllowedToMonitor calculation
+    return BlockNumber(
+        context.monitoring_service_contract.functions.firstBlockAllowedToMonitor(
+            closed_at_block=assumed_close_block,
+            settle_timeout=assumed_settle_timeout,
+            participant1=to_checksum_address(channel.participant1),
+            participant2=to_checksum_address(channel.participant2),
+            monitoring_service_address=context.ms_state.address,
+        ).call()
+    )
+
+
 def channel_closed_event_handler(event: Event, context: Context) -> None:
     assert isinstance(event, ReceiveChannelClosedEvent)
     channel = context.db.get_channel(event.token_network_address, event.channel_identifier)
@@ -82,13 +107,13 @@ def channel_closed_event_handler(event: Event, context: Context) -> None:
         )
         return
 
-    # check if the settle timeout is already over
-    # this is important when starting up the MS
+    # Check if the settle timeout is already over.
+    # This is important when starting up the MS.
     settle_period_end_block = event.block_number + channel.settle_timeout
     settle_period_over = settle_period_end_block < context.last_known_block
     if not settle_period_over:
-        # trigger the monitoring action event handler, this will check if a
-        # valid MR is avilable.
+        # Trigger the monitoring action event handler, this will check if a
+        # valid MR is available.
         # This enables the client to send a late MR
         # also see https://github.com/raiden-network/raiden-services/issues/29
         if channel.participant1 == event.closing_participant:
@@ -96,10 +121,12 @@ def channel_closed_event_handler(event: Event, context: Context) -> None:
         else:
             non_closing_participant = channel.participant1
 
-        client_update_period: int = round(
-            channel.settle_timeout * RATIO_OF_SETTLE_TIMEOUT_BEFORE_MONITOR
+        # Transactions go into the next mined block, so trigger one block
+        # before the `monitor` call is allowed to succeed to include it in the
+        # first possible block.
+        trigger_block = BlockNumber(
+            _first_allowed_block_to_monitor(event.token_network_address, channel, context) - 1
         )
-        trigger_block = BlockNumber(event.block_number + client_update_period)
 
         triggered_event = ActionMonitoringTriggeredEvent(
             token_network_address=channel.token_network_address,
@@ -115,9 +142,9 @@ def channel_closed_event_handler(event: Event, context: Context) -> None:
             trigger_block=trigger_block,
         )
 
-        # Add scheduled event if it not exists yet
-        # If the event is already scheduled (e.g. after a restart) the DB takes care that
-        # it is only stored once
+        # Add scheduled event if it not exists yet. If the event is already
+        # scheduled (e.g. after a restart) the DB takes care that it is only
+        # stored once.
         context.db.upsert_scheduled_event(
             ScheduledEvent(trigger_block_number=trigger_block, event=cast(Event, triggered_event))
         )

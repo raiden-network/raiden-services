@@ -3,7 +3,7 @@ from eth_utils import decode_hex, encode_hex, to_checksum_address
 from request_collector.server import RequestCollector
 from web3 import Web3
 
-from monitoring_service.service import MonitoringService
+from monitoring_service.service import MonitoringService, handle_event
 from monitoring_service.states import HashedBalanceProof
 from raiden.utils.typing import Address, BlockNumber, ChainID, Nonce, TokenAmount
 from raiden_contracts.constants import CONTRACT_MONITORING_SERVICE, MonitoringServiceEvent
@@ -27,6 +27,107 @@ def create_ms_contract_events_query(
         )
 
     return f
+
+
+def test_first_allowed_monitoring(
+    web3,
+    monitoring_service_contract,
+    wait_for_blocks,
+    service_registry,
+    monitoring_service: MonitoringService,
+    request_collector: RequestCollector,
+    contracts_manager,
+    deposit_to_udc,
+    create_channel,
+    token_network,
+    get_accounts,
+    get_private_key,
+):
+    query = create_ms_contract_events_query(
+        web3, contracts_manager, monitoring_service_contract.address
+    )
+    ms_address_hex = to_checksum_address(monitoring_service.address)
+    c1, c2 = get_accounts(2)
+
+    # add deposit for c1
+    node_deposit = 10
+    deposit_to_udc(c1, node_deposit)
+
+    deposit = service_registry.functions.deposits(ms_address_hex).call()
+    assert deposit > 0
+
+    # each client does a transfer
+    channel_id = create_channel(c1, c2, settle_timeout=10)[0]
+
+    shared_bp_args = dict(
+        channel_identifier=channel_id,
+        token_network_address=decode_hex(token_network.address),
+        chain_id=ChainID(1),
+        additional_hash="0x%064x" % 0,
+        locked_amount=TokenAmount(0),
+        locksroot=encode_hex(EMPTY_LOCKSROOT),
+    )
+    transferred_c1 = 5
+    balance_proof_c1 = HashedBalanceProof(
+        nonce=Nonce(1),
+        transferred_amount=transferred_c1,
+        priv_key=get_private_key(c1),
+        **shared_bp_args
+    )
+    transferred_c2 = 6
+    balance_proof_c2 = HashedBalanceProof(
+        nonce=Nonce(2),
+        transferred_amount=transferred_c2,
+        priv_key=get_private_key(c2),
+        **shared_bp_args
+    )
+    monitoring_service._process_new_blocks(web3.eth.blockNumber)
+    assert monitoring_service.context.ms_state.blockchain_state.token_network_addresses
+
+    # c1 asks MS to monitor the channel
+    reward_amount = TokenAmount(1)
+    request_monitoring = balance_proof_c2.get_request_monitoring(
+        get_private_key(c1), reward_amount
+    )
+    request_collector.on_monitor_request(request_monitoring)
+
+    # c2 closes the channel
+    token_network.functions.closeChannel(
+        channel_id,
+        c1,
+        balance_proof_c1.balance_hash,
+        balance_proof_c1.nonce,
+        balance_proof_c1.additional_hash,
+        balance_proof_c1.signature,
+    ).transact({"from": c2})
+
+    monitoring_service._process_new_blocks(web3.eth.blockNumber)
+    triggered_events = monitoring_service.database.get_scheduled_events(
+        max_trigger_block=web3.eth.blockNumber + 10
+    )
+    assert len(triggered_events) == 1
+
+    monitor_trigger = triggered_events[0]
+    channel = monitoring_service.database.get_channel(
+        token_network_address=decode_hex(token_network.address), channel_id=channel_id
+    )
+    assert channel
+
+    # Calling monitor too early must fail. To test this, we call it once block
+    # before the trigger block.
+    wait_for_blocks(monitor_trigger.trigger_block_number - web3.eth.blockNumber - 1)
+    handle_event(monitor_trigger.event, monitoring_service.context)
+    assert [e.event for e in query()] == []
+
+    # If our `monitor` call fails, we won't try again. Force a retry in this
+    # test by clearing closing_tx_hash.
+    channel.closing_tx_hash = None
+    monitoring_service.database.upsert_channel(channel)
+
+    # New we can try again. The first try mined a new block, so now we're one
+    # block further and `monitor` should succeed.
+    handle_event(monitor_trigger.event, monitoring_service.context)
+    assert [e.event for e in query()] == [MonitoringServiceEvent.NEW_BALANCE_PROOF_RECEIVED]
 
 
 def test_e2e(  # pylint: disable=too-many-arguments,too-many-locals
@@ -67,9 +168,7 @@ def test_e2e(  # pylint: disable=too-many-arguments,too-many-locals
     assert deposit > 0
 
     # each client does a transfer
-    channel_id = create_channel(c1, c2, settle_timeout=5)[
-        0
-    ]  # TODO: reduce settle_timeout to speed up test
+    channel_id = create_channel(c1, c2, settle_timeout=5)[0]
 
     shared_bp_args = dict(
         channel_identifier=channel_id,
