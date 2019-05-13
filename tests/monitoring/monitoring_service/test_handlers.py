@@ -57,6 +57,13 @@ DEFAULT_REWARD_AMOUNT = TokenAmount(1)
 DEFAULT_SETTLE_TIMEOUT = 100
 
 
+@pytest.fixture(autouse=True)
+def mock_first_allowed_block(monkeypatch):
+    monkeypatch.setattr(
+        "monitoring_service.handlers._first_allowed_block_to_monitor", Mock(return_value=1)
+    )
+
+
 def assert_channel_state(context, state):
     channel = context.db.get_channel(DEFAULT_TOKEN_NETWORK_ADDRESS, DEFAULT_CHANNEL_IDENTIFIER)
     assert channel

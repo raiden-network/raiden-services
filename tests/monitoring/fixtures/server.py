@@ -89,6 +89,7 @@ def monitoring_service(  # pylint: disable=too-many-arguments
     )
     # We need a shared db between MS and RC so the MS can use MR saved by the RC
     ms.context.db = ms_database
+    ms.database = ms_database
     return ms
 
 
