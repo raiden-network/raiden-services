@@ -130,7 +130,6 @@ def get_blockchain_events(
     contract_manager: ContractManager,
     chain_state: BlockchainState,
     to_block: BlockNumber,
-    query_ms: bool = True,
 ) -> Tuple[BlockchainState, List[Event]]:
     # increment by one, as latest_known_block has been queried last time already
     from_block = BlockNumber(chain_state.latest_known_block + 1)
@@ -181,16 +180,16 @@ def get_blockchain_events(
             if event:
                 events.append(event)
 
-    # get events from monitoring service contract
-    if query_ms:
-        monitoring_events = get_monitoring_blockchain_events(
-            web3=web3,
-            contract_manager=contract_manager,
-            chain_state=new_chain_state,
-            from_block=from_block,
-            to_block=to_block,
-        )
-        events.extend(monitoring_events)
+    # get events from monitoring service contract, this only queries the chain
+    # if the monitor contract address is set in chain_state
+    monitoring_events = get_monitoring_blockchain_events(
+        web3=web3,
+        contract_manager=contract_manager,
+        chain_state=new_chain_state,
+        from_block=from_block,
+        to_block=to_block,
+    )
+    events.extend(monitoring_events)
 
     # commit new block number
     events.append(UpdatedHeadBlockEvent(head_block_number=to_block))
@@ -205,6 +204,9 @@ def get_monitoring_blockchain_events(
     from_block: BlockNumber,
     to_block: BlockNumber,
 ) -> List[Event]:
+    if chain_state.monitor_contract_address is None:
+        return []
+
     monitoring_service_events = query_blockchain_events(
         web3=web3,
         contract_manager=contract_manager,
