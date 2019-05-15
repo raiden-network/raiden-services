@@ -60,6 +60,12 @@ class PathfindingService(gevent.Greenlet):
 
         log.info("PFS payment address", address=to_checksum_address(self.address))
 
+        self.blockchain_state = BlockchainState(
+            latest_known_block=BlockNumber(0),
+            token_network_registry_address=self.registry_address,
+            chain_id=self.chain_id,
+        )
+
         self.database = PFSDatabase(
             filename=db_filename,
             pfs_address=self.address,
@@ -123,18 +129,14 @@ class PathfindingService(gevent.Greenlet):
                 sys.exit(0)
 
     def _process_new_blocks(self, last_block: BlockNumber) -> None:
+        self.blockchain_state.latest_known_block = self.database.get_latest_known_block()
+        self.blockchain_state.token_network_addresses = list(self.token_networks.keys())
+
         _, events = get_blockchain_events(
             web3=self.web3,
             contract_manager=CONTRACT_MANAGER,
-            chain_state=BlockchainState(
-                latest_known_block=self.database.get_latest_known_block(),
-                token_network_addresses=list(self.token_networks.keys()),
-                token_network_registry_address=self.registry_address,
-                monitor_contract_address=Address(bytes([1] * 20)),  # FIXME
-                chain_id=self.chain_id,
-            ),
+            chain_state=self.blockchain_state,
             to_block=last_block,
-            query_ms=False,
         )
         for event in events:
             self.handle_event(event)
