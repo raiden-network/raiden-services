@@ -29,8 +29,7 @@ DEFAULT_REQUIRED_CONFIRMATIONS = 8  # ~2min with 15s blocks
 
 
 @blockchain_options(
-    contracts_version="0.11.1",
-    contracts=[CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT, CONTRACT_ONE_TO_N],
+    contracts=[CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT, CONTRACT_ONE_TO_N]
 )
 @click.command()
 @click.option(
