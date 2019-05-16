@@ -2,13 +2,14 @@ import sys
 
 import gevent
 import structlog
-from eth_utils import encode_hex, to_checksum_address
+from eth_utils import encode_hex
 
 from monitoring_service.database import SharedDatabase
 from monitoring_service.states import MonitorRequest
 from raiden.constants import MONITORING_BROADCASTING_ROOM
 from raiden.exceptions import InvalidSignature
 from raiden.messages import Message, RequestMonitoring
+from raiden.utils.typing import Signature, TokenNetworkAddress
 from raiden_libs.gevent_error_handler import register_error_handler
 from raiden_libs.matrix import MatrixListener
 
@@ -56,21 +57,24 @@ class RequestCollector(gevent.Greenlet):
     def on_monitor_request(self, request_monitoring: RequestMonitoring) -> None:
         assert isinstance(request_monitoring, RequestMonitoring)
 
+        assert request_monitoring.non_closing_signature is not None
+        assert request_monitoring.reward_proof_signature is not None
         # Convert Raiden's RequestMonitoring object to a MonitorRequest
         try:
             monitor_request = MonitorRequest(
                 channel_identifier=request_monitoring.balance_proof.channel_identifier,
-                token_network_address=to_checksum_address(
+                token_network_address=TokenNetworkAddress(
                     request_monitoring.balance_proof.token_network_address
                 ),
                 chain_id=request_monitoring.balance_proof.chain_id,
                 balance_hash=encode_hex(request_monitoring.balance_proof.balance_hash),
                 nonce=request_monitoring.balance_proof.nonce,
                 additional_hash=encode_hex(request_monitoring.balance_proof.additional_hash),
-                closing_signature=encode_hex(request_monitoring.balance_proof.signature),
-                non_closing_signature=encode_hex(request_monitoring.non_closing_signature),
+                closing_signature=request_monitoring.balance_proof.signature,
+                non_closing_signature=request_monitoring.non_closing_signature,
                 reward_amount=request_monitoring.reward_amount,
-                reward_proof_signature=encode_hex(request_monitoring.signature),
+                # FIXME: not sure why the Signature call is necessary
+                reward_proof_signature=Signature(request_monitoring.signature),
             )
         except InvalidSignature:
             log.info("Ignore MR with invalid signature", monitor_request=request_monitoring)
