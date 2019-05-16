@@ -1,4 +1,4 @@
-CODE_DIRS = src/ tests/
+CODE_DIRS = src/ tests/ setup.py
 ISORT_PARAMS = --ignore-whitespace --settings-path . --recursive $(CODE_DIRS)
 BLACK_PARAMS = --line-length 99
 

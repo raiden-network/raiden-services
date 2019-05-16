@@ -72,7 +72,7 @@ def _first_allowed_block_to_monitor(
     token_network_address: TokenNetworkAddress, channel: Channel, context: Context
 ) -> BlockNumber:
     # Get token_network_contract
-    abi = CONTRACT_MANAGER.get_contract(CONTRACT_TOKEN_NETWORK)["abi"]
+    abi = CONTRACT_MANAGER.get_contract_abi(CONTRACT_TOKEN_NETWORK)
     token_network_contract = context.w3.eth.contract(abi=abi, address=token_network_address)
 
     # Use the same assumptions as the MS contract, which can't get the real
