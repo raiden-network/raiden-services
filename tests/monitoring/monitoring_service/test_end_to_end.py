@@ -43,6 +43,7 @@ def test_first_allowed_monitoring(
     get_accounts,
     get_private_key,
 ):
+    # pylint: disable=too-many-arguments,too-many-locals,protected-access
     query = create_ms_contract_events_query(
         web3, contracts_manager, monitoring_service_contract.address
     )
