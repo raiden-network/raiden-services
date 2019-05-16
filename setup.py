@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
-
 import io
 import os
 from glob import glob
 from os.path import basename, dirname, join, splitext
+from typing import List
 
 from setuptools import find_packages, setup
 
 REQ_REPLACE = {
-    "git+https://github.com/raiden-network/raiden.git@aab0172eaa2306e8aa6dc9f540eaf7b9c654f85f": "raiden"
+    "git+https://github.com/raiden-network/raiden.git@aab0172eaa2306e8aa6dc9f540eaf7b9c654f85f": "raiden"  # noqa
 }
 
 DESCRIPTION = "Raiden Services contain additional tools for the Raiden Network."
 
 
-def read_requirements(path: str):
+def read_requirements(path: str) -> List[str]:
     assert os.path.isfile(path)
     ret = []
     with open(path) as requirements:
@@ -29,7 +29,7 @@ def read_requirements(path: str):
     return ret
 
 
-def read(*names, **kwargs):
+def read(*names: str, **kwargs: str) -> str:
     return io.open(join(dirname(__file__), *names), encoding=kwargs.get("encoding", "utf8")).read()
 
 

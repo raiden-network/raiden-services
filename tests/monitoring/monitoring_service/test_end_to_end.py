@@ -114,7 +114,7 @@ def test_first_allowed_monitoring(
     )
     assert channel
 
-    # Calling monitor too early must fail. To test this, we call it once block
+    # Calling monitor too early must fail. To test this, we call it one block
     # before the trigger block.
     wait_for_blocks(monitor_trigger.trigger_block_number - web3.eth.blockNumber - 1)
     handle_event(monitor_trigger.event, monitoring_service.context)
@@ -125,7 +125,7 @@ def test_first_allowed_monitoring(
     channel.closing_tx_hash = None
     monitoring_service.database.upsert_channel(channel)
 
-    # New we can try again. The first try mined a new block, so now we're one
+    # Now we can try again. The first try mined a new block, so now we're one
     # block further and `monitor` should succeed.
     handle_event(monitor_trigger.event, monitoring_service.context)
     assert [e.event for e in query()] == [MonitoringServiceEvent.NEW_BALANCE_PROOF_RECEIVED]
