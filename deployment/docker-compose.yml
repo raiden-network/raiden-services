@@ -12,7 +12,7 @@ services:
   pfs-ropsten:
     << : *defaults
     build: ../
-    command: ["python3", "-m", "pathfinding_service.cli"]
+    command: ["python3", "-m", "pathfinding_service.cli", "--enable-debug"]
     environment:
       - PFS_ETH_RPC=http://geth.ropsten.ethnodes.brainbot.com:8545
       - PFS_STATE_DB=/state/pfs-ropsten.db
@@ -22,7 +22,7 @@ services:
 
   pfs-ropsten-with-fee:
     << : *defaults
-    command: ["python3", "-m", "pathfinding_service.cli"]
+    command: ["python3", "-m", "pathfinding_service.cli", "--enable-debug"]
     environment:
       - PFS_ETH_RPC=http://geth.ropsten.ethnodes.brainbot.com:8545
       - PFS_STATE_DB=/state/pfs-ropsten-with-fee.db
@@ -33,7 +33,7 @@ services:
 
   pfs-rinkeby:
     << : *defaults
-    command: ["python3", "-m", "pathfinding_service.cli"]
+    command: ["python3", "-m", "pathfinding_service.cli", "--enable-debug"]
     environment:
       - PFS_ETH_RPC=http://geth.rinkeby.ethnodes.brainbot.com:8545
       - PFS_STATE_DB=/state/pfs-rinkeby.db
@@ -43,7 +43,7 @@ services:
 
   pfs-rinkeby-with-fee:
     << : *defaults
-    command: ["python3", "-m", "pathfinding_service.cli"]
+    command: ["python3", "-m", "pathfinding_service.cli", "--enable-debug"]
     environment:
       - PFS_ETH_RPC=http://geth.rinkeby.ethnodes.brainbot.com:8545
       - PFS_STATE_DB=/state/pfs-rinkeby-with-fee.db
@@ -54,7 +54,7 @@ services:
 
   pfs-kovan:
     << : *defaults
-    command: ["python3", "-m", "pathfinding_service.cli"]
+    command: ["python3", "-m", "pathfinding_service.cli", "--enable-debug"]
     environment:
       - PFS_ETH_RPC=http://parity.kovan.ethnodes.brainbot.com:8545
       - PFS_STATE_DB=/state/pfs-kovan.db
@@ -64,7 +64,7 @@ services:
 
   pfs-kovan-with-fee:
     << : *defaults
-    command: ["python3", "-m", "pathfinding_service.cli"]
+    command: ["python3", "-m", "pathfinding_service.cli", "--enable-debug"]
     environment:
       - PFS_ETH_RPC=http://parity.kovan.ethnodes.brainbot.com:8545
       - PFS_STATE_DB=/state/pfs-kovan-with-fee.db
@@ -75,7 +75,7 @@ services:
 
   pfs-goerli:
     <<: *defaults
-    command: ["python3", "-m", "pathfinding_service.cli"]
+    command: ["python3", "-m", "pathfinding_service.cli", "--enable-debug"]
     environment:
       - PFS_ETH_RPC=http://geth.goerli.ethnodes.brainbot.com:8545
       - PFS_STATE_DB=/state/pfs-goerli.db
@@ -85,7 +85,7 @@ services:
 
   pfs-goerli-with-fee:
     <<: *defaults
-    command: ["python3", "-m", "pathfinding_service.cli"]
+    command: ["python3", "-m", "pathfinding_service.cli", "--enable-debug"]
     environment:
       - PFS_ETH_RPC=http://geth.goerli.ethnodes.brainbot.com:8545
       - PFS_STATE_DB=/state/pfs-goerli-with-fee.db
