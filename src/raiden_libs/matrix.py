@@ -4,6 +4,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
 import gevent
 import structlog
 from eth_utils import decode_hex, to_checksum_address
+from gevent.event import Event
 from matrix_client.errors import MatrixRequestError
 from matrix_client.user import User
 
@@ -129,7 +130,10 @@ class MatrixListener(gevent.Greenlet):
                 address_reachability_changed_callback=address_reachability_changed_callback,
             )
 
+        self.startup_finished = Event()
+
     def listen_forever(self) -> None:
+        self.startup_finished.wait()
         self.client.listen_forever()
 
     def _run(self) -> None:  # pylint: disable=method-hidden
@@ -158,6 +162,9 @@ class MatrixListener(gevent.Greenlet):
             raise ConnectionError("Could not join monitoring broadcasting room.")
 
         self.broadcast_room.add_listener(self._handle_message, "m.room.message")
+
+        # Signal that startup is finished
+        self.startup_finished.set()
 
     def follow_address_presence(self, address: Address, refresh: bool = False) -> None:
         if self.user_manager:
