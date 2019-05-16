@@ -20,7 +20,10 @@ def main(private_key: str, state_db: str) -> int:
 
     database = SharedDatabase(state_db)
 
-    RequestCollector(private_key=private_key, state_db=database).listen_forever()
+    service = RequestCollector(private_key=private_key, state_db=database)
+
+    service.start()
+    service.listen_forever()
 
     print("Exiting...")
     return 0
