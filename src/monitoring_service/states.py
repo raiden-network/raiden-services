@@ -98,7 +98,7 @@ class HashedBalanceProof:
         if signature is None:
             assert priv_key
             local_signer = LocalSigner(private_key=decode_hex(priv_key))
-            self.signature = encode_hex(local_signer.sign(self.serialize_bin()))
+            self.signature = local_signer.sign(self.serialize_bin())
         else:
             self.signature = signature
 
@@ -127,7 +127,7 @@ class HashedBalanceProof:
             nonce=self.nonce,
             additional_hash=decode_hex(self.additional_hash),
             chain_id=self.chain_id,
-            signature=decode_hex(self.signature),
+            signature=self.signature,
             balance_hash=decode_hex(self.balance_hash),
         )
         request_monitoring = RequestMonitoring(
@@ -176,7 +176,7 @@ class UnsignedMonitorRequest:
 
     def __post_init__(self) -> None:
         self.signer = recover(
-            data=self.packed_balance_proof_data(), signature=decode_hex(self.closing_signature)
+            data=self.packed_balance_proof_data(), signature=self.closing_signature
         )
 
     @classmethod
@@ -205,8 +205,8 @@ class UnsignedMonitorRequest:
             additional_hash=self.additional_hash,
             closing_signature=self.closing_signature,
             reward_amount=self.reward_amount,
-            reward_proof_signature=encode_hex(local_signer.sign(self.packed_reward_proof_data())),
-            non_closing_signature=encode_hex(local_signer.sign(self.packed_non_closing_data())),
+            reward_proof_signature=local_signer.sign(self.packed_reward_proof_data()),
+            non_closing_signature=local_signer.sign(self.packed_non_closing_data()),
         )
 
     def packed_balance_proof_data(
@@ -242,7 +242,7 @@ class UnsignedMonitorRequest:
         balance_proof = self.packed_balance_proof_data(
             message_type=MessageTypeId.BALANCE_PROOF_UPDATE
         )
-        return balance_proof + decode_hex(self.closing_signature)
+        return balance_proof + self.closing_signature
 
 
 @dataclass
@@ -259,8 +259,8 @@ class MonitorRequest(UnsignedMonitorRequest):
     def __post_init__(self) -> None:
         super(MonitorRequest, self).__post_init__()
         self.non_closing_signer = recover(
-            data=self.packed_non_closing_data(), signature=decode_hex(self.non_closing_signature)
+            data=self.packed_non_closing_data(), signature=self.non_closing_signature
         )
         self.reward_proof_signer = recover(
-            data=self.packed_reward_proof_data(), signature=decode_hex(self.reward_proof_signature)
+            data=self.packed_reward_proof_data(), signature=self.reward_proof_signature
         )
