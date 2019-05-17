@@ -4,7 +4,7 @@ from eth_utils import encode_hex, to_checksum_address
 
 from monitoring_service.states import HashedBalanceProof
 from raiden.messages import RequestMonitoring
-from raiden.utils.typing import ChannelID, TokenAmount, TokenNetworkAddress
+from raiden.utils.typing import ChainID, ChannelID, Nonce, TokenAmount, TokenNetworkAddress
 from raiden_contracts.tests.utils import get_random_privkey
 from raiden_libs.utils import private_key_to_address
 
@@ -14,7 +14,11 @@ def build_request_monitoring():
     non_closing_privkey = get_random_privkey()
     non_closing_address = private_key_to_address(non_closing_privkey)
 
-    def f(chain_id=1, amount=50, nonce=1):
+    def f(
+        chain_id: ChainID = ChainID(1),
+        amount: TokenAmount = TokenAmount(50),
+        nonce: Nonce = Nonce(1),
+    ) -> RequestMonitoring:
         balance_proof = HashedBalanceProof(
             channel_identifier=ChannelID(1),
             token_network_address=TokenNetworkAddress(b"1" * 20),

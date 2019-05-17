@@ -56,9 +56,9 @@ class RequestCollector(gevent.Greenlet):
 
     def on_monitor_request(self, request_monitoring: RequestMonitoring) -> None:
         assert isinstance(request_monitoring, RequestMonitoring)
-
         assert request_monitoring.non_closing_signature is not None
         assert request_monitoring.reward_proof_signature is not None
+
         # Convert Raiden's RequestMonitoring object to a MonitorRequest
         try:
             monitor_request = MonitorRequest(
