@@ -149,16 +149,17 @@ class PFSDatabase(BaseDatabase):
             "reveal_timeout",
             "deposit",
             "update_nonce",
-            "absolute_fee",
         ):
             cv_dict[key] = hex256(cv_dict[key])
+        cv_dict["fee_schedule"] = json.dumps(cv_dict["fee_schedule"])
         self.upsert("channel_view", cv_dict)
 
     def get_channel_views(self) -> Iterator[ChannelView]:
         query = "SELECT * FROM channel_view"
         for row in self.conn.execute(query):
             cv_dict = dict(zip(row.keys(), row))
-            yield ChannelView.Schema().load(cv_dict)[0]
+            cv_dict["fee_schedule"] = json.loads(cv_dict["fee_schedule"])
+            yield ChannelView.Schema(strict=True).load(cv_dict)[0]
 
     def delete_channel_views(self, channel_id: ChannelID) -> None:
         self.conn.execute("DELETE FROM channel_view WHERE channel_id = ?", [channel_id])

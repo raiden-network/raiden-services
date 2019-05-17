@@ -1,4 +1,5 @@
 from collections import defaultdict
+from dataclasses import dataclass
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import networkx as nx
@@ -11,9 +12,10 @@ from pathfinding_service.config import (
     DIVERSITY_PEN_DEFAULT,
     FEE_PEN_DEFAULT,
 )
-from pathfinding_service.model.channel_view import ChannelView
+from pathfinding_service.model.channel_view import ChannelView, FeeSchedule
 from raiden.messages import UpdatePFS
 from raiden.network.transport.matrix import AddressReachability
+from raiden.transfer.identifiers import CanonicalIdentifier
 from raiden.utils.typing import Address, ChannelID, TokenAmount, TokenNetworkAddress
 
 log = structlog.get_logger(__name__)
@@ -74,6 +76,14 @@ class Path:
         #         return False
 
         return True
+
+
+@dataclass
+class FeeUpdate:
+    canonical_identifier: CanonicalIdentifier
+    updating_participant: Address
+    other_participant: Address
+    fee_schedule: FeeSchedule
 
 
 class TokenNetwork:
@@ -217,12 +227,20 @@ class TokenNetwork:
             nonce=message.updating_nonce,
             capacity=min(message.updating_capacity, other_capacity_partner),
             reveal_timeout=message.reveal_timeout,
-            mediation_fee=message.mediation_fee,
         )
         channel_view_from_partner.update_capacity(
             nonce=message.other_nonce,
             capacity=min(message.other_capacity, updating_capacity_partner),
         )
+
+    def handle_channel_fee_update(self, message: FeeUpdate) -> None:
+        channel_view_to_partner, channel_view_from_partner = self.get_channel_views_for_partner(
+            channel_identifier=message.canonical_identifier.channel_identifier,
+            updating_participant=message.updating_participant,
+            other_participant=message.other_participant,
+        )
+        channel_view_to_partner.fee_schedule = message.fee_schedule
+        channel_view_from_partner.fee_schedule = message.fee_schedule.reversed()
 
     @staticmethod
     def edge_weight(
