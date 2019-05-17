@@ -44,21 +44,21 @@ def test_scheduled_events(ms_database: Database):
         ),
     )
 
-    ms_database.upsert_scheduled_event(event=event2)
+    ms_database.upsert_scheduled_event(event2)
     assert ms_database.scheduled_event_count() == 2
 
     assert len(ms_database.get_scheduled_events(BlockNumber(22))) == 0
     assert len(ms_database.get_scheduled_events(BlockNumber(23))) == 1
     assert len(ms_database.get_scheduled_events(BlockNumber(24))) == 2
 
-    ms_database.upsert_scheduled_event(event=event1)
+    ms_database.upsert_scheduled_event(event1)
     assert ms_database.scheduled_event_count() == 2
 
     assert len(ms_database.get_scheduled_events(BlockNumber(22))) == 0
     assert len(ms_database.get_scheduled_events(BlockNumber(23))) == 1
     assert len(ms_database.get_scheduled_events(BlockNumber(24))) == 2
 
-    ms_database.remove_scheduled_event(event=event2)
+    ms_database.remove_scheduled_event(event2)
     assert len(ms_database.get_scheduled_events(BlockNumber(22))) == 0
     assert len(ms_database.get_scheduled_events(BlockNumber(23))) == 1
     assert len(ms_database.get_scheduled_events(BlockNumber(24))) == 1

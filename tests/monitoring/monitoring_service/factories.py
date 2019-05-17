@@ -57,10 +57,6 @@ def create_signed_monitor_request(
     return monitor_request
 
 
-def get_random_channel_identifier() -> ChannelID:
-    return ChannelID(random.randint(0, UINT256_MAX))
-
-
 def create_channel(update_status: OnChainUpdateStatus = None) -> Channel:
     return Channel(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
@@ -71,7 +67,7 @@ def create_channel(update_status: OnChainUpdateStatus = None) -> Channel:
         state=random.choice(list(ChannelState)),
         closing_block=BlockNumber(random.randint(0, UINT256_MAX)),
         closing_participant=DEFAULT_PARTICIPANT1,
-        closing_tx_hash=TransactionHash("%d" % random.randint(0, UINT64_MAX)),
-        claim_tx_hash=TransactionHash("%d" % random.randint(0, UINT64_MAX)),
+        closing_tx_hash=TransactionHash("%x" % random.randint(0, UINT64_MAX)),
+        claim_tx_hash=TransactionHash("%x" % random.randint(0, UINT64_MAX)),
         update_status=update_status,
     )
