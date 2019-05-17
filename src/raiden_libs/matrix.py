@@ -168,11 +168,17 @@ class MatrixListener(gevent.Greenlet):
 
     def follow_address_presence(self, address: Address, refresh: bool = False) -> None:
         if self.user_manager:
-            log.debug("Tracking address", address=to_checksum_address(address))
             self.user_manager.add_address(address)
 
             if refresh:
                 self.user_manager.refresh_address_presence(address)
+
+            log.debug(
+                "Tracking address",
+                address=to_checksum_address(address),
+                current_presence=self.user_manager.get_address_reachability(address),
+                refresh=refresh,
+            )
 
     def _get_user(self, user: Union[User, str]) -> User:
         """Creates an User from an user_id, if none, or fetch a cached User """
