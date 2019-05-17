@@ -76,8 +76,12 @@ class ChannelView:
         if reveal_timeout is not None:
             self.reveal_timeout = reveal_timeout
 
-    def fee(self, amount: TokenAmount) -> int:
+    def fee_out(self, amount: TokenAmount) -> int:
         """Return the mediation fee for this channel when transferring the given amount"""
+        return int(self.fee_schedule.flat + amount * self.fee_schedule.proportional)
+
+    def fee_in(self, amount: TokenAmount) -> int:
+        """Return the mediation fee for this channel when receiving the given amount"""
         return int(self.fee_schedule.flat + amount * self.fee_schedule.proportional)
 
     def __repr__(self) -> str:

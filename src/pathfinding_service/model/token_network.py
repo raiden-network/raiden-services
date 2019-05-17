@@ -16,7 +16,7 @@ from pathfinding_service.model.channel_view import ChannelView, FeeSchedule
 from raiden.messages import UpdatePFS
 from raiden.network.transport.matrix import AddressReachability
 from raiden.transfer.identifiers import CanonicalIdentifier
-from raiden.utils.typing import Address, ChannelID, TokenAmount, TokenNetworkAddress
+from raiden.utils.typing import Address, ChannelID, FeeAmount, TokenAmount, TokenNetworkAddress
 
 log = structlog.get_logger(__name__)
 
@@ -33,14 +33,20 @@ class Path:
         self.nodes = nodes
         self.value = value
         self.address_to_reachability = address_to_reachability
+        self.fees: List[FeeAmount] = [
+            self.G[self.nodes[i + 1]][self.nodes[i]]["view"].fee_in(self.value)
+            + self.G[self.nodes[i + 1]][self.nodes[i + 2]]["view"].fee_out(self.value)
+            for i, node in enumerate(self.nodes[1:-1])  # initiator and target don't cause fees
+        ]
 
     @property
     def edge_attrs(self) -> Iterable[dict]:
         return (self.G[node1][node2] for node1, node2 in zip(self.nodes[:-1], self.nodes[1:]))
 
     def to_dict(self) -> dict:
-        fee = sum(edge["view"].fee(self.value) for edge in self.edge_attrs)
-        return dict(path=[to_checksum_address(node) for node in self.nodes], estimated_fee=fee)
+        return dict(
+            path=[to_checksum_address(node) for node in self.nodes], estimated_fee=sum(self.fees)
+        )
 
     @property
     def is_valid(self) -> bool:
@@ -56,11 +62,13 @@ class Path:
         https://github.com/raiden-network/raiden-services/issues/5.
         """
         required_capacity = self.value
-        for edge in reversed(list(self.edge_attrs)):
+        edges = reversed(list(self.edge_attrs))
+        fees = self.fees + [FeeAmount(0)]  # The hop to the target does not incur mediation fees
+        for edge, fee in zip(edges, fees):
             # check capacity
             if edge["view"].capacity < required_capacity:
                 return False
-            required_capacity += edge["view"].fee(self.value)
+            required_capacity = TokenAmount(required_capacity + fee)
 
             # check if settle_timeout / reveal_timeout >= default ratio
             ratio = edge["view"].settle_timeout / edge["view"].reveal_timeout
@@ -253,7 +261,10 @@ class TokenNetwork:
         view: ChannelView = attr["view"]
         view_from_partner: ChannelView = attr_backwards["view"]
         diversity_weight = visited.get(view.channel_id, 0)
-        fee_weight = view.fee(amount) / 1e18 * fee_penalty
+        # Fees for initiator and target are included here. This promotes routes
+        # that are nice to the initiator's and target's capacities, but it's
+        # inconsistent with the estimated total fee.
+        fee_weight = (view.fee_out(amount) + view_from_partner.fee_in(amount)) / 1e18 * fee_penalty
         no_refund_weight = 0
         if view_from_partner.capacity < int(float(amount) * 1.1):
             no_refund_weight = 1
