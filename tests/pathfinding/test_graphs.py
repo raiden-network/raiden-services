@@ -187,6 +187,7 @@ def test_diversity_penalty(token_network_model: TokenNetwork, addresses: List[Ad
 
 
 @pytest.mark.usefixtures("populate_token_network_case_3")
+@pytest.mark.skip("Skipped until #365 is fixed")
 def test_reachability_initiator(token_network_model: TokenNetwork, addresses: List[Address]):
 
     assert get_paths(token_network_model=token_network_model, addresses=addresses) == [
@@ -205,6 +206,7 @@ def test_reachability_initiator(token_network_model: TokenNetwork, addresses: Li
 
 
 @pytest.mark.usefixtures("populate_token_network_case_3")
+@pytest.mark.skip("Skipped until #365 is fixed")
 def test_reachability_mediator(token_network_model: TokenNetwork, addresses: List[Address]):
 
     assert get_paths(token_network_model=token_network_model, addresses=addresses) == [
@@ -225,6 +227,7 @@ def test_reachability_mediator(token_network_model: TokenNetwork, addresses: Lis
 
 
 @pytest.mark.usefixtures("populate_token_network_case_3")
+@pytest.mark.skip("Skipped until #365 is fixed")
 def test_reachability_target(token_network_model: TokenNetwork, addresses: List[Address]):
 
     assert get_paths(token_network_model=token_network_model, addresses=addresses) == [
