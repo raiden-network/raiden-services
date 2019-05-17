@@ -1,10 +1,10 @@
 import sys
 from dataclasses import asdict
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 import gevent
 import structlog
-from eth_utils import to_checksum_address
+from eth_utils import to_checksum_address, to_hex
 from web3 import Web3
 from web3.contract import Contract
 
@@ -33,6 +33,19 @@ from raiden_libs.states import BlockchainState
 from raiden_libs.utils import private_key_to_address
 
 log = structlog.get_logger(__name__)
+
+
+def log_event(event: Event) -> Dict[str, Any]:
+    event_data = asdict(event)
+
+    for key, val in event_data.items():
+        if isinstance(val, bytes):
+            if len(val) == 20:
+                event_data[key] = to_checksum_address(val)
+            else:
+                event_data[key] = to_hex(val)
+
+    return event_data
 
 
 class PathfindingService(gevent.Greenlet):
@@ -180,7 +193,7 @@ class PathfindingService(gevent.Greenlet):
     def handle_token_network_created(self, event: ReceiveTokenNetworkCreatedEvent) -> None:
         network_address = TokenNetworkAddress(event.token_network_address)
         if not self.follows_token_network(network_address):
-            log.info("Found new token network", **asdict(event))
+            log.info("Found new token network", **log_event(event))
 
             self.token_networks[network_address] = TokenNetwork(network_address)
             self.database.upsert_token_network(network_address)
@@ -190,7 +203,7 @@ class PathfindingService(gevent.Greenlet):
         if token_network is None:
             return
 
-        log.info("Received ChannelOpened event", **asdict(event))
+        log.info("Received ChannelOpened event", **log_event(event))
 
         self.matrix_listener.follow_address_presence(event.participant1, refresh=True)
         self.matrix_listener.follow_address_presence(event.participant2, refresh=True)
@@ -209,7 +222,7 @@ class PathfindingService(gevent.Greenlet):
         if token_network is None:
             return
 
-        log.info("Received ChannelNewDeposit event", **asdict(event))
+        log.info("Received ChannelNewDeposit event", **log_event(event))
 
         channel_view = token_network.handle_channel_new_deposit_event(
             channel_identifier=event.channel_identifier,
@@ -224,7 +237,7 @@ class PathfindingService(gevent.Greenlet):
         if token_network is None:
             return
 
-        log.info("Received ChannelClosed event", **asdict(event))
+        log.info("Received ChannelClosed event", **log_event(event))
 
         token_network.handle_channel_closed_event(channel_identifier=event.channel_identifier)
         self.database.delete_channel_views(event.channel_identifier)
