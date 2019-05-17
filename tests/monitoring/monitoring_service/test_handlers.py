@@ -3,7 +3,16 @@ from unittest.mock import Mock
 
 import pytest
 from eth_utils import to_checksum_address
+from tests.monitoring.monitoring_service.factories import (
+    DEFAULT_CHANNEL_IDENTIFIER,
+    DEFAULT_PARTICIPANT1,
+    DEFAULT_PARTICIPANT2,
+    DEFAULT_SETTLE_TIMEOUT,
+    DEFAULT_TOKEN_NETWORK_ADDRESS,
+    create_signed_monitor_request,
+)
 
+from monitoring_service.database import Database
 from monitoring_service.events import (
     ActionClaimRewardTriggeredEvent,
     ActionMonitoringTriggeredEvent,
@@ -20,20 +29,8 @@ from monitoring_service.handlers import (
     non_closing_balance_proof_updated_event_handler,
     updated_head_block_event_handler,
 )
-from monitoring_service.states import (
-    HashedBalanceProof,
-    MonitorRequest,
-    OnChainUpdateStatus,
-    UnsignedMonitorRequest,
-)
-from raiden.utils.typing import (
-    Address,
-    BlockNumber,
-    ChannelID,
-    Nonce,
-    TokenAmount,
-    TokenNetworkAddress,
-)
+from monitoring_service.states import OnChainUpdateStatus
+from raiden.utils.typing import Address, BlockNumber, ChannelID, Nonce, TokenAmount
 from raiden_contracts.constants import ChannelState
 from raiden_contracts.tests.utils import get_random_privkey
 from raiden_libs.events import (
@@ -45,16 +42,6 @@ from raiden_libs.events import (
     ReceiveMonitoringRewardClaimedEvent,
     ReceiveNonClosingBalanceProofUpdatedEvent,
 )
-from raiden_libs.utils import private_key_to_address
-
-DEFAULT_TOKEN_NETWORK_ADDRESS = TokenNetworkAddress(bytes([1] * 20))
-DEFAULT_CHANNEL_IDENTIFIER = ChannelID(3)
-DEFAULT_PRIVATE_KEY1 = "0x" + "1" * 64
-DEFAULT_PRIVATE_KEY2 = "0x" + "2" * 64
-DEFAULT_PARTICIPANT1 = private_key_to_address(DEFAULT_PRIVATE_KEY1)
-DEFAULT_PARTICIPANT2 = private_key_to_address(DEFAULT_PRIVATE_KEY2)
-DEFAULT_REWARD_AMOUNT = TokenAmount(1)
-DEFAULT_SETTLE_TIMEOUT = 100
 
 
 @pytest.fixture(autouse=True)
@@ -104,29 +91,8 @@ def setup_state_with_closed_channel(context: Context) -> Context:
     return context
 
 
-def get_signed_monitor_request(
-    nonce: int = 5,
-    reward_amount: TokenAmount = DEFAULT_REWARD_AMOUNT,
-    closing_privkey: str = DEFAULT_PRIVATE_KEY1,
-    nonclosing_privkey: str = DEFAULT_PRIVATE_KEY2,
-) -> MonitorRequest:
-    bp = HashedBalanceProof(  # type: ignore
-        channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
-        token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
-        chain_id=1,
-        balance_hash="",
-        nonce=nonce,
-        additional_hash="",
-        priv_key=closing_privkey,
-    )
-    monitor_request = UnsignedMonitorRequest.from_balance_proof(
-        bp, reward_amount=reward_amount
-    ).sign(nonclosing_privkey)
-    return monitor_request
-
-
 @pytest.fixture
-def context(ms_database):
+def context(ms_database: Database):
     return Context(
         ms_state=ms_database.load_state(),
         db=ms_database,
@@ -262,7 +228,7 @@ def test_channel_closed_event_handler_trigger_action_monitor_event_with_monitor_
 ):
     context = setup_state_with_open_channel(context)
     # add MR to DB
-    context.db.upsert_monitor_request(get_signed_monitor_request())
+    context.db.upsert_monitor_request(create_signed_monitor_request())
 
     event = ReceiveChannelClosedEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
@@ -497,7 +463,7 @@ def test_action_monitoring_triggered_event_handler_does_not_trigger_monitor_call
     monitor_new_balance_proof_event_handler(event3, context)
 
     # add MR to DB, with nonce being smaller than in event3
-    context.db.upsert_monitor_request(get_signed_monitor_request(nonce=Nonce(4)))
+    context.db.upsert_monitor_request(create_signed_monitor_request(nonce=Nonce(4)))
 
     event4 = ActionMonitoringTriggeredEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
@@ -529,7 +495,7 @@ def test_action_monitoring_triggered_event_handler_with_sufficient_balance_does_
     context = setup_state_with_closed_channel(context)
 
     context.db.upsert_monitor_request(
-        get_signed_monitor_request(nonce=Nonce(6), reward_amount=TokenAmount(10))
+        create_signed_monitor_request(nonce=Nonce(6), reward_amount=TokenAmount(10))
     )
 
     trigger_event = ActionMonitoringTriggeredEvent(
@@ -562,7 +528,7 @@ def test_action_monitoring_triggered_event_handler_with_insufficient_reward_amou
     context = setup_state_with_closed_channel(context)
 
     context.db.upsert_monitor_request(
-        get_signed_monitor_request(nonce=Nonce(6), reward_amount=TokenAmount(0))
+        create_signed_monitor_request(nonce=Nonce(6), reward_amount=TokenAmount(0))
     )
 
     trigger_event = ActionMonitoringTriggeredEvent(
@@ -597,7 +563,7 @@ def test_action_monitoring_triggered_event_handler_without_sufficient_balance_do
     context = setup_state_with_closed_channel(context)
 
     context.db.upsert_monitor_request(
-        get_signed_monitor_request(nonce=Nonce(6), reward_amount=TokenAmount(10))
+        create_signed_monitor_request(nonce=Nonce(6), reward_amount=TokenAmount(10))
     )
 
     trigger_event = ActionMonitoringTriggeredEvent(
@@ -628,7 +594,7 @@ def test_mr_available_before_channel_triggers_monitor_call(context: Context):
     """
 
     # add MR to DB
-    context.db.upsert_monitor_request(get_signed_monitor_request())
+    context.db.upsert_monitor_request(create_signed_monitor_request())
 
     context = setup_state_with_closed_channel(context)
 
@@ -664,8 +630,8 @@ def test_mr_with_unknown_signatures(context: Context):
         action_monitoring_triggered_event_handler(event, context)
         assert not context.monitoring_service_contract.functions.monitor.called
 
-    assert_mr_is_ignored(get_signed_monitor_request(closing_privkey=get_random_privkey()))
-    assert_mr_is_ignored(get_signed_monitor_request(nonclosing_privkey=get_random_privkey()))
+    assert_mr_is_ignored(create_signed_monitor_request(closing_privkey=get_random_privkey()))
+    assert_mr_is_ignored(create_signed_monitor_request(nonclosing_privkey=get_random_privkey()))
 
 
 def test_action_claim_reward_triggered_event_handler_does_trigger_claim_call(  # noqa
@@ -677,7 +643,7 @@ def test_action_claim_reward_triggered_event_handler_does_trigger_claim_call(  #
     context = setup_state_with_closed_channel(context)
 
     context.db.upsert_monitor_request(
-        get_signed_monitor_request(nonce=Nonce(6), reward_amount=TokenAmount(10))
+        create_signed_monitor_request(nonce=Nonce(6), reward_amount=TokenAmount(10))
     )
 
     trigger_event = ActionClaimRewardTriggeredEvent(
@@ -713,7 +679,7 @@ def test_action_claim_reward_triggered_event_handler_without_reward_doesnt_trigg
     context = setup_state_with_closed_channel(context)
 
     context.db.upsert_monitor_request(
-        get_signed_monitor_request(nonce=Nonce(6), reward_amount=TokenAmount(0))
+        create_signed_monitor_request(nonce=Nonce(6), reward_amount=TokenAmount(0))
     )
 
     trigger_event = ActionClaimRewardTriggeredEvent(
@@ -749,7 +715,7 @@ def test_action_claim_reward_triggered_event_handler_without_update_state_doesnt
     context = setup_state_with_closed_channel(context)
 
     context.db.upsert_monitor_request(
-        get_signed_monitor_request(nonce=Nonce(6), reward_amount=TokenAmount(0))
+        create_signed_monitor_request(nonce=Nonce(6), reward_amount=TokenAmount(0))
     )
 
     trigger_event = ActionClaimRewardTriggeredEvent(

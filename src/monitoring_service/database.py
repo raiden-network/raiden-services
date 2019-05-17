@@ -3,7 +3,7 @@ import sqlite3
 from typing import List, Optional, Union, cast
 
 import structlog
-from eth_utils import decode_hex, to_checksum_address
+from eth_utils import decode_hex, to_canonical_address, to_checksum_address, to_hex
 
 from monitoring_service.events import (
     ActionClaimRewardTriggeredEvent,
@@ -38,10 +38,10 @@ class SharedDatabase(BaseDatabase):
             request.balance_hash,
             hex256(request.nonce),
             request.additional_hash,
-            request.closing_signature,
-            request.non_closing_signature,
+            to_hex(request.closing_signature),
+            to_hex(request.non_closing_signature),
             hex256(request.reward_amount),
-            request.reward_proof_signature,
+            to_hex(request.reward_proof_signature),
             to_checksum_address(request.non_closing_signer),
         ]
         upsert_sql = "INSERT OR REPLACE INTO monitor_request VALUES ({})".format(
@@ -74,8 +74,11 @@ class SharedDatabase(BaseDatabase):
             return None
 
         kwargs = {key: val for key, val in zip(row.keys(), row) if key != "non_closing_signer"}
-        mr = MonitorRequest(**kwargs)
-        return mr
+        kwargs["token_network_address"] = to_canonical_address(kwargs["token_network_address"])
+        kwargs["closing_signature"] = decode_hex(kwargs["closing_signature"])
+        kwargs["non_closing_signature"] = decode_hex(kwargs["non_closing_signature"])
+        kwargs["reward_proof_signature"] = decode_hex(kwargs["reward_proof_signature"])
+        return MonitorRequest(**kwargs)
 
     def monitor_request_count(self) -> int:
         return self.conn.execute("SELECT count(*) FROM monitor_request").fetchone()[0]
