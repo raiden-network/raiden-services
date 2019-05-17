@@ -38,14 +38,14 @@ CREATE TABLE monitor_request (
     channel_identifier      HEX_INT     NOT NULL,
     token_network_address   CHAR(42)    NOT NULL,
 
-    balance_hash            CHAR(34)    NOT NULL,
+    balance_hash            CHAR(66)    NOT NULL,
     nonce                   HEX_INT     NOT NULL,
-    additional_hash         CHAR(32)    NOT NULL,
-    closing_signature       CHAR(34)    NOT NULL,
+    additional_hash         CHAR(66)    NOT NULL,
+    closing_signature       CHAR(132)   NOT NULL,
 
-    non_closing_signature   CHAR(160)   NOT NULL,
+    non_closing_signature   CHAR(132)   NOT NULL,
     reward_amount           HEX_INT     NOT NULL,
-    reward_proof_signature  CHAR(42)    NOT NULL,
+    reward_proof_signature  CHAR(132)   NOT NULL,
 
     non_closing_signer      CHAR(42)    NOT NULL,
     PRIMARY KEY (channel_identifier, token_network_address, non_closing_signer)
