@@ -1,5 +1,6 @@
+from bisect import bisect_right
 from dataclasses import dataclass, field
-from typing import ClassVar, List, Optional, Type
+from typing import Callable, ClassVar, List, Optional, Sequence, Type
 
 import marshmallow
 from marshmallow_dataclass import add_schema
@@ -16,14 +17,45 @@ from raiden.utils.typing import (
 from raiden_libs.marshmallow import ChecksumAddress
 
 
+class Interpolate:  # pylint: disable=too-few-public-methods
+    def __init__(self, x_list: Sequence, y_list: Sequence):
+        if any(y - x <= 0 for x, y in zip(x_list, x_list[1:])):
+            raise ValueError("x_list must be in strictly ascending order!")
+        self.x_list = x_list
+        self.y_list = y_list
+        intervals = zip(x_list, x_list[1:], y_list, y_list[1:])
+        self.slopes = [(y2 - y1) / (x2 - x1) for x1, x2, y1, y2 in intervals]
+
+    def __call__(self, x: float) -> float:
+        assert self.x_list[0] <= x <= self.x_list[-1]
+        if x == self.x_list[-1]:
+            return self.y_list[-1]
+        i = bisect_right(self.x_list, x) - 1
+        return self.y_list[i] + self.slopes[i] * (x - self.x_list[i])
+
+
 @dataclass
 class FeeSchedule:
-    flat: FeeAmount
-    proportional: float
-    imbalance_penalty: Optional[List[List[FeeAmount]]] = None
+    # pylint: disable=not-an-iterable
+    flat: FeeAmount = FeeAmount(0)
+    proportional: float = FeeAmount(0)
+    imbalance_penalty: Optional[List[List[TokenAmount]]] = None
+    _penalty_func: Callable = field(init=False)
+
+    def __post_init__(self) -> None:
+        if self.imbalance_penalty:
+            assert isinstance(self.imbalance_penalty, list)
+            x_list, y_list = tuple(zip(*self.imbalance_penalty))
+            # see https://github.com/python/mypy/issues/2427 for type problem
+            self._penalty_func = Interpolate(x_list, y_list)  # type: ignore
+        else:
+            self._penalty_func = lambda amount: 0  # type: ignore
+
+    def fee(self, amount: TokenAmount, capacity: TokenAmount) -> FeeAmount:
+        imbalance_fee = self._penalty_func(capacity + amount) - self._penalty_func(capacity)
+        return FeeAmount(round(self.flat + amount * self.proportional + imbalance_fee))
 
     def reversed(self) -> "FeeSchedule":
-        # pylint: disable=not-an-iterable
         if not self.imbalance_penalty:
             return self
         max_x = max(x for x, penalty in self.imbalance_penalty)
@@ -31,7 +63,7 @@ class FeeSchedule:
             flat=self.flat,
             proportional=self.proportional,
             imbalance_penalty=[
-                [FeeAmount(max_x - x), penalty] for x, penalty in self.imbalance_penalty
+                [TokenAmount(max_x - x), penalty] for x, penalty in self.imbalance_penalty
             ],
         )
 
@@ -54,9 +86,7 @@ class ChannelView:
     reveal_timeout: int = DEFAULT_REVEAL_TIMEOUT
     deposit: TokenAmount = TokenAmount(0)
     update_nonce: Nonce = Nonce(0)
-    fee_schedule: FeeSchedule = field(
-        default_factory=lambda: FeeSchedule(flat=FeeAmount(0), proportional=FeeAmount(0))
-    )
+    fee_schedule: FeeSchedule = field(default_factory=FeeSchedule)
     Schema: ClassVar[Type[marshmallow.Schema]]
 
     def __post_init__(self) -> None:
