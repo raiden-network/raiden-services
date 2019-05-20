@@ -206,13 +206,8 @@ class TokenNetwork:
             )
 
     def get_channel_views_for_partner(
-        self,
-        channel_identifier: ChannelID,
-        updating_participant: Address,
-        other_participant: Address,
+        self, updating_participant: Address, other_participant: Address
     ) -> Tuple[ChannelView, ChannelView]:
-        assert channel_identifier in self.channel_id_to_addresses
-
         # Get the channel views from the perspective of the updating participant
         channel_view_to_partner = self.G[updating_participant][other_participant]["view"]
         channel_view_from_partner = self.G[other_participant][updating_participant]["view"]
@@ -227,7 +222,6 @@ class TokenNetwork:
     ) -> None:
         """ Sends Capacity Update to PFS including the reveal timeout """
         channel_view_to_partner, channel_view_from_partner = self.get_channel_views_for_partner(
-            channel_identifier=message.canonical_identifier.channel_identifier,
             updating_participant=message.updating_participant,
             other_participant=message.other_participant,
         )
@@ -243,7 +237,6 @@ class TokenNetwork:
 
     def handle_channel_fee_update(self, message: FeeUpdate) -> None:
         channel_view_to_partner, channel_view_from_partner = self.get_channel_views_for_partner(
-            channel_identifier=message.canonical_identifier.channel_identifier,
             updating_participant=message.updating_participant,
             other_participant=message.other_participant,
         )
