@@ -250,9 +250,7 @@ def test_pfs_edge_case_capacity_updates_before_deposit(
     token_network = setup_channel(pathfinding_service_web3_mock)
 
     view_to_partner, view_from_partner = token_network.get_channel_views_for_partner(
-        channel_identifier=DEFAULT_CHANNEL_ID,
-        updating_participant=PRIVATE_KEY_1_ADDRESS,
-        other_participant=PRIVATE_KEY_2_ADDRESS,
+        updating_participant=PRIVATE_KEY_1_ADDRESS, other_participant=PRIVATE_KEY_2_ADDRESS
     )
 
     token_network.handle_channel_new_deposit_event(
@@ -311,9 +309,7 @@ def test_pfs_min_calculation_with_capacity_updates(
     token_network = setup_channel_with_deposits(pathfinding_service_web3_mock)
 
     view_to_partner, view_from_partner = token_network.get_channel_views_for_partner(
-        channel_identifier=DEFAULT_CHANNEL_ID,
-        updating_participant=PRIVATE_KEY_1_ADDRESS,
-        other_participant=PRIVATE_KEY_2_ADDRESS,
+        updating_participant=PRIVATE_KEY_1_ADDRESS, other_participant=PRIVATE_KEY_2_ADDRESS
     )
 
     # Assert initial capacity with no Capacity Updates
