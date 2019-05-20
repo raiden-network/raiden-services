@@ -34,8 +34,8 @@ class Path:
         self.value = value
         self.address_to_reachability = address_to_reachability
         self.fees: List[FeeAmount] = [
-            self.G[self.nodes[i + 1]][self.nodes[i]]["view"].fee_in(self.value)
-            + self.G[self.nodes[i + 1]][self.nodes[i + 2]]["view"].fee_out(self.value)
+            self.G[self.nodes[i]][self.nodes[i + 1]]["view"].fee_receiver(self.value)
+            + self.G[self.nodes[i + 1]][self.nodes[i + 2]]["view"].fee_sender(self.value)
             for i, node in enumerate(self.nodes[1:-1])  # initiator and target don't cause fees
         ]
 
@@ -240,8 +240,8 @@ class TokenNetwork:
             updating_participant=message.updating_participant,
             other_participant=message.other_participant,
         )
-        channel_view_to_partner.fee_schedule = message.fee_schedule
-        channel_view_from_partner.fee_schedule = message.fee_schedule.reversed()
+        channel_view_to_partner.fee_schedule_sender = message.fee_schedule
+        channel_view_from_partner.fee_schedule_receiver = message.fee_schedule.reversed()
 
     @staticmethod
     def edge_weight(
@@ -257,7 +257,7 @@ class TokenNetwork:
         # Fees for initiator and target are included here. This promotes routes
         # that are nice to the initiator's and target's capacities, but it's
         # inconsistent with the estimated total fee.
-        fee_weight = (view.fee_out(amount) + view_from_partner.fee_in(amount)) / 1e18 * fee_penalty
+        fee_weight = (view.fee_sender(amount) + view.fee_receiver(amount)) / 1e18 * fee_penalty
         no_refund_weight = 0
         if view_from_partner.capacity < int(float(amount) * 1.1):
             no_refund_weight = 1
