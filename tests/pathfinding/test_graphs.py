@@ -54,7 +54,7 @@ def test_edge_weight(addresses):
     )
 
     # absolute fee
-    view.fee_schedule.flat = FeeAmount(int(0.03e18))
+    view.fee_schedule_sender.flat = FeeAmount(int(0.03e18))
     assert (
         TokenNetwork.edge_weight(
             dict(), dict(view=view), dict(view=view_partner), amount=amount, fee_penalty=100
@@ -63,8 +63,8 @@ def test_edge_weight(addresses):
     )
 
     # relative fee
-    view.fee_schedule.flat = FeeAmount(0)
-    view.fee_schedule.proportional = 0.01
+    view.fee_schedule_sender.flat = FeeAmount(0)
+    view.fee_schedule_sender.proportional = 0.01
     assert (
         TokenNetwork.edge_weight(
             dict(), dict(view=view), dict(view=view_partner), amount=amount, fee_penalty=100
@@ -89,7 +89,7 @@ def test_routing_simple(token_network_model: TokenNetwork, addresses: List[Addre
     view10: ChannelView = token_network_model.G[addresses[1]][addresses[0]]["view"]
 
     assert view01.deposit == 100
-    assert view01.fee_schedule.flat == 0
+    assert view01.fee_schedule_sender.flat == 0
     assert view01.capacity == 90
     assert view10.capacity == 60
 
@@ -122,7 +122,7 @@ def test_capacity_check(token_network_model: TokenNetwork, addresses: List[Addre
 
     # New let's add mediation fees to the channel 0->1.
     model_with_fees = deepcopy(token_network_model)
-    model_with_fees.G[addresses[1]][addresses[0]]["view"].fee_schedule.flat = 1
+    model_with_fees.G[addresses[1]][addresses[0]]["view"].fee_schedule_sender.flat = 1
     # The transfer from 4->1 must now include 1 Token for the mediation fee
     # which will be payed for the 1->0 channel in addition to the payment
     # value of 35. But 35 + 1 exceeds the capacity for channel 4->1, which is

@@ -21,7 +21,8 @@ CREATE TABLE channel_view (
     reveal_timeout  HEX_INT NOT NULL,
     deposit         HEX_INT NOT NULL,
     update_nonce    HEX_INT,
-    fee_schedule    JSON,
+    fee_schedule_sender    JSON,
+    fee_schedule_receiver  JSON,
     PRIMARY KEY (token_network_address, channel_id, participant1),
     FOREIGN KEY (token_network_address)
         REFERENCES token_network(address)

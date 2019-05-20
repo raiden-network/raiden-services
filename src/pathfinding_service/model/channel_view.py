@@ -1,6 +1,6 @@
 from bisect import bisect_right
 from dataclasses import dataclass, field
-from typing import Callable, ClassVar, List, Optional, Sequence, Type
+from typing import ClassVar, List, Optional, Sequence, Type
 
 import marshmallow
 from marshmallow_dataclass import add_schema
@@ -27,7 +27,8 @@ class Interpolate:  # pylint: disable=too-few-public-methods
         self.slopes = [(y2 - y1) / (x2 - x1) for x1, x2, y1, y2 in intervals]
 
     def __call__(self, x: float) -> float:
-        assert self.x_list[0] <= x <= self.x_list[-1]
+        if not self.x_list[0] <= x <= self.x_list[-1]:
+            raise ValueError("x out of bounds!")
         if x == self.x_list[-1]:
             return self.y_list[-1]
         i = bisect_right(self.x_list, x) - 1
@@ -40,30 +41,32 @@ class FeeSchedule:
     flat: FeeAmount = FeeAmount(0)
     proportional: float = FeeAmount(0)
     imbalance_penalty: Optional[List[List[TokenAmount]]] = None
-    _penalty_func: Callable = field(init=False)
+    _penalty_func: Interpolate = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
         if self.imbalance_penalty:
             assert isinstance(self.imbalance_penalty, list)
             x_list, y_list = tuple(zip(*self.imbalance_penalty))
-            # see https://github.com/python/mypy/issues/2427 for type problem
-            self._penalty_func = Interpolate(x_list, y_list)  # type: ignore
-        else:
-            self._penalty_func = lambda amount: 0  # type: ignore
+            self._penalty_func = Interpolate(x_list, y_list)
 
     def fee(self, amount: TokenAmount, capacity: TokenAmount) -> FeeAmount:
-        imbalance_fee = self._penalty_func(capacity + amount) - self._penalty_func(capacity)
+        if self.imbalance_penalty:
+            # Total channel capacity - node capacity = balance (used as x-axis for the penalty)
+            balance = self._penalty_func.x_list[-1] - capacity
+            imbalance_fee = self._penalty_func(balance + amount) - self._penalty_func(balance)
+        else:
+            imbalance_fee = 0
         return FeeAmount(round(self.flat + amount * self.proportional + imbalance_fee))
 
     def reversed(self) -> "FeeSchedule":
         if not self.imbalance_penalty:
             return self
-        max_x = max(x for x, penalty in self.imbalance_penalty)
+        max_penalty = max(penalty for x, penalty in self.imbalance_penalty)
         return FeeSchedule(
             flat=self.flat,
             proportional=self.proportional,
             imbalance_penalty=[
-                [TokenAmount(max_x - x), penalty] for x, penalty in self.imbalance_penalty
+                [x, TokenAmount(max_penalty - penalty)] for x, penalty in self.imbalance_penalty
             ],
         )
 
@@ -86,7 +89,8 @@ class ChannelView:
     reveal_timeout: int = DEFAULT_REVEAL_TIMEOUT
     deposit: TokenAmount = TokenAmount(0)
     update_nonce: Nonce = Nonce(0)
-    fee_schedule: FeeSchedule = field(default_factory=FeeSchedule)
+    fee_schedule_sender: FeeSchedule = field(default_factory=FeeSchedule)
+    fee_schedule_receiver: FeeSchedule = field(default_factory=FeeSchedule)
     Schema: ClassVar[Type[marshmallow.Schema]]
 
     def __post_init__(self) -> None:
@@ -106,13 +110,13 @@ class ChannelView:
         if reveal_timeout is not None:
             self.reveal_timeout = reveal_timeout
 
-    def fee_out(self, amount: TokenAmount) -> int:
+    def fee_sender(self, amount: TokenAmount) -> int:
         """Return the mediation fee for this channel when transferring the given amount"""
-        return int(self.fee_schedule.flat + amount * self.fee_schedule.proportional)
+        return self.fee_schedule_sender.fee(amount, self.capacity)
 
-    def fee_in(self, amount: TokenAmount) -> int:
+    def fee_receiver(self, amount: TokenAmount) -> int:
         """Return the mediation fee for this channel when receiving the given amount"""
-        return int(self.fee_schedule.flat + amount * self.fee_schedule.proportional)
+        return self.fee_schedule_receiver.fee(amount, self.capacity)
 
     def __repr__(self) -> str:
         return "<ChannelView from={} to={} capacity={}>".format(

@@ -151,14 +151,16 @@ class PFSDatabase(BaseDatabase):
             "update_nonce",
         ):
             cv_dict[key] = hex256(cv_dict[key])
-        cv_dict["fee_schedule"] = json.dumps(cv_dict["fee_schedule"])
+        cv_dict["fee_schedule_sender"] = json.dumps(cv_dict["fee_schedule_sender"])
+        cv_dict["fee_schedule_receiver"] = json.dumps(cv_dict["fee_schedule_receiver"])
         self.upsert("channel_view", cv_dict)
 
     def get_channel_views(self) -> Iterator[ChannelView]:
         query = "SELECT * FROM channel_view"
         for row in self.conn.execute(query):
             cv_dict = dict(zip(row.keys(), row))
-            cv_dict["fee_schedule"] = json.loads(cv_dict["fee_schedule"])
+            cv_dict["fee_schedule_sender"] = json.loads(cv_dict["fee_schedule_sender"])
+            cv_dict["fee_schedule_receiver"] = json.loads(cv_dict["fee_schedule_receiver"])
             yield ChannelView.Schema(strict=True).load(cv_dict)[0]
 
     def delete_channel_views(self, channel_id: ChannelID) -> None:
