@@ -1,6 +1,7 @@
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from itertools import islice
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 import networkx as nx
 import structlog
@@ -21,6 +22,20 @@ from raiden.utils.typing import Address, ChannelID, FeeAmount, TokenAmount, Toke
 log = structlog.get_logger(__name__)
 
 
+def window(seq: Sequence, n: int = 2) -> Iterable[tuple]:
+    """Returns a sliding window (of width n) over data from the iterable
+    s -> (s0,s1,...s[n-1]), (s1,s2,...,sn), ...
+    See https://stackoverflow.com/a/6822773/114926
+    """
+    remaining_elements = iter(seq)
+    result = tuple(islice(remaining_elements, n))
+    if len(result) == n:
+        yield result
+    for elem in remaining_elements:
+        result = result[1:] + (elem,)
+        yield result
+
+
 class Path:
     def __init__(
         self,
@@ -33,11 +48,17 @@ class Path:
         self.nodes = nodes
         self.value = value
         self.address_to_reachability = address_to_reachability
-        self.fees: List[FeeAmount] = [
-            self.G[self.nodes[i]][self.nodes[i + 1]]["view"].fee_receiver(self.value)
-            + self.G[self.nodes[i + 1]][self.nodes[i + 2]]["view"].fee_sender(self.value)
-            for i, node in enumerate(self.nodes[1:-1])  # initiator and target don't cause fees
-        ]
+        self.fees: List[FeeAmount] = []
+        self._calc_fees()
+
+    def _calc_fees(self) -> None:
+        total = self.value
+        for prev_node, mediator, next_node in reversed(list(window(self.nodes, 3))):
+            fee_for_this_mediator = self.G[prev_node][mediator]["view"].fee_receiver(
+                total
+            ) + self.G[mediator][next_node]["view"].fee_sender(total)
+            total += fee_for_this_mediator
+            self.fees.append(fee_for_this_mediator)
 
     @property
     def edge_attrs(self) -> Iterable[dict]:

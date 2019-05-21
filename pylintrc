@@ -245,6 +245,7 @@ good-names=i,
            x,
            n,
            tb,  # traceback
+           tn,  # token network
            cv,  # channel view
            ms,  # monitoring service
            mr,  # monitor request
