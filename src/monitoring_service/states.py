@@ -4,6 +4,7 @@ from typing import Iterable, Optional
 from eth_utils import decode_hex, encode_hex
 from web3 import Web3
 
+from raiden.constants import EMPTY_SIGNATURE
 from raiden.messages import RequestMonitoring, SignedBlindedBalanceProof
 from raiden.utils.signer import LocalSigner, recover
 from raiden.utils.signing import pack_data
@@ -131,7 +132,9 @@ class HashedBalanceProof:
             balance_hash=decode_hex(self.balance_hash),
         )
         request_monitoring = RequestMonitoring(
-            onchain_balance_proof=partner_signed_self, reward_amount=reward_amount
+            balance_proof=partner_signed_self,
+            reward_amount=reward_amount,
+            signature=EMPTY_SIGNATURE,
         )
         request_monitoring.sign(non_closing_signer)
         return request_monitoring

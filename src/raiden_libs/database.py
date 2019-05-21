@@ -1,6 +1,6 @@
 import os
 import sqlite3
-from typing import Any, Dict
+from typing import Any, Dict, Union
 
 import structlog
 from eth_utils import to_checksum_address
@@ -18,13 +18,15 @@ def convert_hex(raw: bytes) -> int:
 sqlite3.register_converter("HEX_INT", convert_hex)
 
 
-def hex256(x: int) -> str:
+def hex256(x: Union[int, str]) -> str:
     """Hex encodes values up to 256 bits into a fixed length
 
     By including this amount of leading zeros in the hex string, lexicographic
     and numeric ordering are identical. This facilitates working with these
     numbers in the database without native uint256 support.
     """
+    if isinstance(x, str):
+        x = int(x)
     return "0x{:064x}".format(x)
 
 

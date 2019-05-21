@@ -247,7 +247,7 @@ class PathfindingService(gevent.Greenlet):
             try:
                 self.on_pfs_update(message)
             except InvalidCapacityUpdate as x:
-                log.info(str(x), **message.to_dict())
+                log.info(str(x), **asdict(message))
         else:
             log.info("Ignoring unknown message type")
 
@@ -300,7 +300,7 @@ class PathfindingService(gevent.Greenlet):
     def on_pfs_update(self, message: UpdatePFS) -> None:
         token_network = self._validate_pfs_update(message)
 
-        log.info("Received Capacity Update", **message.to_dict())
+        log.info("Received Capacity Update", **asdict(message))
         self.database.upsert_capacity_update(message)
 
         # Follow presence for the channel participants

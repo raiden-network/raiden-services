@@ -39,11 +39,11 @@ def test_retries(make_post_request_mock):
     # check timings
     assert make_post_request_mock.call_count == 5
     expected_times = [0, 0.01, 0.01 + 0.02, 0.01 + 0.02 + 0.04, 0.01 + 0.02 + 0.04 + 0.08]
-    assert retry_times == pytest.approx(expected_times, abs=0.002, rel=0.3)
+    assert retry_times == pytest.approx(expected_times, abs=0.003, rel=0.3)
 
     # try again to make sure that each request starts with a clean backoff
     start_time = time()
     retry_times = []
     with pytest.raises(requests.exceptions.ConnectionError):
         web3.eth.blockNumber()
-    assert retry_times == pytest.approx(expected_times, abs=0.002, rel=0.3)
+    assert retry_times == pytest.approx(expected_times, abs=0.003, rel=0.3)

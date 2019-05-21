@@ -91,7 +91,7 @@ class PFSDatabase(BaseDatabase):
         self.conn.execute("UPDATE blockchain SET latest_known_block = ?", [latest_known_block])
 
     def upsert_iou(self, iou: IOU) -> None:
-        iou_dict = IOU.Schema(strict=True, exclude=["receiver", "chain_id"]).dump(iou)[0]
+        iou_dict = IOU.Schema(exclude=["receiver", "chain_id"]).dump(iou)
         iou_dict["one_to_n_address"] = to_checksum_address(iou_dict["one_to_n_address"])
         for key in ("amount", "expiration_block"):
             iou_dict[key] = hex256(iou_dict[key])
@@ -130,7 +130,7 @@ class PFSDatabase(BaseDatabase):
         for row in self.conn.execute(query, args):
             iou_dict = dict(zip(row.keys(), row))
             iou_dict["receiver"] = to_checksum_address(self.pfs_address)
-            yield IOU.Schema(strict=True).load(iou_dict)[0]
+            yield IOU.Schema().load(iou_dict)
 
     def get_iou(
         self, sender: Address, expiration_block: BlockNumber = None, claimed: bool = None
@@ -141,7 +141,7 @@ class PFSDatabase(BaseDatabase):
             return None
 
     def upsert_channel_view(self, channel_view: ChannelView) -> None:
-        cv_dict = ChannelView.Schema(strict=True, exclude=["state"]).dump(channel_view)[0]
+        cv_dict = ChannelView.Schema().dump(channel_view)
         for key in (
             "channel_id",
             "settle_timeout",
@@ -161,7 +161,7 @@ class PFSDatabase(BaseDatabase):
             cv_dict = dict(zip(row.keys(), row))
             cv_dict["fee_schedule_sender"] = json.loads(cv_dict["fee_schedule_sender"])
             cv_dict["fee_schedule_receiver"] = json.loads(cv_dict["fee_schedule_receiver"])
-            yield ChannelView.Schema(strict=True).load(cv_dict)[0]
+            yield ChannelView.Schema().load(cv_dict)
 
     def delete_channel_views(self, channel_id: ChannelID) -> None:
         self.conn.execute("DELETE FROM channel_view WHERE channel_id = ?", [channel_id])

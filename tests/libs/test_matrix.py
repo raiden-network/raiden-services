@@ -9,6 +9,7 @@ from eth_utils import decode_hex, encode_hex, to_canonical_address
 from monitoring_service.states import HashedBalanceProof
 from raiden.exceptions import InvalidProtocolMessage
 from raiden.messages import RequestMonitoring
+from raiden.storage.serialization.serializer import DictSerializer
 from raiden.utils.typing import Address as BytesAddress, ChainID, ChannelID, Nonce, TokenAmount
 from raiden_contracts.tests.utils import EMPTY_LOCKSROOT
 from raiden_libs.matrix import deserialize_messages, matrix_http_retry_delay, message_from_dict
@@ -38,21 +39,21 @@ def request_monitoring_message(token_network, get_accounts, get_private_key) -> 
 
 
 def test_message_from_dict(request_monitoring_message):
-    message_json = request_monitoring_message.to_dict()
+    message_json = DictSerializer.serialize(request_monitoring_message)
 
     # Test happy path
     message = message_from_dict(message_json)
     assert message == request_monitoring_message
 
     # Test unknown message type
-    message_json["type"] = "SomeNonexistantMessage"
+    message_json["_type"] = "SomeNonexistantMessage"
     with pytest.raises(InvalidProtocolMessage) as excinfo:
         message_from_dict(message_json)
 
     assert 'Invalid message type (data["type"]' in str(excinfo.value)
 
     # Test non-existant message type
-    del message_json["type"]
+    del message_json["_type"]
     with pytest.raises(InvalidProtocolMessage) as excinfo:
         message_from_dict(message_json)
 
@@ -65,18 +66,8 @@ def test_deserialize_messages(message_data):
     assert len(messages) == 0
 
 
-def test_deserialize_messages_invalid_message_type(request_monitoring_message):
-    message_json = request_monitoring_message.to_dict()
-    message_json["type"] = "SomeNonexistantMessage"
-
-    messages = deserialize_messages(
-        data=json.dumps(message_json), peer_address=INVALID_PEER_ADDRESS
-    )
-    assert len(messages) == 0
-
-
 def test_deserialize_messages_invalid_message_class(request_monitoring_message):
-    message_json = request_monitoring_message.to_dict()
+    message_json = DictSerializer.serialize(request_monitoring_message)
 
     with patch("raiden_libs.matrix.message_from_dict", new=Mock()):
         messages = deserialize_messages(
@@ -86,7 +77,7 @@ def test_deserialize_messages_invalid_message_class(request_monitoring_message):
 
 
 def test_deserialize_messages_invalid_sender(request_monitoring_message):
-    message_json = request_monitoring_message.to_dict()
+    message_json = DictSerializer.serialize(request_monitoring_message)
 
     messages = deserialize_messages(
         data=json.dumps(message_json), peer_address=INVALID_PEER_ADDRESS
@@ -95,7 +86,7 @@ def test_deserialize_messages_invalid_sender(request_monitoring_message):
 
 
 def test_deserialize_messages_valid_message(request_monitoring_message):
-    message_json = request_monitoring_message.to_dict()
+    message_json = DictSerializer.serialize(request_monitoring_message)
 
     messages = deserialize_messages(
         data=json.dumps(message_json), peer_address=request_monitoring_message.sender
@@ -104,7 +95,7 @@ def test_deserialize_messages_valid_message(request_monitoring_message):
 
 
 def test_deserialize_messages_valid_messages(request_monitoring_message):
-    message_json = request_monitoring_message.to_dict()
+    message_json = DictSerializer.serialize(request_monitoring_message)
     raw_string = json.dumps(message_json) + "\n" + json.dumps(message_json)
 
     messages = deserialize_messages(

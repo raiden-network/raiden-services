@@ -193,7 +193,7 @@ def test_get_paths_validation(
         api_sut.pathfinding_service.address,
         one_to_n_address=api_sut.one_to_n_address,
     )
-    good_iou_dict = iou.Schema().dump(iou)[0]
+    good_iou_dict = iou.Schema().dump(iou)
 
     # malformed iou
     bad_iou_dict = good_iou_dict.copy()
@@ -321,7 +321,7 @@ def test_get_iou(api_sut: ServiceApi, api_url: str, token_network_model: TokenNe
     # Is returned IOU the one save into the db?
     response = requests.get(url, params=params)
     assert response.status_code == 200, response.json()
-    iou_dict = IOU.Schema(exclude=["claimed"]).dump(iou)[0]
+    iou_dict = IOU.Schema(exclude=["claimed"]).dump(iou)
     assert response.json()["last_iou"] == iou_dict
 
     # Invalid signatures must fail
