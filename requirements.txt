@@ -1,4 +1,4 @@
-git+https://github.com/raiden-network/raiden.git@aab0172eaa2306e8aa6dc9f540eaf7b9c654f85f
+git+https://github.com/raiden-network/raiden.git@d348ba2256774daa25e866aaf219a44ebbd70c65
 
 raiden-contracts==0.19.1
 
@@ -22,5 +22,5 @@ gevent==1.3.6
 networkx==2.1
 requests==2.20.0
 
-marshmallow==2.15.4
-marshmallow-dataclass==0.5.5
+marshmallow==3.0.0rc6
+marshmallow-dataclass==6.0.0c2

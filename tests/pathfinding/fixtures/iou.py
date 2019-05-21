@@ -30,7 +30,7 @@ def make_iou(one_to_n_contract):
         iou_dict["signature"] = encode_hex(
             sign_one_to_n_iou(privatekey=sender_priv_key, **iou_dict)
         )
-        iou = IOU.Schema(strict=True).load(iou_dict)[0]
+        iou = IOU.Schema().load(iou_dict)
         iou.claimed = False
         return iou
 

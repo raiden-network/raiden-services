@@ -79,10 +79,10 @@ class PathfinderResource(Resource):
         json = request.get_json()
         if not json:
             raise exceptions.ApiException("JSON payload expected")
-        req, errors = req_class.Schema().load(json)  # type: ignore
-        if errors:
-            raise exceptions.InvalidRequest(**errors)
-        return req
+        try:
+            return req_class.Schema().load(json)  # type: ignore
+        except marshmallow.ValidationError as ex:
+            raise exceptions.InvalidRequest(**ex.messages)
 
 
 @add_schema
@@ -91,7 +91,7 @@ class PathRequest:
     """A HTTP request to PathsResource"""
 
     from_: Address = field(
-        metadata=dict(marshmallow_field=ChecksumAddress(required=True, load_from="from"))
+        metadata=dict(marshmallow_field=ChecksumAddress(required=True, data_key="from"))
     )
     to: Address = field(metadata=dict(marshmallow_field=ChecksumAddress(required=True)))
     value: TokenAmount = field(metadata=dict(validate=marshmallow.validate.Range(min=1)))
@@ -254,7 +254,7 @@ class IOURequest:
     sender: Address = field(metadata={"marshmallow_field": ChecksumAddress(required=True)})
     receiver: Address = field(metadata={"marshmallow_field": ChecksumAddress(required=True)})
     timestamp: datetime
-    timestamp_str: str = field(metadata={"load_from": "timestamp"})
+    timestamp_str: str = field(metadata=dict(data_key="timestamp", load_only=True))
     signature: Signature = field(metadata={"marshmallow_field": HexedBytes()})
     Schema: ClassVar[Type[marshmallow.Schema]]
 
@@ -271,9 +271,10 @@ class IOUResource(PathfinderResource):
     def get(
         self, token_network_address: str  # pylint: disable=unused-argument
     ) -> Tuple[dict, int]:
-        iou_request, errors = IOURequest.Schema().load(request.args)
-        if errors:
-            raise exceptions.InvalidRequest(**errors)
+        try:
+            iou_request = IOURequest.Schema().load(request.args)
+        except marshmallow.ValidationError as ex:
+            raise exceptions.InvalidRequest(**ex.messages)
         if not iou_request.is_signature_valid():
             raise exceptions.InvalidSignature
         if iou_request.timestamp < datetime.utcnow() - MAX_AGE_OF_IOU_REQUESTS:
@@ -283,7 +284,7 @@ class IOUResource(PathfinderResource):
             sender=iou_request.sender, claimed=False
         )
         if last_iou:
-            last_iou = IOU.Schema(strict=True, exclude=["claimed"]).dump(last_iou)[0]
+            last_iou = IOU.Schema(exclude=["claimed"]).dump(last_iou)
             return {"last_iou": last_iou}, 200
 
         return {"last_iou": None}, 404

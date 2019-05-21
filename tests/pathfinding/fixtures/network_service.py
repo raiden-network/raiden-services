@@ -8,6 +8,7 @@ from web3.contract import Contract
 
 from pathfinding_service.model.token_network import TokenNetwork
 from pathfinding_service.service import PathfindingService
+from raiden.constants import EMPTY_SIGNATURE
 from raiden.messages import UpdatePFS
 from raiden.network.transport.matrix import AddressReachability
 from raiden.transfer.identifiers import CanonicalIdentifier
@@ -220,6 +221,7 @@ def populate_token_network() -> Callable:
                     other_capacity=p2_capacity,
                     reveal_timeout=p1_reveal_timeout,
                     mediation_fee=FeeAmount(0),
+                    signature=EMPTY_SIGNATURE,
                 ),
                 updating_capacity_partner=TokenAmount(0),
                 other_capacity_partner=TokenAmount(0),
@@ -239,6 +241,7 @@ def populate_token_network() -> Callable:
                     other_capacity=p1_capacity,
                     reveal_timeout=p2_reveal_timeout,
                     mediation_fee=FeeAmount(0),
+                    signature=EMPTY_SIGNATURE,
                 ),
                 updating_capacity_partner=TokenAmount(p1_capacity),
                 other_capacity_partner=TokenAmount(p2_capacity),

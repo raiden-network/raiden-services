@@ -11,7 +11,7 @@ from eth_utils import decode_hex
 from pathfinding_service.exceptions import InvalidCapacityUpdate
 from pathfinding_service.model import TokenNetwork
 from pathfinding_service.service import PathfindingService
-from raiden.constants import UINT256_MAX
+from raiden.constants import EMPTY_SIGNATURE, UINT256_MAX
 from raiden.messages import UpdatePFS
 from raiden.transfer.identifiers import CanonicalIdentifier
 from raiden.utils.signer import LocalSigner
@@ -102,6 +102,7 @@ def get_updatepfs_message(  # pylint: disable=too-many-arguments
         other_capacity=other_capacity,
         reveal_timeout=reveal_timeout,
         mediation_fee=mediation_fee,
+        signature=EMPTY_SIGNATURE,
     )
 
     updatepfs_message.sign(LocalSigner(privkey_signer))

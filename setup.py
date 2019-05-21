@@ -8,7 +8,7 @@ from typing import List
 from setuptools import find_packages, setup
 
 REQ_REPLACE = {
-    "git+https://github.com/raiden-network/raiden.git@aab0172eaa2306e8aa6dc9f540eaf7b9c654f85f": "raiden"  # noqa
+    "git+https://github.com/raiden-network/raiden.git@d348ba2256774daa25e866aaf219a44ebbd70c65": "raiden"  # noqa
 }
 
 DESCRIPTION = "Raiden Services contain additional tools for the Raiden Network."

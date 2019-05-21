@@ -27,6 +27,7 @@ from raiden.settings import (
     DEFAULT_TRANSPORT_MATRIX_RETRY_INTERVAL,
     DEFAULT_TRANSPORT_RETRIES_BEFORE_BACKOFF,
 )
+from raiden.storage.serialization import DictSerializer
 from raiden.utils.cli import get_matrix_servers
 from raiden.utils.signer import LocalSigner
 from raiden.utils.typing import Address, ChainID
@@ -35,20 +36,18 @@ log = structlog.get_logger(__name__)
 
 
 SERVICE_MESSAGES: Tuple = (UpdatePFS, RequestMonitoring)
-CLASSNAME_TO_CLASS: Dict[str, Message] = {klass.__name__: klass for klass in SERVICE_MESSAGES}
+VALID_MESSAGE_TYPES = set(klass.__module__ + "." + klass.__name__ for klass in SERVICE_MESSAGES)
 
 
-def message_from_dict(data: dict) -> Message:
-    try:
-        klass: Message = CLASSNAME_TO_CLASS[data["type"]]
-    except KeyError:
-        if "type" in data:
-            raise InvalidProtocolMessage(
-                'Invalid message type (data["type"] = {})'.format(data["type"])
-            ) from None
+def message_from_dict(data: Dict[str, Any]) -> Message:
+    if "_type" not in data:
         raise InvalidProtocolMessage("Invalid message data. Can not find the data type") from None
+    if data["_type"] not in VALID_MESSAGE_TYPES:
+        raise InvalidProtocolMessage(
+            'Invalid message type (data["type"] = {})'.format(data["_type"])
+        ) from None
 
-    return klass.from_dict(data)
+    return DictSerializer.deserialize(data)
 
 
 def deserialize_messages(data: str, peer_address: Address) -> List[SignedMessage]:
