@@ -39,7 +39,7 @@ class Interpolate:  # pylint: disable=too-few-public-methods
 class FeeSchedule:
     # pylint: disable=not-an-iterable
     flat: FeeAmount = FeeAmount(0)
-    proportional: float = FeeAmount(0)
+    proportional: float = 0
     imbalance_penalty: Optional[List[List[TokenAmount]]] = None
     _penalty_func: Interpolate = field(init=False, repr=False)
 
@@ -110,11 +110,11 @@ class ChannelView:
         if reveal_timeout is not None:
             self.reveal_timeout = reveal_timeout
 
-    def fee_sender(self, amount: TokenAmount) -> int:
+    def fee_sender(self, amount: TokenAmount) -> FeeAmount:
         """Return the mediation fee for this channel when transferring the given amount"""
         return self.fee_schedule_sender.fee(amount, self.capacity)
 
-    def fee_receiver(self, amount: TokenAmount) -> int:
+    def fee_receiver(self, amount: TokenAmount) -> FeeAmount:
         """Return the mediation fee for this channel when receiving the given amount"""
         return self.fee_schedule_receiver.fee(amount, self.capacity)
 
