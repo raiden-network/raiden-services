@@ -131,7 +131,7 @@ class HashedBalanceProof:
             balance_hash=decode_hex(self.balance_hash),
         )
         request_monitoring = RequestMonitoring(
-            onchain_balance_proof=partner_signed_self, reward_amount=reward_amount
+            balance_proof=partner_signed_self, reward_amount=reward_amount
         )
         request_monitoring.sign(non_closing_signer)
         return request_monitoring
