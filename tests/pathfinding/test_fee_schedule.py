@@ -4,7 +4,14 @@ from pathfinding_service.model.channel_view import FeeSchedule
 from pathfinding_service.model.token_network import FeeUpdate, TokenNetwork
 from raiden.network.transport.matrix.utils import AddressReachability
 from raiden.transfer.identifiers import CanonicalIdentifier
-from raiden.utils.typing import ChainID, FeeAmount as FA, TokenAmount as TA
+from raiden.utils.typing import (
+    Address,
+    ChainID,
+    ChannelID,
+    FeeAmount as FA,
+    TokenAmount as TA,
+    TokenNetworkAddress,
+)
 
 
 def test_basic_fee():
@@ -34,25 +41,31 @@ def test_imbalance_penalty():
 
 class PrettyBytes(bytes):
     def __repr__(self):
-        return "b%x" % int.from_bytes(self, byteorder="big")
+        return "a%x" % int.from_bytes(self, byteorder="big")
 
 
-def a(int_addr):  # pylint: disable=invalid-name
-    return PrettyBytes([0] * 19 + [int_addr])
+def a(int_addr) -> Address:  # pylint: disable=invalid-name
+    """Create an address from an int with a short representation.
+
+    This is helpful in tests because
+    * Address creation is concise
+    * You can easily match `a(1)` in your test with `a1` in your test output
+    """
+    return Address(PrettyBytes([0] * 19 + [int_addr]))
 
 
 def test_fees_in_routing():
-    network = TokenNetwork(token_network_address=a(255))
+    network = TokenNetwork(token_network_address=TokenNetworkAddress(a(255)))
     network.address_to_reachability = {
         a(1): AddressReachability.REACHABLE,
         a(2): AddressReachability.REACHABLE,
         a(3): AddressReachability.REACHABLE,
     }
     network.handle_channel_opened_event(
-        channel_identifier=a(100), participant1=a(1), participant2=a(2), settle_timeout=100
+        channel_identifier=ChannelID(100), participant1=a(1), participant2=a(2), settle_timeout=100
     )
     network.handle_channel_opened_event(
-        channel_identifier=a(101), participant1=a(2), participant2=a(3), settle_timeout=100
+        channel_identifier=ChannelID(101), participant1=a(2), participant2=a(3), settle_timeout=100
     )
     for _, _, cv in network.G.edges(data="view"):
         cv.capacity = 100
@@ -64,7 +77,7 @@ def test_fees_in_routing():
     assert result[0]["estimated_fee"] == 0
 
     def set_fee(node1, node2, fee_schedule: FeeSchedule):
-        channel_id = network.G[node1][node2]["view"].channel_id
+        channel_id = network.G[a(node1)][a(node2)]["view"].channel_id
         network.handle_channel_fee_update(
             FeeUpdate(
                 CanonicalIdentifier(
@@ -72,37 +85,37 @@ def test_fees_in_routing():
                     token_network_address=network.address,
                     channel_identifier=channel_id,
                 ),
-                node1,
-                node2,
+                a(node1),
+                a(node2),
                 fee_schedule,
             )
         )
 
     def estimate_fee(initator, target, value=TA(10), max_paths=1):
-        result = network.get_paths(initator, target, value=value, max_paths=max_paths)
+        result = network.get_paths(a(initator), a(target), value=value, max_paths=max_paths)
         return result[0]["estimated_fee"]
 
     # Fees for the initiator are ignored
-    set_fee(a(1), a(2), FeeSchedule(flat=FA(1)))
-    assert estimate_fee(a(1), a(3)) == 0
+    set_fee(1, 2, FeeSchedule(flat=FA(1)))
+    assert estimate_fee(1, 3) == 0
 
     # Node 2 demands fees for incoming transfers
-    set_fee(a(2), a(1), FeeSchedule(flat=FA(1)))
-    assert estimate_fee(a(1), a(3)) == 1
+    set_fee(2, 1, FeeSchedule(flat=FA(1)))
+    assert estimate_fee(1, 3) == 1
 
     # Node 2 demands fees for outgoing transfers
-    set_fee(a(2), a(3), FeeSchedule(flat=FA(1)))
-    assert estimate_fee(a(1), a(3)) == 2
+    set_fee(2, 3, FeeSchedule(flat=FA(1)))
+    assert estimate_fee(1, 3) == 2
 
     # Same fee in the opposite direction
-    assert estimate_fee(a(3), a(1)) == 2
+    assert estimate_fee(3, 1) == 2
 
     # Reset fees to zero
-    set_fee(a(1), a(2), FeeSchedule())
-    set_fee(a(2), a(1), FeeSchedule())
-    set_fee(a(2), a(3), FeeSchedule())
+    set_fee(1, 2, FeeSchedule())
+    set_fee(2, 1, FeeSchedule())
+    set_fee(2, 3, FeeSchedule())
 
     # Now let's try imbalance fees
-    set_fee(a(2), a(3), FeeSchedule(imbalance_penalty=[[TA(0), TA(0)], [TA(200), TA(200)]]))
-    assert estimate_fee(a(1), a(3)) == 10
-    assert estimate_fee(a(3), a(1)) == -10
+    set_fee(2, 3, FeeSchedule(imbalance_penalty=[[TA(0), TA(0)], [TA(200), TA(200)]]))
+    assert estimate_fee(1, 3) == 10
+    assert estimate_fee(3, 1) == -10
