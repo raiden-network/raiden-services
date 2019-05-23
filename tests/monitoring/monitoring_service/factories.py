@@ -7,7 +7,8 @@ from monitoring_service.states import (
     OnChainUpdateStatus,
     UnsignedMonitorRequest,
 )
-from raiden.constants import UINT64_MAX, UINT256_MAX
+from raiden.constants import UINT256_MAX
+from raiden.tests.utils.factories import make_transaction_hash
 from raiden.utils.typing import (
     BlockNumber,
     ChainID,
@@ -17,7 +18,6 @@ from raiden.utils.typing import (
     TokenNetworkAddress,
 )
 from raiden_contracts.constants import ChannelState
-from raiden_libs.types import TransactionHash
 from raiden_libs.utils import private_key_to_address
 
 DEFAULT_TOKEN_NETWORK_ADDRESS = TokenNetworkAddress(bytes([1] * 20))
@@ -67,7 +67,7 @@ def create_channel(update_status: OnChainUpdateStatus = None) -> Channel:
         state=random.choice(list(ChannelState)),
         closing_block=BlockNumber(random.randint(0, UINT256_MAX)),
         closing_participant=DEFAULT_PARTICIPANT1,
-        closing_tx_hash=TransactionHash("%x" % random.randint(0, UINT64_MAX)),
-        claim_tx_hash=TransactionHash("%x" % random.randint(0, UINT64_MAX)),
+        closing_tx_hash=make_transaction_hash(),
+        claim_tx_hash=make_transaction_hash(),
         update_status=update_status,
     )

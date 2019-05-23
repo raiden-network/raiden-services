@@ -3,7 +3,7 @@ import sqlite3
 from typing import List, Optional, Union, cast
 
 import structlog
-from eth_utils import decode_hex, to_canonical_address, to_checksum_address, to_hex
+from eth_utils import decode_hex, encode_hex, to_canonical_address, to_checksum_address, to_hex
 
 from monitoring_service.events import (
     ActionClaimRewardTriggeredEvent,
@@ -16,7 +16,14 @@ from monitoring_service.states import (
     MonitorRequest,
     OnChainUpdateStatus,
 )
-from raiden.utils.typing import Address, BlockNumber, ChainID, ChannelID, TokenNetworkAddress
+from raiden.utils.typing import (
+    Address,
+    BlockNumber,
+    ChainID,
+    ChannelID,
+    TokenNetworkAddress,
+    TransactionHash,
+)
 from raiden_libs.database import BaseDatabase, hex256
 
 SubEvent = Union[ActionMonitoringTriggeredEvent, ActionClaimRewardTriggeredEvent]
@@ -93,8 +100,8 @@ class SharedDatabase(BaseDatabase):
             channel.state,
             hex256(channel.closing_block) if channel.closing_block else None,
             channel.closing_participant,
-            channel.closing_tx_hash,
-            channel.claim_tx_hash,
+            encode_hex(channel.closing_tx_hash) if channel.closing_tx_hash else None,
+            encode_hex(channel.claim_tx_hash) if channel.claim_tx_hash else None,
         ]
         if channel.update_status:
             values += [
@@ -128,6 +135,11 @@ class SharedDatabase(BaseDatabase):
         kwargs["token_network_address"] = decode_hex(kwargs["token_network_address"])
         kwargs["participant1"] = decode_hex(kwargs["participant1"])
         kwargs["participant2"] = decode_hex(kwargs["participant2"])
+        if kwargs["closing_tx_hash"] is not None:
+            kwargs["closing_tx_hash"] = decode_hex(kwargs["closing_tx_hash"])
+        if kwargs["claim_tx_hash"] is not None:
+            kwargs["claim_tx_hash"] = decode_hex(kwargs["claim_tx_hash"])
+
         return Channel(
             update_status=OnChainUpdateStatus(
                 update_sender_address=decode_hex(row["update_status_sender"]),
@@ -200,17 +212,21 @@ class SharedDatabase(BaseDatabase):
     def scheduled_event_count(self) -> int:
         return self.conn.execute("SELECT count(*) FROM scheduled_events").fetchone()[0]
 
-    def get_waiting_transactions(self) -> List[str]:
+    def get_waiting_transactions(self) -> List[TransactionHash]:
         return [
-            row[0]
+            TransactionHash(decode_hex(row[0]))
             for row in self.conn.execute("SELECT transaction_hash FROM waiting_transactions")
         ]
 
-    def add_waiting_transaction(self, waiting_tx_hash: str) -> None:
-        self.conn.execute("INSERT INTO waiting_transactions VALUES (?)", [waiting_tx_hash])
+    def add_waiting_transaction(self, waiting_tx_hash: TransactionHash) -> None:
+        self.conn.execute(
+            "INSERT INTO waiting_transactions VALUES (?)", [encode_hex(waiting_tx_hash)]
+        )
 
-    def remove_waiting_transaction(self, tx_hash: str) -> None:
-        self.conn.execute("DELETE FROM waiting_transactions WHERE transaction_hash = ?", [tx_hash])
+    def remove_waiting_transaction(self, tx_hash: TransactionHash) -> None:
+        self.conn.execute(
+            "DELETE FROM waiting_transactions WHERE transaction_hash = ?", [encode_hex(tx_hash)]
+        )
 
     def load_state(self) -> MonitoringServiceState:
         """ Load MS state from db or return a new empty state if not saved one is present

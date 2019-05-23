@@ -11,7 +11,13 @@ from monitoring_service.database import Database
 from monitoring_service.events import ActionMonitoringTriggeredEvent, ScheduledEvent
 from monitoring_service.states import OnChainUpdateStatus
 from raiden.constants import UINT256_MAX
-from raiden.utils.typing import Address, BlockNumber, ChannelID, TokenNetworkAddress
+from raiden.utils.typing import (
+    Address,
+    BlockNumber,
+    ChannelID,
+    TokenNetworkAddress,
+    TransactionHash,
+)
 
 
 def test_scheduled_events(ms_database: Database):
@@ -67,14 +73,14 @@ def test_scheduled_events(ms_database: Database):
 def test_waiting_transactions(ms_database: Database):
     assert ms_database.get_waiting_transactions() == []
 
-    ms_database.add_waiting_transaction("0xA")
-    assert ms_database.get_waiting_transactions() == ["0xA"]
+    ms_database.add_waiting_transaction(TransactionHash(b"A"))
+    assert ms_database.get_waiting_transactions() == [b"A"]
 
-    ms_database.add_waiting_transaction("0xB")
-    assert ms_database.get_waiting_transactions() == ["0xA", "0xB"]
+    ms_database.add_waiting_transaction(TransactionHash(b"B"))
+    assert ms_database.get_waiting_transactions() == [b"A", b"B"]
 
-    ms_database.remove_waiting_transaction("0xA")
-    assert ms_database.get_waiting_transactions() == ["0xB"]
+    ms_database.remove_waiting_transaction(TransactionHash(b"A"))
+    assert ms_database.get_waiting_transactions() == [b"B"]
 
 
 def test_save_and_load_monitor_request(ms_database: Database):
