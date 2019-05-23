@@ -76,12 +76,10 @@ class Path:
                 return False
 
         # check node reachabilities
-        # for node in self.nodes:
-        #     node_reachability = self.address_to_reachability.get(
-        #         node, AddressReachability.UNKNOWN
-        #     )
-        #     if node_reachability != AddressReachability.REACHABLE:
-        #         return False
+        for node in self.nodes:
+            node_reachability = self.address_to_reachability.get(node, AddressReachability.UNKNOWN)
+            if node_reachability != AddressReachability.REACHABLE:
+                return False
 
         return True
 
