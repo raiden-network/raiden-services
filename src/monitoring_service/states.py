@@ -17,10 +17,10 @@ from raiden.utils.typing import (
     TokenAmount,
     TokenNetworkAddress,
     TokenNetworkID,
+    TransactionHash,
 )
 from raiden_contracts.constants import ChannelState, MessageTypeId
 from raiden_libs.states import BlockchainState
-from raiden_libs.types import TransactionHash
 
 
 @dataclass

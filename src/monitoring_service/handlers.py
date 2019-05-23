@@ -19,7 +19,7 @@ from monitoring_service.states import (
     MonitorRequest,
     OnChainUpdateStatus,
 )
-from raiden.utils.typing import BlockNumber, TokenNetworkAddress
+from raiden.utils.typing import BlockNumber, TokenNetworkAddress, TransactionHash
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK, ChannelState
 from raiden_contracts.contract_manager import ContractManager
 from raiden_libs.contract_info import CONTRACT_MANAGER
@@ -417,18 +417,22 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
     )
     if call_monitor:
         try:
-            tx_hash = context.monitoring_service_contract.functions.monitor(
-                monitor_request.signer,
-                monitor_request.non_closing_signer,
-                monitor_request.balance_hash,
-                monitor_request.nonce,
-                monitor_request.additional_hash,
-                monitor_request.closing_signature,
-                monitor_request.non_closing_signature,
-                monitor_request.reward_amount,
-                monitor_request.token_network_address,
-                monitor_request.reward_proof_signature,
-            ).transact({"from": context.ms_state.address})
+            tx_hash = TransactionHash(
+                bytes(
+                    context.monitoring_service_contract.functions.monitor(
+                        monitor_request.signer,
+                        monitor_request.non_closing_signer,
+                        monitor_request.balance_hash,
+                        monitor_request.nonce,
+                        monitor_request.additional_hash,
+                        monitor_request.closing_signature,
+                        monitor_request.non_closing_signature,
+                        monitor_request.reward_amount,
+                        monitor_request.token_network_address,
+                        monitor_request.reward_proof_signature,
+                    ).transact({"from": context.ms_state.address})
+                )
+            )
 
             log.info(
                 "Sent transaction calling `monitor` for channel",
@@ -440,7 +444,7 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
 
             with context.db.conn:
                 # Add tx hash to list of waiting transactions
-                context.db.add_waiting_transaction(encode_hex(tx_hash))
+                context.db.add_waiting_transaction(tx_hash)
 
                 channel.closing_tx_hash = tx_hash
                 context.db.upsert_channel(channel)
@@ -487,12 +491,16 @@ def action_claim_reward_triggered_event_handler(event: Event, context: Context) 
 
     if can_claim and has_reward:
         try:
-            tx_hash = context.monitoring_service_contract.functions.claimReward(
-                monitor_request.channel_identifier,
-                monitor_request.token_network_address,
-                monitor_request.signer,
-                monitor_request.non_closing_signer,
-            ).transact({"from": context.ms_state.address})
+            tx_hash = TransactionHash(
+                bytes(
+                    context.monitoring_service_contract.functions.claimReward(
+                        monitor_request.channel_identifier,
+                        monitor_request.token_network_address,
+                        monitor_request.signer,
+                        monitor_request.non_closing_signer,
+                    ).transact({"from": context.ms_state.address})
+                )
+            )
 
             log.info(
                 "Sent transaction calling `claimReward` for channel",
@@ -504,7 +512,7 @@ def action_claim_reward_triggered_event_handler(event: Event, context: Context) 
 
             with context.db.conn:
                 # Add tx hash to list of waiting transactions
-                context.db.add_waiting_transaction(encode_hex(tx_hash))
+                context.db.add_waiting_transaction(tx_hash)
 
                 channel.claim_tx_hash = tx_hash
                 context.db.upsert_channel(channel)
