@@ -21,7 +21,7 @@ from raiden.network.transport.matrix.utils import (
     make_room_alias,
     validate_userid_signature,
 )
-from raiden.network.transport.udp import udp_utils
+from raiden.network.transport.utils import timeout_exponential_backoff
 from raiden.settings import (
     DEFAULT_MATRIX_KNOWN_SERVERS,
     DEFAULT_TRANSPORT_MATRIX_RETRY_INTERVAL,
@@ -83,7 +83,7 @@ def deserialize_messages(data: str, peer_address: Address) -> List[SignedMessage
 
 
 def matrix_http_retry_delay() -> Iterable[float]:
-    return udp_utils.timeout_exponential_backoff(
+    return timeout_exponential_backoff(
         DEFAULT_TRANSPORT_RETRIES_BEFORE_BACKOFF,
         int(DEFAULT_TRANSPORT_MATRIX_RETRY_INTERVAL / 5),
         int(DEFAULT_TRANSPORT_MATRIX_RETRY_INTERVAL),

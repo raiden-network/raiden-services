@@ -17,7 +17,6 @@ from raiden.utils.typing import (
     Signature,
     TokenAmount,
     TokenNetworkAddress,
-    TokenNetworkID,
     TransactionHash,
 )
 from raiden_contracts.constants import ChannelState, MessageTypeId
@@ -124,7 +123,7 @@ class HashedBalanceProof:
         non_closing_signer = LocalSigner(decode_hex(privkey))
         partner_signed_self = SignedBlindedBalanceProof(
             channel_identifier=self.channel_identifier,
-            token_network_address=TokenNetworkID(self.token_network_address),
+            token_network_address=self.token_network_address,
             nonce=self.nonce,
             additional_hash=decode_hex(self.additional_hash),
             chain_id=self.chain_id,
