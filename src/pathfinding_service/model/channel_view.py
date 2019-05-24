@@ -1,6 +1,6 @@
 from bisect import bisect_right
 from dataclasses import dataclass, field
-from typing import ClassVar, List, Optional, Sequence, Type
+from typing import ClassVar, List, Optional, Sequence, Tuple, Type
 
 import marshmallow
 from marshmallow_dataclass import add_schema
@@ -40,7 +40,7 @@ class FeeSchedule:
     # pylint: disable=not-an-iterable
     flat: FeeAmount = FeeAmount(0)
     proportional: float = 0
-    imbalance_penalty: Optional[List[List[TokenAmount]]] = None
+    imbalance_penalty: Optional[List[Tuple[TokenAmount, FeeAmount]]] = None
     _penalty_func: Interpolate = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
@@ -66,7 +66,7 @@ class FeeSchedule:
             flat=self.flat,
             proportional=self.proportional,
             imbalance_penalty=[
-                [x, TokenAmount(max_penalty - penalty)] for x, penalty in self.imbalance_penalty
+                (x, FeeAmount(max_penalty - penalty)) for x, penalty in self.imbalance_penalty
             ],
         )
 

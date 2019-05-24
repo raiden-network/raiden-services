@@ -31,7 +31,7 @@ def test_basic_fee():
 
 def test_imbalance_penalty():
     v_schedule = FeeSchedule(
-        imbalance_penalty=[[TA(0), TA(10)], [TA(50), TA(0)], [TA(100), TA(10)]]
+        imbalance_penalty=[(TA(0), FA(10)), (TA(50), FA(0)), (TA(100), FA(10))]
     )
     assert v_schedule.fee(capacity=TA(100 - 0), amount=TA(50)) == FA(-10)
     assert v_schedule.fee(capacity=TA(100 - 50), amount=TA(50)) == FA(10)
@@ -129,7 +129,7 @@ def test_fees_in_routing():
     tn.set_fee(2, 3, FeeSchedule())
 
     # Now let's try imbalance fees
-    tn.set_fee(2, 3, FeeSchedule(imbalance_penalty=[[TA(0), TA(0)], [TA(200), TA(200)]]))
+    tn.set_fee(2, 3, FeeSchedule(imbalance_penalty=[(TA(0), FA(0)), (TA(200), FA(200))]))
     assert tn.estimate_fee(1, 3) == 10
     assert tn.estimate_fee(3, 1) == -10
 
