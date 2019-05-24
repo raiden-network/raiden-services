@@ -284,7 +284,7 @@ def test_update_fee(pathfinding_service_mock, token_network_model):
     fee_schedule = FeeSchedule(
         flat=FeeAmount(1),
         proportional=0.1,
-        imbalance_penalty=[[TokenAmount(0), TokenAmount(0)], [TokenAmount(10), TokenAmount(10)]],
+        imbalance_penalty=[(TokenAmount(0), FeeAmount(0)), (TokenAmount(10), FeeAmount(10))],
     )
     fee_update = FeeUpdate(
         canonical_identifier=CanonicalIdentifier(
