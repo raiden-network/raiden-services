@@ -6,6 +6,7 @@ import marshmallow
 from marshmallow_dataclass import add_schema
 
 from pathfinding_service.config import DEFAULT_REVEAL_TIMEOUT
+from pathfinding_service.exceptions import UndefinedFee
 from raiden.utils.typing import (
     Address,
     ChannelID,
@@ -58,7 +59,10 @@ class FeeSchedule:
         if self.imbalance_penalty:
             # Total channel capacity - node capacity = balance (used as x-axis for the penalty)
             balance = self._penalty_func.x_list[-1] - capacity
-            imbalance_fee = self._penalty_func(balance + amount) - self._penalty_func(balance)
+            try:
+                imbalance_fee = self._penalty_func(balance + amount) - self._penalty_func(balance)
+            except ValueError:
+                raise UndefinedFee()
         else:
             imbalance_fee = 0
         return FeeAmount(round(self.flat + amount * self.proportional + imbalance_fee))

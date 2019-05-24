@@ -5,6 +5,12 @@ class InvalidCapacityUpdate(Exception):
     """Exception for incoming messages"""
 
 
+class UndefinedFee(Exception):
+    """The fee schedule is not applicable resulting in undefined fees
+
+    This should be handled by excluding the route from the results"""
+
+
 class ApiException(Exception):
     """An exception that can be returned via the REST API"""
 

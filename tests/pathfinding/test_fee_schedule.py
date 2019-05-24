@@ -95,6 +95,8 @@ class TestTokenNetwork(TokenNetwork):
 
     def estimate_fee(self, initator, target, value=TA(10), max_paths=1):
         result = self.get_paths(a(initator), a(target), value=value, max_paths=max_paths)
+        if not result:
+            return None
         return result[0]["estimated_fee"]
 
 
@@ -133,6 +135,11 @@ def test_fees_in_routing():
     tn.set_fee(2, 3, FeeSchedule(imbalance_penalty=[(TA(0), FA(0)), (TA(200), FA(200))]))
     assert tn.estimate_fee(1, 3) == 10
     assert tn.estimate_fee(3, 1) == -10
+
+    # When the range covered by the imbalance_penalty does include the
+    # necessary belance values, the route should be considered invalid.
+    tn.set_fee(2, 3, FeeSchedule(imbalance_penalty=[(TA(0), FA(0)), (TA(80), FA(200))]))
+    assert tn.estimate_fee(1, 3) is None
 
 
 def test_compounding_fees():

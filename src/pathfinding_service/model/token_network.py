@@ -13,6 +13,7 @@ from pathfinding_service.config import (
     DIVERSITY_PEN_DEFAULT,
     FEE_PEN_DEFAULT,
 )
+from pathfinding_service.exceptions import UndefinedFee
 from pathfinding_service.model.channel_view import ChannelView, FeeSchedule
 from raiden.messages import Message, UpdatePFS
 from raiden.network.transport.matrix import AddressReachability
@@ -53,12 +54,15 @@ class Path:
 
     def _calc_fees(self) -> None:
         total = self.value
-        for prev_node, mediator, next_node in reversed(list(window(self.nodes, 3))):
-            fee_for_this_mediator = self.G[prev_node][mediator]["view"].fee_receiver(
-                total
-            ) + self.G[mediator][next_node]["view"].fee_sender(total)
-            total += fee_for_this_mediator
-            self.fees.append(fee_for_this_mediator)
+        try:
+            for prev_node, mediator, next_node in reversed(list(window(self.nodes, 3))):
+                fee_for_this_mediator = self.G[prev_node][mediator]["view"].fee_receiver(
+                    total
+                ) + self.G[mediator][next_node]["view"].fee_sender(total)
+                total += fee_for_this_mediator
+                self.fees.append(fee_for_this_mediator)
+        except UndefinedFee:
+            self._is_valid = False
 
     @property
     def edge_attrs(self) -> Iterable[dict]:
@@ -82,6 +86,8 @@ class Path:
         should not use such routes. See
         https://github.com/raiden-network/raiden-services/issues/5.
         """
+        if hasattr(self, "_is_valid"):
+            return self._is_valid
         required_capacity = self.value
         edges = reversed(list(self.edge_attrs))
         fees = self.fees + [FeeAmount(0)]  # The hop to the target does not incur mediation fees
@@ -278,7 +284,10 @@ class TokenNetwork:
         # Fees for initiator and target are included here. This promotes routes
         # that are nice to the initiator's and target's capacities, but it's
         # inconsistent with the estimated total fee.
-        fee_weight = (view.fee_sender(amount) + view.fee_receiver(amount)) / 1e18 * fee_penalty
+        try:
+            fee_weight = (view.fee_sender(amount) + view.fee_receiver(amount)) / 1e18 * fee_penalty
+        except UndefinedFee:
+            return float("inf")
         no_refund_weight = 0
         if view_from_partner.capacity < int(float(amount) * 1.1):
             no_refund_weight = 1
