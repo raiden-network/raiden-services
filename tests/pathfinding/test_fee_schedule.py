@@ -1,8 +1,9 @@
 from typing import List
 
+import pytest
 from eth_utils import decode_hex
 
-from pathfinding_service.model.channel_view import FeeSchedule
+from pathfinding_service.model.channel_view import FeeSchedule, Interpolate
 from pathfinding_service.model.token_network import FeeUpdate, TokenNetwork
 from raiden.network.transport.matrix.utils import AddressReachability
 from raiden.transfer.identifiers import CanonicalIdentifier
@@ -152,3 +153,24 @@ def test_compounding_fees():
         1  # fee for node 3
         + 2  # fee for node 2, which mediates 1 token for the payment and 1 for node 3's fees
     )
+
+
+def test_interpolation():
+    interp = Interpolate((0, 100), (0, 100))
+    for i in range(101):
+        assert interp(i) == i
+
+    interp = Interpolate((0, 50, 100), (0, 100, 200))
+    for i in range(101):
+        assert interp(i) == 2 * i
+
+    interp = Interpolate((0, 50, 100), (0, -50, 50))
+    assert interp(40) == -40
+    assert interp(60) == -30
+    assert interp(90) == 30
+    assert interp(99) == 48
+
+    interp = Interpolate((0, 100), (12.35, 67.2))
+    assert interp(0) == 12.35
+    assert interp(50) == pytest.approx((12.35 + 67.2) / 2)
+    assert interp(100) == 67.2
