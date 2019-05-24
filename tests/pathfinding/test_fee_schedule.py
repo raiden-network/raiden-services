@@ -78,7 +78,7 @@ class TestTokenNetwork(TokenNetwork):
         for node in self.G.nodes:
             self.address_to_reachability[node] = AddressReachability.REACHABLE
 
-    def set_fee(self, node1, node2, fee_schedule: FeeSchedule):
+    def set_fee(self, node1: int, node2: int, fee_schedule: FeeSchedule):
         channel_id = self.G[a(node1)][a(node2)]["view"].channel_id
         self.handle_channel_fee_update(
             FeeUpdate(
@@ -93,7 +93,7 @@ class TestTokenNetwork(TokenNetwork):
             )
         )
 
-    def estimate_fee(self, initator, target, value=TA(10), max_paths=1):
+    def estimate_fee(self, initator: int, target: int, value=TA(10), max_paths=1):
         result = self.get_paths(a(initator), a(target), value=value, max_paths=max_paths)
         if not result:
             return None
@@ -137,7 +137,7 @@ def test_fees_in_routing():
     assert tn.estimate_fee(3, 1) == -10
 
     # When the range covered by the imbalance_penalty does include the
-    # necessary belance values, the route should be considered invalid.
+    # necessary balance values, the route should be considered invalid.
     tn.set_fee(2, 3, FeeSchedule(imbalance_penalty=[(TA(0), FA(0)), (TA(80), FA(200))]))
     assert tn.estimate_fee(1, 3) is None
 
