@@ -18,6 +18,11 @@ from raiden_libs.marshmallow import ChecksumAddress
 
 
 class Interpolate:  # pylint: disable=too-few-public-methods
+    """ Linear interpolation of a function with given points
+
+    Based on https://stackoverflow.com/a/7345691/114926
+    """
+
     def __init__(self, x_list: Sequence, y_list: Sequence):
         if any(y - x <= 0 for x, y in zip(x_list, x_list[1:])):
             raise ValueError("x_list must be in strictly ascending order!")
