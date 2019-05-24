@@ -14,7 +14,7 @@ from pathfinding_service.config import (
     FEE_PEN_DEFAULT,
 )
 from pathfinding_service.model.channel_view import ChannelView, FeeSchedule
-from raiden.messages import UpdatePFS
+from raiden.messages import Message, UpdatePFS
 from raiden.network.transport.matrix import AddressReachability
 from raiden.transfer.identifiers import CanonicalIdentifier
 from raiden.utils.typing import Address, ChannelID, FeeAmount, TokenAmount, TokenNetworkAddress
@@ -105,8 +105,8 @@ class Path:
         return True
 
 
-@dataclass
-class FeeUpdate:
+@dataclass  # pylint: disable=abstract-method
+class FeeUpdate(Message):
     canonical_identifier: CanonicalIdentifier
     updating_participant: Address
     other_participant: Address

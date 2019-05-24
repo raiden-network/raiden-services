@@ -2,9 +2,20 @@ import os
 from typing import List
 from unittest.mock import Mock, call, patch
 
+from pathfinding_service.model.channel_view import FeeSchedule
+from pathfinding_service.model.token_network import FeeUpdate
 from pathfinding_service.service import PathfindingService
 from raiden.network.transport.matrix import AddressReachability
-from raiden.utils.typing import Address, BlockNumber, ChannelID, TokenAmount, TokenNetworkAddress
+from raiden.transfer.identifiers import CanonicalIdentifier
+from raiden.utils.typing import (
+    Address,
+    BlockNumber,
+    ChainID,
+    ChannelID,
+    FeeAmount,
+    TokenAmount,
+    TokenNetworkAddress,
+)
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
 from raiden_contracts.tests.utils import get_random_privkey, to_canonical_address
 from raiden_libs.events import (
@@ -265,4 +276,28 @@ def test_handle_reachability_change(pathfinding_service_mock, token_network_mode
     )
     assert (
         token_network_model.address_to_reachability[PARTICIPANT2] == AddressReachability.REACHABLE
+    )
+
+
+def test_update_fee(pathfinding_service_mock, token_network_model):
+    setup_channel(pathfinding_service_mock, token_network_model)
+    fee_schedule = FeeSchedule(
+        flat=FeeAmount(1),
+        proportional=0.1,
+        imbalance_penalty=[[TokenAmount(0), TokenAmount(0)], [TokenAmount(10), TokenAmount(10)]],
+    )
+    fee_update = FeeUpdate(
+        canonical_identifier=CanonicalIdentifier(
+            chain_identifier=ChainID(1),
+            token_network_address=token_network_model.address,
+            channel_identifier=ChannelID(1),
+        ),
+        updating_participant=PARTICIPANT1,
+        other_participant=PARTICIPANT2,
+        fee_schedule=fee_schedule,
+    )
+    pathfinding_service_mock.handle_message(fee_update)
+    assert (
+        token_network_model.G[PARTICIPANT1][PARTICIPANT2]["view"].fee_schedule_sender
+        == fee_schedule
     )

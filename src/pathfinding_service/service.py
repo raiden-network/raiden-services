@@ -12,6 +12,7 @@ from monitoring_service.constants import MAX_FILTER_INTERVAL
 from pathfinding_service.database import PFSDatabase
 from pathfinding_service.exceptions import InvalidCapacityUpdate
 from pathfinding_service.model import TokenNetwork
+from pathfinding_service.model.token_network import FeeUpdate
 from raiden.constants import PATH_FINDING_BROADCASTING_ROOM, UINT256_MAX
 from raiden.messages import Message, UpdatePFS
 from raiden.network.transport.matrix import AddressReachability
@@ -248,6 +249,12 @@ class PathfindingService(gevent.Greenlet):
                 self.on_pfs_update(message)
             except InvalidCapacityUpdate as x:
                 log.info(str(x), **asdict(message))
+        if isinstance(message, FeeUpdate):
+            token_network = self.get_token_network(
+                message.canonical_identifier.token_network_address
+            )
+            if token_network:
+                token_network.handle_channel_fee_update(message)
         else:
             log.info("Ignoring unknown message type")
 
