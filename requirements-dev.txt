@@ -18,6 +18,7 @@ pytest==4.4.1
 pytest-runner
 pytest-cov
 pytest-structlog==0.1
+pytest-xdist
 coverage>=4.5.2
 
 ipython==4.2.1

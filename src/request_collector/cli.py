@@ -1,6 +1,6 @@
 from gevent import monkey  # isort:skip # noqa
 
-monkey.patch_all()  # isort:skip # noqa
+monkey.patch_all(subprocess=False, thread=False)  # isort:skip # noqa
 
 import click
 import structlog

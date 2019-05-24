@@ -10,5 +10,5 @@ script:
   - pip install -r requirements-dev.txt
   - pip install -e .
   - make lint
-  - pytest -v --cov=./ tests/
+  - pytest -v --cov=./ tests/ -n auto
   - codecov
