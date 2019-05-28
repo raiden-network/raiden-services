@@ -52,7 +52,7 @@ class RequestCollector(gevent.Greenlet):
         if isinstance(message, RequestMonitoring):
             self.on_monitor_request(message)
         else:
-            log.info("Ignoring unknown message type")
+            log.debug("Ignoring message", message=message)
 
     def on_monitor_request(self, request_monitoring: RequestMonitoring) -> None:
         assert isinstance(request_monitoring, RequestMonitoring)
