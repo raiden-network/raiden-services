@@ -327,7 +327,7 @@ class FeedbackResource(PathfinderResource):
         if updated_rows > 0:
             log.info(
                 "Received feedback",
-                token_network_address=feedback_token.token_network_address,
+                token_network_address=to_checksum_address(feedback_token.token_network_address),
                 feedback_token=feedback_request.token,
                 feedback_route=[to_checksum_address(addr) for addr in feedback_request.path],
                 was_success=feedback_request.success,

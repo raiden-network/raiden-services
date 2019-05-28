@@ -256,7 +256,7 @@ class PathfindingService(gevent.Greenlet):
             if token_network:
                 token_network.handle_channel_fee_update(message)
         else:
-            log.info("Ignoring unknown message type")
+            log.debug("Ignoring message", message=message)
 
     def _validate_pfs_update(self, message: UpdatePFS) -> TokenNetwork:
         token_network_address = TokenNetworkAddress(
