@@ -345,22 +345,16 @@ def test_feedback(api_sut: ServiceApi, api_url: str, token_network_model: TokenN
     default_path_hex = ["0x" + "1" * 40, "0x" + "2" * 40, "0x" + "3" * 40]
     default_path = [decode_hex(e) for e in default_path_hex]
 
-    def make_request(token_id: str = None, status: str = None, path: List[str] = None):
+    def make_request(token_id: str = None, success: bool = True, path: List[str] = None):
         url = api_url + f"/{to_checksum_address(token_network_model.address)}/feedback"
 
         token_id = token_id or uuid4().hex
-        status = status or "success"
         path = path or default_path_hex
-        data = {"token": token_id, "status": status, "path": path}
+        data = {"token": token_id, "success": success, "path": path}
         return requests.post(url, json=data)
 
     # Request with invalid UUID
     response = make_request(token_id="abc")
-    assert response.status_code == 400
-    assert response.json()["error_code"] == exceptions.InvalidRequest.error_code
-
-    # Request with invalid status
-    response = make_request(status="abc")
     assert response.status_code == 400
     assert response.json()["error_code"] == exceptions.InvalidRequest.error_code
 

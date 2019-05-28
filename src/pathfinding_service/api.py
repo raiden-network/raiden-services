@@ -11,7 +11,7 @@ from eth_utils import decode_hex, is_checksum_address, is_same_address, to_check
 from flask import Flask, Response, request
 from flask_restful import Api, Resource
 from gevent.pywsgi import WSGIServer
-from marshmallow import fields, validate
+from marshmallow import fields
 from marshmallow_dataclass import add_schema
 from networkx.exception import NetworkXNoPath, NodeNotFound
 from web3 import Web3
@@ -296,13 +296,7 @@ class FeedbackRequest:
     """A HTTP request to FeedbackResource"""
 
     token: UUID = field(metadata={"required": True})
-    status: str = field(
-        metadata={
-            "marshmallow_field": fields.Str(
-                validate=validate.OneOf(("success", "failure")), required=True
-            )
-        }
-    )
+    success: bool = field(metadata={"required": True})
     path: List[Address] = field(
         metadata={"marshmallow_field": fields.List(ChecksumAddress, many=True), "required": True}
     )
@@ -326,13 +320,18 @@ class FeedbackResource(PathfinderResource):
         if not feedback_token or not feedback_token.is_valid():
             return {}, 400
 
-        success = feedback_request.status == "successful"
         updated_rows = self.pathfinding_service.database.update_feedback(
-            token=feedback_token, route=feedback_request.path, successful=success
+            token=feedback_token, route=feedback_request.path, successful=feedback_request.success
         )
 
         if updated_rows > 0:
-            log.info("Received feedback", feedback=feedback_request)
+            log.info(
+                "Received feedback",
+                token_network_address=feedback_token.token_network_address,
+                feedback_token=feedback_request.token,
+                feedback_route=[to_checksum_address(addr) for addr in feedback_request.path],
+                was_success=feedback_request.success,
+            )
 
         return {}, 200
 
