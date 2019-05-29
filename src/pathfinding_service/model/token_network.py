@@ -127,7 +127,6 @@ class TokenNetwork:
 
         self.address = token_network_address
         self.channel_id_to_addresses: Dict[ChannelID, Tuple[Address, Address]] = dict()
-        self.address_to_reachability: Dict[Address, AddressReachability] = dict()
         self.G = DiGraph()
 
     def __repr__(self) -> str:
@@ -291,11 +290,12 @@ class TokenNetwork:
             no_refund_weight = 1
         return 1 + diversity_weight + fee_weight + no_refund_weight
 
-    def _get_single_path(
+    def _get_single_path(  # pylint: disable=too-many-arguments
         self,
         source: Address,
         target: Address,
         value: TokenAmount,
+        address_to_reachability: Dict[Address, AddressReachability],
         visited: Dict[ChannelID, float],
         disallowed_paths: List[List[Address]],
         fee_penalty: float,
@@ -315,7 +315,7 @@ class TokenNetwork:
             path = next(
                 p
                 for p in (
-                    Path(self.G, nodes, value, self.address_to_reachability) for nodes in all_paths
+                    Path(self.G, nodes, value, address_to_reachability) for nodes in all_paths
                 )
                 if p.is_valid and p.nodes not in disallowed_paths
             )
@@ -323,12 +323,13 @@ class TokenNetwork:
         except StopIteration:
             return None
 
-    def get_paths(
+    def get_paths(  # pylint: disable=too-many-arguments
         self,
         source: Address,
         target: Address,
         value: TokenAmount,
         max_paths: int,
+        address_to_reachability: Dict[Address, AddressReachability],
         diversity_penalty: float = DIVERSITY_PEN_DEFAULT,
         fee_penalty: float = FEE_PEN_DEFAULT,
     ) -> List[dict]:
@@ -346,6 +347,7 @@ class TokenNetwork:
                 source=source,
                 target=target,
                 value=value,
+                address_to_reachability=address_to_reachability,
                 visited=visited,
                 disallowed_paths=[p.nodes for p in paths],
                 fee_penalty=fee_penalty,

@@ -98,6 +98,7 @@ class PathfindingService(gevent.Greenlet):
             address_reachability_changed_callback=self.handle_reachability_change,
         )
 
+        self.address_to_reachability: Dict[Address, AddressReachability] = dict()
         self.token_networks = self._load_token_networks()
 
     def _load_token_networks(self) -> Dict[TokenNetworkAddress, TokenNetwork]:
@@ -167,9 +168,7 @@ class PathfindingService(gevent.Greenlet):
     def handle_reachability_change(
         self, address: Address, reachability: AddressReachability
     ) -> None:
-        for token_network_model in self.token_networks.values():
-            if address in token_network_model.G.nodes:
-                token_network_model.address_to_reachability[address] = reachability
+        self.address_to_reachability[address] = reachability
 
     def get_token_network(
         self, token_network_address: TokenNetworkAddress

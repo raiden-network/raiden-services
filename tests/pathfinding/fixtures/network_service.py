@@ -1,5 +1,5 @@
 # pylint: disable=redefined-outer-name
-from typing import Callable, Generator, List
+from typing import Callable, Dict, Generator, List
 from unittest.mock import Mock, patch
 
 import pytest
@@ -166,7 +166,10 @@ def channel_descriptions_case_3() -> List:
 def populate_token_network() -> Callable:
     # pylint: disable=too-many-locals
     def populate_token_network(
-        token_network: TokenNetwork, addresses: List[Address], channel_descriptions: List
+        token_network: TokenNetwork,
+        address_to_reachability: Dict[Address, AddressReachability],
+        addresses: List[Address],
+        channel_descriptions: List,
     ):
         for (
             channel_id,
@@ -246,8 +249,10 @@ def populate_token_network() -> Callable:
                 updating_capacity_partner=TokenAmount(p1_capacity),
                 other_capacity_partner=TokenAmount(p2_capacity),
             )
-            token_network.address_to_reachability[participant1] = p1_reachability
-            token_network.address_to_reachability[participant2] = p2_reachability
+
+            # Update presence state according to scenario
+            address_to_reachability[participant1] = p1_reachability
+            address_to_reachability[participant2] = p2_reachability
 
     return populate_token_network
 
@@ -256,30 +261,39 @@ def populate_token_network() -> Callable:
 def populate_token_network_case_1(
     populate_token_network: Callable,
     token_network_model: TokenNetwork,
+    address_to_reachability: Dict[Address, AddressReachability],
     addresses: List[Address],
     channel_descriptions_case_1: List,
 ):
-    populate_token_network(token_network_model, addresses, channel_descriptions_case_1)
+    populate_token_network(
+        token_network_model, address_to_reachability, addresses, channel_descriptions_case_1
+    )
 
 
 @pytest.fixture
 def populate_token_network_case_2(
     populate_token_network: Callable,
     token_network_model: TokenNetwork,
+    address_to_reachability: Dict[Address, AddressReachability],
     addresses: List[Address],
     channel_descriptions_case_2: List,
 ):
-    populate_token_network(token_network_model, addresses, channel_descriptions_case_2)
+    populate_token_network(
+        token_network_model, address_to_reachability, addresses, channel_descriptions_case_2
+    )
 
 
 @pytest.fixture
 def populate_token_network_case_3(
     populate_token_network: Callable,
     token_network_model: TokenNetwork,
+    address_to_reachability: Dict[Address, AddressReachability],
     addresses: List[Address],
     channel_descriptions_case_3: List,
 ):
-    populate_token_network(token_network_model, addresses, channel_descriptions_case_3)
+    populate_token_network(
+        token_network_model, address_to_reachability, addresses, channel_descriptions_case_3
+    )
 
 
 @pytest.fixture

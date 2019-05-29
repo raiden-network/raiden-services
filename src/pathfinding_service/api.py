@@ -114,10 +114,10 @@ class PathsResource(PathfinderResource):
         token_network = self._validate_token_network_argument(token_network_address)
         path_req = self._parse_post(PathRequest)
         process_payment(
-            path_req.iou,
-            self.pathfinding_service,
-            self.service_api.service_fee,
-            self.service_api.one_to_n_address,
+            iou=path_req.iou,
+            pathfinding_service=self.pathfinding_service,
+            service_fee=self.service_api.service_fee,
+            one_to_n_address=self.service_api.one_to_n_address,
         )
 
         # only add optional args if not None, so we can use defaults
@@ -131,6 +131,7 @@ class PathsResource(PathfinderResource):
                 source=path_req.from_,
                 target=path_req.to,
                 value=path_req.value,
+                address_to_reachability=self.pathfinding_service.address_to_reachability,
                 max_paths=path_req.max_paths,
                 **optional_args,
             )
