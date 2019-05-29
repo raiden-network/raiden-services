@@ -1,11 +1,12 @@
 # pylint: disable=redefined-outer-name
 import socket
-from typing import Iterator
+from typing import Dict, Iterator
 
 import pytest
 
 from pathfinding_service.api import ServiceApi
 from pathfinding_service.config import API_PATH
+from raiden.network.transport.matrix import AddressReachability
 from raiden.utils.typing import Address
 
 
@@ -26,9 +27,11 @@ def api_url(free_port: int) -> str:
 @pytest.fixture
 def api_sut(
     pathfinding_service_mock,
+    address_to_reachability: Dict[Address, AddressReachability],
     free_port: int,
     populate_token_network_case_1,  # pylint: disable=unused-argument
 ) -> Iterator[ServiceApi]:
+    pathfinding_service_mock.address_to_reachability = address_to_reachability
     api = ServiceApi(pathfinding_service_mock, one_to_n_address=Address(bytes([1] * 20)))
     api.run(port=free_port)
     yield api
@@ -38,9 +41,11 @@ def api_sut(
 @pytest.fixture
 def api_sut_with_debug(
     pathfinding_service_mock,
+    address_to_reachability: Dict[Address, AddressReachability],
     free_port: int,
     populate_token_network_case_1,  # pylint: disable=unused-argument
 ) -> Iterator[ServiceApi]:
+    pathfinding_service_mock.address_to_reachability = address_to_reachability
     api = ServiceApi(
         pathfinding_service_mock, one_to_n_address=Address(bytes([1] * 20)), debug_mode=True
     )

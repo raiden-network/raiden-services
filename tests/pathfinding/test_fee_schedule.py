@@ -1,4 +1,4 @@
-from typing import List
+from typing import Dict, List
 
 import pytest
 from eth_utils import decode_hex
@@ -74,9 +74,10 @@ class TestTokenNetwork(TokenNetwork):
         for _, _, cv in self.G.edges(data="view"):
             cv.capacity = 100
 
-        # make nodes reachable
-        for node in self.G.nodes:
-            self.address_to_reachability[node] = AddressReachability.REACHABLE
+        # create reachability mapping for testing
+        self.address_to_reachability: Dict[Address, AddressReachability] = {
+            node: AddressReachability.REACHABLE for node in self.G.nodes
+        }
 
     def set_fee(self, node1: int, node2: int, fee_schedule: FeeSchedule):
         channel_id = self.G[a(node1)][a(node2)]["view"].channel_id
@@ -94,7 +95,13 @@ class TestTokenNetwork(TokenNetwork):
         )
 
     def estimate_fee(self, initator: int, target: int, value=TA(10), max_paths=1):
-        result = self.get_paths(a(initator), a(target), value=value, max_paths=max_paths)
+        result = self.get_paths(
+            source=a(initator),
+            target=a(target),
+            value=value,
+            max_paths=max_paths,
+            address_to_reachability=self.address_to_reachability,
+        )
         if not result:
             return None
         return result[0]["estimated_fee"]
@@ -106,7 +113,13 @@ def test_fees_in_routing():
     )
 
     # Make sure that routing works and the default fees are zero
-    result = tn.get_paths(a(1), a(3), value=TA(10), max_paths=1)
+    result = tn.get_paths(
+        source=a(1),
+        target=a(3),
+        value=TA(10),
+        max_paths=1,
+        address_to_reachability=tn.address_to_reachability,
+    )
     assert len(result) == 1
     assert [PrettyBytes(decode_hex(node)) for node in result[0]["path"]] == [a(1), a(2), a(3)]
     assert result[0]["estimated_fee"] == 0

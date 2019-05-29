@@ -246,36 +246,25 @@ def test_token_channel_closed(pathfinding_service_mock, token_network_model):
 def test_handle_reachability_change(pathfinding_service_mock, token_network_model):
     setup_channel(pathfinding_service_mock, token_network_model)
 
-    assert len(token_network_model.address_to_reachability) == 0
+    assert len(pathfinding_service_mock.address_to_reachability) == 0
     pathfinding_service_mock.handle_reachability_change(
         to_canonical_address(PARTICIPANT1), AddressReachability.REACHABLE
     )
-    assert len(token_network_model.channel_id_to_addresses) == 1
     assert (
-        token_network_model.address_to_reachability[PARTICIPANT1] == AddressReachability.REACHABLE
+        pathfinding_service_mock.address_to_reachability[PARTICIPANT1]
+        == AddressReachability.REACHABLE
     )
 
-    token_address = Address(b"8" * 20)
-    token_network_address = TokenNetworkAddress(b"9" * 20)
-    network_event = ReceiveTokenNetworkCreatedEvent(
-        token_address=token_address,
-        token_network_address=token_network_address,
-        block_number=BlockNumber(1),
-    )
-    pathfinding_service_mock.handle_event(network_event)
-    token_network_model2 = pathfinding_service_mock.token_networks[token_network_address]
-
-    assert len(token_network_model2.address_to_reachability) == 0
     pathfinding_service_mock.handle_reachability_change(
         to_canonical_address(PARTICIPANT2), AddressReachability.REACHABLE
     )
-    assert len(token_network_model.channel_id_to_addresses) == 1
-    assert len(token_network_model2.address_to_reachability) == 0
     assert (
-        token_network_model.address_to_reachability[PARTICIPANT1] == AddressReachability.REACHABLE
+        pathfinding_service_mock.address_to_reachability[PARTICIPANT1]
+        == AddressReachability.REACHABLE
     )
     assert (
-        token_network_model.address_to_reachability[PARTICIPANT2] == AddressReachability.REACHABLE
+        pathfinding_service_mock.address_to_reachability[PARTICIPANT2]
+        == AddressReachability.REACHABLE
     )
 
 

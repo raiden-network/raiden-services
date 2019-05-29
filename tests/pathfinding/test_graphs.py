@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import List
+from typing import Dict, List
 
 import pytest
 from eth_utils import decode_hex, to_checksum_address
@@ -83,7 +83,11 @@ def test_edge_weight(addresses):
 
 
 @pytest.mark.usefixtures("populate_token_network_case_1")
-def test_routing_simple(token_network_model: TokenNetwork, addresses: List[Address]):
+def test_routing_simple(
+    token_network_model: TokenNetwork,
+    address_to_reachability: Dict[Address, AddressReachability],
+    addresses: List[Address],
+):
     hex_addrs = [to_checksum_address(addr) for addr in addresses]
     view01: ChannelView = token_network_model.G[addresses[0]][addresses[1]]["view"]
     view10: ChannelView = token_network_model.G[addresses[1]][addresses[0]]["view"]
@@ -95,7 +99,11 @@ def test_routing_simple(token_network_model: TokenNetwork, addresses: List[Addre
 
     # 0->2->3 is the shortest path, but has no capacity, so 0->1->4->3 is used
     paths = token_network_model.get_paths(
-        addresses[0], addresses[3], value=TokenAmount(10), max_paths=1
+        source=addresses[0],
+        target=addresses[3],
+        value=TokenAmount(10),
+        max_paths=1,
+        address_to_reachability=address_to_reachability,
     )
     assert len(paths) == 1
     assert paths[0] == {
@@ -106,16 +114,28 @@ def test_routing_simple(token_network_model: TokenNetwork, addresses: List[Addre
     # Not connected.
     with pytest.raises(NetworkXNoPath):
         token_network_model.get_paths(
-            addresses[0], addresses[5], value=TokenAmount(10), max_paths=1
+            source=addresses[0],
+            target=addresses[5],
+            value=TokenAmount(10),
+            max_paths=1,
+            address_to_reachability=address_to_reachability,
         )
 
 
 @pytest.mark.usefixtures("populate_token_network_case_1")
-def test_capacity_check(token_network_model: TokenNetwork, addresses: List[Address]):
+def test_capacity_check(
+    token_network_model: TokenNetwork,
+    address_to_reachability: Dict[Address, AddressReachability],
+    addresses: List[Address],
+):
     """ Test that the mediation fees are included in the capacity check """
     # First get a path without mediation fees. This must return the shortest path: 4->1->0
     paths = token_network_model.get_paths(
-        addresses[4], addresses[0], value=TokenAmount(35), max_paths=1
+        addresses[4],
+        addresses[0],
+        value=TokenAmount(35),
+        max_paths=1,
+        address_to_reachability=address_to_reachability,
     )
     index_paths = [addresses_to_indexes(p["path"], addresses) for p in paths]
     assert index_paths == [[4, 1, 0]]
@@ -128,17 +148,30 @@ def test_capacity_check(token_network_model: TokenNetwork, addresses: List[Addre
     # value of 35. But 35 + 1 exceeds the capacity for channel 4->1, which is
     # 35. So we should now get the next best route instead.
     paths = model_with_fees.get_paths(
-        addresses[4], addresses[0], value=TokenAmount(35), max_paths=1, fee_penalty=0
+        addresses[4],
+        addresses[0],
+        value=TokenAmount(35),
+        max_paths=1,
+        address_to_reachability=address_to_reachability,
+        fee_penalty=0,
     )
     index_paths = [addresses_to_indexes(p["path"], addresses) for p in paths]
     assert index_paths == [[4, 1, 2, 0]]
 
 
 @pytest.mark.usefixtures("populate_token_network_case_1")
-def test_routing_result_order(token_network_model: TokenNetwork, addresses: List[Address]):
+def test_routing_result_order(
+    token_network_model: TokenNetwork,
+    address_to_reachability: Dict[Address, AddressReachability],
+    addresses: List[Address],
+):
     hex_addrs = [to_checksum_address(addr) for addr in addresses]
     paths = token_network_model.get_paths(
-        addresses[0], addresses[2], value=TokenAmount(10), max_paths=5
+        addresses[0],
+        addresses[2],
+        value=TokenAmount(10),
+        max_paths=5,
+        address_to_reachability=address_to_reachability,
     )
     # 5 paths requested, but only 1 is available
     assert len(paths) == 1
@@ -150,8 +183,9 @@ def addresses_to_indexes(path, addresses):
     return [index_of_address[decode_hex(a)] for a in path]
 
 
-def get_paths(
+def get_paths(  # pylint: disable=too-many-arguments
     token_network_model: TokenNetwork,
+    address_to_reachability: Dict[Address, AddressReachability],
     addresses: List[Address],
     source_index: int = 0,
     target_index: int = 8,
@@ -165,79 +199,136 @@ def get_paths(
         target=addresses[target_index],
         value=value,
         max_paths=max_paths,
+        address_to_reachability=address_to_reachability,
     )
     index_paths = [addresses_to_indexes(p["path"], addresses) for p in paths]
     return index_paths
 
 
 @pytest.mark.usefixtures("populate_token_network_case_3")
-def test_diversity_penalty(token_network_model: TokenNetwork, addresses: List[Address]):
+def test_diversity_penalty(
+    token_network_model: TokenNetwork,
+    address_to_reachability: Dict[Address, AddressReachability],
+    addresses: List[Address],
+):
     """ Check changes in routing when increasing diversity penalty """
 
     assert get_paths(
-        token_network_model=token_network_model, addresses=addresses, diversity_penalty=0.1
+        token_network_model=token_network_model,
+        address_to_reachability=address_to_reachability,
+        addresses=addresses,
+        diversity_penalty=0.1,
     ) == [[0, 7, 8], [0, 7, 6, 8], [0, 7, 9, 10, 8], [0, 7, 6, 5, 8], [0, 1, 2, 3, 4, 8]]
 
     assert get_paths(
-        token_network_model=token_network_model, addresses=addresses, diversity_penalty=1.1
+        token_network_model=token_network_model,
+        address_to_reachability=address_to_reachability,
+        addresses=addresses,
+        diversity_penalty=1.1,
     ) == [[0, 7, 8], [0, 7, 6, 8], [0, 1, 2, 3, 4, 8], [0, 7, 9, 10, 8], [0, 7, 6, 5, 8]]
 
     assert get_paths(
-        token_network_model=token_network_model, addresses=addresses, diversity_penalty=10
+        token_network_model=token_network_model,
+        address_to_reachability=address_to_reachability,
+        addresses=addresses,
+        diversity_penalty=10,
     ) == [[0, 7, 8], [0, 1, 2, 3, 4, 8], [0, 7, 6, 8], [0, 7, 9, 10, 8], [0, 7, 6, 5, 8]]
 
 
 @pytest.mark.usefixtures("populate_token_network_case_3")
-def test_reachability_initiator(token_network_model: TokenNetwork, addresses: List[Address]):
+def test_reachability_initiator(
+    token_network_model: TokenNetwork,
+    address_to_reachability: Dict[Address, AddressReachability],
+    addresses: List[Address],
+):
 
-    assert get_paths(token_network_model=token_network_model, addresses=addresses) == [
-        [0, 7, 8],
-        [0, 1, 2, 3, 4, 8],
-        [0, 7, 6, 8],
-        [0, 7, 9, 10, 8],
-        [0, 7, 6, 5, 8],
-    ]
+    assert get_paths(
+        token_network_model=token_network_model,
+        address_to_reachability=address_to_reachability,
+        addresses=addresses,
+    ) == [[0, 7, 8], [0, 1, 2, 3, 4, 8], [0, 7, 6, 8], [0, 7, 9, 10, 8], [0, 7, 6, 5, 8]]
 
-    token_network_model.address_to_reachability[addresses[0]] = AddressReachability.UNREACHABLE
-    assert get_paths(token_network_model=token_network_model, addresses=addresses) == []
+    address_to_reachability[addresses[0]] = AddressReachability.UNREACHABLE
+    assert (
+        get_paths(
+            token_network_model=token_network_model,
+            address_to_reachability=address_to_reachability,
+            addresses=addresses,
+        )
+        == []
+    )
 
-    token_network_model.address_to_reachability[addresses[0]] = AddressReachability.UNKNOWN
-    assert get_paths(token_network_model=token_network_model, addresses=addresses) == []
-
-
-@pytest.mark.usefixtures("populate_token_network_case_3")
-def test_reachability_mediator(token_network_model: TokenNetwork, addresses: List[Address]):
-
-    assert get_paths(token_network_model=token_network_model, addresses=addresses) == [
-        [0, 7, 8],
-        [0, 1, 2, 3, 4, 8],
-        [0, 7, 6, 8],
-        [0, 7, 9, 10, 8],
-        [0, 7, 6, 5, 8],
-    ]
-
-    token_network_model.address_to_reachability[addresses[7]] = AddressReachability.UNREACHABLE
-    assert get_paths(token_network_model=token_network_model, addresses=addresses) == [
-        [0, 1, 2, 3, 4, 8]
-    ]
-
-    token_network_model.address_to_reachability[addresses[1]] = AddressReachability.UNKNOWN
-    assert get_paths(token_network_model=token_network_model, addresses=addresses) == []
+    address_to_reachability[addresses[0]] = AddressReachability.UNKNOWN
+    assert (
+        get_paths(
+            token_network_model=token_network_model,
+            address_to_reachability=address_to_reachability,
+            addresses=addresses,
+        )
+        == []
+    )
 
 
 @pytest.mark.usefixtures("populate_token_network_case_3")
-def test_reachability_target(token_network_model: TokenNetwork, addresses: List[Address]):
+def test_reachability_mediator(
+    token_network_model: TokenNetwork,
+    address_to_reachability: Dict[Address, AddressReachability],
+    addresses: List[Address],
+):
 
-    assert get_paths(token_network_model=token_network_model, addresses=addresses) == [
-        [0, 7, 8],
-        [0, 1, 2, 3, 4, 8],
-        [0, 7, 6, 8],
-        [0, 7, 9, 10, 8],
-        [0, 7, 6, 5, 8],
-    ]
+    assert get_paths(
+        token_network_model=token_network_model,
+        address_to_reachability=address_to_reachability,
+        addresses=addresses,
+    ) == [[0, 7, 8], [0, 1, 2, 3, 4, 8], [0, 7, 6, 8], [0, 7, 9, 10, 8], [0, 7, 6, 5, 8]]
 
-    token_network_model.address_to_reachability[addresses[8]] = AddressReachability.UNREACHABLE
-    assert get_paths(token_network_model=token_network_model, addresses=addresses) == []
+    address_to_reachability[addresses[7]] = AddressReachability.UNREACHABLE
+    assert get_paths(
+        token_network_model=token_network_model,
+        address_to_reachability=address_to_reachability,
+        addresses=addresses,
+    ) == [[0, 1, 2, 3, 4, 8]]
 
-    token_network_model.address_to_reachability[addresses[8]] = AddressReachability.UNKNOWN
-    assert get_paths(token_network_model=token_network_model, addresses=addresses) == []
+    address_to_reachability[addresses[1]] = AddressReachability.UNKNOWN
+    assert (
+        get_paths(
+            token_network_model=token_network_model,
+            address_to_reachability=address_to_reachability,
+            addresses=addresses,
+        )
+        == []
+    )
+
+
+@pytest.mark.usefixtures("populate_token_network_case_3")
+def test_reachability_target(
+    token_network_model: TokenNetwork,
+    address_to_reachability: Dict[Address, AddressReachability],
+    addresses: List[Address],
+):
+
+    assert get_paths(
+        token_network_model=token_network_model,
+        address_to_reachability=address_to_reachability,
+        addresses=addresses,
+    ) == [[0, 7, 8], [0, 1, 2, 3, 4, 8], [0, 7, 6, 8], [0, 7, 9, 10, 8], [0, 7, 6, 5, 8]]
+
+    address_to_reachability[addresses[8]] = AddressReachability.UNREACHABLE
+    assert (
+        get_paths(
+            token_network_model=token_network_model,
+            address_to_reachability=address_to_reachability,
+            addresses=addresses,
+        )
+        == []
+    )
+
+    address_to_reachability[addresses[8]] = AddressReachability.UNKNOWN
+    assert (
+        get_paths(
+            token_network_model=token_network_model,
+            address_to_reachability=address_to_reachability,
+            addresses=addresses,
+        )
+        == []
+    )
