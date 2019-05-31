@@ -1,6 +1,7 @@
 [run]
 branch = True
 source = src
+concurrency = gevent
 
 [report]
 exclude_lines =
