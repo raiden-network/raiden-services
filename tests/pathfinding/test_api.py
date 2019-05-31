@@ -9,7 +9,7 @@ from eth_utils import decode_hex, encode_hex, to_bytes, to_checksum_address, to_
 from tests.pathfinding.test_database import db_has_feedback_for
 
 import pathfinding_service.exceptions as exceptions
-from pathfinding_service.api import DEFAULT_MAX_PATHS, ServiceApi
+from pathfinding_service.api import DEFAULT_MAX_PATHS, ServiceApi, last_requests
 from pathfinding_service.model import IOU, TokenNetwork
 from pathfinding_service.model.feedback import FeedbackToken
 from raiden.utils.signer import LocalSigner
@@ -40,6 +40,8 @@ def test_get_paths_via_debug_endpoint_with_debug_disabled(
 def test_get_paths_via_debug_endpoint(
     api_url: str, addresses: List[Address], token_network_model: TokenNetwork
 ):
+    # `last_requests` is a module variable, so it might have entries from tests that ran earlier.
+    last_requests.clear()
     hex_addrs = [to_checksum_address(addr) for addr in addresses]
     token_network_address = to_checksum_address(token_network_model.address)
     url_debug = api_url + f"/_debug/routes/{token_network_address}/{hex_addrs[0]}"
