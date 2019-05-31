@@ -57,7 +57,7 @@ def a(int_addr) -> Address:  # pylint: disable=invalid-name
     return Address(PrettyBytes([0] * 19 + [int_addr]))
 
 
-class TestTokenNetwork(TokenNetwork):
+class TokenNetworkForTests(TokenNetwork):
     def __init__(self, channels: List[dict]):
         super().__init__(token_network_address=TokenNetworkAddress(a(255)))
 
@@ -108,7 +108,7 @@ class TestTokenNetwork(TokenNetwork):
 
 
 def test_fees_in_routing():
-    tn = TestTokenNetwork(
+    tn = TokenNetworkForTests(
         channels=[dict(participant1=1, participant2=2), dict(participant1=2, participant2=3)]
     )
 
@@ -160,7 +160,7 @@ def test_compounding_fees():
     Earlier mediators will apply the proportional fee not only on the payment
     amount, but also on the fees for later mediators.
     """
-    tn = TestTokenNetwork(
+    tn = TokenNetworkForTests(
         channels=[
             dict(participant1=1, participant2=2),
             dict(participant1=2, participant2=3),
