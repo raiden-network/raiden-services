@@ -10,11 +10,11 @@ from monitoring_service.states import HashedBalanceProof
 from raiden.exceptions import InvalidProtocolMessage
 from raiden.messages import RequestMonitoring
 from raiden.storage.serialization.serializer import DictSerializer
-from raiden.utils.typing import Address as BytesAddress, ChainID, ChannelID, Nonce, TokenAmount
+from raiden.utils.typing import Address, ChainID, ChannelID, Nonce, TokenAmount
 from raiden_contracts.tests.utils import EMPTY_LOCKSROOT
 from raiden_libs.matrix import deserialize_messages, matrix_http_retry_delay, message_from_dict
 
-INVALID_PEER_ADDRESS = BytesAddress(to_canonical_address("0x" + "1" * 40))
+INVALID_PEER_ADDRESS = Address(to_canonical_address("0x" + "1" * 40))
 
 
 @pytest.fixture
@@ -34,7 +34,9 @@ def request_monitoring_message(token_network, get_accounts, get_private_key) -> 
     )
 
     return balance_proof_c2.get_request_monitoring(
-        privkey=get_private_key(c1), reward_amount=TokenAmount(1)
+        privkey=get_private_key(c1),
+        reward_amount=TokenAmount(1),
+        monitoring_service_contract_address=Address(bytes([11] * 20)),
     )
 
 

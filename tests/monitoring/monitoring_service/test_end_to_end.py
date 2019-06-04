@@ -88,7 +88,7 @@ def test_first_allowed_monitoring(
     # c1 asks MS to monitor the channel
     reward_amount = TokenAmount(1)
     request_monitoring = balance_proof_c2.get_request_monitoring(
-        get_private_key(c1), reward_amount
+        get_private_key(c1), reward_amount, monitoring_service_contract.address
     )
     request_collector.on_monitor_request(request_monitoring)
 
@@ -204,7 +204,7 @@ def test_e2e(  # pylint: disable=too-many-arguments,too-many-locals
     # c1 asks MS to monitor the channel
     reward_amount = TokenAmount(1)
     request_monitoring = balance_proof_c2.get_request_monitoring(
-        get_private_key(c1), reward_amount
+        get_private_key(c1), reward_amount, monitoring_service_contract.address
     )
     request_collector.on_monitor_request(request_monitoring)
 

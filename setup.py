@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 import io
 import os
+import re
 from glob import glob
 from os.path import basename, dirname, join, splitext
 from typing import List
 
 from setuptools import find_packages, setup
 
-REQ_REPLACE = {
-    "git+https://github.com/raiden-network/raiden.git@d52a9e65b98af755c31de47c7a121c3172337219": "raiden"  # noqa
-}
+REQ_REPLACE = {re.compile(r"git\+https://github.com/raiden-network/raiden.git@.*"): "raiden"}
 
 DESCRIPTION = "Raiden Services contain additional tools for the Raiden Network."
 
@@ -22,8 +21,9 @@ def read_requirements(path: str) -> List[str]:
             line = line.strip()
             if line and line[0] in ("#", "-"):
                 continue
-            if line in REQ_REPLACE.keys():
-                line = REQ_REPLACE[line]
+            for regex, replacement in REQ_REPLACE.items():
+                if regex.match(line):
+                    line = replacement
             ret.append(line)
 
     return ret
