@@ -117,7 +117,10 @@ class HashedBalanceProof:
         )
 
     def get_request_monitoring(
-        self, privkey: str, reward_amount: TokenAmount
+        self,
+        privkey: str,
+        reward_amount: TokenAmount,
+        monitoring_service_contract_address: Address,
     ) -> RequestMonitoring:
         """Returns raiden client's RequestMonitoring object"""
         non_closing_signer = LocalSigner(decode_hex(privkey))
@@ -134,6 +137,7 @@ class HashedBalanceProof:
             balance_proof=partner_signed_self,
             reward_amount=reward_amount,
             signature=EMPTY_SIGNATURE,
+            monitoring_service_contract_address=monitoring_service_contract_address,
         )
         request_monitoring.sign(non_closing_signer)
         return request_monitoring
