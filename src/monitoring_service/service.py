@@ -93,7 +93,6 @@ class MonitoringService:  # pylint: disable=too-few-public-methods
             ms_state=ms_state,
             db=self.database,
             w3=self.web3,
-            contract_manager=CONTRACT_MANAGER,
             last_known_block=0,
             monitoring_service_contract=monitoring_contract,
             user_deposit_contract=user_deposit_contract,

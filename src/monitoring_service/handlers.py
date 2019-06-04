@@ -21,7 +21,6 @@ from monitoring_service.states import (
 )
 from raiden.utils.typing import BlockNumber, TokenNetworkAddress, TransactionHash
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK, ChannelState
-from raiden_contracts.contract_manager import ContractManager
 from raiden_libs.contract_info import CONTRACT_MANAGER
 from raiden_libs.events import (
     Event,
@@ -42,7 +41,6 @@ class Context:
     ms_state: MonitoringServiceState
     db: Database
     w3: Web3
-    contract_manager: ContractManager
     last_known_block: int
     monitoring_service_contract: Contract
     user_deposit_contract: Contract

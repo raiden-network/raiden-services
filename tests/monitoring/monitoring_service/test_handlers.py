@@ -97,7 +97,6 @@ def context(ms_database: Database):
         ms_state=ms_database.load_state(),
         db=ms_database,
         w3=Mock(),
-        contract_manager=Mock(),
         last_known_block=0,
         monitoring_service_contract=Mock(),
         user_deposit_contract=Mock(),
