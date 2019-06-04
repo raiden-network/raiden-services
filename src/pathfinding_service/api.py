@@ -364,7 +364,7 @@ class InfoResource(PathfinderResource):
         )
 
 
-class DebugEndpoint(PathfinderResource):
+class DebugPathResource(PathfinderResource):
     def get(  # pylint: disable=no-self-use
         self, token_network_address: str, source_address: str, target_address: str = None
     ) -> Tuple[dict, int]:
@@ -387,7 +387,7 @@ class DebugEndpoint(PathfinderResource):
         return dict(request_count=request_count, responses=responses), 200
 
 
-class DebugEndpointIOU(PathfinderResource):
+class DebugIOUResource(PathfinderResource):
     def get(self, source_address: Address) -> Tuple[dict, int]:
         iou = self.pathfinding_service.database.get_iou(source_address)
         if iou:
@@ -400,6 +400,26 @@ class DebugEndpointIOU(PathfinderResource):
                 200,
             )
         return {}, 200
+
+
+class DebugStatsResource(PathfinderResource):
+    def get(self) -> Tuple[dict, int]:
+        num_calculated_routes = self.pathfinding_service.database.get_num_routes_feedback()
+        num_feedback_received = self.pathfinding_service.database.get_num_routes_feedback(
+            only_with_feedback=True
+        )
+        num_successful = self.pathfinding_service.database.get_num_routes_feedback(
+            only_successful=True
+        )
+
+        return (
+            {
+                "total_calculated_routes": num_calculated_routes,
+                "total_feedback_received": num_feedback_received,
+                "total_successful_routes": num_successful,
+            },
+            200,
+        )
 
 
 class ServiceApi:
@@ -435,17 +455,18 @@ class ServiceApi:
                 [
                     (
                         "/_debug/routes/<token_network_address>/<source_address>",
-                        cast(Resource, DebugEndpoint),
+                        cast(Resource, DebugPathResource),
                         {},
                         "debug1",
                     ),
                     (
                         "/_debug/routes/<token_network_address>/<source_address>/<target_address>",
-                        DebugEndpoint,
+                        DebugPathResource,
                         {},
                         "debug2",
                     ),
-                    ("/_debug/ious/<source_address>", DebugEndpointIOU, {}, "debug3"),
+                    ("/_debug/ious/<source_address>", DebugIOUResource, {}, "debug3"),
+                    ("/_debug/stats", DebugStatsResource, {}, "debug4"),
                 ]
             )
 

@@ -361,7 +361,7 @@ def test_feedback(api_sut: ServiceApi, api_url: str, token_network_model: TokenN
     assert response.json()["error_code"] == exceptions.InvalidRequest.error_code
 
     # Request with invalid path
-    response = make_request(path="abc")  # type: ignore
+    response = make_request(path=["abc"])
     assert response.status_code == 400
     assert response.json()["error_code"] == exceptions.InvalidRequest.error_code
 
@@ -390,3 +390,37 @@ def test_feedback(api_sut: ServiceApi, api_url: str, token_network_model: TokenN
     response = make_request(token_id=token.id.hex)
     assert response.status_code == 200
     assert db_has_feedback_for(database, token, default_path)
+
+
+def test_stats_endpoint(
+    api_sut_with_debug: ServiceApi, api_url: str, token_network_model: TokenNetwork
+):
+    database = api_sut_with_debug.pathfinding_service.database
+    default_path = [Address(b"1" * 20), Address(b"2" * 20), Address(b"3" * 20)]
+    feedback_token = FeedbackToken(token_network_model.address)
+
+    def check_response(num_all: int, num_only_feedback: int, num_only_success: int) -> None:
+        url = api_url + f"/_debug/stats"
+        response = requests.get(url)
+
+        assert response.status_code == 200
+
+        data = response.json()
+        assert data["total_calculated_routes"] == num_all
+        assert data["total_feedback_received"] == num_only_feedback
+        assert data["total_successful_routes"] == num_only_success
+
+    database.prepare_feedback(feedback_token, default_path)
+    check_response(1, 0, 0)
+
+    database.update_feedback(feedback_token, default_path, False)
+    check_response(1, 1, 0)
+
+    default_path2 = default_path[1:]
+    feedback_token2 = FeedbackToken(token_network_model.address)
+
+    database.prepare_feedback(feedback_token2, default_path2)
+    check_response(2, 1, 0)
+
+    database.update_feedback(feedback_token2, default_path2, True)
+    check_response(2, 2, 1)

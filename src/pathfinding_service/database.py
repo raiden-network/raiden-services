@@ -227,3 +227,14 @@ class PFSDatabase(BaseDatabase):
             )
 
         return None
+
+    def get_num_routes_feedback(
+        self, only_with_feedback: bool = False, only_successful: bool = False
+    ) -> int:
+        where_clause = ""
+        if only_with_feedback:
+            where_clause = "WHERE successful IS NOT NULL"
+        elif only_successful:
+            where_clause = "WHERE successful"
+
+        return self.conn.execute(f"SELECT COUNT(*) FROM feedback {where_clause};").fetchone()[0]

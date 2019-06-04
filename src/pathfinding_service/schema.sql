@@ -59,3 +59,6 @@ CREATE TABLE feedback (
     feedback_time TIMESTAMP,
     PRIMARY KEY (token_id, token_network_address, route)
 );
+
+CREATE INDEX feedback_successful
+    ON feedback(successful);

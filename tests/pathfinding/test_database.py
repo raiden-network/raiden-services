@@ -93,3 +93,33 @@ def test_feedback(pathfinding_service_mock):
 
     rowcount = database.update_feedback(token=token, route=route, successful=True)
     assert rowcount == 0
+
+
+def test_feedback_stats(pathfinding_service_mock):
+    token_network_address = TokenNetworkAddress(b"1" * 20)
+    default_path = [b"1" * 20, b"2" * 20, b"3" * 20]
+    feedback_token = FeedbackToken(token_network_address)
+    database = pathfinding_service_mock.database
+
+    database.prepare_feedback(feedback_token, default_path)
+    assert database.get_num_routes_feedback() == 1
+    assert database.get_num_routes_feedback(only_with_feedback=True) == 0
+    assert database.get_num_routes_feedback(only_successful=True) == 0
+
+    database.update_feedback(feedback_token, default_path, False)
+    assert database.get_num_routes_feedback() == 1
+    assert database.get_num_routes_feedback(only_with_feedback=True) == 1
+    assert database.get_num_routes_feedback(only_successful=True) == 0
+
+    default_path2 = default_path[1:]
+    feedback_token2 = FeedbackToken(token_network_address)
+
+    database.prepare_feedback(feedback_token2, default_path2)
+    assert database.get_num_routes_feedback() == 2
+    assert database.get_num_routes_feedback(only_with_feedback=True) == 1
+    assert database.get_num_routes_feedback(only_successful=True) == 0
+
+    database.update_feedback(feedback_token2, default_path2, True)
+    assert database.get_num_routes_feedback() == 2
+    assert database.get_num_routes_feedback(only_with_feedback=True) == 2
+    assert database.get_num_routes_feedback(only_successful=True) == 1
