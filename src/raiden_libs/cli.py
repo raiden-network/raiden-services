@@ -20,6 +20,7 @@ from raiden_contracts.constants import (
     CONTRACT_ONE_TO_N,
     CONTRACT_TOKEN_NETWORK_REGISTRY,
     CONTRACT_USER_DEPOSIT,
+    CONTRACTS_VERSION,
 )
 from raiden_libs.contract_info import CONTRACT_MANAGER, get_contract_addresses_and_start_block
 from raiden_libs.logging import setup_logging
@@ -78,7 +79,6 @@ def common_options(app_name: str) -> Callable:
                 ),
                 click.option(
                     "--state-db",
-                    default=os.path.join(click.get_app_dir(app_name), "state.db"),
                     type=str,
                     help="Path to SQLite3 db which stores the application state",
                 ),
@@ -99,6 +99,17 @@ def common_options(app_name: str) -> Callable:
             )
             try:
                 setup_logging(params.pop("log_level"))
+                if not params["state_db"]:
+                    params["state_db"] = os.path.join(
+                        "deployment",
+                        "state",
+                        app_name
+                        + "-"
+                        + str(params["web3"].net.version)
+                        + "-"
+                        + CONTRACTS_VERSION
+                        + ".db",
+                    )
                 return func(**params)
             finally:
                 structlog.reset_defaults()
