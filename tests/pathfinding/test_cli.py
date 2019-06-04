@@ -45,7 +45,6 @@ def provider_mock(monkeypatch):
     return provider_mock
 
 
-@pytest.mark.skip()
 def test_bad_eth_client(log, default_cli_args):
     """ Giving a bad `eth-rpc` value should yield a concise error message """
     runner = CliRunner()
