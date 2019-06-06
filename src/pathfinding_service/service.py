@@ -293,8 +293,16 @@ class PathfindingService(gevent.Greenlet):
 
     def on_pfs_update(self, message: UpdatePFS) -> None:
         token_network = self._validate_pfs_update(message)
-
-        log.info("Received Capacity Update", **asdict(message))
+        # TODO outsource this to the logging layer and checksum all addresses that are logged
+        log_message = asdict(message)
+        log_message["canonical_identifier"]["token_network_address"] = to_checksum_address(
+            log_message["canonical_identifier"]["token_network_address"]
+        )
+        log_message["other_participant"] = to_checksum_address(log_message["other_participant"])
+        log_message["updating_participant"] = to_checksum_address(
+            log_message["updating_participant"]
+        )
+        log.info("Received Capacity Update", message=log_message)
         self.database.upsert_capacity_update(message)
 
         # Follow presence for the channel participants
