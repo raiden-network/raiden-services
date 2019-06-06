@@ -1,7 +1,12 @@
 import logging
 import sys
+from dataclasses import asdict
+from typing import Any, Dict
 
 import structlog
+from eth_utils import to_checksum_address, to_hex
+
+from raiden_libs.events import Event
 
 
 def setup_logging(log_level: str) -> None:
@@ -27,3 +32,16 @@ def setup_logging(log_level: str) -> None:
         wrapper_class=structlog.stdlib.BoundLogger,
         cache_logger_on_first_use=True,
     )
+
+
+def log_event(event: Event) -> Dict[str, Any]:
+    event_data = asdict(event)
+
+    for key, val in event_data.items():
+        if isinstance(val, bytes):
+            if len(val) == 20:
+                event_data[key] = to_checksum_address(val)
+            else:
+                event_data[key] = to_hex(val)
+
+    return event_data

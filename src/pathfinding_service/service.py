@@ -1,10 +1,10 @@
 import sys
 from dataclasses import asdict
-from typing import Any, Dict, Optional
+from typing import Dict, Optional
 
 import gevent
 import structlog
-from eth_utils import to_checksum_address, to_hex
+from eth_utils import to_checksum_address
 from web3 import Web3
 from web3.contract import Contract
 
@@ -29,24 +29,12 @@ from raiden_libs.events import (
     UpdatedHeadBlockEvent,
 )
 from raiden_libs.gevent_error_handler import register_error_handler
+from raiden_libs.logging import log_event
 from raiden_libs.matrix import MatrixListener
 from raiden_libs.states import BlockchainState
 from raiden_libs.utils import private_key_to_address
 
 log = structlog.get_logger(__name__)
-
-
-def log_event(event: Event) -> Dict[str, Any]:
-    event_data = asdict(event)
-
-    for key, val in event_data.items():
-        if isinstance(val, bytes):
-            if len(val) == 20:
-                event_data[key] = to_checksum_address(val)
-            else:
-                event_data[key] = to_hex(val)
-
-    return event_data
 
 
 class PathfindingService(gevent.Greenlet):
