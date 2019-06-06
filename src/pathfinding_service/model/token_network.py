@@ -1,5 +1,5 @@
+import dataclasses
 from collections import defaultdict
-from dataclasses import dataclass
 from itertools import islice
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
@@ -15,9 +15,8 @@ from pathfinding_service.config import (
 )
 from pathfinding_service.exceptions import UndefinedFee
 from pathfinding_service.model.channel_view import ChannelView, FeeSchedule
-from raiden.messages import Message, UpdatePFS
+from raiden.messages import FeeUpdate, UpdatePFS
 from raiden.network.transport.matrix import AddressReachability
-from raiden.transfer.identifiers import CanonicalIdentifier
 from raiden.utils.typing import Address, ChannelID, FeeAmount, TokenAmount, TokenNetworkAddress
 
 log = structlog.get_logger(__name__)
@@ -109,14 +108,6 @@ class Path:
                 return False
 
         return True
-
-
-@dataclass  # pylint: disable=abstract-method
-class FeeUpdate(Message):
-    canonical_identifier: CanonicalIdentifier
-    updating_participant: Address
-    other_participant: Address
-    fee_schedule: FeeSchedule
 
 
 class TokenNetwork:
@@ -260,12 +251,15 @@ class TokenNetwork:
         )
 
     def handle_channel_fee_update(self, message: FeeUpdate) -> None:
+        channel_id = message.canonical_identifier.channel_identifier
+        participants = self.channel_id_to_addresses[channel_id]
+        other_participant = (set(participants) - {message.updating_participant}).pop()
         channel_view_to_partner, channel_view_from_partner = self.get_channel_views_for_partner(
-            updating_participant=message.updating_participant,
-            other_participant=message.other_participant,
+            updating_participant=message.updating_participant, other_participant=other_participant
         )
-        channel_view_to_partner.fee_schedule_sender = message.fee_schedule
-        channel_view_from_partner.fee_schedule_receiver = message.fee_schedule.reversed()
+        fee_schedule = FeeSchedule(**dataclasses.asdict(message.fee_schedule))
+        channel_view_to_partner.fee_schedule_sender = fee_schedule
+        channel_view_from_partner.fee_schedule_receiver = fee_schedule.reversed()
 
     @staticmethod
     def edge_weight(

@@ -12,9 +12,8 @@ from monitoring_service.constants import MAX_FILTER_INTERVAL
 from pathfinding_service.database import PFSDatabase
 from pathfinding_service.exceptions import InvalidCapacityUpdate
 from pathfinding_service.model import TokenNetwork
-from pathfinding_service.model.token_network import FeeUpdate
 from raiden.constants import PATH_FINDING_BROADCASTING_ROOM, UINT256_MAX
-from raiden.messages import Message, UpdatePFS
+from raiden.messages import FeeUpdate, Message, UpdatePFS
 from raiden.network.transport.matrix import AddressReachability
 from raiden.utils.typing import Address, BlockNumber, ChainID, TokenNetworkAddress
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
@@ -205,6 +204,13 @@ class PathfindingService(gevent.Greenlet):
         for cv in channel_views:
             self.database.upsert_channel_view(cv)
 
+        # Handle messages for this channel which where received before ChannelOpened
+        with self.database.conn:
+            for message in self.database.pop_waiting_messages(
+                token_network.address, event.channel_identifier
+            ):
+                self.handle_message(message)
+
     def handle_channel_new_deposit(self, event: ReceiveChannelNewDepositEvent) -> None:
         token_network = self.get_token_network(event.token_network_address)
         if token_network is None:
@@ -241,9 +247,23 @@ class PathfindingService(gevent.Greenlet):
                 message.canonical_identifier.token_network_address
             )
             if token_network:
-                token_network.handle_channel_fee_update(message)
+                if (
+                    message.canonical_identifier.channel_identifier
+                    in token_network.channel_id_to_addresses
+                ):
+                    token_network.handle_channel_fee_update(message)
+                else:
+                    self.defer_message_until_channel_is_open(message)
         else:
             log.debug("Ignoring message", message=message)
+
+    def defer_message_until_channel_is_open(self, message: FeeUpdate) -> None:
+        log.debug(
+            "Received message for unknown channel, defer until ChannelOpened is confirmed",
+            channel_id=message.canonical_identifier.channel_identifier,
+            message=message,
+        )
+        self.database.insert_waiting_message(message)
 
     def _validate_pfs_update(self, message: UpdatePFS) -> TokenNetwork:
         token_network_address = TokenNetworkAddress(
