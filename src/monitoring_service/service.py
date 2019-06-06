@@ -25,6 +25,7 @@ from raiden_contracts.constants import (
 from raiden_libs.blockchain import get_blockchain_events
 from raiden_libs.contract_info import CONTRACT_MANAGER
 from raiden_libs.events import Event
+from raiden_libs.logging import log_event
 from raiden_libs.utils import private_key_to_address
 
 log = structlog.get_logger(__name__)
@@ -47,7 +48,7 @@ def check_gas_reserve(web3: Web3, private_key: str) -> None:
 
 
 def handle_event(event: Event, context: Context) -> None:
-    log.debug("Processing event", event_=event)
+    log.debug("Processing event", event_=log_event(event))
     handler = HANDLERS.get(type(event))
 
     if handler:
