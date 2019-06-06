@@ -5,12 +5,15 @@ from unittest.mock import Mock, call, patch
 
 import pytest
 
+from pathfinding_service import exceptions
 from pathfinding_service.model.token_network import FeeUpdate
 from pathfinding_service.service import PathfindingService
 from raiden.constants import EMPTY_SIGNATURE
 from raiden.messages import FeeSchedule
 from raiden.network.transport.matrix import AddressReachability
+from raiden.tests.utils.factories import make_privkey_address
 from raiden.transfer.identifiers import CanonicalIdentifier
+from raiden.utils.signer import LocalSigner
 from raiden.utils.typing import (
     Address,
     BlockNumber,
@@ -33,7 +36,7 @@ from raiden_libs.events import (
 
 from ..libs.mocks.web3 import ContractMock, Web3Mock
 
-PARTICIPANT1 = Address(bytes([1] * 20))
+PARTICIPANT1_PRIVKEY, PARTICIPANT1 = make_privkey_address()
 PARTICIPANT2 = Address(bytes([2] * 20))
 
 
@@ -198,7 +201,7 @@ def test_token_channel_opened(pathfinding_service_mock, token_network_model):
 
     # Check that presence of these addresses is followed
     pathfinding_service_mock.matrix_listener.follow_address_presence.assert_has_calls(
-        [call(bytes([1] * 20), refresh=True), call(bytes([2] * 20), refresh=True)]
+        [call(PARTICIPANT1, refresh=True), call(PARTICIPANT2, refresh=True)]
     )
 
 
@@ -297,6 +300,7 @@ def test_update_fee(order, pathfinding_service_mock, token_network_model):
         nonce=Nonce(1),
         signature=EMPTY_SIGNATURE,
     )
+    fee_update.sign(LocalSigner(PARTICIPANT1_PRIVKEY))
     pathfinding_service_mock.handle_message(fee_update)
 
     if order == "fee_update_befor_channel_open":
@@ -309,3 +313,23 @@ def test_update_fee(order, pathfinding_service_mock, token_network_model):
         ).items()
         if not k.startswith("_")
     } == asdict(fee_schedule)
+
+
+def test_invalid_fee_update(pathfinding_service_mock, token_network_model):
+    setup_channel(pathfinding_service_mock, token_network_model)
+
+    fee_update = FeeUpdate(
+        canonical_identifier=CanonicalIdentifier(
+            chain_identifier=ChainID(1),
+            token_network_address=token_network_model.address,
+            channel_identifier=ChannelID(1),
+        ),
+        updating_participant=PARTICIPANT1,
+        fee_schedule=FeeSchedule(),
+        nonce=Nonce(1),
+        signature=EMPTY_SIGNATURE,
+    )
+
+    # bad/missing signature
+    with pytest.raises(exceptions.InvalidFeeUpdate):
+        pathfinding_service_mock.on_fee_update(fee_update)
