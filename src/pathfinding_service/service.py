@@ -10,7 +10,11 @@ from web3.contract import Contract
 
 from monitoring_service.constants import MAX_FILTER_INTERVAL
 from pathfinding_service.database import PFSDatabase
-from pathfinding_service.exceptions import InvalidCapacityUpdate
+from pathfinding_service.exceptions import (
+    InvalidCapacityUpdate,
+    InvalidFeeUpdate,
+    InvalidGlobalMessage,
+)
 from pathfinding_service.model import TokenNetwork
 from raiden.constants import PATH_FINDING_BROADCASTING_ROOM, UINT256_MAX
 from raiden.messages import FeeUpdate, Message, UpdatePFS
@@ -237,25 +241,15 @@ class PathfindingService(gevent.Greenlet):
         self.database.delete_channel_views(event.channel_identifier)
 
     def handle_message(self, message: Message) -> None:
-        if isinstance(message, UpdatePFS):
-            try:
+        try:
+            if isinstance(message, UpdatePFS):
                 self.on_pfs_update(message)
-            except InvalidCapacityUpdate as x:
-                log.info(str(x), **asdict(message))
-        if isinstance(message, FeeUpdate):
-            token_network = self.get_token_network(
-                message.canonical_identifier.token_network_address
-            )
-            if token_network:
-                if (
-                    message.canonical_identifier.channel_identifier
-                    in token_network.channel_id_to_addresses
-                ):
-                    token_network.handle_channel_fee_update(message)
-                else:
-                    self.defer_message_until_channel_is_open(message)
-        else:
-            log.debug("Ignoring message", message=message)
+            elif isinstance(message, FeeUpdate):
+                self.on_fee_update(message)
+            else:
+                log.debug("Ignoring message", message=message)
+        except InvalidGlobalMessage as x:
+            log.info(str(x), **asdict(message))
 
     def defer_message_until_channel_is_open(self, message: FeeUpdate) -> None:
         log.debug(
@@ -264,6 +258,20 @@ class PathfindingService(gevent.Greenlet):
             message=message,
         )
         self.database.insert_waiting_message(message)
+
+    def on_fee_update(self, message: FeeUpdate) -> None:
+        if message.sender != message.updating_participant:
+            raise InvalidFeeUpdate("Invalid sender recovered from signature in FeeUpdate")
+
+        token_network = self.get_token_network(message.canonical_identifier.token_network_address)
+        if token_network:
+            if (
+                message.canonical_identifier.channel_identifier
+                in token_network.channel_id_to_addresses
+            ):
+                token_network.handle_channel_fee_update(message)
+            else:
+                self.defer_message_until_channel_is_open(message)
 
     def _validate_pfs_update(self, message: UpdatePFS) -> TokenNetwork:
         token_network_address = TokenNetworkAddress(

@@ -1,8 +1,16 @@
 from typing import Any, Dict, Optional
 
 
-class InvalidCapacityUpdate(Exception):
-    """Exception for incoming messages"""
+class InvalidGlobalMessage(Exception):
+    """A global message received via matrix is invalid and must be discarded"""
+
+
+class InvalidCapacityUpdate(InvalidGlobalMessage):
+    pass
+
+
+class InvalidFeeUpdate(InvalidGlobalMessage):
+    pass
 
 
 class UndefinedFee(Exception):
