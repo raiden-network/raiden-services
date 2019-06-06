@@ -1,10 +1,14 @@
 import os
+from dataclasses import asdict
 from typing import List
 from unittest.mock import Mock, call, patch
 
-from pathfinding_service.model.channel_view import FeeSchedule
+import pytest
+
 from pathfinding_service.model.token_network import FeeUpdate
 from pathfinding_service.service import PathfindingService
+from raiden.constants import EMPTY_SIGNATURE
+from raiden.messages import FeeSchedule
 from raiden.network.transport.matrix import AddressReachability
 from raiden.transfer.identifiers import CanonicalIdentifier
 from raiden.utils.typing import (
@@ -13,6 +17,7 @@ from raiden.utils.typing import (
     ChainID,
     ChannelID,
     FeeAmount,
+    Nonce,
     TokenAmount,
     TokenNetworkAddress,
 )
@@ -268,11 +273,17 @@ def test_handle_reachability_change(pathfinding_service_mock, token_network_mode
     )
 
 
-def test_update_fee(pathfinding_service_mock, token_network_model):
-    setup_channel(pathfinding_service_mock, token_network_model)
+@pytest.mark.parametrize("order", ["normal", "fee_update_befor_channel_open"])
+def test_update_fee(order, pathfinding_service_mock, token_network_model):
+    pathfinding_service_mock.database.insert(
+        "token_network", dict(address=token_network_model.address)
+    )
+    if order == "normal":
+        setup_channel(pathfinding_service_mock, token_network_model)
+
     fee_schedule = FeeSchedule(
         flat=FeeAmount(1),
-        proportional=0.1,
+        proportional=int(0.1e9),
         imbalance_penalty=[(TokenAmount(0), FeeAmount(0)), (TokenAmount(10), FeeAmount(10))],
     )
     fee_update = FeeUpdate(
@@ -282,11 +293,19 @@ def test_update_fee(pathfinding_service_mock, token_network_model):
             channel_identifier=ChannelID(1),
         ),
         updating_participant=PARTICIPANT1,
-        other_participant=PARTICIPANT2,
         fee_schedule=fee_schedule,
+        nonce=Nonce(1),
+        signature=EMPTY_SIGNATURE,
     )
     pathfinding_service_mock.handle_message(fee_update)
-    assert (
-        token_network_model.G[PARTICIPANT1][PARTICIPANT2]["view"].fee_schedule_sender
-        == fee_schedule
-    )
+
+    if order == "fee_update_befor_channel_open":
+        setup_channel(pathfinding_service_mock, token_network_model)
+
+    assert {
+        k: v
+        for k, v in asdict(
+            token_network_model.G[PARTICIPANT1][PARTICIPANT2]["view"].fee_schedule_sender
+        ).items()
+        if not k.startswith("_")
+    } == asdict(fee_schedule)

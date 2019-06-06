@@ -11,7 +11,8 @@ from pathfinding_service.model import IOU
 from pathfinding_service.model.channel_view import ChannelView
 from pathfinding_service.model.feedback import FeedbackToken
 from pathfinding_service.model.token_network import TokenNetwork
-from raiden.messages import UpdatePFS
+from raiden.messages import FeeUpdate, UpdatePFS
+from raiden.storage.serialization.serializer import DictSerializer
 from raiden.utils.typing import (
     Address,
     BlockNumber,
@@ -238,3 +239,35 @@ class PFSDatabase(BaseDatabase):
             where_clause = "WHERE successful"
 
         return self.conn.execute(f"SELECT COUNT(*) FROM feedback {where_clause};").fetchone()[0]
+
+    def insert_waiting_message(self, message: FeeUpdate) -> None:
+        self.insert(
+            "waiting_message",
+            dict(
+                token_network_address=to_checksum_address(
+                    message.canonical_identifier.token_network_address
+                ),
+                channel_id=hex256(message.canonical_identifier.channel_identifier),
+                message=json.dumps(DictSerializer.serialize(message)),
+            ),
+        )
+
+    def pop_waiting_messages(
+        self, token_network_address: TokenNetworkAddress, channel_id: ChannelID
+    ) -> Iterator[FeeUpdate]:
+        """Return all waiting messages for the given channel and delete them from the db"""
+        # Return messages
+        for row in self.conn.execute(
+            """
+            SELECT message FROM waiting_message
+            WHERE token_network_address = ? AND channel_id = ?
+            """,
+            [to_checksum_address(token_network_address), hex256(channel_id)],
+        ):
+            yield DictSerializer.deserialize(json.loads(row["message"]))
+
+        # Delete returned messages
+        self.conn.execute(
+            "DELETE FROM waiting_message WHERE token_network_address = ? AND channel_id = ?",
+            [to_checksum_address(token_network_address), hex256(channel_id)],
+        )

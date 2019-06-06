@@ -47,7 +47,7 @@ class FeeSchedule:
     flat: FeeAmount = FeeAmount(0)
     proportional: float = 0
     imbalance_penalty: Optional[List[Tuple[TokenAmount, FeeAmount]]] = None
-    _penalty_func: Interpolate = field(init=False, repr=False)
+    _penalty_func: Optional[Interpolate] = field(init=False, repr=False, default=None)
 
     def __post_init__(self) -> None:
         if self.imbalance_penalty:
@@ -56,7 +56,7 @@ class FeeSchedule:
             self._penalty_func = Interpolate(x_list, y_list)
 
     def fee(self, amount: TokenAmount, capacity: TokenAmount) -> FeeAmount:
-        if self.imbalance_penalty:
+        if self._penalty_func:
             # Total channel capacity - node capacity = balance (used as x-axis for the penalty)
             balance = self._penalty_func.x_list[-1] - capacity
             try:

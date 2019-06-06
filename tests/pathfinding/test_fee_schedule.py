@@ -1,10 +1,13 @@
+import itertools
 from typing import Dict, List
 
 import pytest
 from eth_utils import decode_hex
 
 from pathfinding_service.model.channel_view import FeeSchedule, Interpolate
-from pathfinding_service.model.token_network import FeeUpdate, TokenNetwork
+from pathfinding_service.model.token_network import TokenNetwork
+from raiden.constants import EMPTY_SIGNATURE
+from raiden.messages import FeeSchedule as RaidenFeeSchedule, FeeUpdate
 from raiden.network.transport.matrix.utils import AddressReachability
 from raiden.transfer.identifiers import CanonicalIdentifier
 from raiden.utils.typing import (
@@ -12,6 +15,7 @@ from raiden.utils.typing import (
     ChainID,
     ChannelID,
     FeeAmount as FA,
+    Nonce,
     TokenAmount as TA,
     TokenNetworkAddress,
 )
@@ -62,9 +66,10 @@ class TokenNetworkForTests(TokenNetwork):
         super().__init__(token_network_address=TokenNetworkAddress(a(255)))
 
         # open channels
+        channel_ids = itertools.count(100)
         for chan in channels:
             self.handle_channel_opened_event(
-                channel_identifier=ChannelID(100),
+                channel_identifier=ChannelID(next(channel_ids)),
                 participant1=a(chan["participant1"]),
                 participant2=a(chan["participant2"]),
                 settle_timeout=100,
@@ -79,18 +84,19 @@ class TokenNetworkForTests(TokenNetwork):
             node: AddressReachability.REACHABLE for node in self.G.nodes
         }
 
-    def set_fee(self, node1: int, node2: int, fee_schedule: FeeSchedule):
+    def set_fee(self, node1: int, node2: int, **fee_params):
         channel_id = self.G[a(node1)][a(node2)]["view"].channel_id
         self.handle_channel_fee_update(
             FeeUpdate(
-                CanonicalIdentifier(
+                canonical_identifier=CanonicalIdentifier(
                     chain_identifier=ChainID(1),
                     token_network_address=self.address,
                     channel_identifier=channel_id,
                 ),
-                a(node1),
-                a(node2),
-                fee_schedule,
+                updating_participant=a(node1),
+                fee_schedule=RaidenFeeSchedule(**fee_params),
+                signature=EMPTY_SIGNATURE,
+                nonce=Nonce(1),
             )
         )
 
@@ -125,33 +131,33 @@ def test_fees_in_routing():
     assert result[0]["estimated_fee"] == 0
 
     # Fees for the initiator are ignored
-    tn.set_fee(1, 2, FeeSchedule(flat=FA(1)))
+    tn.set_fee(1, 2, flat=FA(1))
     assert tn.estimate_fee(1, 3) == 0
 
     # Node 2 demands fees for incoming transfers
-    tn.set_fee(2, 1, FeeSchedule(flat=FA(1)))
+    tn.set_fee(2, 1, flat=FA(1))
     assert tn.estimate_fee(1, 3) == 1
 
     # Node 2 demands fees for outgoing transfers
-    tn.set_fee(2, 3, FeeSchedule(flat=FA(1)))
+    tn.set_fee(2, 3, flat=FA(1))
     assert tn.estimate_fee(1, 3) == 2
 
     # Same fee in the opposite direction
     assert tn.estimate_fee(3, 1) == 2
 
     # Reset fees to zero
-    tn.set_fee(1, 2, FeeSchedule())
-    tn.set_fee(2, 1, FeeSchedule())
-    tn.set_fee(2, 3, FeeSchedule())
+    tn.set_fee(1, 2)
+    tn.set_fee(2, 1)
+    tn.set_fee(2, 3)
 
     # Now let's try imbalance fees
-    tn.set_fee(2, 3, FeeSchedule(imbalance_penalty=[(TA(0), FA(0)), (TA(200), FA(200))]))
+    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(0)), (TA(200), FA(200))])
     assert tn.estimate_fee(1, 3) == 10
     assert tn.estimate_fee(3, 1) == -10
 
     # When the range covered by the imbalance_penalty does include the
     # necessary balance values, the route should be considered invalid.
-    tn.set_fee(2, 3, FeeSchedule(imbalance_penalty=[(TA(0), FA(0)), (TA(80), FA(200))]))
+    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(0)), (TA(80), FA(200))])
     assert tn.estimate_fee(1, 3) is None
 
 
@@ -167,8 +173,8 @@ def test_compounding_fees():
             dict(participant1=3, participant2=4),
         ]
     )
-    tn.set_fee(2, 3, FeeSchedule(proportional=1))  # this is a 100% fee
-    tn.set_fee(3, 4, FeeSchedule(proportional=1))
+    tn.set_fee(2, 3, proportional=1)  # this is a 100% fee
+    tn.set_fee(3, 4, proportional=1)
     assert tn.estimate_fee(1, 4, value=TA(1)) == (
         1  # fee for node 3
         + 2  # fee for node 2, which mediates 1 token for the payment and 1 for node 3's fees
