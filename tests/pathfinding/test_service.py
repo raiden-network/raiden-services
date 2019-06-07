@@ -1,5 +1,6 @@
 import os
 from dataclasses import asdict
+from datetime import datetime
 from typing import List
 from unittest.mock import Mock, call, patch
 
@@ -20,7 +21,6 @@ from raiden.utils.typing import (
     ChainID,
     ChannelID,
     FeeAmount,
-    Nonce,
     TokenAmount,
     TokenNetworkAddress,
 )
@@ -297,7 +297,7 @@ def test_update_fee(order, pathfinding_service_mock, token_network_model):
         ),
         updating_participant=PARTICIPANT1,
         fee_schedule=fee_schedule,
-        nonce=Nonce(1),
+        timestamp=datetime.utcnow(),
         signature=EMPTY_SIGNATURE,
     )
     fee_update.sign(LocalSigner(PARTICIPANT1_PRIVKEY))
@@ -311,7 +311,7 @@ def test_update_fee(order, pathfinding_service_mock, token_network_model):
         for k, v in asdict(
             token_network_model.G[PARTICIPANT1][PARTICIPANT2]["view"].fee_schedule_sender
         ).items()
-        if not k.startswith("_")
+        if k in ("flat", "proportional", "imbalance_penalty")
     } == asdict(fee_schedule)
 
 
@@ -326,7 +326,7 @@ def test_invalid_fee_update(pathfinding_service_mock, token_network_model):
         ),
         updating_participant=PARTICIPANT1,
         fee_schedule=FeeSchedule(),
-        nonce=Nonce(1),
+        timestamp=datetime.utcnow(),
         signature=EMPTY_SIGNATURE,
     )
 

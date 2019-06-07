@@ -1,6 +1,6 @@
 import sys
 from dataclasses import asdict
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 import gevent
 import structlog
@@ -16,6 +16,7 @@ from pathfinding_service.exceptions import (
     InvalidGlobalMessage,
 )
 from pathfinding_service.model import TokenNetwork
+from pathfinding_service.model.channel_view import ChannelView
 from raiden.constants import PATH_FINDING_BROADCASTING_ROOM, UINT256_MAX
 from raiden.messages import FeeUpdate, Message, UpdatePFS
 from raiden.network.transport.matrix import AddressReachability
@@ -243,11 +244,15 @@ class PathfindingService(gevent.Greenlet):
     def handle_message(self, message: Message) -> None:
         try:
             if isinstance(message, UpdatePFS):
-                self.on_pfs_update(message)
+                changed_cvs = self.on_pfs_update(message)
             elif isinstance(message, FeeUpdate):
-                self.on_fee_update(message)
+                changed_cvs = self.on_fee_update(message)
             else:
                 log.debug("Ignoring message", message=message)
+
+            for cv in changed_cvs:
+                self.database.upsert_channel_view(cv)
+
         except InvalidGlobalMessage as x:
             log.info(str(x), **asdict(message))
 
@@ -259,19 +264,22 @@ class PathfindingService(gevent.Greenlet):
         )
         self.database.insert_waiting_message(message)
 
-    def on_fee_update(self, message: FeeUpdate) -> None:
+    def on_fee_update(self, message: FeeUpdate) -> List[ChannelView]:
         if message.sender != message.updating_participant:
             raise InvalidFeeUpdate("Invalid sender recovered from signature in FeeUpdate")
 
         token_network = self.get_token_network(message.canonical_identifier.token_network_address)
-        if token_network:
-            if (
-                message.canonical_identifier.channel_identifier
-                in token_network.channel_id_to_addresses
-            ):
-                token_network.handle_channel_fee_update(message)
-            else:
-                self.defer_message_until_channel_is_open(message)
+        if not token_network:
+            return []
+
+        if (
+            message.canonical_identifier.channel_identifier
+            in token_network.channel_id_to_addresses
+        ):
+            return token_network.handle_channel_fee_update(message)
+        else:
+            self.defer_message_until_channel_is_open(message)
+            return []
 
     def _validate_pfs_update(self, message: UpdatePFS) -> TokenNetwork:
         token_network_address = TokenNetworkAddress(
@@ -319,7 +327,7 @@ class PathfindingService(gevent.Greenlet):
 
         return token_network
 
-    def on_pfs_update(self, message: UpdatePFS) -> None:
+    def on_pfs_update(self, message: UpdatePFS) -> List[ChannelView]:
         token_network = self._validate_pfs_update(message)
 
         log.info("Received Capacity Update", **asdict(message))
@@ -336,7 +344,7 @@ class PathfindingService(gevent.Greenlet):
             ),
             channel_id=message.canonical_identifier.channel_identifier,
         )
-        token_network.handle_channel_balance_update_message(
+        return token_network.handle_channel_balance_update_message(
             message=message,
             updating_capacity_partner=updating_capacity_partner,
             other_capacity_partner=other_capacity_partner,
