@@ -1,12 +1,13 @@
 from bisect import bisect_right
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import ClassVar, List, Optional, Sequence, Tuple, Type
 
 import marshmallow
 from marshmallow_dataclass import add_schema
 
 from pathfinding_service.config import DEFAULT_REVEAL_TIMEOUT
-from pathfinding_service.exceptions import UndefinedFee
+from pathfinding_service.exceptions import InvalidFeeUpdate, UndefinedFee
 from raiden.utils.typing import (
     Address,
     ChannelID,
@@ -47,6 +48,7 @@ class FeeSchedule:
     flat: FeeAmount = FeeAmount(0)
     proportional: float = 0
     imbalance_penalty: Optional[List[Tuple[TokenAmount, FeeAmount]]] = None
+    timestamp: datetime = datetime(2000, 1, 1)
     _penalty_func: Optional[Interpolate] = field(init=False, repr=False, default=None)
 
     def __post_init__(self) -> None:
@@ -74,6 +76,7 @@ class FeeSchedule:
         return FeeSchedule(
             flat=self.flat,
             proportional=self.proportional,
+            timestamp=self.timestamp,
             imbalance_penalty=[
                 (x, FeeAmount(max_penalty - penalty)) for x, penalty in self.imbalance_penalty
             ],
@@ -126,6 +129,13 @@ class ChannelView:
     def fee_receiver(self, amount: TokenAmount) -> FeeAmount:
         """Return the mediation fee for this channel when receiving the given amount"""
         return self.fee_schedule_receiver.fee(amount, self.capacity)
+
+    def set_fee_schedule(self, party: str, fee_schedule: FeeSchedule) -> None:
+        assert party in ["sender", "receiver"]
+        attr_name = "fee_schedule_" + party
+        if getattr(self, attr_name).timestamp >= fee_schedule.timestamp:
+            raise InvalidFeeUpdate("Timestamp must increase between fee updates")
+        setattr(self, attr_name, fee_schedule)
 
     def __repr__(self) -> str:
         return "<ChannelView from={} to={} capacity={}>".format(

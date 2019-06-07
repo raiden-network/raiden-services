@@ -1,4 +1,5 @@
 import itertools
+from datetime import datetime
 from typing import Dict, List
 
 import pytest
@@ -15,7 +16,6 @@ from raiden.utils.typing import (
     ChainID,
     ChannelID,
     FeeAmount as FA,
-    Nonce,
     TokenAmount as TA,
     TokenNetworkAddress,
 )
@@ -96,7 +96,7 @@ class TokenNetworkForTests(TokenNetwork):
                 updating_participant=a(node1),
                 fee_schedule=RaidenFeeSchedule(**fee_params),
                 signature=EMPTY_SIGNATURE,
-                nonce=Nonce(1),
+                timestamp=datetime.utcnow(),
             )
         )
 
