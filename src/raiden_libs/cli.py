@@ -100,16 +100,10 @@ def common_options(app_name: str) -> Callable:
             try:
                 setup_logging(params.pop("log_level"))
                 if not params["state_db"]:
-                    params["state_db"] = os.path.join(
-                        "deployment",
-                        "state",
-                        app_name
-                        + "-"
-                        + str(params["web3"].net.version)
-                        + "-"
-                        + CONTRACTS_VERSION
-                        + ".db",
-                    )
+                    chain_id = str(params["web3"].net.version)
+                    contracts_version = CONTRACTS_VERSION.replace(".", "_")
+                    filename = f"{app_name}-{chain_id}-{contracts_version}.db"
+                    params["state_db"] = os.path.join("deployment", "state", filename)
                 return func(**params)
             finally:
                 structlog.reset_defaults()
