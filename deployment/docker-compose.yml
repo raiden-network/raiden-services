@@ -77,7 +77,7 @@ services:
     <<: *defaults
     command: ["python3", "-m", "pathfinding_service.cli", "--enable-debug"]
     environment:
-      - PFS_ETH_RPC=http://geth.goerli.ethnodes.brainbot.com:8545
+      - PFS_ETH_RPC=http://parity.goerli.ethnodes.brainbot.com:8545
       - PFS_STATE_DB=/state/pfs-goerli.db
     labels:
       - "traefik.enable=true"
@@ -87,7 +87,7 @@ services:
     <<: *defaults
     command: ["python3", "-m", "pathfinding_service.cli", "--enable-debug"]
     environment:
-      - PFS_ETH_RPC=http://geth.goerli.ethnodes.brainbot.com:8545
+      - PFS_ETH_RPC=http://parity.goerli.ethnodes.brainbot.com:8545
       - PFS_STATE_DB=/state/pfs-goerli-with-fee.db
       - PFS_SERVICE_FEE=100
     labels:
@@ -116,7 +116,7 @@ services:
     <<: *defaults
     command: ["python3", "-m", "monitoring_service.cli"]
     environment:
-      - MS_ETH_RPC=http://geth.goerli.ethnodes.brainbot.com:8545
+      - MS_ETH_RPC=http://parity.goerli.ethnodes.brainbot.com:8545
 
   msrc-ropsten:
     << : *defaults
