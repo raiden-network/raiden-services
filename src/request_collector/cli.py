@@ -38,7 +38,7 @@ def main(private_key: str, state_db: str) -> int:
     """ The request collector for the monitoring service. """
     log.info("Starting Raiden Monitoring Request Collector")
 
-    if not os.path.exists(state_db):
+    if state_db != ":memory:" and not os.path.exists(state_db):
         log.error(
             "Database file from monitoring service not found. Is the monitoring service running?",
             expected_db_path=state_db,

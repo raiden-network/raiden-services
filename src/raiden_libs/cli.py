@@ -106,9 +106,10 @@ def common_options(app_name: str) -> Callable:
                     filename = f"{app_name}-{chain_id}-{contracts_version}.db"
                     params["state_db"] = os.path.join("deployment", "state", filename)
 
-                    # remove `chain_id` paramater, when available
-                    if params.get("chain_id") is not None:
-                        params.pop("chain_id")
+                # Need to delete the `chain_id` key
+                if params.get("chain_id") is not None:
+                    del params["chain_id"]
+
                 return func(**params)
             finally:
                 structlog.reset_defaults()
