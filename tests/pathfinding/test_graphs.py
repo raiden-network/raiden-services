@@ -64,7 +64,7 @@ def test_edge_weight(addresses):
 
     # relative fee
     view.fee_schedule_sender.flat = FeeAmount(0)
-    view.fee_schedule_sender.proportional = 0.01
+    view.fee_schedule_sender.proportional = int(0.01e6)
     assert (
         TokenNetwork.edge_weight(
             dict(), dict(view=view), dict(view=view_partner), amount=amount, fee_penalty=100

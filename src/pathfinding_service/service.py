@@ -274,12 +274,12 @@ class PathfindingService(gevent.Greenlet):
 
         if (
             message.canonical_identifier.channel_identifier
-            in token_network.channel_id_to_addresses
+            not in token_network.channel_id_to_addresses
         ):
-            return token_network.handle_channel_fee_update(message)
-        else:
             self.defer_message_until_channel_is_open(message)
             return []
+
+        return token_network.handle_channel_fee_update(message)
 
     def _validate_pfs_update(self, message: UpdatePFS) -> TokenNetwork:
         token_network_address = TokenNetworkAddress(

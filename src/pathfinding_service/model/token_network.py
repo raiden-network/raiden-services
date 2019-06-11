@@ -1,4 +1,3 @@
-import dataclasses
 from collections import defaultdict
 from datetime import datetime, timedelta
 from itertools import islice
@@ -14,8 +13,9 @@ from pathfinding_service.config import (
     DIVERSITY_PEN_DEFAULT,
     FEE_PEN_DEFAULT,
 )
-from pathfinding_service.exceptions import InvalidFeeUpdate, UndefinedFee
+from pathfinding_service.exceptions import InvalidFeeUpdate
 from pathfinding_service.model.channel_view import ChannelView, FeeSchedule
+from raiden.exceptions import UndefinedMediationFee
 from raiden.messages import FeeUpdate, UpdatePFS
 from raiden.network.transport.matrix import AddressReachability
 from raiden.utils.typing import Address, ChannelID, FeeAmount, TokenAmount, TokenNetworkAddress
@@ -61,7 +61,7 @@ class Path:
                 ) + self.G[mediator][next_node]["view"].fee_sender(total)
                 total += fee_for_this_mediator
                 self.fees.append(fee_for_this_mediator)
-        except UndefinedFee:
+        except UndefinedMediationFee:
             self._is_valid = False
 
     @property
@@ -264,9 +264,7 @@ class TokenNetwork:
         channel_view_to_partner, channel_view_from_partner = self.get_channel_views_for_partner(
             updating_participant=message.updating_participant, other_participant=other_participant
         )
-        fee_schedule = FeeSchedule(  # type: ignore  # mypy is confused by different FeeSchedules
-            **dataclasses.asdict(message.fee_schedule), timestamp=message.timestamp
-        )
+        fee_schedule = FeeSchedule.from_raiden(message.fee_schedule, timestamp=message.timestamp)
         channel_view_to_partner.set_fee_schedule("sender", fee_schedule)
         channel_view_from_partner.set_fee_schedule("receiver", fee_schedule.reversed())
         return [channel_view_to_partner, channel_view_from_partner]
@@ -287,7 +285,7 @@ class TokenNetwork:
         # inconsistent with the estimated total fee.
         try:
             fee_weight = (view.fee_sender(amount) + view.fee_receiver(amount)) / 1e18 * fee_penalty
-        except UndefinedFee:
+        except UndefinedMediationFee:
             return float("inf")
         no_refund_weight = 0
         if view_from_partner.capacity < int(float(amount) * 1.1):
