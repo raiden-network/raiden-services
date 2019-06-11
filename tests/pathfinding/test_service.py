@@ -1,5 +1,4 @@
 import os
-from dataclasses import asdict
 from datetime import datetime
 from typing import List
 from unittest.mock import Mock, call, patch
@@ -306,13 +305,9 @@ def test_update_fee(order, pathfinding_service_mock, token_network_model):
     if order == "fee_update_befor_channel_open":
         setup_channel(pathfinding_service_mock, token_network_model)
 
-    assert {
-        k: v
-        for k, v in asdict(
-            token_network_model.G[PARTICIPANT1][PARTICIPANT2]["view"].fee_schedule_sender
-        ).items()
-        if k in ("flat", "proportional", "imbalance_penalty")
-    } == asdict(fee_schedule)
+    cv = token_network_model.G[PARTICIPANT1][PARTICIPANT2]["view"]
+    for key in ("flat", "proportional", "imbalance_penalty"):
+        assert getattr(cv.fee_schedule_sender, key) == getattr(fee_schedule, key)
 
 
 def test_invalid_fee_update(pathfinding_service_mock, token_network_model):
