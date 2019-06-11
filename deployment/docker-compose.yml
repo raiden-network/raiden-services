@@ -121,24 +121,32 @@ services:
   msrc-ropsten:
     << : *defaults
     command: ["python3", "-m", "request_collector.cli"]
+    environment:
+      - MS_CHAIN_ID=ropsten
     depends_on:
       - ms-ropsten
 
   msrc-rinkeby:
     << : *defaults
     command: ["python3", "-m", "request_collector.cli"]
+    environment:
+      - MS_CHAIN_ID=rinkeby
     depends_on:
       - ms-rinkeby
 
   msrc-kovan:
     << : *defaults
     command: ["python3", "-m", "request_collector.cli"]
+    environment:
+      - MS_CHAIN_ID=kovan
     depends_on:
       - ms-kovan
 
   msrc-goerli:
     << : *defaults
     command: ["python3", "-m", "request_collector.cli"]
+    environment:
+      - MS_CHAIN_ID=goerli
     depends_on:
       - ms-goerli
 
