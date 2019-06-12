@@ -4,17 +4,19 @@ from typing import Dict, Optional
 
 import gevent
 import structlog
-from eth_utils import to_checksum_address
 from web3 import Web3
 from web3.contract import Contract
 
 from monitoring_service.constants import MAX_FILTER_INTERVAL
 from pathfinding_service.database import PFSDatabase
-from pathfinding_service.exceptions import InvalidCapacityUpdate
+from pathfinding_service.exceptions import (
+    InvalidCapacityUpdate,
+    InvalidFeeUpdate,
+    InvalidGlobalMessage,
+)
 from pathfinding_service.model import TokenNetwork
-from pathfinding_service.model.token_network import FeeUpdate
 from raiden.constants import PATH_FINDING_BROADCASTING_ROOM, UINT256_MAX
-from raiden.messages import Message, UpdatePFS
+from raiden.messages import FeeUpdate, Message, UpdatePFS
 from raiden.network.transport.matrix import AddressReachability
 from raiden.utils.typing import Address, BlockNumber, ChainID, TokenNetworkAddress
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
@@ -29,7 +31,6 @@ from raiden_libs.events import (
     UpdatedHeadBlockEvent,
 )
 from raiden_libs.gevent_error_handler import register_error_handler
-from raiden_libs.logging import log_event
 from raiden_libs.matrix import MatrixListener
 from raiden_libs.states import BlockchainState
 from raiden_libs.utils import private_key_to_address
@@ -60,7 +61,7 @@ class PathfindingService(gevent.Greenlet):
         self._poll_interval = poll_interval
         self._is_running = gevent.event.Event()
 
-        log.info("PFS payment address", address=to_checksum_address(self.address))
+        log.info("PFS payment address", address=self.address)
 
         self.blockchain_state = BlockchainState(
             latest_known_block=BlockNumber(0),
@@ -111,7 +112,7 @@ class PathfindingService(gevent.Greenlet):
 
         log.info(
             "Listening to token network registry",
-            registry_address=to_checksum_address(self.registry_address),
+            registry_address=self.registry_address,
             start_block=self.database.get_latest_known_block(),
         )
         while not self._is_running.is_set():
@@ -181,7 +182,7 @@ class PathfindingService(gevent.Greenlet):
     def handle_token_network_created(self, event: ReceiveTokenNetworkCreatedEvent) -> None:
         network_address = TokenNetworkAddress(event.token_network_address)
         if not self.follows_token_network(network_address):
-            log.info("Found new token network", **log_event(event))
+            log.info("Found new token network", event_=event)
 
             self.token_networks[network_address] = TokenNetwork(network_address)
             self.database.upsert_token_network(network_address)
@@ -191,7 +192,7 @@ class PathfindingService(gevent.Greenlet):
         if token_network is None:
             return
 
-        log.info("Received ChannelOpened event", **log_event(event))
+        log.info("Received ChannelOpened event", event_=event)
 
         self.matrix_listener.follow_address_presence(event.participant1, refresh=True)
         self.matrix_listener.follow_address_presence(event.participant2, refresh=True)
@@ -205,12 +206,19 @@ class PathfindingService(gevent.Greenlet):
         for cv in channel_views:
             self.database.upsert_channel_view(cv)
 
+        # Handle messages for this channel which where received before ChannelOpened
+        with self.database.conn:
+            for message in self.database.pop_waiting_messages(
+                token_network.address, event.channel_identifier
+            ):
+                self.handle_message(message)
+
     def handle_channel_new_deposit(self, event: ReceiveChannelNewDepositEvent) -> None:
         token_network = self.get_token_network(event.token_network_address)
         if token_network is None:
             return
 
-        log.info("Received ChannelNewDeposit event", **log_event(event))
+        log.info("Received ChannelNewDeposit event", event_=event)
 
         channel_view = token_network.handle_channel_new_deposit_event(
             channel_identifier=event.channel_identifier,
@@ -225,25 +233,43 @@ class PathfindingService(gevent.Greenlet):
         if token_network is None:
             return
 
-        log.info("Received ChannelClosed event", **log_event(event))
+        log.info("Received ChannelClosed event", event_=event)
 
         token_network.handle_channel_closed_event(channel_identifier=event.channel_identifier)
         self.database.delete_channel_views(event.channel_identifier)
 
     def handle_message(self, message: Message) -> None:
-        if isinstance(message, UpdatePFS):
-            try:
+        try:
+            if isinstance(message, UpdatePFS):
                 self.on_pfs_update(message)
-            except InvalidCapacityUpdate as x:
-                log.info(str(x), **asdict(message))
-        if isinstance(message, FeeUpdate):
-            token_network = self.get_token_network(
-                message.canonical_identifier.token_network_address
-            )
-            if token_network:
+            elif isinstance(message, FeeUpdate):
+                self.on_fee_update(message)
+            else:
+                log.debug("Ignoring message", message=message)
+        except InvalidGlobalMessage as x:
+            log.info(str(x), **asdict(message))
+
+    def defer_message_until_channel_is_open(self, message: FeeUpdate) -> None:
+        log.debug(
+            "Received message for unknown channel, defer until ChannelOpened is confirmed",
+            channel_id=message.canonical_identifier.channel_identifier,
+            message=message,
+        )
+        self.database.insert_waiting_message(message)
+
+    def on_fee_update(self, message: FeeUpdate) -> None:
+        if message.sender != message.updating_participant:
+            raise InvalidFeeUpdate("Invalid sender recovered from signature in FeeUpdate")
+
+        token_network = self.get_token_network(message.canonical_identifier.token_network_address)
+        if token_network:
+            if (
+                message.canonical_identifier.channel_identifier
+                in token_network.channel_id_to_addresses
+            ):
                 token_network.handle_channel_fee_update(message)
-        else:
-            log.debug("Ignoring message", message=message)
+            else:
+                self.defer_message_until_channel_is_open(message)
 
     def _validate_pfs_update(self, message: UpdatePFS) -> TokenNetwork:
         token_network_address = TokenNetworkAddress(
@@ -293,16 +319,7 @@ class PathfindingService(gevent.Greenlet):
 
     def on_pfs_update(self, message: UpdatePFS) -> None:
         token_network = self._validate_pfs_update(message)
-        # TODO outsource this to the logging layer and checksum all addresses that are logged
-        log_message = asdict(message)
-        log_message["canonical_identifier"]["token_network_address"] = to_checksum_address(
-            log_message["canonical_identifier"]["token_network_address"]
-        )
-        log_message["other_participant"] = to_checksum_address(log_message["other_participant"])
-        log_message["updating_participant"] = to_checksum_address(
-            log_message["updating_participant"]
-        )
-        log.info("Received Capacity Update", message=log_message)
+        log.info("Received Capacity Update", message=message)
         self.database.upsert_capacity_update(message)
 
         # Follow presence for the channel participants

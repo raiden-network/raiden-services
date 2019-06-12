@@ -77,7 +77,7 @@ services:
     <<: *defaults
     command: ["python3", "-m", "pathfinding_service.cli", "--enable-debug"]
     environment:
-      - PFS_ETH_RPC=http://geth.goerli.ethnodes.brainbot.com:8545
+      - PFS_ETH_RPC=http://parity.goerli.ethnodes.brainbot.com:8545
       - PFS_STATE_DB=/state/pfs-goerli.db
     labels:
       - "traefik.enable=true"
@@ -87,7 +87,7 @@ services:
     <<: *defaults
     command: ["python3", "-m", "pathfinding_service.cli", "--enable-debug"]
     environment:
-      - PFS_ETH_RPC=http://geth.goerli.ethnodes.brainbot.com:8545
+      - PFS_ETH_RPC=http://parity.goerli.ethnodes.brainbot.com:8545
       - PFS_STATE_DB=/state/pfs-goerli-with-fee.db
       - PFS_SERVICE_FEE=100
     labels:
@@ -99,34 +99,30 @@ services:
     command: ["python3", "-m", "monitoring_service.cli"]
     environment:
       - MS_ETH_RPC=http://geth.ropsten.ethnodes.brainbot.com:8545
-      - MS_STATE_DB=/state/ms-ropsten.db
 
   ms-rinkeby:
     << : *defaults
     command: ["python3", "-m", "monitoring_service.cli"]
     environment:
       - MS_ETH_RPC=http://geth.rinkeby.ethnodes.brainbot.com:8545
-      - MS_STATE_DB=/state/ms-rinkeby.db
 
   ms-kovan:
     << : *defaults
     command: ["python3", "-m", "monitoring_service.cli"]
     environment:
       - MS_ETH_RPC=http://parity.kovan.ethnodes.brainbot.com:8545
-      - MS_STATE_DB=/state/ms-kovan.db
 
   ms-goerli:
     <<: *defaults
     command: ["python3", "-m", "monitoring_service.cli"]
     environment:
-      - MS_ETH_RPC=http://geth.goerli.ethnodes.brainbot.com:8545
-      - MS_STATE_DB=/state/ms-goerli.db
+      - MS_ETH_RPC=http://parity.goerli.ethnodes.brainbot.com:8545
 
   msrc-ropsten:
     << : *defaults
     command: ["python3", "-m", "request_collector.cli"]
     environment:
-      - MSRC_STATE_DB=/state/ms-ropsten.db
+      - MSRC_CHAIN_ID=ropsten
     depends_on:
       - ms-ropsten
 
@@ -134,7 +130,7 @@ services:
     << : *defaults
     command: ["python3", "-m", "request_collector.cli"]
     environment:
-      - MSRC_STATE_DB=/state/ms-rinkeby.db
+      - MSRC_CHAIN_ID=rinkeby
     depends_on:
       - ms-rinkeby
 
@@ -142,7 +138,7 @@ services:
     << : *defaults
     command: ["python3", "-m", "request_collector.cli"]
     environment:
-      - MSRC_STATE_DB=/state/ms-kovan.db
+      - MSRC_CHAIN_ID=kovan
     depends_on:
       - ms-kovan
 
@@ -150,7 +146,7 @@ services:
     << : *defaults
     command: ["python3", "-m", "request_collector.cli"]
     environment:
-      - MSRC_STATE_DB=/state/ms-goerli.db
+      - MSRC_CHAIN_ID=goerli
     depends_on:
       - ms-goerli
 

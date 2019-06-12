@@ -62,3 +62,15 @@ CREATE TABLE feedback (
 
 CREATE INDEX feedback_successful
     ON feedback(successful);
+
+-- Messages which can't be processed yet because the ChannelOpened event has
+-- not been confirmed at the time of receiving will be stored here. The
+-- messages are processed when the corresponding ChannelOpened is confirmed.
+CREATE TABLE waiting_message (
+    token_network_address   CHAR(42) NOT NULL,
+    channel_id              HEX_INT NOT NULL,
+    message                 JSON NOT NULL,
+    added_at                TIMESTAMP DEFAULT current_timestamp,
+    FOREIGN KEY (token_network_address)
+        REFERENCES token_network(address)
+)

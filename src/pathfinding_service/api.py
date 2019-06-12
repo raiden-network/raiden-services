@@ -481,7 +481,7 @@ class ServiceApi:
         self.rest_server = WSGIServer((host, port), self.flask_app)
         self.rest_server.start()
 
-        log.info("Running endpoint", endpoint=f"{host}:{port}")
+        log.info("Running endpoint", endpoint=f"http://{host}:{port}")
 
     def stop(self) -> None:
         if self.rest_server:

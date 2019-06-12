@@ -19,6 +19,7 @@ def setup_logging(log_level: str) -> None:
 
     structlog.configure(
         processors=[
+            format_to_hex,
             structlog.stdlib.add_log_level,
             structlog.stdlib.add_logger_name,
             structlog.stdlib.PositionalArgumentsFormatter(),
@@ -34,14 +35,22 @@ def setup_logging(log_level: str) -> None:
     )
 
 
-def log_event(event: Event) -> Dict[str, Any]:
-    event_data = asdict(event)
+def change_bytes(event_dict: Dict, key: Any, val: bytes) -> Dict[str, Any]:
+    if len(val) == 20:
+        event_dict[key] = to_checksum_address(val)
+    else:
+        event_dict[key] = to_hex(val)
+    return event_dict
 
-    for key, val in event_data.items():
+
+def format_to_hex(_logger: Any, _log_method: Any, event_dict: Dict) -> Dict[str, Any]:
+    for key, val in event_dict.items():
         if isinstance(val, bytes):
-            if len(val) == 20:
-                event_data[key] = to_checksum_address(val)
-            else:
-                event_data[key] = to_hex(val)
-
-    return event_data
+            change_bytes(event_dict, key, val)
+        if isinstance(val, Event):
+            event_data = asdict(val)
+            for keys, value in event_data.items():
+                if isinstance(value, bytes):
+                    change_bytes(event_data, keys, value)
+            event_dict[key] = event_data
+    return event_dict

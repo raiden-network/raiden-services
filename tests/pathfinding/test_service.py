@@ -1,18 +1,27 @@
 import os
+from dataclasses import asdict
 from typing import List
 from unittest.mock import Mock, call, patch
 
-from pathfinding_service.model.channel_view import FeeSchedule
+import pytest
+from eth_utils import to_checksum_address
+
+from pathfinding_service import exceptions
 from pathfinding_service.model.token_network import FeeUpdate
 from pathfinding_service.service import PathfindingService
+from raiden.constants import EMPTY_SIGNATURE
+from raiden.messages import FeeSchedule
 from raiden.network.transport.matrix import AddressReachability
+from raiden.tests.utils.factories import make_privkey_address
 from raiden.transfer.identifiers import CanonicalIdentifier
+from raiden.utils.signer import LocalSigner
 from raiden.utils.typing import (
     Address,
     BlockNumber,
     ChainID,
     ChannelID,
     FeeAmount,
+    Nonce,
     TokenAmount,
     TokenNetworkAddress,
 )
@@ -25,10 +34,11 @@ from raiden_libs.events import (
     ReceiveTokenNetworkCreatedEvent,
     UpdatedHeadBlockEvent,
 )
+from raiden_libs.logging import format_to_hex
 
 from ..libs.mocks.web3 import ContractMock, Web3Mock
 
-PARTICIPANT1 = Address(bytes([1] * 20))
+PARTICIPANT1_PRIVKEY, PARTICIPANT1 = make_privkey_address()
 PARTICIPANT2 = Address(bytes([2] * 20))
 
 
@@ -193,7 +203,7 @@ def test_token_channel_opened(pathfinding_service_mock, token_network_model):
 
     # Check that presence of these addresses is followed
     pathfinding_service_mock.matrix_listener.follow_address_presence.assert_has_calls(
-        [call(bytes([1] * 20), refresh=True), call(bytes([2] * 20), refresh=True)]
+        [call(PARTICIPANT1, refresh=True), call(PARTICIPANT2, refresh=True)]
     )
 
 
@@ -268,11 +278,17 @@ def test_handle_reachability_change(pathfinding_service_mock, token_network_mode
     )
 
 
-def test_update_fee(pathfinding_service_mock, token_network_model):
-    setup_channel(pathfinding_service_mock, token_network_model)
+@pytest.mark.parametrize("order", ["normal", "fee_update_befor_channel_open"])
+def test_update_fee(order, pathfinding_service_mock, token_network_model):
+    pathfinding_service_mock.database.insert(
+        "token_network", dict(address=token_network_model.address)
+    )
+    if order == "normal":
+        setup_channel(pathfinding_service_mock, token_network_model)
+
     fee_schedule = FeeSchedule(
         flat=FeeAmount(1),
-        proportional=0.1,
+        proportional=int(0.1e9),
         imbalance_penalty=[(TokenAmount(0), FeeAmount(0)), (TokenAmount(10), FeeAmount(10))],
     )
     fee_update = FeeUpdate(
@@ -282,11 +298,66 @@ def test_update_fee(pathfinding_service_mock, token_network_model):
             channel_identifier=ChannelID(1),
         ),
         updating_participant=PARTICIPANT1,
-        other_participant=PARTICIPANT2,
         fee_schedule=fee_schedule,
+        nonce=Nonce(1),
+        signature=EMPTY_SIGNATURE,
     )
+    fee_update.sign(LocalSigner(PARTICIPANT1_PRIVKEY))
     pathfinding_service_mock.handle_message(fee_update)
-    assert (
-        token_network_model.G[PARTICIPANT1][PARTICIPANT2]["view"].fee_schedule_sender
-        == fee_schedule
+
+    if order == "fee_update_befor_channel_open":
+        setup_channel(pathfinding_service_mock, token_network_model)
+
+    assert {
+        k: v
+        for k, v in asdict(
+            token_network_model.G[PARTICIPANT1][PARTICIPANT2]["view"].fee_schedule_sender
+        ).items()
+        if not k.startswith("_")
+    } == asdict(fee_schedule)
+
+
+def test_invalid_fee_update(pathfinding_service_mock, token_network_model):
+    setup_channel(pathfinding_service_mock, token_network_model)
+
+    fee_update = FeeUpdate(
+        canonical_identifier=CanonicalIdentifier(
+            chain_identifier=ChainID(1),
+            token_network_address=token_network_model.address,
+            channel_identifier=ChannelID(1),
+        ),
+        updating_participant=PARTICIPANT1,
+        fee_schedule=FeeSchedule(),
+        nonce=Nonce(1),
+        signature=EMPTY_SIGNATURE,
+    )
+
+    # bad/missing signature
+    with pytest.raises(exceptions.InvalidFeeUpdate):
+        pathfinding_service_mock.on_fee_update(fee_update)
+
+
+def test_logging_processor():
+    # test if our logging processor changes bytes to checksum addresses
+    # even if bytes-addresses are entangeled into events
+    logger = Mock()
+    log_method = Mock()
+
+    address = b"\x7f[\xf6\xc9To\xa8\x185w\xe4\x9f\x15\xbc\xef@mr\xd5\xd9"
+    address2 = b"\x7f[\xf6\xc9To\xa8\x185w\xe4\x9f\x15\xbc\xef@mr\xd5\xd1"
+    event = ReceiveTokenNetworkCreatedEvent(
+        token_address=Address(address),
+        token_network_address=TokenNetworkAddress(address2),
+        block_number=BlockNumber(1),
+    )
+    address_log = format_to_hex(
+        _logger=logger, _log_method=log_method, event_dict=dict(address=address)
+    )
+    event_log = format_to_hex(_logger=logger, _log_method=log_method, event_dict=dict(event=event))
+    assert to_checksum_address(address) == address_log["address"]
+    assert (  # pylint: disable=unsubscriptable-object
+        to_checksum_address(address) == event_log["event"]["token_address"]
+    )
+    assert (  # pylint: disable=unsubscriptable-object
+        to_checksum_address(address2) == event_log["event"]["token_network_address"]
     )

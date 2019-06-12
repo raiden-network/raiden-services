@@ -10,7 +10,7 @@ from matrix_client.user import User
 
 from raiden.constants import Environment
 from raiden.exceptions import InvalidProtocolMessage, TransportError
-from raiden.messages import Message, RequestMonitoring, SignedMessage, UpdatePFS
+from raiden.messages import FeeUpdate, Message, RequestMonitoring, SignedMessage, UpdatePFS
 from raiden.network.transport.matrix.client import Room
 from raiden.network.transport.matrix.utils import (
     AddressReachability,
@@ -35,7 +35,7 @@ from raiden.utils.typing import Address, ChainID
 log = structlog.get_logger(__name__)
 
 
-SERVICE_MESSAGES: Tuple = (UpdatePFS, RequestMonitoring)
+SERVICE_MESSAGES: Tuple = (UpdatePFS, RequestMonitoring, FeeUpdate)
 VALID_MESSAGE_TYPES = set(klass.__module__ + "." + klass.__name__ for klass in SERVICE_MESSAGES)
 
 
