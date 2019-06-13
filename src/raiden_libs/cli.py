@@ -104,7 +104,8 @@ def common_options(app_name: str) -> Callable:
                     chain_id = str(params.get("chain_id") or params["web3"].net.version)
                     contracts_version = CONTRACTS_VERSION.replace(".", "_")
                     filename = f"{app_name}-{chain_id}-{contracts_version}.db"
-                    params["state_db"] = os.path.join("deployment", "state", filename)
+                    data_dir = click.get_app_dir(app_name)
+                    params["state_db"] = os.path.join(data_dir, filename)
 
                 # Need to delete the `chain_id` key
                 if params.get("chain_id") is not None:

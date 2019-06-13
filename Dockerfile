@@ -6,5 +6,8 @@ EXPOSE 6000
 WORKDIR /services
 ADD . /services
 
+RUN useradd -ms /bin/bash services_user
+USER services_user
+
 RUN python3 -m pip install -r requirements.txt
 RUN python3 -m pip install -e .
