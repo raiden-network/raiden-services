@@ -5,8 +5,8 @@ import structlog
 from web3 import Web3
 from web3.contract import Contract
 
-from monitoring_service.constants import DEFAULT_REQUIRED_CONFIRMATIONS
 from monitoring_service.service import MonitoringService
+from raiden.settings import DEFAULT_NUMBER_OF_BLOCK_CONFIRMATIONS
 from raiden.utils.typing import BlockNumber
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
@@ -30,7 +30,7 @@ log = structlog.get_logger(__name__)
 )
 @click.option(
     "--confirmations",
-    default=DEFAULT_REQUIRED_CONFIRMATIONS,
+    default=DEFAULT_NUMBER_OF_BLOCK_CONFIRMATIONS,
     type=click.IntRange(min=0),
     help="Number of block confirmations to wait for",
 )
