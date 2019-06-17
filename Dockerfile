@@ -11,7 +11,7 @@ RUN set -eux; \
 WORKDIR /services
 ADD . /services
 
-USER services
-
 RUN python3 -m pip install -r requirements.txt
 RUN python3 -m pip install -e .
+
+USER services
