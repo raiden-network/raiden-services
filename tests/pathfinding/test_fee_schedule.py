@@ -6,7 +6,7 @@ from eth_utils import decode_hex
 
 from pathfinding_service.model.token_network import TokenNetwork
 from raiden.constants import EMPTY_SIGNATURE
-from raiden.messages import FeeSchedule as RaidenFeeSchedule, FeeUpdate
+from raiden.messages import FeeScheduleState as RaidenFeeSchedule, FeeUpdate
 from raiden.network.transport.matrix.utils import AddressReachability
 from raiden.transfer.identifiers import CanonicalIdentifier
 from raiden.utils.typing import (

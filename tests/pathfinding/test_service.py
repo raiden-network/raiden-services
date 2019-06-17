@@ -9,7 +9,7 @@ from pathfinding_service import exceptions
 from pathfinding_service.model.token_network import FeeUpdate
 from pathfinding_service.service import PathfindingService
 from raiden.constants import EMPTY_SIGNATURE
-from raiden.messages import FeeSchedule
+from raiden.messages import FeeScheduleState
 from raiden.network.transport.matrix import AddressReachability
 from raiden.tests.utils.factories import make_privkey_address
 from raiden.transfer.identifiers import CanonicalIdentifier
@@ -283,7 +283,7 @@ def test_update_fee(order, pathfinding_service_mock, token_network_model):
     if order == "normal":
         setup_channel(pathfinding_service_mock, token_network_model)
 
-    fee_schedule = FeeSchedule(
+    fee_schedule = FeeScheduleState(
         flat=FeeAmount(1),
         proportional=int(0.1e9),
         imbalance_penalty=[(TokenAmount(0), FeeAmount(0)), (TokenAmount(10), FeeAmount(10))],
@@ -320,7 +320,7 @@ def test_invalid_fee_update(pathfinding_service_mock, token_network_model):
             channel_identifier=ChannelID(1),
         ),
         updating_participant=PARTICIPANT1,
-        fee_schedule=FeeSchedule(),
+        fee_schedule=FeeScheduleState(),
         timestamp=datetime.utcnow(),
         signature=EMPTY_SIGNATURE,
     )
