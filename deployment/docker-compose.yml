@@ -5,8 +5,8 @@ x-defaults: &defaults
   image: raiden-services
   env_file: services.env
   volumes:
-    - /data/state:/state
-    - /data/keystore:/keystore
+    - ${DATA_DIR:-./data}/state:/state
+    - ${DATA_DIR:-./data}/keystore:/keystore
 
 services:
   pfs-ropsten:
