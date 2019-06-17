@@ -212,7 +212,7 @@ class PathfindingService(gevent.Greenlet):
         # Handle messages for this channel which where received before ChannelOpened
         with self.database.conn:
             for message in self.database.pop_waiting_messages(
-                token_network.address, event.channel_identifier
+                token_network_address=token_network.address, channel_id=event.channel_identifier
             ):
                 self.handle_message(message)
 

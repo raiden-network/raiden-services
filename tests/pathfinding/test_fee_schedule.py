@@ -1,5 +1,5 @@
 import itertools
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List
 
 from eth_utils import decode_hex
@@ -69,7 +69,7 @@ class TokenNetworkForTests(TokenNetwork):
                 updating_participant=a(node1),
                 fee_schedule=RaidenFeeSchedule(**fee_params),
                 signature=EMPTY_SIGNATURE,
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc),
             )
         )
 
