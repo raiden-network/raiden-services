@@ -1,4 +1,4 @@
-git+https://github.com/raiden-network/raiden.git@e2504fbd4c4527903c150fecbe17f06e76c4353d
+git+https://github.com/raiden-network/raiden.git@ff813c73b2f12e29e6d13281d61f1da0c274c4a8
 
 raiden-contracts==0.22.0
 
