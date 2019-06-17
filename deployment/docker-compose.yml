@@ -6,7 +6,7 @@ x-defaults: &defaults
   env_file: services.env
   volumes:
     - /data/state:/state
-    - ~/keystore:/keystore
+    - /data/keystore:/keystore
 
 services:
   pfs-ropsten:
