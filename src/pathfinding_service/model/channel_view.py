@@ -1,5 +1,5 @@
 from dataclasses import asdict, dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import ClassVar, Type
 
 import marshmallow
@@ -21,7 +21,7 @@ from raiden_libs.marshmallow import ChecksumAddress
 
 @dataclass
 class FeeSchedule(FeeScheduleRaiden):
-    timestamp: datetime = datetime(2000, 1, 1)
+    timestamp: datetime = datetime(2000, 1, 1, tzinfo=timezone.utc)
 
     @classmethod
     def from_raiden(cls, fee_schedule: FeeScheduleRaiden, timestamp: datetime) -> "FeeSchedule":
