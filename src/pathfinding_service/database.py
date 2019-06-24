@@ -1,6 +1,6 @@
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Iterator, List, Optional, Tuple
 from uuid import UUID
 
@@ -264,7 +264,9 @@ class PFSDatabase(BaseDatabase):
             """,
             [to_checksum_address(token_network_address), hex256(channel_id)],
         ):
-            yield DictSerializer.deserialize(json.loads(row["message"]))
+            message: FeeUpdate = DictSerializer.deserialize(json.loads(row["message"]))
+            message.timestamp = message.timestamp.replace(tzinfo=timezone.utc)
+            yield message
 
         # Delete returned messages
         self.conn.execute(

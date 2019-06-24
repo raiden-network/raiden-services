@@ -15,6 +15,7 @@ from web3.contract import Contract
 from pathfinding_service.api import ServiceApi
 from pathfinding_service.config import DEFAULT_API_HOST, DEFAULT_POLL_INTERVALL
 from pathfinding_service.service import PathfindingService
+from raiden.settings import DEFAULT_NUMBER_OF_BLOCK_CONFIRMATIONS
 from raiden.utils.typing import BlockNumber, TokenAmount
 from raiden_contracts.constants import (
     CONTRACT_ONE_TO_N,
@@ -24,8 +25,6 @@ from raiden_contracts.constants import (
 from raiden_libs.cli import blockchain_options, common_options
 
 log = structlog.get_logger(__name__)
-
-DEFAULT_REQUIRED_CONFIRMATIONS = 8  # ~2min with 15s blocks
 
 
 @blockchain_options(
@@ -43,7 +42,7 @@ DEFAULT_REQUIRED_CONFIRMATIONS = 8  # ~2min with 15s blocks
 )
 @click.option(
     "--confirmations",
-    default=DEFAULT_REQUIRED_CONFIRMATIONS,
+    default=DEFAULT_NUMBER_OF_BLOCK_CONFIRMATIONS,
     type=click.IntRange(min=0),
     help="Number of block confirmations to wait for",
 )

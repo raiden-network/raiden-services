@@ -53,4 +53,5 @@ def format_to_hex(_logger: Any, _log_method: Any, event_dict: Dict) -> Dict[str,
                 if isinstance(value, bytes):
                     change_bytes(event_data, keys, value)
             event_dict[key] = event_data
+            event_dict[key]["event_name"] = val.__class__.__name__
     return event_dict

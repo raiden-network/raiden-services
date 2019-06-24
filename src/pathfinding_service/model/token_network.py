@@ -1,5 +1,5 @@
-import dataclasses
 from collections import defaultdict
+from datetime import datetime, timedelta, timezone
 from itertools import islice
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
@@ -13,8 +13,9 @@ from pathfinding_service.config import (
     DIVERSITY_PEN_DEFAULT,
     FEE_PEN_DEFAULT,
 )
-from pathfinding_service.exceptions import UndefinedFee
+from pathfinding_service.exceptions import InvalidFeeUpdate
 from pathfinding_service.model.channel_view import ChannelView, FeeSchedule
+from raiden.exceptions import UndefinedMediationFee
 from raiden.messages import FeeUpdate, UpdatePFS
 from raiden.network.transport.matrix import AddressReachability
 from raiden.utils.typing import Address, ChannelID, FeeAmount, TokenAmount, TokenNetworkAddress
@@ -60,7 +61,7 @@ class Path:
                 ) + self.G[mediator][next_node]["view"].fee_sender(total)
                 total += fee_for_this_mediator
                 self.fees.append(fee_for_this_mediator)
-        except UndefinedFee:
+        except UndefinedMediationFee:
             self._is_valid = False
 
     @property
@@ -234,7 +235,7 @@ class TokenNetwork:
         message: UpdatePFS,
         updating_capacity_partner: TokenAmount,
         other_capacity_partner: TokenAmount,
-    ) -> None:
+    ) -> List[ChannelView]:
         """ Sends Capacity Update to PFS including the reveal timeout """
         channel_view_to_partner, channel_view_from_partner = self.get_channel_views_for_partner(
             updating_participant=message.updating_participant,
@@ -249,17 +250,24 @@ class TokenNetwork:
             nonce=message.other_nonce,
             capacity=min(message.other_capacity, updating_capacity_partner),
         )
+        return [channel_view_to_partner, channel_view_from_partner]
 
-    def handle_channel_fee_update(self, message: FeeUpdate) -> None:
+    def handle_channel_fee_update(self, message: FeeUpdate) -> List[ChannelView]:
+        if message.timestamp > datetime.now(timezone.utc) + timedelta(hours=1):
+            # We don't really care about the time, but if we accept a time far
+            # in the future, the client will have problems sending fee updates
+            # with increasing time after fixing his clock.
+            raise InvalidFeeUpdate("Timestamp is in the future")
         channel_id = message.canonical_identifier.channel_identifier
         participants = self.channel_id_to_addresses[channel_id]
         other_participant = (set(participants) - {message.updating_participant}).pop()
         channel_view_to_partner, channel_view_from_partner = self.get_channel_views_for_partner(
             updating_participant=message.updating_participant, other_participant=other_participant
         )
-        fee_schedule = FeeSchedule(**dataclasses.asdict(message.fee_schedule))
-        channel_view_to_partner.fee_schedule_sender = fee_schedule
-        channel_view_from_partner.fee_schedule_receiver = fee_schedule.reversed()
+        fee_schedule = FeeSchedule.from_raiden(message.fee_schedule, timestamp=message.timestamp)
+        channel_view_to_partner.set_fee_schedule("sender", fee_schedule)
+        channel_view_from_partner.set_fee_schedule("receiver", fee_schedule.reversed())
+        return [channel_view_to_partner, channel_view_from_partner]
 
     @staticmethod
     def edge_weight(
@@ -277,7 +285,7 @@ class TokenNetwork:
         # inconsistent with the estimated total fee.
         try:
             fee_weight = (view.fee_sender(amount) + view.fee_receiver(amount)) / 1e18 * fee_penalty
-        except UndefinedFee:
+        except UndefinedMediationFee:
             return float("inf")
         no_refund_weight = 0
         if view_from_partner.capacity < int(float(amount) * 1.1):

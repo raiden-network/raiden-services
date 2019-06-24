@@ -6,7 +6,7 @@ x-defaults: &defaults
   env_file: services.env
   volumes:
     - /data/state:/state
-    - ~/keystore:/keystore
+    - /data/keystore:/keystore
 
 services:
   pfs-ropsten:
@@ -99,30 +99,35 @@ services:
     command: ["python3", "-m", "monitoring_service.cli"]
     environment:
       - MS_ETH_RPC=http://geth.ropsten.ethnodes.brainbot.com:8545
+      - MS_STATE_DB=/state/ms-ropsten.db
 
   ms-rinkeby:
     << : *defaults
     command: ["python3", "-m", "monitoring_service.cli"]
     environment:
       - MS_ETH_RPC=http://geth.rinkeby.ethnodes.brainbot.com:8545
+      - MS_STATE_DB=/state/ms-rinkeby.db
 
   ms-kovan:
     << : *defaults
     command: ["python3", "-m", "monitoring_service.cli"]
     environment:
       - MS_ETH_RPC=http://parity.kovan.ethnodes.brainbot.com:8545
+      - MS_STATE_DB=/state/ms-kovan.db
 
   ms-goerli:
     <<: *defaults
     command: ["python3", "-m", "monitoring_service.cli"]
     environment:
       - MS_ETH_RPC=http://parity.goerli.ethnodes.brainbot.com:8545
+      - MS_STATE_DB=/state/ms-goerli.db
 
   msrc-ropsten:
     << : *defaults
     command: ["python3", "-m", "request_collector.cli"]
     environment:
       - MSRC_CHAIN_ID=ropsten
+      - MSRC_STATE_DB=/state/ms-ropsten.db
     depends_on:
       - ms-ropsten
 
@@ -131,6 +136,7 @@ services:
     command: ["python3", "-m", "request_collector.cli"]
     environment:
       - MSRC_CHAIN_ID=rinkeby
+      - MSRC_STATE_DB=/state/ms-rinkeby.db
     depends_on:
       - ms-rinkeby
 
@@ -139,6 +145,7 @@ services:
     command: ["python3", "-m", "request_collector.cli"]
     environment:
       - MSRC_CHAIN_ID=kovan
+      - MSRC_STATE_DB=/state/ms-kovan.db
     depends_on:
       - ms-kovan
 
@@ -147,6 +154,7 @@ services:
     command: ["python3", "-m", "request_collector.cli"]
     environment:
       - MSRC_CHAIN_ID=goerli
+      - MSRC_STATE_DB=/state/ms-goerli.db
     depends_on:
       - ms-goerli
 

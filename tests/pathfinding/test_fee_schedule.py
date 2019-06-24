@@ -1,13 +1,12 @@
 import itertools
+from datetime import datetime, timezone
 from typing import Dict, List
 
-import pytest
 from eth_utils import decode_hex
 
-from pathfinding_service.model.channel_view import FeeSchedule, Interpolate
 from pathfinding_service.model.token_network import TokenNetwork
 from raiden.constants import EMPTY_SIGNATURE
-from raiden.messages import FeeSchedule as RaidenFeeSchedule, FeeUpdate
+from raiden.messages import FeeScheduleState as RaidenFeeSchedule, FeeUpdate
 from raiden.network.transport.matrix.utils import AddressReachability
 from raiden.transfer.identifiers import CanonicalIdentifier
 from raiden.utils.typing import (
@@ -15,35 +14,9 @@ from raiden.utils.typing import (
     ChainID,
     ChannelID,
     FeeAmount as FA,
-    Nonce,
     TokenAmount as TA,
     TokenNetworkAddress,
 )
-
-
-def test_basic_fee():
-    flat_schedule = FeeSchedule(flat=FA(2))
-    assert flat_schedule.fee(TA(10), capacity=TA(0)) == FA(2)
-
-    prop_schedule = FeeSchedule(proportional=0.01)
-    assert prop_schedule.fee(TA(40), capacity=TA(0)) == FA(0)
-    assert prop_schedule.fee(TA(60), capacity=TA(0)) == FA(1)
-    assert prop_schedule.fee(TA(1000), capacity=TA(0)) == FA(10)
-
-    combined_schedule = FeeSchedule(flat=FA(2), proportional=0.01)
-    assert combined_schedule.fee(TA(60), capacity=TA(0)) == FA(3)
-
-
-def test_imbalance_penalty():
-    v_schedule = FeeSchedule(
-        imbalance_penalty=[(TA(0), FA(10)), (TA(50), FA(0)), (TA(100), FA(10))]
-    )
-    assert v_schedule.fee(capacity=TA(100 - 0), amount=TA(50)) == FA(-10)
-    assert v_schedule.fee(capacity=TA(100 - 50), amount=TA(50)) == FA(10)
-    assert v_schedule.fee(capacity=TA(100 - 0), amount=TA(10)) == FA(-2)
-    assert v_schedule.fee(capacity=TA(100 - 10), amount=TA(10)) == FA(-2)
-    assert v_schedule.fee(capacity=TA(100 - 0), amount=TA(20)) == FA(-4)
-    assert v_schedule.fee(capacity=TA(100 - 40), amount=TA(20)) == FA(0)
 
 
 class PrettyBytes(bytes):
@@ -96,7 +69,7 @@ class TokenNetworkForTests(TokenNetwork):
                 updating_participant=a(node1),
                 fee_schedule=RaidenFeeSchedule(**fee_params),
                 signature=EMPTY_SIGNATURE,
-                nonce=Nonce(1),
+                timestamp=datetime.now(timezone.utc),
             )
         )
 
@@ -173,30 +146,9 @@ def test_compounding_fees():
             dict(participant1=3, participant2=4),
         ]
     )
-    tn.set_fee(2, 3, proportional=1)  # this is a 100% fee
-    tn.set_fee(3, 4, proportional=1)
+    tn.set_fee(2, 3, proportional=1e6)  # this is a 100% fee
+    tn.set_fee(3, 4, proportional=1e6)
     assert tn.estimate_fee(1, 4, value=TA(1)) == (
         1  # fee for node 3
         + 2  # fee for node 2, which mediates 1 token for the payment and 1 for node 3's fees
     )
-
-
-def test_interpolation():
-    interp = Interpolate((0, 100), (0, 100))
-    for i in range(101):
-        assert interp(i) == i
-
-    interp = Interpolate((0, 50, 100), (0, 100, 200))
-    for i in range(101):
-        assert interp(i) == 2 * i
-
-    interp = Interpolate((0, 50, 100), (0, -50, 50))
-    assert interp(40) == -40
-    assert interp(60) == -30
-    assert interp(90) == 30
-    assert interp(99) == 48
-
-    interp = Interpolate((0, 100), (12.35, 67.2))
-    assert interp(0) == 12.35
-    assert interp(50) == pytest.approx((12.35 + 67.2) / 2)
-    assert interp(100) == 67.2
