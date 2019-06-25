@@ -104,16 +104,13 @@ class HashedBalanceProof:
 
     def serialize_bin(self, msg_type: MessageTypeId = MessageTypeId.BALANCE_PROOF) -> bytes:
         return pack_data(
-            ["address", "uint256", "uint256", "uint256", "bytes32", "uint256", "bytes32"],
-            [
-                self.token_network_address,
-                self.chain_id,
-                msg_type.value,
-                self.channel_identifier,
-                decode_hex(self.balance_hash),
-                self.nonce,
-                decode_hex(self.additional_hash),
-            ],
+            (self.token_network_address, "address"),
+            (self.chain_id, "uint256"),
+            (msg_type.value, "uint256"),
+            (self.channel_identifier, "uint256"),
+            (decode_hex(self.balance_hash), "bytes32"),
+            (self.nonce, "uint256"),
+            (decode_hex(self.additional_hash), "bytes32"),
         )
 
     def get_request_monitoring(
@@ -219,29 +216,23 @@ class UnsignedMonitorRequest:
         self, message_type: MessageTypeId = MessageTypeId.BALANCE_PROOF
     ) -> bytes:
         return pack_data(
-            ["address", "uint256", "uint256", "uint256", "bytes32", "uint256", "bytes32"],
-            [
-                self.token_network_address,
-                self.chain_id,
-                message_type.value,
-                self.channel_identifier,
-                decode_hex(self.balance_hash),
-                self.nonce,
-                decode_hex(self.additional_hash),
-            ],
+            (self.token_network_address, "address"),
+            (self.chain_id, "uint256"),
+            (message_type.value, "uint256"),
+            (self.channel_identifier, "uint256"),
+            (decode_hex(self.balance_hash), "bytes32"),
+            (self.nonce, "uint256"),
+            (decode_hex(self.additional_hash), "bytes32"),
         )
 
     def packed_reward_proof_data(self) -> bytes:
         """Return reward proof data serialized to binary"""
         return pack_data(
-            ["uint256", "uint256", "address", "uint256", "uint256"],
-            [
-                self.channel_identifier,
-                self.reward_amount,
-                self.token_network_address,
-                self.chain_id,
-                self.nonce,
-            ],
+            (self.channel_identifier, "uint256"),
+            (self.reward_amount, "uint256"),
+            (self.token_network_address, "address"),
+            (self.chain_id, "uint256"),
+            (self.nonce, "uint256"),
         )
 
     def packed_non_closing_data(self) -> bytes:

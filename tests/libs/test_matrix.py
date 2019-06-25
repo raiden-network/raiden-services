@@ -22,8 +22,8 @@ def request_monitoring_message(token_network, get_accounts, get_private_key) -> 
     c1, c2 = get_accounts(2)
 
     balance_proof_c2 = HashedBalanceProof(
-        token_network_address=decode_hex(token_network.address),
         channel_identifier=ChannelID(1),
+        token_network_address=decode_hex(token_network.address),
         chain_id=ChainID(1),
         nonce=Nonce(2),
         additional_hash="0x%064x" % 0,

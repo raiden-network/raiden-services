@@ -12,7 +12,7 @@ from pathfinding_service.exceptions import InvalidCapacityUpdate
 from pathfinding_service.model import TokenNetwork
 from pathfinding_service.service import PathfindingService
 from raiden.constants import EMPTY_SIGNATURE, UINT256_MAX
-from raiden.messages import UpdatePFS
+from raiden.messages import PFSCapacityUpdate
 from raiden.transfer.identifiers import CanonicalIdentifier
 from raiden.utils.signer import LocalSigner
 from raiden.utils.typing import (
@@ -85,8 +85,8 @@ def get_updatepfs_message(  # pylint: disable=too-many-arguments
     other_capacity=TokenAmount(110),
     reveal_timeout: int = 2,
     privkey_signer: bytes = PRIVATE_KEY_1,
-) -> UpdatePFS:
-    updatepfs_message = UpdatePFS(
+) -> PFSCapacityUpdate:
+    updatepfs_message = PFSCapacityUpdate(
         canonical_identifier=CanonicalIdentifier(
             chain_identifier=chain_identifier,
             channel_identifier=channel_identifier,

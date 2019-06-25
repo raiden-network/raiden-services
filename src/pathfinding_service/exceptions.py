@@ -9,7 +9,7 @@ class InvalidCapacityUpdate(InvalidGlobalMessage):
     pass
 
 
-class InvalidFeeUpdate(InvalidGlobalMessage):
+class InvalidPFSFeeUpdate(InvalidGlobalMessage):
     pass
 
 

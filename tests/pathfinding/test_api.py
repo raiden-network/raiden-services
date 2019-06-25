@@ -300,8 +300,9 @@ def test_get_iou(api_sut: ServiceApi, api_url: str, token_network_model: TokenNe
         params["signature"] = encode_hex(
             local_signer.sign(
                 pack_data(
-                    ["address", "address", "string"],
-                    [params["sender"], params["receiver"], params["timestamp"]],
+                    (params["sender"], "address"),
+                    (params["receiver"], "address"),
+                    (params["timestamp"], "string"),
                 )
             )
         )

@@ -11,7 +11,7 @@ from pathfinding_service.model import IOU
 from pathfinding_service.model.channel_view import ChannelView
 from pathfinding_service.model.feedback import FeedbackToken
 from pathfinding_service.model.token_network import TokenNetwork
-from raiden.messages import FeeUpdate, UpdatePFS
+from raiden.messages import PFSCapacityUpdate, PFSFeeUpdate
 from raiden.storage.serialization.serializer import JSONSerializer
 from raiden.utils.typing import (
     Address,
@@ -49,7 +49,7 @@ class PFSDatabase(BaseDatabase):
             **contract_addresses,
         )
 
-    def upsert_capacity_update(self, message: UpdatePFS) -> None:
+    def upsert_capacity_update(self, message: PFSCapacityUpdate) -> None:
         capacity_update_dict = dict(
             updating_participant=to_checksum_address(message.updating_participant),
             token_network_address=to_checksum_address(
@@ -240,7 +240,7 @@ class PFSDatabase(BaseDatabase):
 
         return self.conn.execute(f"SELECT COUNT(*) FROM feedback {where_clause};").fetchone()[0]
 
-    def insert_waiting_message(self, message: FeeUpdate) -> None:
+    def insert_waiting_message(self, message: PFSFeeUpdate) -> None:
         self.insert(
             "waiting_message",
             dict(
@@ -254,7 +254,7 @@ class PFSDatabase(BaseDatabase):
 
     def pop_waiting_messages(
         self, token_network_address: TokenNetworkAddress, channel_id: ChannelID
-    ) -> Iterator[FeeUpdate]:
+    ) -> Iterator[PFSFeeUpdate]:
         """Return all waiting messages for the given channel and delete them from the db"""
         # Return messages
         for row in self.conn.execute(
@@ -264,7 +264,7 @@ class PFSDatabase(BaseDatabase):
             """,
             [to_checksum_address(token_network_address), hex256(channel_id)],
         ):
-            message: FeeUpdate = JSONSerializer.deserialize(row["message"])
+            message: PFSFeeUpdate = JSONSerializer.deserialize(row["message"])
             message.timestamp = message.timestamp.replace(tzinfo=timezone.utc)
             yield message
 
