@@ -12,7 +12,7 @@ from pathfinding_service.model.channel_view import ChannelView
 from pathfinding_service.model.feedback import FeedbackToken
 from pathfinding_service.model.token_network import TokenNetwork
 from raiden.messages import FeeUpdate, UpdatePFS
-from raiden.storage.serialization.serializer import DictSerializer
+from raiden.storage.serialization.serializer import JSONSerializer
 from raiden.utils.typing import (
     Address,
     BlockNumber,
@@ -248,7 +248,7 @@ class PFSDatabase(BaseDatabase):
                     message.canonical_identifier.token_network_address
                 ),
                 channel_id=hex256(message.canonical_identifier.channel_identifier),
-                message=json.dumps(DictSerializer.serialize(message)),
+                message=JSONSerializer.serialize(message),
             ),
         )
 
@@ -264,7 +264,7 @@ class PFSDatabase(BaseDatabase):
             """,
             [to_checksum_address(token_network_address), hex256(channel_id)],
         ):
-            message: FeeUpdate = DictSerializer.deserialize(json.loads(row["message"]))
+            message: FeeUpdate = JSONSerializer.deserialize(row["message"])
             message.timestamp = message.timestamp.replace(tzinfo=timezone.utc)
             yield message
 
