@@ -1,7 +1,7 @@
 -r requirements.txt
 -r requirements-docs.txt
 
-pip>=19.0.1
+pip<19.0.0
 bumpversion>=0.5.3
 wheel>=0.30.0
 watchdog>=0.8.3
@@ -23,7 +23,6 @@ coverage>=4.5.2
 
 ipython==4.2.1
 pdbpp
-psutil==5.4.7
 
 eth-tester[py-evm]==0.1.0b33
 attrs==18.2.0  # needed for travis
