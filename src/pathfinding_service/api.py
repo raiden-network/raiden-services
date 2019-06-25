@@ -33,7 +33,7 @@ from pathfinding_service.model.token_network import TokenNetwork
 from pathfinding_service.service import PathfindingService
 from raiden.exceptions import InvalidSignature
 from raiden.utils.signer import recover
-from raiden.utils.typing import Address, Signature, TokenAmount, TokenNetworkAddress
+from raiden.utils.typing import Address, PaymentAmount, Signature, TokenAmount, TokenNetworkAddress
 from raiden_libs.marshmallow import ChecksumAddress, HexedBytes
 
 log = structlog.get_logger(__name__)
@@ -94,7 +94,7 @@ class PathRequest:
         metadata=dict(marshmallow_field=ChecksumAddress(required=True, data_key="from"))
     )
     to: Address = field(metadata=dict(marshmallow_field=ChecksumAddress(required=True)))
-    value: TokenAmount = field(metadata=dict(validate=marshmallow.validate.Range(min=1)))
+    value: PaymentAmount = field(metadata=dict(validate=marshmallow.validate.Range(min=1)))
     max_paths: int = field(
         default=DEFAULT_MAX_PATHS,
         metadata=dict(validate=marshmallow.validate.Range(min=1, max=MAX_PATHS_PER_REQUEST)),

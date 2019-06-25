@@ -20,7 +20,7 @@ from raiden_contracts.constants import (
     CONTRACT_USER_DEPOSIT,
     TEST_SETTLE_TIMEOUT_MIN,
 )
-from raiden_contracts.tests.utils.constants import EMPTY_LOCKSROOT
+from raiden_contracts.tests.utils.constants import LOCKSROOT_OF_NO_LOCKS
 
 
 def test_pfs_with_mocked_client(  # pylint: disable=too-many-arguments
@@ -166,7 +166,7 @@ def test_pfs_with_mocked_client(  # pylint: disable=too-many-arguments
             chain_id=ChainID(1),
             additional_hash="0x%064x" % 0,
             locked_amount=0,
-            locksroot=encode_hex(EMPTY_LOCKSROOT),
+            locksroot=encode_hex(LOCKSROOT_OF_NO_LOCKS),
         )
         token_network.functions.closeChannel(
             channel_id,

@@ -21,7 +21,7 @@ from raiden_contracts.constants import (
     CONTRACT_USER_DEPOSIT,
 )
 from raiden_contracts.tests.utils import get_random_address, get_random_privkey
-from raiden_contracts.tests.utils.constants import EMPTY_LOCKSROOT
+from raiden_contracts.tests.utils.constants import LOCKSROOT_OF_NO_LOCKS
 from raiden_libs.events import ReceiveChannelOpenedEvent, UpdatedHeadBlockEvent
 
 from ...libs.mocks.web3 import ContractMock, Web3Mock
@@ -47,7 +47,7 @@ def test_crash(
         chain_id=ChainID(1),
         additional_hash="0x%064x" % 0,
         locked_amount=0,
-        locksroot=encode_hex(EMPTY_LOCKSROOT),
+        locksroot=encode_hex(LOCKSROOT_OF_NO_LOCKS),
     )
     monitor_request = balance_proof.get_monitor_request(
         get_private_key(c2), reward_amount=TokenAmount(0)
