@@ -6,6 +6,7 @@ from typing import Any, Dict
 import structlog
 from eth_utils import to_checksum_address, to_hex
 
+from raiden.messages import Message
 from raiden_libs.events import Event
 
 
@@ -47,7 +48,7 @@ def format_to_hex(_logger: Any, _log_method: Any, event_dict: Dict) -> Dict[str,
     for key, val in event_dict.items():
         if isinstance(val, bytes):
             change_bytes(event_dict, key, val)
-        if isinstance(val, Event):
+        if isinstance(val, (Event, Message)):
             event_data = asdict(val)
             for keys, value in event_data.items():
                 if isinstance(value, bytes):
