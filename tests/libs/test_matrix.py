@@ -11,7 +11,7 @@ from raiden.exceptions import InvalidProtocolMessage
 from raiden.messages import RequestMonitoring
 from raiden.storage.serialization.serializer import DictSerializer
 from raiden.utils.typing import Address, ChainID, ChannelID, Nonce, TokenAmount
-from raiden_contracts.tests.utils import EMPTY_LOCKSROOT
+from raiden_contracts.tests.utils import LOCKSROOT_OF_NO_LOCKS
 from raiden_libs.matrix import deserialize_messages, matrix_http_retry_delay, message_from_dict
 
 INVALID_PEER_ADDRESS = Address(to_canonical_address("0x" + "1" * 40))
@@ -29,7 +29,7 @@ def request_monitoring_message(token_network, get_accounts, get_private_key) -> 
         additional_hash="0x%064x" % 0,
         transferred_amount=TokenAmount(1),
         locked_amount=TokenAmount(0),
-        locksroot=encode_hex(EMPTY_LOCKSROOT),
+        locksroot=encode_hex(LOCKSROOT_OF_NO_LOCKS),
         priv_key=get_private_key(c2),
     )
 

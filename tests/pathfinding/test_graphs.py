@@ -8,7 +8,14 @@ from networkx import NetworkXNoPath
 from pathfinding_service.config import DIVERSITY_PEN_DEFAULT
 from pathfinding_service.model import ChannelView, TokenNetwork
 from raiden.network.transport.matrix import AddressReachability
-from raiden.utils.typing import Address, ChannelID, FeeAmount, TokenAmount, TokenNetworkAddress
+from raiden.utils.typing import (
+    Address,
+    ChannelID,
+    FeeAmount,
+    PaymentAmount,
+    TokenAmount,
+    TokenNetworkAddress,
+)
 
 
 def test_edge_weight(addresses):
@@ -35,7 +42,7 @@ def test_edge_weight(addresses):
         capacity=capacity_partner,
         settle_timeout=settle_timeout,
     )
-    amount = TokenAmount(int(1e18))  # one RDN
+    amount = PaymentAmount(int(1e18))  # one RDN
 
     # no penalty
     assert (
@@ -101,7 +108,7 @@ def test_routing_simple(
     paths = token_network_model.get_paths(
         source=addresses[0],
         target=addresses[3],
-        value=TokenAmount(10),
+        value=PaymentAmount(10),
         max_paths=1,
         address_to_reachability=address_to_reachability,
     )
@@ -116,7 +123,7 @@ def test_routing_simple(
         token_network_model.get_paths(
             source=addresses[0],
             target=addresses[5],
-            value=TokenAmount(10),
+            value=PaymentAmount(10),
             max_paths=1,
             address_to_reachability=address_to_reachability,
         )
@@ -133,7 +140,7 @@ def test_capacity_check(
     paths = token_network_model.get_paths(
         addresses[4],
         addresses[0],
-        value=TokenAmount(35),
+        value=PaymentAmount(35),
         max_paths=1,
         address_to_reachability=address_to_reachability,
     )
@@ -150,7 +157,7 @@ def test_capacity_check(
     paths = model_with_fees.get_paths(
         addresses[4],
         addresses[0],
-        value=TokenAmount(35),
+        value=PaymentAmount(35),
         max_paths=1,
         address_to_reachability=address_to_reachability,
         fee_penalty=0,
@@ -169,7 +176,7 @@ def test_routing_result_order(
     paths = token_network_model.get_paths(
         addresses[0],
         addresses[2],
-        value=TokenAmount(10),
+        value=PaymentAmount(10),
         max_paths=5,
         address_to_reachability=address_to_reachability,
     )
@@ -189,7 +196,7 @@ def get_paths(  # pylint: disable=too-many-arguments
     addresses: List[Address],
     source_index: int = 0,
     target_index: int = 8,
-    value: TokenAmount = TokenAmount(10),
+    value: PaymentAmount = PaymentAmount(10),
     max_paths: int = 5,
     diversity_penalty: float = DIVERSITY_PEN_DEFAULT,
 ) -> List:

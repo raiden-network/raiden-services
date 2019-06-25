@@ -85,7 +85,7 @@ def test_process_payment(
     sender = create_account()
     privkey = get_private_key(sender)
     deposit_to_udc(sender, round(1 * UDC_SECURITY_MARGIN_FACTOR))
-    one_to_n_address = decode_hex(one_to_n_contract.address)
+    one_to_n_address = Address(decode_hex(one_to_n_contract.address))
 
     # Make payment
     iou = make_iou(privkey, pfs.address, amount=1)

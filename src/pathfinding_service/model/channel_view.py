@@ -10,9 +10,11 @@ from pathfinding_service.exceptions import InvalidPFSFeeUpdate
 from raiden.transfer.mediated_transfer.mediation_fee import FeeScheduleState as FeeScheduleRaiden
 from raiden.utils.typing import (
     Address,
+    Balance,
     ChannelID,
     FeeAmount,
     Nonce,
+    PaymentAmount,
     TokenAmount,
     TokenNetworkAddress,
 )
@@ -69,13 +71,13 @@ class ChannelView:
         if reveal_timeout is not None:
             self.reveal_timeout = reveal_timeout
 
-    def fee_sender(self, amount: TokenAmount) -> FeeAmount:
+    def fee_sender(self, amount: PaymentAmount) -> FeeAmount:
         """Return the mediation fee for this channel when transferring the given amount"""
-        return self.fee_schedule_sender.fee(amount, self.capacity)
+        return self.fee_schedule_sender.fee(amount, Balance(self.capacity))
 
-    def fee_receiver(self, amount: TokenAmount) -> FeeAmount:
+    def fee_receiver(self, amount: PaymentAmount) -> FeeAmount:
         """Return the mediation fee for this channel when receiving the given amount"""
-        return self.fee_schedule_receiver.fee(amount, self.capacity)
+        return self.fee_schedule_receiver.fee(amount, Balance(self.capacity))
 
     def set_fee_schedule(self, party: str, fee_schedule: FeeSchedule) -> None:
         assert party in ["sender", "receiver"]

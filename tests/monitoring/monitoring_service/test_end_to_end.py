@@ -8,7 +8,7 @@ from monitoring_service.states import HashedBalanceProof
 from raiden.utils.typing import Address, BlockNumber, ChainID, Nonce, TokenAmount
 from raiden_contracts.constants import CONTRACT_MONITORING_SERVICE, MonitoringServiceEvent
 from raiden_contracts.contract_manager import ContractManager
-from raiden_contracts.tests.utils.constants import EMPTY_LOCKSROOT
+from raiden_contracts.tests.utils.constants import LOCKSROOT_OF_NO_LOCKS
 from raiden_libs.blockchain import query_blockchain_events
 
 
@@ -66,7 +66,7 @@ def test_first_allowed_monitoring(
         chain_id=ChainID(1),
         additional_hash="0x%064x" % 0,
         locked_amount=TokenAmount(0),
-        locksroot=encode_hex(EMPTY_LOCKSROOT),
+        locksroot=encode_hex(LOCKSROOT_OF_NO_LOCKS),
     )
     transferred_c1 = 5
     balance_proof_c1 = HashedBalanceProof(
@@ -177,7 +177,7 @@ def test_e2e(  # pylint: disable=too-many-arguments,too-many-locals
         chain_id=ChainID(1),
         additional_hash="0x%064x" % 0,
         locked_amount=TokenAmount(0),
-        locksroot=encode_hex(EMPTY_LOCKSROOT),
+        locksroot=encode_hex(LOCKSROOT_OF_NO_LOCKS),
     )
     transferred_c1 = 5
     balance_proof_c1 = HashedBalanceProof(
@@ -233,11 +233,11 @@ def test_e2e(  # pylint: disable=too-many-arguments,too-many-locals
         c1,  # participant_B
         transferred_c1,  # participant_B_transferred_amount
         0,  # participant_B_locked_amount
-        EMPTY_LOCKSROOT,  # participant_B_locksroot
+        LOCKSROOT_OF_NO_LOCKS,  # participant_B_locksroot
         c2,  # participant_A
         transferred_c2,  # participant_A_transferred_amount
         0,  # participant_A_locked_amount
-        EMPTY_LOCKSROOT,  # participant_A_locksroot
+        LOCKSROOT_OF_NO_LOCKS,  # participant_A_locksroot
     ).transact()
 
     # Wait until the ChannelSettled is confirmed

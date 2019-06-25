@@ -14,6 +14,7 @@ from raiden.utils.typing import (
     ChainID,
     ChannelID,
     FeeAmount as FA,
+    PaymentAmount as PA,
     TokenAmount as TA,
     TokenNetworkAddress,
 )
@@ -73,7 +74,7 @@ class TokenNetworkForTests(TokenNetwork):
             )
         )
 
-    def estimate_fee(self, initator: int, target: int, value=TA(10), max_paths=1):
+    def estimate_fee(self, initator: int, target: int, value=PA(10), max_paths=1):
         result = self.get_paths(
             source=a(initator),
             target=a(target),
@@ -95,7 +96,7 @@ def test_fees_in_routing():
     result = tn.get_paths(
         source=a(1),
         target=a(3),
-        value=TA(10),
+        value=PA(10),
         max_paths=1,
         address_to_reachability=tn.address_to_reachability,
     )
@@ -148,7 +149,7 @@ def test_compounding_fees():
     )
     tn.set_fee(2, 3, proportional=1e6)  # this is a 100% fee
     tn.set_fee(3, 4, proportional=1e6)
-    assert tn.estimate_fee(1, 4, value=TA(1)) == (
+    assert tn.estimate_fee(1, 4, value=PA(1)) == (
         1  # fee for node 3
         + 2  # fee for node 2, which mediates 1 token for the payment and 1 for node 3's fees
     )

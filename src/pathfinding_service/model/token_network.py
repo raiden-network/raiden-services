@@ -18,7 +18,14 @@ from pathfinding_service.model.channel_view import ChannelView, FeeSchedule
 from raiden.exceptions import UndefinedMediationFee
 from raiden.messages import PFSCapacityUpdate, PFSFeeUpdate
 from raiden.network.transport.matrix import AddressReachability
-from raiden.utils.typing import Address, ChannelID, FeeAmount, TokenAmount, TokenNetworkAddress
+from raiden.utils.typing import (
+    Address,
+    ChannelID,
+    FeeAmount,
+    PaymentAmount,
+    TokenAmount,
+    TokenNetworkAddress,
+)
 
 log = structlog.get_logger(__name__)
 
@@ -42,7 +49,7 @@ class Path:
         self,
         G: DiGraph,
         nodes: List[Address],
-        value: TokenAmount,
+        value: PaymentAmount,
         address_to_reachability: Dict[Address, AddressReachability],
     ):
         self.G = G
@@ -95,7 +102,7 @@ class Path:
             # check capacity
             if edge["view"].capacity < required_capacity:
                 return False
-            required_capacity = TokenAmount(required_capacity + fee)
+            required_capacity = PaymentAmount(required_capacity + fee)
 
             # check if settle_timeout / reveal_timeout >= default ratio
             ratio = edge["view"].settle_timeout / edge["view"].reveal_timeout
@@ -274,7 +281,7 @@ class TokenNetwork:
         visited: Dict[ChannelID, float],
         attr: Dict[str, Any],
         attr_backwards: Dict[str, Any],
-        amount: TokenAmount,
+        amount: PaymentAmount,
         fee_penalty: float,
     ) -> float:
         view: ChannelView = attr["view"]
@@ -296,7 +303,7 @@ class TokenNetwork:
         self,
         source: Address,
         target: Address,
-        value: TokenAmount,
+        value: PaymentAmount,
         address_to_reachability: Dict[Address, AddressReachability],
         visited: Dict[ChannelID, float],
         disallowed_paths: List[List[Address]],
@@ -329,7 +336,7 @@ class TokenNetwork:
         self,
         source: Address,
         target: Address,
-        value: TokenAmount,
+        value: PaymentAmount,
         max_paths: int,
         address_to_reachability: Dict[Address, AddressReachability],
         diversity_penalty: float = DIVERSITY_PEN_DEFAULT,
