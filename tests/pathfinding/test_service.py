@@ -4,6 +4,7 @@ from typing import List
 from unittest.mock import Mock, call, patch
 
 import pytest
+from eth_utils import to_checksum_address
 
 from pathfinding_service import exceptions
 from pathfinding_service.model.token_network import FeeUpdate
@@ -32,6 +33,7 @@ from raiden_libs.events import (
     ReceiveTokenNetworkCreatedEvent,
     UpdatedHeadBlockEvent,
 )
+from raiden_libs.logging import format_to_hex
 
 from ..libs.mocks.web3 import ContractMock, Web3Mock
 
@@ -328,3 +330,29 @@ def test_invalid_fee_update(pathfinding_service_mock, token_network_model):
     # bad/missing signature
     with pytest.raises(exceptions.InvalidFeeUpdate):
         pathfinding_service_mock.on_fee_update(fee_update)
+
+
+def test_logging_processor():
+    # test if our logging processor changes bytes to checksum addresses
+    # even if bytes-addresses are entangeled into events
+    logger = Mock()
+    log_method = Mock()
+
+    address = b"\x7f[\xf6\xc9To\xa8\x185w\xe4\x9f\x15\xbc\xef@mr\xd5\xd9"
+    address2 = b"\x7f[\xf6\xc9To\xa8\x185w\xe4\x9f\x15\xbc\xef@mr\xd5\xd1"
+    event = ReceiveTokenNetworkCreatedEvent(
+        token_address=Address(address),
+        token_network_address=TokenNetworkAddress(address2),
+        block_number=BlockNumber(1),
+    )
+    address_log = format_to_hex(
+        _logger=logger, _log_method=log_method, event_dict=dict(address=address)
+    )
+    event_log = format_to_hex(_logger=logger, _log_method=log_method, event_dict=dict(event=event))
+    assert to_checksum_address(address) == address_log["address"]
+    assert (  # pylint: disable=unsubscriptable-object
+        to_checksum_address(address) == event_log["event"]["token_address"]
+    )
+    assert (  # pylint: disable=unsubscriptable-object
+        to_checksum_address(address2) == event_log["event"]["token_network_address"]
+    )

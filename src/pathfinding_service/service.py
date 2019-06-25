@@ -4,7 +4,6 @@ from typing import Dict, List, Optional
 
 import gevent
 import structlog
-from eth_utils import to_checksum_address
 from web3 import Web3
 from web3.contract import Contract
 
@@ -33,7 +32,6 @@ from raiden_libs.events import (
     UpdatedHeadBlockEvent,
 )
 from raiden_libs.gevent_error_handler import register_error_handler
-from raiden_libs.logging import log_event
 from raiden_libs.matrix import MatrixListener
 from raiden_libs.states import BlockchainState
 from raiden_libs.utils import private_key_to_address
@@ -64,7 +62,7 @@ class PathfindingService(gevent.Greenlet):
         self._poll_interval = poll_interval
         self._is_running = gevent.event.Event()
 
-        log.info("PFS payment address", address=to_checksum_address(self.address))
+        log.info("PFS payment address", address=self.address)
 
         self.blockchain_state = BlockchainState(
             latest_known_block=BlockNumber(0),
@@ -115,7 +113,7 @@ class PathfindingService(gevent.Greenlet):
 
         log.info(
             "Listening to token network registry",
-            registry_address=to_checksum_address(self.registry_address),
+            registry_address=self.registry_address,
             start_block=self.database.get_latest_known_block(),
         )
         while not self._is_running.is_set():
@@ -185,7 +183,7 @@ class PathfindingService(gevent.Greenlet):
     def handle_token_network_created(self, event: ReceiveTokenNetworkCreatedEvent) -> None:
         network_address = TokenNetworkAddress(event.token_network_address)
         if not self.follows_token_network(network_address):
-            log.info("Found new token network", **log_event(event))
+            log.info("Found new token network", event_=event)
 
             self.token_networks[network_address] = TokenNetwork(network_address)
             self.database.upsert_token_network(network_address)
@@ -195,7 +193,7 @@ class PathfindingService(gevent.Greenlet):
         if token_network is None:
             return
 
-        log.info("Received ChannelOpened event", **log_event(event))
+        log.info("Received ChannelOpened event", event_=event)
 
         self.matrix_listener.follow_address_presence(event.participant1, refresh=True)
         self.matrix_listener.follow_address_presence(event.participant2, refresh=True)
@@ -221,7 +219,7 @@ class PathfindingService(gevent.Greenlet):
         if token_network is None:
             return
 
-        log.info("Received ChannelNewDeposit event", **log_event(event))
+        log.info("Received ChannelNewDeposit event", event_=event)
 
         channel_view = token_network.handle_channel_new_deposit_event(
             channel_identifier=event.channel_identifier,
@@ -236,7 +234,7 @@ class PathfindingService(gevent.Greenlet):
         if token_network is None:
             return
 
-        log.info("Received ChannelClosed event", **log_event(event))
+        log.info("Received ChannelClosed event", event_=event)
 
         token_network.handle_channel_closed_event(channel_identifier=event.channel_identifier)
         self.database.delete_channel_views(event.channel_identifier)
@@ -329,8 +327,7 @@ class PathfindingService(gevent.Greenlet):
 
     def on_pfs_update(self, message: UpdatePFS) -> List[ChannelView]:
         token_network = self._validate_pfs_update(message)
-
-        log.info("Received Capacity Update", **asdict(message))
+        log.info("Received Capacity Update", message=message)
         self.database.upsert_capacity_update(message)
 
         # Follow presence for the channel participants
