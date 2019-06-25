@@ -1,4 +1,4 @@
-# `UpdatePFS` message design
+# `PFSCapacityUpdate` message design
 
 * Status: accepted
 * Deciders: Augusto, Dominik, Karl, Konrad, Paul

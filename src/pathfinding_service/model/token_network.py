@@ -13,10 +13,10 @@ from pathfinding_service.config import (
     DIVERSITY_PEN_DEFAULT,
     FEE_PEN_DEFAULT,
 )
-from pathfinding_service.exceptions import InvalidFeeUpdate
+from pathfinding_service.exceptions import InvalidPFSFeeUpdate
 from pathfinding_service.model.channel_view import ChannelView, FeeSchedule
 from raiden.exceptions import UndefinedMediationFee
-from raiden.messages import FeeUpdate, UpdatePFS
+from raiden.messages import PFSCapacityUpdate, PFSFeeUpdate
 from raiden.network.transport.matrix import AddressReachability
 from raiden.utils.typing import Address, ChannelID, FeeAmount, TokenAmount, TokenNetworkAddress
 
@@ -232,7 +232,7 @@ class TokenNetwork:
 
     def handle_channel_balance_update_message(
         self,
-        message: UpdatePFS,
+        message: PFSCapacityUpdate,
         updating_capacity_partner: TokenAmount,
         other_capacity_partner: TokenAmount,
     ) -> List[ChannelView]:
@@ -252,12 +252,12 @@ class TokenNetwork:
         )
         return [channel_view_to_partner, channel_view_from_partner]
 
-    def handle_channel_fee_update(self, message: FeeUpdate) -> List[ChannelView]:
+    def handle_channel_fee_update(self, message: PFSFeeUpdate) -> List[ChannelView]:
         if message.timestamp > datetime.now(timezone.utc) + timedelta(hours=1):
             # We don't really care about the time, but if we accept a time far
             # in the future, the client will have problems sending fee updates
             # with increasing time after fixing his clock.
-            raise InvalidFeeUpdate("Timestamp is in the future")
+            raise InvalidPFSFeeUpdate("Timestamp is in the future")
         channel_id = message.canonical_identifier.channel_identifier
         participants = self.channel_id_to_addresses[channel_id]
         other_participant = (set(participants) - {message.updating_participant}).pop()

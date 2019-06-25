@@ -6,7 +6,7 @@ from eth_utils import decode_hex
 
 from pathfinding_service.model.token_network import TokenNetwork
 from raiden.constants import EMPTY_SIGNATURE
-from raiden.messages import FeeScheduleState as RaidenFeeSchedule, FeeUpdate
+from raiden.messages import FeeScheduleState as RaidenFeeSchedule, PFSFeeUpdate
 from raiden.network.transport.matrix.utils import AddressReachability
 from raiden.transfer.identifiers import CanonicalIdentifier
 from raiden.utils.typing import (
@@ -60,7 +60,7 @@ class TokenNetworkForTests(TokenNetwork):
     def set_fee(self, node1: int, node2: int, **fee_params):
         channel_id = self.G[a(node1)][a(node2)]["view"].channel_id
         self.handle_channel_fee_update(
-            FeeUpdate(
+            PFSFeeUpdate(
                 canonical_identifier=CanonicalIdentifier(
                     chain_identifier=ChainID(1),
                     token_network_address=self.address,

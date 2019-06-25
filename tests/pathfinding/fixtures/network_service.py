@@ -9,7 +9,7 @@ from web3.contract import Contract
 from pathfinding_service.model.token_network import TokenNetwork
 from pathfinding_service.service import PathfindingService
 from raiden.constants import EMPTY_SIGNATURE
-from raiden.messages import UpdatePFS
+from raiden.messages import PFSCapacityUpdate
 from raiden.network.transport.matrix import AddressReachability
 from raiden.transfer.identifiers import CanonicalIdentifier
 from raiden.utils.typing import (
@@ -209,7 +209,7 @@ def populate_token_network() -> Callable:
             )
 
             token_network.handle_channel_balance_update_message(
-                UpdatePFS(
+                PFSCapacityUpdate(
                     canonical_identifier=CanonicalIdentifier(
                         chain_identifier=ChainID(1),
                         channel_identifier=ChannelID(channel_id),
@@ -228,7 +228,7 @@ def populate_token_network() -> Callable:
                 other_capacity_partner=TokenAmount(0),
             )
             token_network.handle_channel_balance_update_message(
-                UpdatePFS(
+                PFSCapacityUpdate(
                     canonical_identifier=CanonicalIdentifier(
                         chain_identifier=ChainID(1),
                         channel_identifier=ChannelID(channel_id),

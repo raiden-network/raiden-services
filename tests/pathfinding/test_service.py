@@ -7,7 +7,7 @@ import pytest
 from eth_utils import to_checksum_address
 
 from pathfinding_service import exceptions
-from pathfinding_service.model.token_network import FeeUpdate
+from pathfinding_service.model.token_network import PFSFeeUpdate
 from pathfinding_service.service import PathfindingService
 from raiden.constants import EMPTY_SIGNATURE
 from raiden.messages import FeeScheduleState
@@ -290,7 +290,7 @@ def test_update_fee(order, pathfinding_service_mock, token_network_model):
         proportional=int(0.1e9),
         imbalance_penalty=[(TokenAmount(0), FeeAmount(0)), (TokenAmount(10), FeeAmount(10))],
     )
-    fee_update = FeeUpdate(
+    fee_update = PFSFeeUpdate(
         canonical_identifier=CanonicalIdentifier(
             chain_identifier=ChainID(1),
             token_network_address=token_network_model.address,
@@ -315,7 +315,7 @@ def test_update_fee(order, pathfinding_service_mock, token_network_model):
 def test_invalid_fee_update(pathfinding_service_mock, token_network_model):
     setup_channel(pathfinding_service_mock, token_network_model)
 
-    fee_update = FeeUpdate(
+    fee_update = PFSFeeUpdate(
         canonical_identifier=CanonicalIdentifier(
             chain_identifier=ChainID(1),
             token_network_address=token_network_model.address,
@@ -328,7 +328,7 @@ def test_invalid_fee_update(pathfinding_service_mock, token_network_model):
     )
 
     # bad/missing signature
-    with pytest.raises(exceptions.InvalidFeeUpdate):
+    with pytest.raises(exceptions.InvalidPFSFeeUpdate):
         pathfinding_service_mock.on_fee_update(fee_update)
 
 

@@ -51,7 +51,7 @@ where for each channel
 
 `MF_channel = flat_fee + proportional_fee * amount + IP(C_before) - IP(C_after)`
 
-where `IP` is the "Imbalance Penalty" function and `C_before/after` are the channel capacities before and after the payment. The channel capacity is the node's free capacity as reported to the PFS with the UpdatePFS messages.
+where `IP` is the "Imbalance Penalty" function and `C_before/after` are the channel capacities before and after the payment. The channel capacity is the node's free capacity as reported to the PFS with the PFSCapacityUpdate messages.
 
 The IP function is a function that describes how much a node is willing to pay (in absolute values/wad) to move away from an undesirable channel capacity. If a node prefers to have a channel capacity of 5 while the total capacity of that channel is 10 (so that it could mediate up to 5 tokens in both directions) the IP function might look like
 
