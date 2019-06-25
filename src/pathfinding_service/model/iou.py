@@ -9,6 +9,7 @@ from marshmallow_dataclass import add_schema
 from raiden.exceptions import InvalidSignature
 from raiden.utils.signer import recover
 from raiden.utils.typing import Address, BlockNumber, ChainID, Signature, TokenAmount
+from raiden_contracts.constants import MessageTypeId
 from raiden_libs.marshmallow import ChecksumAddress, HexedBytes
 
 
@@ -27,12 +28,13 @@ class IOU:
 
     def packed_data(self) -> bytes:
         return (
-            self.sender
+            self.one_to_n_address
+            + encode_single("uint256", self.chain_id)
+            + encode_single("uint256", MessageTypeId.IOU)
+            + self.sender
             + self.receiver
             + encode_single("uint256", self.amount)
             + encode_single("uint256", self.expiration_block)
-            + self.one_to_n_address
-            + encode_single("uint256", self.chain_id)
         )
 
     def is_signature_valid(self) -> bool:
