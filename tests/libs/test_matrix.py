@@ -11,7 +11,7 @@ from raiden.exceptions import InvalidProtocolMessage
 from raiden.messages import RequestMonitoring
 from raiden.storage.serialization.serializer import DictSerializer
 from raiden.utils.typing import Address, ChainID, ChannelID, Nonce, TokenAmount
-from raiden_contracts.tests.utils import LOCKSROOT_OF_NO_LOCKS
+from raiden_contracts.tests.utils import LOCKSROOT_OF_NO_LOCKS, deepcopy
 from raiden_libs.matrix import deserialize_messages, matrix_http_retry_delay, message_from_dict
 
 INVALID_PEER_ADDRESS = Address(to_canonical_address("0x" + "1" * 40))
@@ -110,3 +110,19 @@ def test_matrix_http_retry_delay():
     delays = list(itertools.islice(matrix_http_retry_delay(), 8))
 
     assert delays == [1, 1, 1, 1, 1, 2, 4, 5]
+
+
+def test_deserialize_messages_with_missing_fields(request_monitoring_message):
+    message_json = DictSerializer.serialize(request_monitoring_message)
+    list_of_key_words = list(message_json.keys())
+
+    # non closing signature is not required by this message type
+    list_of_key_words.remove("non_closing_signature")
+
+    for key in list_of_key_words:
+        message_json_broken = deepcopy(message_json)
+        del message_json_broken[key]
+        messages = deserialize_messages(
+            data=json.dumps(message_json_broken), peer_address=request_monitoring_message.sender
+        )
+        assert len(messages) == 0
