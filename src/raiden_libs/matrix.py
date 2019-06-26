@@ -5,6 +5,7 @@ import gevent
 import structlog
 from eth_utils import decode_hex, to_checksum_address
 from gevent.event import Event
+from marshmallow import ValidationError
 from matrix_client.errors import MatrixRequestError
 from matrix_client.user import User
 
@@ -71,7 +72,7 @@ def deserialize_messages(data: str, peer_address: Address) -> List[SignedMessage
         except (UnicodeDecodeError, json.JSONDecodeError) as ex:
             logger.warning("Can't parse message data JSON", message_data=line, _exc=ex)
             continue
-        except (InvalidProtocolMessage, KeyError) as ex:
+        except (InvalidProtocolMessage, ValidationError, KeyError, ValueError) as ex:
             logger.warning("Message data JSON is not a valid message", message_data=line, _exc=ex)
             continue
 
