@@ -45,6 +45,74 @@ the services follow these instructions:
 This installs the executables ``pathfinding-service``, ``monitoring-service``
 and ``request-collector`` into the virtual environment.
 
+Using MS and PFS in raiden
+--------------------------
+We need to install raiden from the latest development branch.
+
+.. code:: bash
+
+    git clone https://github.com/raiden-network/raiden.git
+    cd raiden
+    git checkout development
+    make install-dev
+
+Raiden client needs to be started with the raiden-services flags like
+
+* --enable-monitoring
+* --routing-mode [pfs|local|private]
+
+Doing ``raiden --help`` and going to Raiden Services options would give more
+information.
+
+Payments related to Services
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The monitoring service registration, client onboarding(raiden node asking for
+a raiden service), monitoring service payment requires acquiring tokens in the
+token contracts deployed in various testnets and the mainnet. All deployment
+data regarding the various raiden-service contracts and associated tokens is
+displayed in the prefixed ``data`` folders here_. One can read about the design
+of ``raiden-services`` in the specs_.
+
+.. _here: https://github.com/raiden-network/raiden-contracts
+    /tree/master/raiden_contracts
+.. _specs: https://raiden-network-specification.readthedocs.io/en/latest
+    /monitoring_service.html#design-of-the-monitoring-service-still-work-in-progress
+
+
+
+For example the latest deployment of the raiden-service contracts_
+on the goerli testnet.
+
+.. _contracts: https://github.com/raiden-network/raiden-contracts
+  /blob/master/raiden_contracts/data_0.17.0/deployment_services_goerli.json
+
+
+The various *raiden-service* contracts and associated tokens can be deciphered
+from the json file containing the deployed data. Thus navigating to the
+``data_0.17.0`` folder and opening the ``deployment_services_goerli.json``
+shows us the following information.
+
++------------------+----------------------------------------------------------+
+| Contract         | Address                                                  |
++==================+==========================================================+
+| ServiceRegistry  | 0x9C64084682B3cA0CE602c4c42015C876B4d17Fd2               |
++------------------+----------------------------------------------------------+
+| UserDeposit      | 0x0486b0086b9C99e124E38e87d6Fd95f450136Afe               |
++------------------+----------------------------------------------------------+
+| Token for service|                                                          |
+| registration     | 0x3E7b2664B79966e7A3A05744f611c9C26c3e00f9               |
++------------------+----------------------------------------------------------+
+| Token for User   |                                                          |
+| deposit for      | 0x3E7b2664B79966e7A3A05744f611c9C26c3e00f9               |
+| payment of       |                                                          |
+| raiden-services  |                                                          |
++------------------+----------------------------------------------------------+
+| MonitoringService| 0x8fec7673d3DE31f84D181e3D521dcaB154c96b3c               |
++------------------+----------------------------------------------------------+
+| OneToN           | 0x6650E6695618299710F048912FC0d4b87dd2Ec91               |
++------------------+----------------------------------------------------------+
+
+
 Running the services
 --------------------
 
