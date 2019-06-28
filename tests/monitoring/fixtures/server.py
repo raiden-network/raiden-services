@@ -83,6 +83,7 @@ def monitoring_service(  # pylint: disable=too-many-arguments
             CONTRACT_MONITORING_SERVICE: monitoring_service_contract,
             CONTRACT_USER_DEPOSIT: user_deposit_contract,
         },
+        gas_measurements={"MonitoringService.monitor": 210000},
         required_confirmations=0,  # for faster tests
         poll_interval=0.01,  # for faster tests
         db_filename=":memory:",

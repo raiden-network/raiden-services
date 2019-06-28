@@ -22,6 +22,7 @@ from raiden_contracts.constants import (
     CONTRACT_USER_DEPOSIT,
     CONTRACTS_VERSION,
 )
+from raiden_contracts.contract_manager import gas_measurements
 from raiden_libs.contract_info import CONTRACT_MANAGER, get_contract_addresses_and_start_block
 from raiden_libs.logging import setup_logging
 
@@ -120,7 +121,9 @@ def common_options(app_name: str) -> Callable:
     return decorator
 
 
-def blockchain_options(contracts: List[str], contracts_version: str = None) -> Callable:
+def blockchain_options(
+    contracts: List[str], contracts_version: str = None, with_gas_numbers: bool = False
+) -> Callable:
     """A decorator providing blockchain related params to a command"""
     options = [
         click.Option(
@@ -160,12 +163,16 @@ def blockchain_options(contracts: List[str], contracts_version: str = None) -> C
                 )
                 if value is not None
             }
-            params["web3"], params["contracts"], params["start_block"] = connect_to_blockchain(
+            params["web3"], params["contracts"], params["gas_measurements"], params[
+                "start_block"
+            ] = connect_to_blockchain(
                 eth_rpc=params.pop("eth_rpc"),
                 used_contracts=contracts,
                 address_overwrites=address_overwrites,
                 contracts_version=contracts_version,
             )
+            if not with_gas_numbers:
+                del params["gas_measurements"]
             return callback(**params)
 
         command.callback = call_with_blockchain_info
@@ -179,7 +186,7 @@ def connect_to_blockchain(
     used_contracts: List[str],
     address_overwrites: Dict[str, Address],
     contracts_version: str = None,
-) -> Tuple[Web3, Dict[str, Contract], BlockNumber]:
+) -> Tuple[Web3, Dict[str, Contract], Dict[str, int], BlockNumber]:
     try:
         log.info("Starting Web3 client", node_address=eth_rpc)
         provider = HTTPProvider(eth_rpc)
@@ -216,4 +223,6 @@ def connect_to_blockchain(
 
     hex_addresses = {key: to_checksum_address(value) for key, value in addresses.items()}
     log.info("Contract information", addresses=hex_addresses, start_block=start_block)
-    return web3, contracts, start_block
+
+    measured_gas = gas_measurements(contracts_version)
+    return web3, contracts, measured_gas, start_block

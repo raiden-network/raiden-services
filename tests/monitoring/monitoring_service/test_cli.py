@@ -11,7 +11,7 @@ from monitoring_service.service import check_gas_reserve
 
 @pytest.fixture(autouse=True)
 def service_mock(monkeypatch):
-    connect_mock = Mock(return_value=(Mock(), MagicMock(), Mock()))
+    connect_mock = Mock(return_value=(Mock(), MagicMock(), MagicMock(), Mock()))
     monkeypatch.setattr("raiden_libs.cli.connect_to_blockchain", connect_mock)
     service_mock = Mock()
     monkeypatch.setattr("monitoring_service.cli.MonitoringService", service_mock)
@@ -20,7 +20,7 @@ def service_mock(monkeypatch):
 
 def test_account_check(web3, capsys):
     private_key = "0F951D6EAF7685D420AACCA3900127E669892FE5CA6C8E4C572A59B0609AAE6B"
-    check_gas_reserve(web3, private_key)
+    check_gas_reserve(web3, private_key, {"MonitoringService.monitor": 100})
     out = capsys.readouterr().out
     assert "Your account's balance is below the estimated gas reserve of" in out
 

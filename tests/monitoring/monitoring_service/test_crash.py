@@ -84,11 +84,14 @@ def test_crash(
         CONTRACT_USER_DEPOSIT: ContractMock(),
     }
 
+    gas_measurements = {"MonitoringService.monitor": 210000}
+
     def new_ms(filename):
         ms = MonitoringService(
             web3=Web3Mock(),
             private_key=server_private_key,
             contracts=contracts,
+            gas_measurements=gas_measurements,
             db_filename=os.path.join(tmpdir, filename),
         )
         msc = Mock()

@@ -19,7 +19,12 @@ log = structlog.get_logger(__name__)
 
 
 @blockchain_options(
-    contracts=[CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT, CONTRACT_MONITORING_SERVICE]
+    contracts=[
+        CONTRACT_TOKEN_NETWORK_REGISTRY,
+        CONTRACT_USER_DEPOSIT,
+        CONTRACT_MONITORING_SERVICE,
+    ],
+    with_gas_numbers=True,
 )
 @click.command()
 @click.option(
@@ -32,7 +37,7 @@ log = structlog.get_logger(__name__)
     "--confirmations",
     default=DEFAULT_NUMBER_OF_BLOCK_CONFIRMATIONS,
     type=click.IntRange(min=0),
-    help="Number of block confirmations to wait for",
+    help="Number of block confirmations to wait for",  # pylint: disable=too-many-arguments
 )
 @common_options("raiden-monitoring-service")
 def main(
@@ -40,6 +45,7 @@ def main(
     state_db: str,
     web3: Web3,
     contracts: Dict[str, Contract],
+    gas_measurements: Dict[str, int],
     start_block: BlockNumber,
     confirmations: BlockNumber,
     min_reward: int,
@@ -51,6 +57,7 @@ def main(
         web3=web3,
         private_key=private_key,
         contracts=contracts,
+        gas_measurements=gas_measurements,
         sync_start_block=start_block,
         required_confirmations=confirmations,
         db_filename=state_db,

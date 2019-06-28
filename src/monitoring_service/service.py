@@ -20,7 +20,6 @@ from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
     CONTRACT_TOKEN_NETWORK_REGISTRY,
     CONTRACT_USER_DEPOSIT,
-    GAS_REQUIRED_FOR_MS_MONITOR,
 )
 from raiden_libs.blockchain import get_blockchain_events
 from raiden_libs.contract_info import CONTRACT_MANAGER
@@ -30,10 +29,10 @@ from raiden_libs.utils import private_key_to_address
 log = structlog.get_logger(__name__)
 
 
-def check_gas_reserve(web3: Web3, private_key: str) -> None:
+def check_gas_reserve(web3: Web3, private_key: str, gas_measurements: Dict[str, int]) -> None:
     """ Check periodically for gas reserve in the account """
     gas_price = web3.eth.gasPrice
-    gas_limit = GAS_REQUIRED_FOR_MS_MONITOR
+    gas_limit = gas_measurements["MonitoringService.monitor"]
     estimated_required_balance = gas_limit * gas_price * DEFAULT_GAS_BUFFER_FACTOR
     estimated_required_balance_eth = Web3.fromWei(estimated_required_balance, "ether")
     current_balance = web3.eth.getBalance(private_key_to_address(private_key))
@@ -55,13 +54,14 @@ def handle_event(event: Event, context: Context) -> None:
         log.debug("Processed event", num_scheduled_events=context.db.scheduled_event_count())
 
 
-class MonitoringService:  # pylint: disable=too-few-public-methods
+class MonitoringService:  # pylint: disable=too-few-public-methods,too-many-instance-attributes
     def __init__(  # pylint: disable=too-many-arguments
         self,
         web3: Web3,
         private_key: str,
         db_filename: str,
         contracts: Dict[str, Contract],
+        gas_measurements: Dict[str, int],
         sync_start_block: BlockNumber = BlockNumber(0),
         required_confirmations: int = DEFAULT_NUMBER_OF_BLOCK_CONFIRMATIONS,
         poll_interval: float = 1,
@@ -69,6 +69,7 @@ class MonitoringService:  # pylint: disable=too-few-public-methods
     ):
         self.web3 = web3
         self.private_key = private_key
+        self.gas_measurements = gas_measurements
         self.address = private_key_to_address(private_key)
         self.required_confirmations = required_confirmations
         self.poll_interval = poll_interval
@@ -112,7 +113,7 @@ class MonitoringService:  # pylint: disable=too-few-public-methods
                 and last_confirmed_block >= last_gas_check_block + DEFAULT_GAS_CHECK_BLOCKS
             )
             if do_gas_reserve_check:
-                check_gas_reserve(self.web3, self.private_key)
+                check_gas_reserve(self.web3, self.private_key, self.gas_measurements)
                 last_gas_check_block = last_confirmed_block
 
             max_query_interval_end_block = (
