@@ -1,5 +1,5 @@
 """
-The tests in this module mock Capacity Updates and call on_pfs_update().
+The tests in this module mock Capacity Updates and call on_capacity_update().
 
 The Capacity Updates show different correct and incorrect values to test all edge cases
 """
@@ -120,7 +120,7 @@ def test_pfs_rejects_capacity_update_with_wrong_chain_id(
     )
 
     with pytest.raises(InvalidCapacityUpdate) as exinfo:
-        pathfinding_service_web3_mock.on_pfs_update(message)
+        pathfinding_service_web3_mock.on_capacity_update(message)
     assert "unknown chain identifier" in str(exinfo.value)
 
 
@@ -137,7 +137,7 @@ def test_pfs_rejects_capacity_update_with_wrong_token_network_address(
     )
 
     with pytest.raises(InvalidCapacityUpdate) as exinfo:
-        pathfinding_service_web3_mock.on_pfs_update(message)
+        pathfinding_service_web3_mock.on_capacity_update(message)
     assert "unknown token network" in str(exinfo.value)
 
 
@@ -154,7 +154,7 @@ def test_pfs_rejects_capacity_update_with_wrong_channel_identifier(
     )
 
     with pytest.raises(InvalidCapacityUpdate) as exinfo:
-        pathfinding_service_web3_mock.on_pfs_update(message)
+        pathfinding_service_web3_mock.on_capacity_update(message)
     assert "unknown channel identifier in token network" in str(exinfo.value)
 
 
@@ -172,7 +172,7 @@ def test_pfs_rejects_capacity_update_with_impossible_updating_capacity(
     message.updating_capacity = TokenAmount(UINT256_MAX + 1)
 
     with pytest.raises(InvalidCapacityUpdate) as exinfo:
-        pathfinding_service_web3_mock.on_pfs_update(message)
+        pathfinding_service_web3_mock.on_capacity_update(message)
     assert "with impossible updating_capacity" in str(exinfo.value)
 
 
@@ -190,7 +190,7 @@ def test_pfs_rejects_capacity_update_with_impossible_other_capacity(
     message.other_capacity = TokenAmount(UINT256_MAX + 1)
 
     with pytest.raises(InvalidCapacityUpdate) as exinfo:
-        pathfinding_service_web3_mock.on_pfs_update(message)
+        pathfinding_service_web3_mock.on_capacity_update(message)
     assert "with impossible other_capacity" in str(exinfo.value)
 
 
@@ -206,7 +206,7 @@ def test_pfs_rejects_capacity_update_with_wrong_updating_participant(
     )
 
     with pytest.raises(InvalidCapacityUpdate) as exinfo:
-        pathfinding_service_web3_mock.on_pfs_update(message)
+        pathfinding_service_web3_mock.on_capacity_update(message)
     assert "Sender of Capacity Update does not match" in str(exinfo.value)
 
 
@@ -222,7 +222,7 @@ def test_pfs_rejects_capacity_update_with_wrong_other_participant(
     )
 
     with pytest.raises(InvalidCapacityUpdate) as exinfo:
-        pathfinding_service_web3_mock.on_pfs_update(message)
+        pathfinding_service_web3_mock.on_capacity_update(message)
     assert "Other Participant of Capacity Update does not match" in str(exinfo.value)
 
 
@@ -238,7 +238,7 @@ def test_pfs_rejects_capacity_update_with_incorrect_signature(
     )
 
     with pytest.raises(InvalidCapacityUpdate) as exinfo:
-        pathfinding_service_web3_mock.on_pfs_update(message)
+        pathfinding_service_web3_mock.on_capacity_update(message)
     assert "Capacity Update not signed correctly" in str(exinfo.value)
 
 
@@ -277,12 +277,12 @@ def test_pfs_edge_case_capacity_updates_before_deposit(
     )
 
     # we expect no capacity at all since we don't know anything from P2
-    pathfinding_service_web3_mock.on_pfs_update(message1)
+    pathfinding_service_web3_mock.on_capacity_update(message1)
     assert view_to_partner.capacity == 0
     assert view_from_partner.capacity == 0
 
     # we expect now the capacity as stated in both consistent messages
-    pathfinding_service_web3_mock.on_pfs_update(message2)
+    pathfinding_service_web3_mock.on_capacity_update(message2)
     assert view_to_partner.capacity == 90
     assert view_from_partner.capacity == 10
 
@@ -322,7 +322,7 @@ def test_pfs_min_calculation_with_capacity_updates(
         other_capacity=110,
     )
 
-    pathfinding_service_web3_mock.on_pfs_update(message1)
+    pathfinding_service_web3_mock.on_capacity_update(message1)
 
     # Now the channel capacities are set to 0, since only P1 sent an update
     assert view_to_partner.capacity == 0
@@ -337,14 +337,14 @@ def test_pfs_min_calculation_with_capacity_updates(
         other_capacity=90,
     )
 
-    pathfinding_service_web3_mock.on_pfs_update(message2)
+    pathfinding_service_web3_mock.on_capacity_update(message2)
 
     # Now after both participants have sent Capacity Updates, we have the correct capacities
     assert view_to_partner.capacity == 90
     assert view_from_partner.capacity == 110
 
     # Now P1 sends the same update again, the capacities should not change (no need for nonces)
-    pathfinding_service_web3_mock.on_pfs_update(message1)
+    pathfinding_service_web3_mock.on_capacity_update(message1)
     assert view_to_partner.capacity == 90
     assert view_from_partner.capacity == 110
 
@@ -356,7 +356,7 @@ def test_pfs_min_calculation_with_capacity_updates(
         updating_capacity=10000,
         other_capacity=110,
     )
-    pathfinding_service_web3_mock.on_pfs_update(message3)
+    pathfinding_service_web3_mock.on_capacity_update(message3)
 
     # The capacities should be calculated out of the minimum of the two capacity updates,
     # so stay the same
@@ -371,7 +371,7 @@ def test_pfs_min_calculation_with_capacity_updates(
         updating_capacity=90,
         other_capacity=0,
     )
-    pathfinding_service_web3_mock.on_pfs_update(message4)
+    pathfinding_service_web3_mock.on_capacity_update(message4)
 
     # The capacities should be calculated out of the minimum of the two capacity updates,
     #  he can block his partner
@@ -386,7 +386,7 @@ def test_pfs_min_calculation_with_capacity_updates(
         updating_capacity=90,
         other_capacity=10000,
     )
-    pathfinding_service_web3_mock.on_pfs_update(message4)
+    pathfinding_service_web3_mock.on_capacity_update(message4)
 
     # The capacities should be calculated out of the minimum of the two capacity updates
     assert view_to_partner.capacity == 90

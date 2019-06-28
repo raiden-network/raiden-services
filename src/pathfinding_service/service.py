@@ -242,7 +242,7 @@ class PathfindingService(gevent.Greenlet):
     def handle_message(self, message: Message) -> None:
         try:
             if isinstance(message, PFSCapacityUpdate):
-                changed_cvs = self.on_pfs_update(message)
+                changed_cvs = self.on_capacity_update(message)
             elif isinstance(message, PFSFeeUpdate):
                 changed_cvs = self.on_fee_update(message)
             else:
@@ -325,7 +325,7 @@ class PathfindingService(gevent.Greenlet):
 
         return token_network
 
-    def on_pfs_update(self, message: PFSCapacityUpdate) -> List[ChannelView]:
+    def on_capacity_update(self, message: PFSCapacityUpdate) -> List[ChannelView]:
         token_network = self._validate_pfs_update(message)
         log.info("Received Capacity Update", message=message)
         self.database.upsert_capacity_update(message)
