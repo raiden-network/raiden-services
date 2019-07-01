@@ -16,6 +16,7 @@ from pathfinding_service.exceptions import (
 )
 from pathfinding_service.model import TokenNetwork
 from pathfinding_service.model.channel_view import ChannelView
+from pathfinding_service.typing import DeferableMessage
 from raiden.constants import PATH_FINDING_BROADCASTING_ROOM, UINT256_MAX
 from raiden.messages import Message, PFSCapacityUpdate, PFSFeeUpdate
 from raiden.network.transport.matrix import AddressReachability
@@ -37,6 +38,16 @@ from raiden_libs.states import BlockchainState
 from raiden_libs.utils import private_key_to_address
 
 log = structlog.get_logger(__name__)
+
+
+class DeferMessage(Exception):
+    """Stop processing the message and handle it when the channel has been opened"""
+
+    deferred_message: DeferableMessage
+
+    def __init__(self, deferred_message: DeferableMessage):
+        super().__init__()
+        self.deferred_message = deferred_message
 
 
 class PathfindingService(gevent.Greenlet):
@@ -251,10 +262,12 @@ class PathfindingService(gevent.Greenlet):
             for cv in changed_cvs:
                 self.database.upsert_channel_view(cv)
 
-        except InvalidGlobalMessage as x:
-            log.info(str(x), **asdict(message))
+        except DeferMessage as ex:
+            self.defer_message_until_channel_is_open(ex.deferred_message)
+        except InvalidGlobalMessage as ex:
+            log.info(str(ex), **asdict(message))
 
-    def defer_message_until_channel_is_open(self, message: PFSFeeUpdate) -> None:
+    def defer_message_until_channel_is_open(self, message: DeferableMessage) -> None:
         log.debug(
             "Received message for unknown channel, defer until ChannelOpened is confirmed",
             channel_id=message.canonical_identifier.channel_identifier,
@@ -274,8 +287,7 @@ class PathfindingService(gevent.Greenlet):
             message.canonical_identifier.channel_identifier
             not in token_network.channel_id_to_addresses
         ):
-            self.defer_message_until_channel_is_open(message)
-            return []
+            raise DeferMessage(message)
 
         return token_network.handle_channel_fee_update(message)
 
@@ -293,13 +305,6 @@ class PathfindingService(gevent.Greenlet):
         if token_network is None:
             raise InvalidCapacityUpdate("Received Capacity Update with unknown token network")
 
-        # check if channel exists
-        channel_identifier = message.canonical_identifier.channel_identifier
-        if channel_identifier not in token_network.channel_id_to_addresses:
-            raise InvalidCapacityUpdate(
-                "Received Capacity Update with unknown channel identifier in token network"
-            )
-
         # check values < max int 256
         if message.updating_capacity > UINT256_MAX:
             raise InvalidCapacityUpdate(
@@ -307,6 +312,15 @@ class PathfindingService(gevent.Greenlet):
             )
         if message.other_capacity > UINT256_MAX:
             raise InvalidCapacityUpdate("Received Capacity Update with impossible other_capacity")
+
+        # check signature of Capacity Update
+        if message.sender != message.updating_participant:
+            raise InvalidCapacityUpdate("Capacity Update not signed correctly")
+
+        # check if channel exists
+        channel_identifier = message.canonical_identifier.channel_identifier
+        if channel_identifier not in token_network.channel_id_to_addresses:
+            raise DeferMessage(message)
 
         # check if participants fit to channel id
         participants = token_network.channel_id_to_addresses[channel_identifier]
@@ -318,10 +332,6 @@ class PathfindingService(gevent.Greenlet):
             raise InvalidCapacityUpdate(
                 "Other Participant of Capacity Update does not match the internal channel"
             )
-
-        # check signature of Capacity Update
-        if message.sender != message.updating_participant:
-            raise InvalidCapacityUpdate("Capacity Update not signed correctly")
 
         return token_network
 

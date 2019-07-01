@@ -10,7 +10,7 @@ from eth_utils import decode_hex
 
 from pathfinding_service.exceptions import InvalidCapacityUpdate
 from pathfinding_service.model import TokenNetwork
-from pathfinding_service.service import PathfindingService
+from pathfinding_service.service import DeferMessage, PathfindingService
 from raiden.constants import EMPTY_SIGNATURE, UINT256_MAX
 from raiden.messages import PFSCapacityUpdate
 from raiden.transfer.identifiers import CanonicalIdentifier
@@ -153,9 +153,8 @@ def test_pfs_rejects_capacity_update_with_wrong_channel_identifier(
         privkey_signer=PRIVATE_KEY_1,
     )
 
-    with pytest.raises(InvalidCapacityUpdate) as exinfo:
+    with pytest.raises(DeferMessage):
         pathfinding_service_web3_mock.on_capacity_update(message)
-    assert "unknown channel identifier in token network" in str(exinfo.value)
 
 
 def test_pfs_rejects_capacity_update_with_impossible_updating_capacity(
@@ -202,7 +201,7 @@ def test_pfs_rejects_capacity_update_with_wrong_updating_participant(
     message = get_updatepfs_message(
         updating_participant=PRIVATE_KEY_3_ADDRESS,
         other_participant=PRIVATE_KEY_2_ADDRESS,
-        privkey_signer=PRIVATE_KEY_1,
+        privkey_signer=PRIVATE_KEY_3,
     )
 
     with pytest.raises(InvalidCapacityUpdate) as exinfo:
