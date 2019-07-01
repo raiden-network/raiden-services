@@ -120,7 +120,7 @@ def common_options(app_name: str) -> Callable:
     return decorator
 
 
-def blockchain_options(contracts: List[str], contracts_version: str = None) -> Callable:
+def blockchain_options(contracts: List[str]) -> Callable:
     """A decorator providing blockchain related params to a command"""
     options = [
         click.Option(
@@ -164,7 +164,6 @@ def blockchain_options(contracts: List[str], contracts_version: str = None) -> C
                 eth_rpc=params.pop("eth_rpc"),
                 used_contracts=contracts,
                 address_overwrites=address_overwrites,
-                contracts_version=contracts_version,
             )
             return callback(**params)
 
@@ -175,10 +174,7 @@ def blockchain_options(contracts: List[str], contracts_version: str = None) -> C
 
 
 def connect_to_blockchain(
-    eth_rpc: str,
-    used_contracts: List[str],
-    address_overwrites: Dict[str, Address],
-    contracts_version: str = None,
+    eth_rpc: str, used_contracts: List[str], address_overwrites: Dict[str, Address]
 ) -> Tuple[Web3, Dict[str, Contract], BlockNumber]:
     try:
         log.info("Starting Web3 client", node_address=eth_rpc)
@@ -200,14 +196,8 @@ def connect_to_blockchain(
     # give web3 some time between retries before failing
     provider.middlewares.replace("http_retry_request", http_retry_with_backoff_middleware)
 
-    if contracts_version:
-        log.info(f"Using contracts version: {contracts_version}")
-
     addresses, start_block = get_contract_addresses_and_start_block(
-        chain_id=chain_id,
-        contracts=used_contracts,
-        address_overwrites=address_overwrites,
-        contracts_version=contracts_version,
+        chain_id=chain_id, contracts=used_contracts, address_overwrites=address_overwrites
     )
     contracts = {
         c: web3.eth.contract(abi=CONTRACT_MANAGER.get_contract_abi(c), address=address)
