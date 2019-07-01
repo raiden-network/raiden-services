@@ -11,6 +11,7 @@ from pathfinding_service.model import IOU
 from pathfinding_service.model.channel_view import ChannelView
 from pathfinding_service.model.feedback import FeedbackToken
 from pathfinding_service.model.token_network import TokenNetwork
+from pathfinding_service.typing import DeferableMessage
 from raiden.messages import PFSCapacityUpdate, PFSFeeUpdate
 from raiden.storage.serialization.serializer import JSONSerializer
 from raiden.utils.typing import (
@@ -240,7 +241,7 @@ class PFSDatabase(BaseDatabase):
 
         return self.conn.execute(f"SELECT COUNT(*) FROM feedback {where_clause};").fetchone()[0]
 
-    def insert_waiting_message(self, message: PFSFeeUpdate) -> None:
+    def insert_waiting_message(self, message: DeferableMessage) -> None:
         self.insert(
             "waiting_message",
             dict(
