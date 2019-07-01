@@ -20,8 +20,8 @@ from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
     CONTRACT_TOKEN_NETWORK_REGISTRY,
     CONTRACT_USER_DEPOSIT,
-    GAS_REQUIRED_FOR_MS_MONITOR,
 )
+from raiden_contracts.contract_manager import gas_measurements
 from raiden_libs.blockchain import get_blockchain_events
 from raiden_libs.contract_info import CONTRACT_MANAGER
 from raiden_libs.events import Event
@@ -33,7 +33,7 @@ log = structlog.get_logger(__name__)
 def check_gas_reserve(web3: Web3, private_key: str) -> None:
     """ Check periodically for gas reserve in the account """
     gas_price = web3.eth.gasPrice
-    gas_limit = GAS_REQUIRED_FOR_MS_MONITOR
+    gas_limit = gas_measurements()["MonitoringService.monitor"]
     estimated_required_balance = gas_limit * gas_price * DEFAULT_GAS_BUFFER_FACTOR
     estimated_required_balance_eth = Web3.fromWei(estimated_required_balance, "ether")
     current_balance = web3.eth.getBalance(private_key_to_address(private_key))
