@@ -1,5 +1,6 @@
 import os
 import sqlite3
+import sys
 from typing import Any, Dict, Union
 
 import structlog
@@ -100,7 +101,14 @@ class BaseDatabase:
         ).fetchone()
         for key, val in new_settings.items():
             old = old_settings[key]
-            assert old == val, f"DB was created with {key}={old}, got {val}!"
+            if old != val:
+                log.error(
+                    "Mismatch between current settings and settings saved in db: "
+                    f"DB was created with {key}='{old}', current_value is '{val}'! "
+                    "Either fix your settings or start with a fresh db. "
+                    "WARNING: If you delete your db, you will lose earned fees!"
+                )
+                sys.exit(1)
 
     def insert(
         self, table_name: str, fields_by_colname: Dict[str, Any], keyword: str = "INSERT"
