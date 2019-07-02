@@ -291,7 +291,7 @@ class PathfindingService(gevent.Greenlet):
 
         return token_network.handle_channel_fee_update(message)
 
-    def _validate_pfs_update(self, message: PFSCapacityUpdate) -> TokenNetwork:
+    def _validate_pfs_capacity_update(self, message: PFSCapacityUpdate) -> TokenNetwork:
         token_network_address = TokenNetworkAddress(
             message.canonical_identifier.token_network_address
         )
@@ -336,7 +336,7 @@ class PathfindingService(gevent.Greenlet):
         return token_network
 
     def on_capacity_update(self, message: PFSCapacityUpdate) -> List[ChannelView]:
-        token_network = self._validate_pfs_update(message)
+        token_network = self._validate_pfs_capacity_update(message)
         log.info("Received Capacity Update", message=message)
         self.database.upsert_capacity_update(message)
 
