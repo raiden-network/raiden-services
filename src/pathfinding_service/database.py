@@ -255,7 +255,7 @@ class PFSDatabase(BaseDatabase):
 
     def pop_waiting_messages(
         self, token_network_address: TokenNetworkAddress, channel_id: ChannelID
-    ) -> Iterator[PFSFeeUpdate]:
+    ) -> Iterator[DeferableMessage]:
         """Return all waiting messages for the given channel and delete them from the db"""
         # Return messages
         for row in self.conn.execute(
@@ -265,8 +265,11 @@ class PFSDatabase(BaseDatabase):
             """,
             [to_checksum_address(token_network_address), hex256(channel_id)],
         ):
-            message: PFSFeeUpdate = JSONSerializer.deserialize(row["message"])
-            message.timestamp = message.timestamp.replace(tzinfo=timezone.utc)
+            message: DeferableMessage = JSONSerializer.deserialize(row["message"])
+
+            if isinstance(message, PFSFeeUpdate):
+                message.timestamp = message.timestamp.replace(tzinfo=timezone.utc)
+
             yield message
 
         # Delete returned messages
