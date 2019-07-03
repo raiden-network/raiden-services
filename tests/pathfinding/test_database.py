@@ -1,4 +1,5 @@
 import json
+from datetime import datetime, timezone
 from typing import List
 from uuid import uuid4
 
@@ -6,7 +7,20 @@ from eth_utils import to_checksum_address
 
 from pathfinding_service.database import PFSDatabase
 from pathfinding_service.model.feedback import FeedbackToken
-from raiden.utils.typing import Address, TokenNetworkAddress
+from raiden.constants import EMPTY_SIGNATURE
+from raiden.messages import PFSCapacityUpdate, PFSFeeUpdate
+from raiden.tests.utils.factories import make_address, make_privkey_address
+from raiden.transfer.identifiers import CanonicalIdentifier
+from raiden.transfer.mediated_transfer.mediation_fee import FeeScheduleState
+from raiden.utils.signer import LocalSigner
+from raiden.utils.typing import (
+    Address,
+    ChainID,
+    ChannelID,
+    Nonce,
+    TokenAmount,
+    TokenNetworkAddress,
+)
 
 
 def db_has_feedback_for(database: PFSDatabase, token: FeedbackToken, route: List[Address]) -> bool:
@@ -123,3 +137,64 @@ def test_feedback_stats(pathfinding_service_mock):
     assert database.get_num_routes_feedback() == 2
     assert database.get_num_routes_feedback(only_with_feedback=True) == 2
     assert database.get_num_routes_feedback(only_successful=True) == 1
+
+
+def test_waiting_messages(pathfinding_service_mock):
+    participant1_privkey, participant1 = make_privkey_address()
+    token_network_address = TokenNetworkAddress(b"1" * 20)
+    channel_id = ChannelID(1)
+
+    # register token network internally
+    database = pathfinding_service_mock.database
+    database.conn.execute(
+        "INSERT INTO token_network(address) VALUES (?)",
+        [to_checksum_address(token_network_address)],
+    )
+
+    fee_update = PFSFeeUpdate(
+        canonical_identifier=CanonicalIdentifier(
+            chain_identifier=ChainID(1),
+            token_network_address=token_network_address,
+            channel_identifier=channel_id,
+        ),
+        updating_participant=participant1,
+        fee_schedule=FeeScheduleState(),
+        timestamp=datetime.now(timezone.utc),
+        signature=EMPTY_SIGNATURE,
+    )
+    fee_update.sign(LocalSigner(participant1_privkey))
+
+    capacity_update = PFSCapacityUpdate(
+        canonical_identifier=CanonicalIdentifier(
+            chain_identifier=ChainID(1),
+            token_network_address=token_network_address,
+            channel_identifier=channel_id,
+        ),
+        updating_participant=make_address(),
+        other_participant=make_address(),
+        updating_nonce=Nonce(1),
+        other_nonce=Nonce(1),
+        updating_capacity=TokenAmount(100),
+        other_capacity=TokenAmount(111),
+        reveal_timeout=50,
+        signature=EMPTY_SIGNATURE,
+    )
+    capacity_update.sign(LocalSigner(participant1_privkey))
+
+    for message in (fee_update, capacity_update):
+        database.insert_waiting_message(message)
+
+        recovered_messages = list(
+            database.pop_waiting_messages(
+                token_network_address=token_network_address, channel_id=channel_id
+            )
+        )
+        assert len(recovered_messages) == 1
+        assert recovered_messages[0] == message
+
+        recovered_messages2 = list(
+            database.pop_waiting_messages(
+                token_network_address=token_network_address, channel_id=channel_id
+            )
+        )
+        assert len(recovered_messages2) == 0
