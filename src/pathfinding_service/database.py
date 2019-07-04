@@ -268,6 +268,8 @@ class PFSDatabase(BaseDatabase):
             message: DeferableMessage = JSONSerializer.deserialize(row["message"])
 
             if isinstance(message, PFSFeeUpdate):
+                # Necessary till marshmallow bug is fixed and released:
+                # https://github.com/marshmallow-code/marshmallow/issues/955
                 message.timestamp = message.timestamp.replace(tzinfo=timezone.utc)
 
             yield message
