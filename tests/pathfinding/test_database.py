@@ -9,7 +9,6 @@ from pathfinding_service.database import PFSDatabase
 from pathfinding_service.model.feedback import FeedbackToken
 from raiden.constants import EMPTY_SIGNATURE
 from raiden.messages import PFSCapacityUpdate, PFSFeeUpdate
-from raiden.storage.serialization import DictSerializer
 from raiden.tests.utils.factories import make_address, make_privkey_address
 from raiden.transfer.identifiers import CanonicalIdentifier
 from raiden.transfer.mediated_transfer.mediation_fee import FeeScheduleState
@@ -182,8 +181,6 @@ def test_waiting_messages(pathfinding_service_mock):
     )
     capacity_update.sign(LocalSigner(participant1_privkey))
 
-    # FIXME: should be removed once __eq__ is fixed for messages
-    serializer = DictSerializer()
     for message in (fee_update, capacity_update):
         database.insert_waiting_message(message)
 
@@ -193,19 +190,7 @@ def test_waiting_messages(pathfinding_service_mock):
             )
         )
         assert len(recovered_messages) == 1
-
-        recovered_message = serializer.serialize(recovered_messages[0])
-        original_message = serializer.serialize(message)
-
-        if isinstance(message, PFSFeeUpdate):
-            # Currently marshmallow has problems with properly deserializing
-            # subsecond parts of `datetime`
-            # See https://github.com/marshmallow-code/marshmallow/issues/627
-            # Thus remove the timestamp for the comparison
-            del recovered_message["timestamp"]
-            del original_message["timestamp"]
-
-        assert recovered_message == original_message
+        assert message == recovered_messages[0]
 
         recovered_messages2 = list(
             database.pop_waiting_messages(
