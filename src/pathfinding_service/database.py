@@ -1,6 +1,6 @@
 import json
 import os
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Iterator, List, Optional, Tuple
 from uuid import UUID
 
@@ -12,7 +12,7 @@ from pathfinding_service.model.channel_view import ChannelView
 from pathfinding_service.model.feedback import FeedbackToken
 from pathfinding_service.model.token_network import TokenNetwork
 from pathfinding_service.typing import DeferableMessage
-from raiden.messages import PFSCapacityUpdate, PFSFeeUpdate
+from raiden.messages import PFSCapacityUpdate
 from raiden.storage.serialization.serializer import JSONSerializer
 from raiden.utils.typing import (
     Address,
@@ -265,14 +265,7 @@ class PFSDatabase(BaseDatabase):
             """,
             [to_checksum_address(token_network_address), hex256(channel_id)],
         ):
-            message: DeferableMessage = JSONSerializer.deserialize(row["message"])
-
-            if isinstance(message, PFSFeeUpdate):
-                # Necessary till marshmallow bug is fixed and released:
-                # https://github.com/marshmallow-code/marshmallow/issues/955
-                message.timestamp = message.timestamp.replace(tzinfo=timezone.utc)
-
-            yield message
+            yield JSONSerializer.deserialize(row["message"])
 
         # Delete returned messages
         self.conn.execute(
