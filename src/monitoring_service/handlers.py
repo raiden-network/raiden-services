@@ -415,6 +415,11 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
     )
     if call_monitor:
         try:
+            # Attackers might be able to construct MRs that make this fail.
+            # Since we execute a gas estimation before doing the `transact`,
+            # the gas estimation will fail before any gas is used.
+            # If we stop doing a gas estimation, a `call` has to be done before
+            # the `transact` to prevent attackers from wasting the MS's gas.
             tx_hash = TransactionHash(
                 bytes(
                     context.monitoring_service_contract.functions.monitor(
@@ -489,6 +494,12 @@ def action_claim_reward_triggered_event_handler(event: Event, context: Context) 
 
     if can_claim and has_reward:
         try:
+            # The gas estimation will prevent us from wasting gas on failing
+            # transactions. Attackers shouldn't be able to exploit this
+            # transaction to waste gas anyway unless there is a bug in the smart
+            # contract. It should not be possible to bring the contract into a
+            # state where MS has a reward, the contract says it is time to
+            # claim it, but the claim will fail.
             tx_hash = TransactionHash(
                 bytes(
                     context.monitoring_service_contract.functions.claimReward(
