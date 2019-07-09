@@ -35,7 +35,7 @@ def read(*names: str, **kwargs: str) -> str:
 
 setup(
     name="raiden-services",
-    version="0.0.1",
+    version="0.1.0",
     license="MIT",
     description=DESCRIPTION,
     author="Brainbot Labs Est.",
