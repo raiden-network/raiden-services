@@ -283,6 +283,8 @@ class PathfindingService(gevent.Greenlet):
         if not token_network:
             return []
 
+        log.debug("Received Fee Update", message=message)
+
         if (
             message.canonical_identifier.channel_identifier
             not in token_network.channel_id_to_addresses
@@ -337,7 +339,7 @@ class PathfindingService(gevent.Greenlet):
 
     def on_capacity_update(self, message: PFSCapacityUpdate) -> List[ChannelView]:
         token_network = self._validate_pfs_capacity_update(message)
-        log.info("Received Capacity Update", message=message)
+        log.debug("Received Capacity Update", message=message)
         self.database.upsert_capacity_update(message)
 
         # Follow presence for the channel participants
