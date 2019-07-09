@@ -1,4 +1,5 @@
 # Changelog
 
+### 0.1.0
 
-* Work on initial MVP to be released soon
+* Initial testnet release of the Raiden Services
