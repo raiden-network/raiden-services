@@ -1,4 +1,5 @@
 import json
+import sys
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
 
 import gevent
@@ -59,6 +60,10 @@ def message_from_dict(data: Dict[str, Any]) -> Message:
 
 def deserialize_messages(data: str, peer_address: Address) -> List[SignedMessage]:
     messages: List[SignedMessage] = list()
+
+    if sys.getsizeof(data) >= 1000000:
+        log.warning("Received message that is too big")
+        return messages
 
     for line in data.splitlines():
         line = line.strip()

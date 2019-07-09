@@ -49,10 +49,14 @@ class RequestCollector(gevent.Greenlet):
         self.matrix_listener.join()
 
     def handle_message(self, message: Message) -> None:
-        if isinstance(message, RequestMonitoring):
-            self.on_monitor_request(message)
-        else:
-            log.debug("Ignoring message", message=message)
+        try:
+            if isinstance(message, RequestMonitoring):
+                self.on_monitor_request(message)
+            else:
+                log.debug("Ignoring message", message=message)
+        # add more advanced exception catching
+        except AssertionError as ex:
+            log.error("Error while handling message", message=message, _exc=ex)
 
     def on_monitor_request(self, request_monitoring: RequestMonitoring) -> None:
         assert isinstance(request_monitoring, RequestMonitoring)
