@@ -6,9 +6,11 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import click
 import requests.exceptions
+import sentry_sdk
 import structlog
 from eth_account import Account
 from eth_utils import decode_hex, is_checksum_address, to_checksum_address
+from sentry_sdk.integrations.flask import FlaskIntegration
 from web3 import HTTPProvider, Web3
 from web3.contract import Contract
 from web3.middleware import geth_poa_middleware
@@ -207,3 +209,11 @@ def connect_to_blockchain(
     hex_addresses = {key: to_checksum_address(value) for key, value in addresses.items()}
     log.info("Contract information", addresses=hex_addresses, start_block=start_block)
     return web3, contracts, start_block
+
+
+def maybe_setup_sentry(enable_flask_integration: bool = False) -> None:
+    sentry_dsn = os.environ.get("SENTRY_DSN")
+    if sentry_dsn is not None:
+        sentry_sdk.init(
+            dsn=sentry_dsn, integrations=[FlaskIntegration()] if enable_flask_integration else []
+        )
