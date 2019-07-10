@@ -59,6 +59,8 @@ class Path:
         self.fees: List[FeeAmount] = []
         self._calc_fees()
 
+        log.debug("Creating Path object", nodes=nodes, is_valid=self.is_valid)
+
     def _calc_fees(self) -> None:
         total = self.value
         try:
@@ -317,7 +319,7 @@ class TokenNetwork:
 
         # find next path
         all_paths: Iterable[List[Address]] = nx.shortest_simple_paths(
-            self.G, source, target, weight="weight"
+            G=self.G, source=source, target=target, weight="weight"
         )
         try:
             # skip duplicates and invalid paths
@@ -350,6 +352,17 @@ class TokenNetwork:
         """
         visited: Dict[ChannelID, float] = defaultdict(lambda: 0)
         paths: List[Path] = []
+
+        log.debug(
+            "Finding paths for payment",
+            source=to_checksum_address(source),
+            target=to_checksum_address(target),
+            value=value,
+            max_paths=max_paths,
+            diversity_penalty=diversity_penalty,
+            fee_penalty=fee_penalty,
+            reachabilities=address_to_reachability,
+        )
 
         while len(paths) < max_paths:
             path = self._get_single_path(
