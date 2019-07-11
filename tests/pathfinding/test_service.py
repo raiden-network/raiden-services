@@ -339,20 +339,40 @@ def test_logging_processor():
     log_method = Mock()
 
     address = b"\x7f[\xf6\xc9To\xa8\x185w\xe4\x9f\x15\xbc\xef@mr\xd5\xd9"
+    address_log = format_to_hex(
+        _logger=logger, _log_method=log_method, event_dict=dict(address=address)
+    )
+    assert to_checksum_address(address) == address_log["address"]
+
     address2 = b"\x7f[\xf6\xc9To\xa8\x185w\xe4\x9f\x15\xbc\xef@mr\xd5\xd1"
     event = ReceiveTokenNetworkCreatedEvent(
         token_address=Address(address),
         token_network_address=TokenNetworkAddress(address2),
         block_number=BlockNumber(1),
     )
-    address_log = format_to_hex(
-        _logger=logger, _log_method=log_method, event_dict=dict(address=address)
-    )
     event_log = format_to_hex(_logger=logger, _log_method=log_method, event_dict=dict(event=event))
-    assert to_checksum_address(address) == address_log["address"]
     assert (  # pylint: disable=unsubscriptable-object
         to_checksum_address(address) == event_log["event"]["token_address"]
     )
     assert (  # pylint: disable=unsubscriptable-object
         to_checksum_address(address2) == event_log["event"]["token_network_address"]
+    )
+
+    message = PFSFeeUpdate(
+        canonical_identifier=CanonicalIdentifier(
+            chain_identifier=ChainID(1),
+            token_network_address=TokenNetworkAddress(address),
+            channel_identifier=ChannelID(1),
+        ),
+        updating_participant=PARTICIPANT1,
+        fee_schedule=FeeScheduleState(),
+        timestamp=datetime.now(timezone.utc),
+        signature=EMPTY_SIGNATURE,
+    )
+    message_log = format_to_hex(
+        _logger=logger, _log_method=log_method, event_dict=dict(message=message)
+    )
+    assert (  # pylint: disable=unsubscriptable-object
+        to_checksum_address(address)
+        == message_log["message"]["canonical_identifier"]["token_network_address"]
     )

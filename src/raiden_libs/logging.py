@@ -36,23 +36,30 @@ def setup_logging(log_level: str) -> None:
     )
 
 
-def change_bytes(event_dict: Dict, key: Any, val: bytes) -> Dict[str, Any]:
-    if len(val) == 20:
-        event_dict[key] = to_checksum_address(val)
-    else:
-        event_dict[key] = to_hex(val)
-    return event_dict
+def make_bytes_readable(value: Any) -> Any:
+    if isinstance(value, bytes):
+        if len(value) == 20:
+            return to_checksum_address(value)
+
+        return to_hex(value)
+    return value
+
+
+def apply_recursive(value: Any) -> Any:
+    if isinstance(value, (list, tuple)):
+        return [apply_recursive(x) for x in value]
+    if isinstance(value, dict):
+        return {apply_recursive(k): apply_recursive(v) for k, v in value.items()}
+
+    return make_bytes_readable(value)
 
 
 def format_to_hex(_logger: Any, _log_method: Any, event_dict: Dict) -> Dict[str, Any]:
     for key, val in event_dict.items():
-        if isinstance(val, bytes):
-            change_bytes(event_dict, key, val)
         if isinstance(val, (Event, Message)):
-            event_data = asdict(val)
-            for keys, value in event_data.items():
-                if isinstance(value, bytes):
-                    change_bytes(event_data, keys, value)
-            event_dict[key] = event_data
-            event_dict[key]["event_name"] = val.__class__.__name__
+            val = asdict(val)
+            val["event_name"] = val.__class__.__name__
+
+        event_dict[key] = apply_recursive(val)
+
     return event_dict
