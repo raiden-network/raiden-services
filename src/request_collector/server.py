@@ -86,6 +86,7 @@ class RequestCollector(gevent.Greenlet):
             return
         if monitor_request.non_closing_signer != monitor_request.reward_proof_signer:
             log.debug("The two MR signatures don't match", monitor_request=monitor_request)
+            return
 
         # Check that received MR is newer by comparing nonces
         old_mr = self.state_db.get_monitor_request(
