@@ -5,29 +5,36 @@ x-defaults: &defaults
   image: raiden-services
   env_file: .env
   volumes:
-    - /data/state:/state
-    - /data/keystore:/keystore
+    - ${DATA_DIR:-./data}/state:/state
+    - ${DATA_DIR:-./data}/keystore:/keystore
 
 services:
   pfs:
     << : *defaults
     command: ["python3", "-m", "pathfinding_service.cli"]
-    labels:
-      - "traefik.enable=true"
-      - "traefik.frontend.rule=Host: pfs-ropsten-with-fee.services-dev.raiden.network"
+    ports:
+      - 6001:6000
     environment:
       - PFS_STATE_DB=/state/pfs-state.db
       - PFS_HOST=0.0.0.0
+      - SERVER_NAME
+    labels:
+      - "traefik.enable=true"
+      - "traefik.frontend.rule=Host:${SERVER_NAME}"
 
   ms:
     << : *defaults
     command: ["python3", "-m", "monitoring_service.cli"]
+    ports:
+      - 6002:6000
     environment:
       - MS_STATE_DB=/state/ms-state.db
 
   msrc:
     << : *defaults
     command: ["python3", "-m", "request_collector.cli"]
+    ports:
+      - 6003:6000
     environment:
       - MSRC_STATE_DB=/state/ms-state.db
     depends_on:
@@ -41,8 +48,9 @@ services:
       - 443:443
     volumes:
       - ./config/traefik:/etc/traefik
-      - ./data/traefik:/data
+      - ${DATA_DIR:-./data}/traefik:/data
       - /var/run/docker.sock:/var/run/docker.sock
+    command: --acme.email=${LETSENCRYPT_EMAIL}
     depends_on:
       - pfs
       - ms
