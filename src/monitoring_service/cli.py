@@ -13,7 +13,7 @@ from raiden_contracts.constants import (
     CONTRACT_TOKEN_NETWORK_REGISTRY,
     CONTRACT_USER_DEPOSIT,
 )
-from raiden_libs.cli import blockchain_options, common_options, maybe_setup_sentry
+from raiden_libs.cli import blockchain_options, common_options, setup_sentry
 
 log = structlog.get_logger(__name__)
 
@@ -62,5 +62,5 @@ def main(
 
 
 if __name__ == "__main__":
-    maybe_setup_sentry()
+    setup_sentry()
     main(auto_envvar_prefix="MS")

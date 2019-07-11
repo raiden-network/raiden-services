@@ -11,7 +11,7 @@ from request_collector.server import RequestCollector
 
 from monitoring_service.database import SharedDatabase
 from raiden.utils.cli import NetworkChoiceType
-from raiden_libs.cli import common_options, maybe_setup_sentry
+from raiden_libs.cli import common_options, setup_sentry
 
 log = structlog.get_logger(__name__)
 
@@ -57,5 +57,5 @@ def main(private_key: str, state_db: str) -> int:
 
 
 if __name__ == "__main__":
-    maybe_setup_sentry()
+    setup_sentry()
     main(auto_envvar_prefix="MSRC")  # pragma: no cover
