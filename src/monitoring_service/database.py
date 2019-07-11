@@ -39,22 +39,21 @@ class SharedDatabase(BaseDatabase):
     schema_filename = os.path.join(os.path.dirname(os.path.realpath(__file__)), "schema.sql")
 
     def upsert_monitor_request(self, request: MonitorRequest) -> None:
-        values = [
-            hex256(request.channel_identifier),
-            to_checksum_address(request.token_network_address),
-            request.balance_hash,
-            hex256(request.nonce),
-            request.additional_hash,
-            to_hex(request.closing_signature),
-            to_hex(request.non_closing_signature),
-            hex256(request.reward_amount),
-            to_hex(request.reward_proof_signature),
-            to_checksum_address(request.non_closing_signer),
-        ]
-        upsert_sql = "INSERT OR REPLACE INTO monitor_request VALUES ({})".format(
-            ", ".join("?" * len(values))
+        self.upsert(
+            "monitor_request",
+            dict(
+                channel_identifier=hex256(request.channel_identifier),
+                token_network_address=to_checksum_address(request.token_network_address),
+                balance_hash=request.balance_hash,
+                nonce=hex256(request.nonce),
+                additional_hash=request.additional_hash,
+                closing_signature=to_hex(request.closing_signature),
+                non_closing_signature=to_hex(request.non_closing_signature),
+                reward_amount=hex256(request.reward_amount),
+                reward_proof_signature=to_hex(request.reward_proof_signature),
+                non_closing_signer=to_checksum_address(request.non_closing_signer),
+            ),
         )
-        self.conn.execute(upsert_sql, values)
 
     def get_monitor_request(
         self,
@@ -82,7 +81,11 @@ class SharedDatabase(BaseDatabase):
         if row is None:
             return None
 
-        kwargs = {key: val for key, val in zip(row.keys(), row) if key != "non_closing_signer"}
+        kwargs = {
+            key: val
+            for key, val in zip(row.keys(), row)
+            if key not in ("non_closing_signer", "saved_at", "waiting_for_channel")
+        }
         kwargs["token_network_address"] = to_canonical_address(kwargs["token_network_address"])
         kwargs["msc_address"] = to_canonical_address(kwargs["msc_address"])
         kwargs["closing_signature"] = decode_hex(kwargs["closing_signature"])

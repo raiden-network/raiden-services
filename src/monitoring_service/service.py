@@ -1,5 +1,6 @@
 import sys
 import time
+from datetime import datetime, timedelta
 from typing import Callable, Dict
 
 import structlog
@@ -122,6 +123,7 @@ class MonitoringService:  # pylint: disable=too-few-public-methods
             last_block = min(last_confirmed_block, max_query_interval_end_block)
 
             self._process_new_blocks(last_block)
+            self._purge_old_monitor_requests()
 
             try:
                 wait_function(self.poll_interval)
@@ -186,3 +188,32 @@ class MonitoringService:  # pylint: disable=too-few-public-methods
                         transaction_hash=tx_hash,
                         receipt=receipt,
                     )
+
+    def _purge_old_monitor_requests(self) -> None:
+        """ Delete all old MRs for which still no channel exists.
+
+        Also marks all MRs which have a channel as not waiting_for_channel to
+        avoid checking them again, every time.
+        """
+        with self.context.db.conn:
+            self.context.db.conn.execute(
+                """
+                UPDATE monitor_request SET waiting_for_channel = false
+                WHERE waiting_for_channel
+                  AND EXISTS (
+                    SELECT 1
+                    FROM channel
+                    WHERE (channel.identifier, channel.token_network_address)
+                     = (monitor_request.channel_identifier, monitor_request.token_network_address)
+                  )
+            """
+            )
+            before_this_is_old = datetime.utcnow() - timedelta(minutes=15)
+            self.context.db.conn.execute(
+                """
+                DELETE FROM monitor_request
+                WHERE waiting_for_channel
+                  AND saved_at < ?
+            """,
+                [before_this_is_old],
+            )
