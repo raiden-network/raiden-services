@@ -84,6 +84,8 @@ class RequestCollector(gevent.Greenlet):
         if monitor_request.chain_id != self.chain_id:
             log.debug("Bad chain_id", monitor_request=monitor_request, expected=self.chain_id)
             return
+        if monitor_request.non_closing_signer != monitor_request.reward_proof_signer:
+            log.debug("The two MR signatures don't match", monitor_request=monitor_request)
 
         # Check that received MR is newer by comparing nonces
         old_mr = self.state_db.get_monitor_request(
