@@ -95,6 +95,7 @@ class Path:
         should not use such routes. See
         https://github.com/raiden-network/raiden-services/issues/5.
         """
+        log.debug("Checking path validity", nodes=self.nodes, value=self.value)
         if hasattr(self, "_is_valid"):
             return self._is_valid
         required_capacity = self.value
@@ -103,18 +104,39 @@ class Path:
         for edge, fee in zip(edges, fees):
             # check capacity
             if edge["view"].capacity < required_capacity:
+                log.debug(
+                    "Path invalid because of missing capacity",
+                    edge=edge,
+                    fee=fees,
+                    available_capacity=edge["view"].capacity,
+                    required_capacity=required_capacity,
+                )
                 return False
             required_capacity = PaymentAmount(required_capacity + fee)
 
             # check if settle_timeout / reveal_timeout >= default ratio
             ratio = edge["view"].settle_timeout / edge["view"].reveal_timeout
             if ratio < DEFAULT_SETTLE_TO_REVEAL_TIMEOUT_RATIO:
+                log.debug(
+                    "Path invalid because of too low reveal timeout ratio",
+                    edge=edge,
+                    fee=fees,
+                    settle_timeout=edge["view"].settle_timeout,
+                    reveal_timeout=edge["view"].reveal_timeout,
+                    ratio=ratio,
+                    required_ratio=DEFAULT_SETTLE_TO_REVEAL_TIMEOUT_RATIO,
+                )
                 return False
 
         # check node reachabilities
         for node in self.nodes:
             node_reachability = self.address_to_reachability.get(node, AddressReachability.UNKNOWN)
             if node_reachability != AddressReachability.REACHABLE:
+                log.debug(
+                    "Path invalid because of unavailable node",
+                    node=node,
+                    node_reachability=node_reachability,
+                )
                 return False
 
         return True
