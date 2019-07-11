@@ -48,10 +48,20 @@ CREATE TABLE monitor_request (
     reward_proof_signature  CHAR(132)   NOT NULL,
 
     non_closing_signer      CHAR(42)    NOT NULL,
+
+    -- These two columns are just for handling MRs before we have confirmed
+    -- that a matching channel exists.
+    -- * If `waiting_for_channel` is false, we've already checked that such a
+    --   channel exists and everything is ok.
+    -- * If `saved_at` is sufficiently recent, a missing channel is acceptable.
+    -- * If `saved_at` is old, we will delete the MR if not matching channel is
+    --   found.
+    saved_at                TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    waiting_for_channel     BOOL        NOT NULL DEFAULT TRUE,
+
     PRIMARY KEY (channel_identifier, token_network_address, non_closing_signer)
-    --FOREIGN KEY (channel_identifier, token_network_address)
-    --    REFERENCES channels(channel_identifier, token_network_address) ON DELETE CASCADE
 );
+CREATE INDEX old_mr_idx ON monitor_request(saved_at) WHERE (waiting_for_channel);
 
 CREATE TABLE waiting_transactions (
     transaction_hash        CHAR(66)    NOT NULL

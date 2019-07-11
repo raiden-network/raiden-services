@@ -1,56 +1,9 @@
 # pylint: disable=redefined-outer-name
 from unittest.mock import Mock, patch
 
-import pytest
-from eth_utils import encode_hex, to_checksum_address
+from eth_utils import to_checksum_address
 
-from monitoring_service.states import HashedBalanceProof
-from raiden.messages import RequestMonitoring
 from raiden.storage.serialization.serializer import DictSerializer
-from raiden.utils.typing import (
-    Address,
-    ChainID,
-    ChannelID,
-    Nonce,
-    TokenAmount,
-    TokenNetworkAddress,
-)
-from raiden_contracts.tests.utils import get_random_privkey
-from raiden_libs.utils import private_key_to_address
-
-
-@pytest.fixture
-def build_request_monitoring():
-    non_closing_privkey = get_random_privkey()
-    non_closing_address = private_key_to_address(non_closing_privkey)
-
-    def f(
-        chain_id: ChainID = ChainID(1),
-        amount: TokenAmount = TokenAmount(50),
-        nonce: Nonce = Nonce(1),
-    ) -> RequestMonitoring:
-        balance_proof = HashedBalanceProof(
-            channel_identifier=ChannelID(1),
-            token_network_address=TokenNetworkAddress(b"1" * 20),
-            chain_id=chain_id,
-            nonce=nonce,
-            additional_hash="",
-            balance_hash=encode_hex(bytes([amount])),
-            priv_key=get_random_privkey(),
-        )
-        request_monitoring = balance_proof.get_request_monitoring(
-            privkey=non_closing_privkey,
-            reward_amount=TokenAmount(55),
-            monitoring_service_contract_address=Address(bytes([11] * 20)),
-        )
-
-        # usually not a property of RequestMonitoring, but added for convenience in these tests
-        request_monitoring.non_closing_signer = to_checksum_address(  # type: ignore
-            non_closing_address
-        )
-        return request_monitoring
-
-    return f
 
 
 def test_invalid_request(ms_database, build_request_monitoring, request_collector):
