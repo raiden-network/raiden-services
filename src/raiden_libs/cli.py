@@ -21,6 +21,7 @@ from raiden.utils.typing import Address, BlockNumber, ChainID
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
     CONTRACT_ONE_TO_N,
+    CONTRACT_SERVICE_REGISTRY,
     CONTRACT_TOKEN_NETWORK_REGISTRY,
     CONTRACT_USER_DEPOSIT,
     CONTRACTS_VERSION,
@@ -132,10 +133,11 @@ def blockchain_options(contracts: List[str]) -> Callable:
     ]
 
     arg_for_contract = {
-        CONTRACT_TOKEN_NETWORK_REGISTRY: "token-network-registry",
+        CONTRACT_TOKEN_NETWORK_REGISTRY: "token-network-registry-contract",
         CONTRACT_USER_DEPOSIT: "user-deposit-contract",
         CONTRACT_MONITORING_SERVICE: "monitor-contract",
         CONTRACT_ONE_TO_N: "one-to-n-contract",
+        CONTRACT_SERVICE_REGISTRY: "seervice-registry-contract",
     }
 
     param_for_contract: Dict[str, str] = {}
