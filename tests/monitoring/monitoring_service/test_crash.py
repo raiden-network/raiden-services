@@ -19,9 +19,9 @@ from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
     CONTRACT_TOKEN_NETWORK_REGISTRY,
     CONTRACT_USER_DEPOSIT,
+    LOCKSROOT_OF_NO_LOCKS,
 )
 from raiden_contracts.tests.utils import get_random_address, get_random_privkey
-from raiden_contracts.tests.utils.constants import LOCKSROOT_OF_NO_LOCKS
 from raiden_libs.events import ReceiveChannelOpenedEvent, UpdatedHeadBlockEvent
 
 from ...libs.mocks.web3 import ContractMock, Web3Mock

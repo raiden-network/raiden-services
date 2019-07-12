@@ -6,9 +6,12 @@ from web3 import Web3
 from monitoring_service.service import MonitoringService, handle_event
 from monitoring_service.states import HashedBalanceProof
 from raiden.utils.typing import Address, BlockNumber, ChainID, Nonce, TokenAmount
-from raiden_contracts.constants import CONTRACT_MONITORING_SERVICE, MonitoringServiceEvent
+from raiden_contracts.constants import (
+    CONTRACT_MONITORING_SERVICE,
+    LOCKSROOT_OF_NO_LOCKS,
+    MonitoringServiceEvent,
+)
 from raiden_contracts.contract_manager import ContractManager
-from raiden_contracts.tests.utils.constants import LOCKSROOT_OF_NO_LOCKS
 from raiden_libs.blockchain import query_blockchain_events
 
 
