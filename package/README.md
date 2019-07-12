@@ -95,6 +95,11 @@ Minumum recommended for a production setup:
 ### Other
 
 - A domain (or subdomain) for exclusive use by the services
+- A synced Ethereum node, that is reachable from the server where the services are installed,
+is required. Setting one up is outside of the scope of this document, please refer to
+ <some link to eth node setup instructions>.
+- A fresh Ethereum account that will be used only by the services. The accounts needs a small
+amount of funding (0.1 ETH) should be enough.
 
 ## Installation
 
@@ -128,7 +133,6 @@ TODO: check
 1. Run `docker-compose build` to build the containers
 1. Run `docker-compose up -d` to start all services
    - The services are configured to automatically restart in case of a crash or reboot
-1. Verify the service is up by opening the domain in a browser.
 
 ### Submit
 

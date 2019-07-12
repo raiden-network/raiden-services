@@ -15,9 +15,14 @@ services:
     ports:
       - 6001:6000
     environment:
+      - PFS_KEYSTORE_FILE=${SERVER_NAME}
       - PFS_STATE_DB=/state/pfs-state.db
       - PFS_HOST=0.0.0.0
       - SERVER_NAME
+      - PFS_LOG_LEVEL=${LOG_LEVEL}
+      - PFS_KEYSTORE_FILE=/keystore/${KEYSTORE_FILE}
+      - PFS_PASSWORD=${PASSWORD}
+      - PFS_ETH_RPC=${ETH_RPC_ENDPOINT}
     labels:
       - "traefik.enable=true"
       - "traefik.frontend.rule=Host:${SERVER_NAME}"
@@ -29,6 +34,10 @@ services:
       - 6002:6000
     environment:
       - MS_STATE_DB=/state/ms-state.db
+      - MS_LOG_LEVEL=${LOG_LEVEL}
+      - MS_KEYSTORE_FILE=/keystore/${KEYSTORE_FILE}
+      - MS_PASSWORD=${PASSWORD}
+      - MS_ETH_RPC=${ETH_RPC_ENDPOINT}
 
   msrc:
     << : *defaults
@@ -37,6 +46,10 @@ services:
       - 6003:6000
     environment:
       - MSRC_STATE_DB=/state/ms-state.db
+      - MSRC_LOG_LEVEL=${LOG_LEVEL}
+      - MSRC_KEYSTORE_FILE=/keystore/${KEYSTORE_FILE}
+      - MSRC_PASSWORD=${PASSWORD}
+      - MSRC_CHAIN_ID=${CHAIN_ID}
     depends_on:
       - ms-ropsten
 
