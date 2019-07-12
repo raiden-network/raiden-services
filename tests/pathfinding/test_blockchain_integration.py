@@ -18,9 +18,9 @@ from raiden.utils.typing import BlockNumber, ChainID, Nonce
 from raiden_contracts.constants import (
     CONTRACT_TOKEN_NETWORK_REGISTRY,
     CONTRACT_USER_DEPOSIT,
+    LOCKSROOT_OF_NO_LOCKS,
     TEST_SETTLE_TIMEOUT_MIN,
 )
-from raiden_contracts.tests.utils.constants import LOCKSROOT_OF_NO_LOCKS
 
 
 def test_pfs_with_mocked_client(  # pylint: disable=too-many-arguments
