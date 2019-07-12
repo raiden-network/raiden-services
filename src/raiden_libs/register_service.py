@@ -32,13 +32,19 @@ log = structlog.get_logger(__name__)
 @common_options("register_service")
 def main(
     private_key: str,
-    state_db: str,
+    state_db: str,  # pylint: disable=unused-argument
     web3: Web3,
     contracts: Dict[str, Contract],
-    start_block: BlockNumber,
+    start_block: BlockNumber,  # pylint: disable=unused-argument
     deposit: TokenAmount,
     service_url: str,
 ) -> None:
+    """
+    Registers the address of a service deployment with the `ServiceRegistry`.
+
+    The address that is registered is derived from the supplied private key.
+    It also sets or updates the URL of the services deployment.
+    """
     # Add middleware to sign transactions by default
     web3.middleware_stack.add(construct_sign_and_send_raw_middleware(private_key))
 
@@ -61,42 +67,40 @@ def main(
     if current_deposit <= 0:
         log.info("Address not registered in ServiceRegistry")
 
-        custom_token_address = contracts[CONTRACT_USER_DEPOSIT].functions.token().call()
-        custom_token_contract = web3.eth.contract(
-            address=custom_token_address,
+        deposit_token_address = contracts[CONTRACT_USER_DEPOSIT].functions.token().call()
+        deposit_token_contract = web3.eth.contract(
+            address=deposit_token_address,
             abi=CONTRACT_MANAGER.get_contract_abi(CONTRACT_CUSTOM_TOKEN),
         )
 
         # Check current token balance
-        account_balance = custom_token_contract.functions.balanceOf(service_address).call()
+        account_balance = deposit_token_contract.functions.balanceOf(service_address).call()
         log.info("Current account balance", balance=account_balance, desired_deposit=deposit)
 
-        # mint token if necessary
+        # mint tokens if necessary
         if account_balance < deposit:
-            run_task(
+            checked_transact(
                 web3=web3,
                 service_address=service_address,
-                function_call=custom_token_contract.functions.mint(deposit),
+                function_call=deposit_token_contract.functions.mint(deposit),
                 task_name="Minting new Test RDN tokens",
             )
 
-            account_balance = custom_token_contract.functions.balanceOf(service_address).call()
+            account_balance = deposit_token_contract.functions.balanceOf(service_address).call()
             log.info("Updated account balance", balance=account_balance, desired_deposit=deposit)
 
-        current_allowance = custom_token_contract.functions.allowance(
-            service_address, service_registry_contract.address
-        ).call()
-        if current_allowance < deposit:
-            run_task(
-                web3=web3,
-                service_address=service_address,
-                function_call=custom_token_contract.functions.approve(
-                    contracts[CONTRACT_SERVICE_REGISTRY].address, deposit
-                ),
-                task_name="Allowing token transfor for deposit",
-            )
+        # Approve token transfer
+        checked_transact(
+            web3=web3,
+            service_address=service_address,
+            function_call=deposit_token_contract.functions.approve(
+                contracts[CONTRACT_SERVICE_REGISTRY].address, deposit
+            ),
+            task_name="Allowing token transfor for deposit",
+        )
 
-        run_task(
+        # Deposit tokens
+        checked_transact(
             web3=web3,
             service_address=service_address,
             function_call=service_registry_contract.functions.deposit(deposit),
@@ -105,7 +109,7 @@ def main(
 
     # TODO: maybe check that the address is pingable
     if service_url and service_url != current_url:
-        run_task(
+        checked_transact(
             web3=web3,
             service_address=service_address,
             function_call=service_registry_contract.functions.setURL(service_url),
@@ -118,7 +122,7 @@ def main(
     log.info("Updated infos", current_deposit=current_deposit, current_url=current_url)
 
 
-def run_task(
+def checked_transact(
     web3: Web3, service_address: Address, function_call: ContractFunction, task_name: str
 ) -> None:
     log.info(f"Starting: {task_name}")
