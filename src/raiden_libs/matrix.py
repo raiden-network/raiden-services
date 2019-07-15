@@ -1,5 +1,6 @@
 import json
 import sys
+from datetime import datetime, timedelta
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
 
 import gevent
@@ -10,6 +11,10 @@ from marshmallow import ValidationError
 from matrix_client.errors import MatrixRequestError
 from matrix_client.user import User
 
+from monitoring_service.constants import (
+    MATRIX_RATE_LIMIT_ALLOWED_BYTES,
+    MATRIX_RATE_LIMIT_RESET_INTERVAL,
+)
 from raiden.constants import Environment
 from raiden.exceptions import InvalidProtocolMessage, TransportError
 from raiden.messages import (
@@ -47,6 +52,33 @@ SERVICE_MESSAGES: Tuple = (PFSCapacityUpdate, RequestMonitoring, PFSFeeUpdate)
 VALID_MESSAGE_TYPES = set(klass.__module__ + "." + klass.__name__ for klass in SERVICE_MESSAGES)
 
 
+class RateLimiter:
+    """Primitive bucket based rate limiter
+
+    Counts bytes for each sender. `check_and_count` will return false when the
+    `allowed_bytes` are exceeded during a single `reset_interval`.
+    """
+
+    def __init__(self, allowed_bytes: int, reset_interval: timedelta):
+        self.allowed_bytes = allowed_bytes
+        self.reset_interval = reset_interval
+        self.next_reset = datetime.utcnow() + reset_interval
+        self.bytes_processed_for: Dict[Address, int] = {}
+
+    def reset_if_it_is_time(self) -> None:
+        if datetime.utcnow() >= self.next_reset:
+            self.bytes_processed_for = {}
+            self.next_reset = datetime.utcnow() + self.reset_interval
+
+    def check_and_count(self, sender: Address, added_bytes: int) -> bool:
+        new_total = self.bytes_processed_for.get(sender, 0) + added_bytes
+        if new_total > self.allowed_bytes:
+            return False
+
+        self.bytes_processed_for[sender] = new_total
+        return True
+
+
 def message_from_dict(data: Dict[str, Any]) -> Message:
     if "_type" not in data:
         raise InvalidProtocolMessage("Invalid message data. Can not find the data type") from None
@@ -58,12 +90,20 @@ def message_from_dict(data: Dict[str, Any]) -> Message:
     return DictSerializer.deserialize(data)
 
 
-def deserialize_messages(data: str, peer_address: Address) -> List[SignedMessage]:
+def deserialize_messages(
+    data: str, peer_address: Address, rate_limiter: Optional[RateLimiter] = None
+) -> List[SignedMessage]:
     messages: List[SignedMessage] = list()
 
-    if sys.getsizeof(data) >= 1000000:
-        log.warning("Received message that is too big")
-        return messages
+    if rate_limiter:
+        rate_limiter.reset_if_it_is_time()
+        # This size includes some bytes of overhead for python. But otherwise we
+        # would have to either count characters for decode the whole string before
+        # checking the rate limiting.
+        size = sys.getsizeof(data)
+        if not rate_limiter.check_and_count(peer_address, size):
+            log.warning("Sender is rate limited", sender=peer_address)
+            return []
 
     for line in data.splitlines():
         line = line.strip()
@@ -142,6 +182,10 @@ class MatrixListener(gevent.Greenlet):
             )
 
         self.startup_finished = Event()
+        self.rate_limiter(
+            allowed_bytes=MATRIX_RATE_LIMIT_ALLOWED_BYTES,
+            reset_interval=MATRIX_RATE_LIMIT_RESET_INTERVAL,
+        )
 
     def listen_forever(self) -> None:
         self.startup_finished.wait()
@@ -239,7 +283,7 @@ class MatrixListener(gevent.Greenlet):
             )
             return False
 
-        messages = deserialize_messages(data, peer_address)
+        messages = deserialize_messages(data, peer_address, self.rate_limiter)
         if not messages:
             return False
 
