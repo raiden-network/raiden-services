@@ -57,7 +57,7 @@ CREATE TABLE monitor_request (
     -- * If `saved_at` is old, we will delete the MR if no matching channel is
     --   found.
     saved_at                TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,  -- timezone GMT
-    waiting_for_channel     BOOL        NOT NULL DEFAULT TRUE,
+    waiting_for_channel     BOOLEAN     NOT NULL DEFAULT 1,
 
     PRIMARY KEY (channel_identifier, token_network_address, non_closing_signer)
 );

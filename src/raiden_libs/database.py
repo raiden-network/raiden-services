@@ -16,7 +16,16 @@ def convert_hex(raw: bytes) -> int:
     return int(raw, 16)
 
 
+def convert_bool(raw: bytes) -> bool:
+    if raw == b"1":
+        return True
+    if raw == b"0":
+        return False
+    raise Exception("Bad boolean in db:", repr(raw))
+
+
 sqlite3.register_converter("HEX_INT", convert_hex)
+sqlite3.register_converter("BOOLEAN", convert_bool)
 
 
 def hex256(x: Union[int, str]) -> str:
