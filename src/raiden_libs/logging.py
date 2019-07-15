@@ -57,8 +57,9 @@ def apply_recursive(value: Any) -> Any:
 def format_to_hex(_logger: Any, _log_method: Any, event_dict: Dict) -> Dict[str, Any]:
     for key, val in event_dict.items():
         if isinstance(val, (Event, Message)):
+            name = val.__class__.__name__
             val = asdict(val)
-            val["event_name"] = val.__class__.__name__
+            val["type_name"] = name
 
         event_dict[key] = apply_recursive(val)
 
