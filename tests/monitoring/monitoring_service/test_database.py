@@ -161,5 +161,4 @@ def test_purge_old_monitor_requests(
         FROM monitor_request ORDER BY channel_identifier
         """
     ).fetchall()
-    # sqlite returns booleans as 0/1
-    assert [tuple(mr) for mr in remaining_mrs] == [(1, 0), (2, 1)]
+    assert [tuple(mr) for mr in remaining_mrs] == [(1, False), (2, True)]
