@@ -6,6 +6,7 @@ from unittest.mock import patch
 import pytest
 from eth_utils import decode_hex
 from request_collector.server import RequestCollector
+from tests.constants import TEST_MSC_ADDRESS
 from web3 import Web3
 
 from monitoring_service.database import Database
@@ -44,7 +45,7 @@ def ms_database():
     return Database(
         filename=":memory:",
         chain_id=ChainID(1),
-        msc_address=Address(bytes([2] * 20)),
+        msc_address=TEST_MSC_ADDRESS,
         registry_address=Address(bytes([3] * 20)),
         receiver=Address(bytes([4] * 20)),
     )

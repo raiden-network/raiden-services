@@ -1,5 +1,7 @@
 import random
 
+from tests.constants import TEST_MSC_ADDRESS
+
 from monitoring_service.states import (
     Channel,
     HashedBalanceProof,
@@ -46,7 +48,7 @@ def create_signed_monitor_request(
         priv_key=closing_privkey,
     )
     monitor_request = UnsignedMonitorRequest.from_balance_proof(
-        bp, reward_amount=reward_amount
+        bp, reward_amount=reward_amount, msc_address=TEST_MSC_ADDRESS
     ).sign(nonclosing_privkey)
 
     # Some signature correctness checks

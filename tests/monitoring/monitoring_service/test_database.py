@@ -93,7 +93,7 @@ def test_save_and_load_monitor_request(ms_database: Database):
         non_closing_signer=request.non_closing_signer,
     )
 
-    assert request == restored
+    assert restored == request
 
 
 def test_save_and_load_channel(ms_database: Database):
