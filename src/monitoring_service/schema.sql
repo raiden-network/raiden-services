@@ -54,9 +54,9 @@ CREATE TABLE monitor_request (
     -- * If `waiting_for_channel` is false, we've already checked that such a
     --   channel exists and everything is ok.
     -- * If `saved_at` is sufficiently recent, a missing channel is acceptable.
-    -- * If `saved_at` is old, we will delete the MR if not matching channel is
+    -- * If `saved_at` is old, we will delete the MR if no matching channel is
     --   found.
-    saved_at                TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    saved_at                TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,  -- timezone GMT
     waiting_for_channel     BOOL        NOT NULL DEFAULT TRUE,
 
     PRIMARY KEY (channel_identifier, token_network_address, non_closing_signer)
