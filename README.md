@@ -5,7 +5,8 @@ Supplemental services for the [Raiden Network](https://raiden.network/).
 [![Build Status](https://travis-ci.com/raiden-network/raiden-services.svg?branch=master)](https://travis-ci.com/raiden-network/raiden-services)
 [![Coverage](https://img.shields.io/codecov/c/github/raiden-network/raiden-services.svg?style=round)](https://codecov.io/gh/raiden-network/raiden-services/)
 
-More information can be found in the [documentation](https://raiden-services.readthedocs.io/en/latest/).
+More information can be found in the [documentation](https://raiden-services.readthedocs.io/en/latest/) and in the
+[service intro blogpost](https://medium.com/raiden-network/raiden-service-bundle-explained-f9bd3f6f358d).
 
 ### Monitoring Service
 
@@ -22,11 +23,14 @@ For more technical details see:
 - [Monitoring Service specification](https://raiden-network-specification.readthedocs.io/en/latest/monitoring_service.html)
 - [Pathfinding Service specification](https://raiden-network-specification.readthedocs.io/en/latest/pathfinding_service.html)
 
-## Getting started
+## Service Providers
+
+To become a service provider follow the instructions in the [service provider README](https://github.com/raiden-network/raiden-services/blob/master/package/README.md).
+## Developers
 
 The Raiden Services require Python 3.7+.
 
-Currently we recommend to use the latest development version of the services. To install them run the following commands:
+To install the latest development version of the services run the following commands:
 
 ```sh
 git clone git@github.com:raiden-network/raiden-services.git
