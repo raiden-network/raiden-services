@@ -109,9 +109,9 @@ amount of funding (0.1 ETH) should be enough.
 1. Ensure a domain (or subdomain) is available
 
    Examples:
-   - raidenservices.somecompany.tld
-   - raidenservices-somecompany.tld
-   - somecompany-raidenservices.tld
+   - raidenservices.mydomain.tld
+   - raidenservices-mydomain.tld
+   - mydomain-raidenservices.tld
 
 1. Configure `A` (and optionally `AAAA`) DNS records for the domain pointing to the servers IP address(es)
 1. Configure a `CNAME` DNS record for `*.<domain>` pointing back to `<domain>`
@@ -120,23 +120,19 @@ TODO: check
 
 ### Installing
 
-1. Clone the [current release version of this repository](https://github.com/raiden-network/raiden-transport/tree/2018.12.0)
+1. Clone the [current release version of this repository](https://github.com/raiden-network/raiden-services)
    to a suitable location on the server:
 
    ```shell
-   git clone -b 2018.12.0 https://github.com/raiden-network/raiden-transport.git
+   git clone https://github.com/raiden-network/raiden-services.git
    ```
 1. Copy `.env.template` to `.env` and modify the values to fit your setup (see inline comments for details)
-   - We would appreciate it if you allow us access to the monitoring interfaces
-     (to do that uncomment the default values of the `CIDR_ALLOW_METRICS` and `CIDR_ALLOW_PROXY` settings).
-   - We also recommend that you provide your own monitoring. The setup of which is currently out of scope of this document.
+   - We recommend that you provide your own monitoring. The setup of which is currently out of scope of this document.
 1. Run `docker-compose build` to build the containers
 1. Run `docker-compose up -d` to start all services
-   - The services are configured to automatically restart in case of a crash or reboot
+   - The services are configured to automatically restart in case of a crash or reboot.
+1. The registration of the service with the service registry is done automatically
 
-### Submit
-
-TODO
 
 ## Upgrades
 

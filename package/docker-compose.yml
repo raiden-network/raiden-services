@@ -1,7 +1,6 @@
 version: '3.4'
 
 x-defaults: &defaults
-  restart: always
   image: raiden-services
   env_file: .env
   volumes:
@@ -12,6 +11,7 @@ services:
   pfs:
     << : *defaults
     command: ["python3", "-m", "pathfinding_service.cli"]
+    restart: always
     ports:
       - 6001:6000
     environment:
@@ -30,6 +30,7 @@ services:
   ms:
     << : *defaults
     command: ["python3", "-m", "monitoring_service.cli"]
+    restart: always
     ports:
       - 6002:6000
     environment:
@@ -42,6 +43,7 @@ services:
   msrc:
     << : *defaults
     command: ["python3", "-m", "request_collector.cli"]
+    restart: always
     ports:
       - 6003:6000
     environment:
@@ -68,3 +70,16 @@ services:
       - pfs
       - ms
       - msrc
+
+  # This registers the service and stops afterwards
+  registration:
+    <<: *defaults
+    command: ["python3", "-m", "raiden_libs.register_service"]
+    environment:
+      - RDN_REGISTRY_LOG_LEVEL=${LOG_LEVEL}
+      - RDN_REGISTRY_KEYSTORE_FILE=/keystore/${KEYSTORE_FILE}
+      - RDN_REGISTRY_PASSWORD=${PASSWORD}
+      - RDN_REGISTRY_DEPOSIT=${RDN_DEPOSIT}
+      - RDN_REGISTRY_SERVICE_URL=${SERVER_NAME}
+    depends_on:
+      - traefik
