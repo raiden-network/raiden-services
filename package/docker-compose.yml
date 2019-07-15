@@ -22,7 +22,7 @@ services:
       - PFS_LOG_LEVEL=${LOG_LEVEL}
       - PFS_KEYSTORE_FILE=/keystore/${KEYSTORE_FILE}
       - PFS_PASSWORD=${PASSWORD}
-      - PFS_ETH_RPC=${ETH_RPC_ENDPOINT}
+      - PFS_ETH_RPC=${ETH_RPC}
     labels:
       - "traefik.enable=true"
       - "traefik.frontend.rule=Host:${SERVER_NAME}"
@@ -38,7 +38,7 @@ services:
       - MS_LOG_LEVEL=${LOG_LEVEL}
       - MS_KEYSTORE_FILE=/keystore/${KEYSTORE_FILE}
       - MS_PASSWORD=${PASSWORD}
-      - MS_ETH_RPC=${ETH_RPC_ENDPOINT}
+      - MS_ETH_RPC=${ETH_RPC}
 
   msrc:
     << : *defaults
@@ -53,7 +53,7 @@ services:
       - MSRC_PASSWORD=${PASSWORD}
       - MSRC_CHAIN_ID=${CHAIN_ID}
     depends_on:
-      - ms-ropsten
+      - ms
 
   traefik:
     image: traefik:1.7
