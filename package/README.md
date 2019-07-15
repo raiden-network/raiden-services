@@ -123,19 +123,19 @@ amount of funding (0.1 ETH) should be enough.
    ```shell
    git clone https://github.com/raiden-network/raiden-services.git
    ```
-1. Copy the keystore file to be used by the services into the directory `./data/keystore/`
-    - Make sure that the containers have read rights for the keystore files
-1. Copy `.env.template` to `.env` and modify the values to fit your setup (see inline comments for details)
+2. Copy the keystore file to be used by the services into the directory `./data/keystore/`  - whereas `.` refers to the location you cloned into in step 1
+3. Copy `.env.template` to `.env` and modify the values to fit your setup (see inline comments for details)
     - Set `KEYSTORE_FILE` to the filename of the keystore file
     - Set `PASSWORD` to the password of the keystore file
     - Set `DATA_DIR`, if you used a different data directory (the keystore file is expected in `<DATA_DIR>/keystore/`)
-    - We recommend that you provide your own monitoring. The setup of which is currently out of scope of this document.
-1. Run `docker-compose build` to build the containers
-1. Run `docker-compose up -d` to start all services
+4. Run `docker-compose build` to build the containers
+5. Run `docker-compose up -d` to start all services
     - The services are configured to automatically restart in case of a crash or reboot.
-1. The registration of the service with the service registry is done automatically.
+6. The registration of the service with the service registry is done automatically. This may take a while.
     - Please check that the registration was successful with `docker-compose logs -f registration`.
-1. The states of the services are stored in `./data/state/` (or `<DATA_DIR>/state/`). This directory should be backed up regularly, otherwise funds could be lost.
+7. The states of the services are stored in `./data/state/` (or `<DATA_DIR>/state/`). This directory should be backed up regularly, otherwise funds could be lost.
+
+We recommend that you provide your own monitoring. The setup of which is currently out of scope of this document.
 
 
 ## Upgrades
