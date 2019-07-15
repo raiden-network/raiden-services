@@ -357,6 +357,9 @@ def test_logging_processor():
     assert (  # pylint: disable=unsubscriptable-object
         to_checksum_address(address2) == event_log["event"]["token_network_address"]
     )
+    assert (  # pylint: disable=unsubscriptable-object
+        event_log["event"]["type_name"] == "ReceiveTokenNetworkCreatedEvent"
+    )
 
     message = PFSFeeUpdate(
         canonical_identifier=CanonicalIdentifier(
@@ -375,4 +378,7 @@ def test_logging_processor():
     assert (  # pylint: disable=unsubscriptable-object
         to_checksum_address(address)
         == message_log["message"]["canonical_identifier"]["token_network_address"]
+    )
+    assert (  # pylint: disable=unsubscriptable-object
+        message_log["message"]["type_name"] == "PFSFeeUpdate"
     )
