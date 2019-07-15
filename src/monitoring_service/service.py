@@ -198,13 +198,13 @@ class MonitoringService:  # pylint: disable=too-few-public-methods
         with self.context.db.conn:
             self.context.db.conn.execute(
                 """
-                UPDATE monitor_request SET waiting_for_channel = false
+                UPDATE monitor_request SET waiting_for_channel = 0
                 WHERE waiting_for_channel
                   AND EXISTS (
                     SELECT 1
                     FROM channel
-                    WHERE (channel.identifier, channel.token_network_address)
-                     = (monitor_request.channel_identifier, monitor_request.token_network_address)
+                    WHERE channel.identifier = monitor_request.channel_identifier
+                      AND channel.token_network_address = monitor_request.token_network_address
                   )
             """
             )
