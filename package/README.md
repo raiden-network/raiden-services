@@ -126,17 +126,17 @@ TODO: check
    ```shell
    git clone https://github.com/raiden-network/raiden-services.git
    ```
+1. Copy the keystore file to be used by the services into the directory `./data/keystore/`
 1. Copy `.env.template` to `.env` and modify the values to fit your setup (see inline comments for details)
-   - We recommend that you provide your own monitoring. The setup of which is currently out of scope of this document.
+    - Set `KEYSTORE_FILE` to the filename of the keystore file
+    - Set `PASSWORD` to the password of the keystore file
+    - Set `DATA_DIR`, if you used a different data directory (the keystore file is expected in `<DATA_DIR>/keystore/`)
+    - We recommend that you provide your own monitoring. The setup of which is currently out of scope of this document.
 1. Run `docker-compose build` to build the containers
-1. Copy the keystore file to be used by the services into the directory `./data/keystore/` (or `<DATA_DIR>/keystore/`
-if you set `DATA_DIR` in the `.env` file)
-  - Set `KEYSTORE_FILE` to the filename of the keystore file
-  - Set `PASSWORD` to the password of the keystore file
 1. Run `docker-compose up -d` to start all services
-   - The services are configured to automatically restart in case of a crash or reboot.
-1. The registration of the service with the service registry is done automatically. You can check the logs with
-`docker-compose logs registration`
+    - The services are configured to automatically restart in case of a crash or reboot.
+1. The registration of the service with the service registry is done automatically.
+    - Please check that the registration was successful with `docker-compose logs -f registration`.
 
 
 ## Upgrades
