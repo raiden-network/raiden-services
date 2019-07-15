@@ -1,4 +1,6 @@
 # pylint: disable=redefined-outer-name
+from unittest.mock import Mock, patch
+
 import pytest
 from eth_utils import encode_hex, to_checksum_address
 
@@ -93,3 +95,11 @@ def test_ignore_old_nonce(ms_database, build_request_monitoring, request_collect
 
     # update without higher nonce must succeed
     assert stored_mr_after_proccessing(amount=2, nonce=2).balance_hash != initial_hash
+
+
+def test_request_collector_doesnt_crash_with_invalid_messages(request_collector):
+    # We want to test that the request collector does not crash,
+    # in case an assertion on the MonitorRequest fails
+    # In theory, the collector crashed before, when on_monitor_request raised an AssertionError
+    with patch.object(request_collector, "on_monitor_request", side_effect=AssertionError):
+        request_collector.handle_message(Mock())

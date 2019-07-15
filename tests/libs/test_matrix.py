@@ -1,6 +1,7 @@
 # pylint: disable=redefined-outer-name
 import itertools
 import json
+import sys
 from unittest.mock import Mock, patch
 
 import pytest
@@ -126,3 +127,14 @@ def test_deserialize_messages_with_missing_fields(request_monitoring_message):
             data=json.dumps(message_json_broken), peer_address=request_monitoring_message.sender
         )
         assert len(messages) == 0
+
+
+def test_deserialize_messages_that_is_too_big(request_monitoring_message, capsys):
+
+    data = str(b"/0" * 1000000)
+    assert sys.getsizeof(data) >= 1000000
+
+    deserialize_messages(data=data, peer_address=request_monitoring_message.sender)
+    captured = capsys.readouterr()
+
+    assert "Received message that is too big" in captured.out
