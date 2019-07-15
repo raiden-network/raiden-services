@@ -2,6 +2,8 @@
 import itertools
 import json
 import sys
+import time
+from datetime import timedelta
 from unittest.mock import Mock, patch
 
 import pytest
@@ -13,7 +15,12 @@ from raiden.messages import RequestMonitoring
 from raiden.storage.serialization.serializer import DictSerializer
 from raiden.utils.typing import Address, ChainID, ChannelID, Nonce, TokenAmount
 from raiden_contracts.tests.utils import LOCKSROOT_OF_NO_LOCKS, deepcopy
-from raiden_libs.matrix import deserialize_messages, matrix_http_retry_delay, message_from_dict
+from raiden_libs.matrix import (
+    RateLimiter,
+    deserialize_messages,
+    matrix_http_retry_delay,
+    message_from_dict,
+)
 
 INVALID_PEER_ADDRESS = Address(to_canonical_address("0x" + "1" * 40))
 
@@ -134,7 +141,25 @@ def test_deserialize_messages_that_is_too_big(request_monitoring_message, capsys
     data = str(b"/0" * 1000000)
     assert sys.getsizeof(data) >= 1000000
 
-    deserialize_messages(data=data, peer_address=request_monitoring_message.sender)
+    deserialize_messages(
+        data=data,
+        peer_address=request_monitoring_message.sender,
+        rate_limiter=RateLimiter(allowed_bytes=1000000, reset_interval=timedelta(minutes=1)),
+    )
     captured = capsys.readouterr()
 
-    assert "Received message that is too big" in captured.out
+    assert "Sender is rate limited" in captured.out
+
+
+def test_rate_limiter():
+    limiter = RateLimiter(allowed_bytes=100, reset_interval=timedelta(seconds=1))
+    sender = Address(b"1" * 20)
+    for _ in range(50):
+        assert limiter.check_and_count(sender, 2)
+
+    assert not limiter.check_and_count(sender, 2)
+    limiter.reset_if_it_is_time()
+    assert not limiter.check_and_count(sender, 2)
+    time.sleep(1)
+    limiter.reset_if_it_is_time()
+    assert limiter.check_and_count(sender, 2)
