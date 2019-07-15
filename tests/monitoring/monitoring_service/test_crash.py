@@ -3,6 +3,7 @@ from typing import List
 from unittest.mock import Mock
 
 from eth_utils import decode_hex, encode_hex
+from tests.constants import TEST_MSC_ADDRESS
 
 from monitoring_service.events import ActionMonitoringTriggeredEvent
 from monitoring_service.service import MonitoringService
@@ -50,7 +51,7 @@ def test_crash(
         locksroot=encode_hex(LOCKSROOT_OF_NO_LOCKS),
     )
     monitor_request = balance_proof.get_monitor_request(
-        get_private_key(c2), reward_amount=TokenAmount(0)
+        get_private_key(c2), reward_amount=TokenAmount(0), msc_address=TEST_MSC_ADDRESS
     )
 
     events = [

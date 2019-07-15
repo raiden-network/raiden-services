@@ -64,9 +64,11 @@ class SharedDatabase(BaseDatabase):
     ) -> Optional[MonitorRequest]:
         row = self.conn.execute(
             """
-                SELECT *,
-                    (SELECT chain_id FROM blockchain) As chain_id
-                FROM monitor_request
+                SELECT monitor_request.*,
+                    blockchain.chain_id,
+                    blockchain.monitor_contract_address AS msc_address
+                FROM monitor_request,
+                    blockchain
                 WHERE channel_identifier = ?
                   AND token_network_address = ?
                   AND non_closing_signer = ?
@@ -82,6 +84,7 @@ class SharedDatabase(BaseDatabase):
 
         kwargs = {key: val for key, val in zip(row.keys(), row) if key != "non_closing_signer"}
         kwargs["token_network_address"] = to_canonical_address(kwargs["token_network_address"])
+        kwargs["msc_address"] = to_canonical_address(kwargs["msc_address"])
         kwargs["closing_signature"] = decode_hex(kwargs["closing_signature"])
         kwargs["non_closing_signature"] = decode_hex(kwargs["non_closing_signature"])
         kwargs["reward_proof_signature"] = decode_hex(kwargs["reward_proof_signature"])

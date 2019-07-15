@@ -75,6 +75,7 @@ class RequestCollector(gevent.Greenlet):
                 reward_amount=request_monitoring.reward_amount,
                 # FIXME: not sure why the Signature call is necessary
                 reward_proof_signature=Signature(request_monitoring.signature),
+                msc_address=request_monitoring.monitoring_service_contract_address,
             )
         except InvalidSignature:
             log.info("Ignore MR with invalid signature", monitor_request=request_monitoring)
