@@ -1,9 +1,10 @@
 import pytest
 from eth_utils import encode_hex, to_checksum_address
+from tests.constants import TEST_MSC_ADDRESS
 
 from monitoring_service.states import HashedBalanceProof
 from raiden.messages import RequestMonitoring
-from raiden.utils.typing import Address, ChannelID, Nonce, TokenAmount, TokenNetworkAddress
+from raiden.utils.typing import ChannelID, Nonce, TokenAmount, TokenNetworkAddress
 from raiden_contracts.tests.utils.address import get_random_privkey
 from raiden_contracts.utils.type_aliases import ChainID
 from raiden_libs.utils import private_key_to_address
@@ -32,7 +33,7 @@ def build_request_monitoring():
         request_monitoring = balance_proof.get_request_monitoring(
             privkey=non_closing_privkey,
             reward_amount=TokenAmount(55),
-            monitoring_service_contract_address=Address(bytes([11] * 20)),
+            monitoring_service_contract_address=TEST_MSC_ADDRESS,
         )
 
         # usually not a property of RequestMonitoring, but added for convenience in these tests

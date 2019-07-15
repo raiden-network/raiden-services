@@ -1,6 +1,6 @@
 import sys
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Callable, Dict
 
 import structlog
@@ -11,6 +11,7 @@ from web3.middleware import construct_sign_and_send_raw_middleware
 from monitoring_service.constants import (
     DEFAULT_GAS_BUFFER_FACTOR,
     DEFAULT_GAS_CHECK_BLOCKS,
+    KEEP_MRS_WITHOUT_CHANNEL,
     MAX_FILTER_INTERVAL,
 )
 from monitoring_service.database import Database
@@ -208,7 +209,7 @@ class MonitoringService:  # pylint: disable=too-few-public-methods
                   )
             """
             )
-            before_this_is_old = datetime.utcnow() - timedelta(minutes=15)
+            before_this_is_old = datetime.utcnow() - KEEP_MRS_WITHOUT_CHANNEL
             self.context.db.conn.execute(
                 """
                 DELETE FROM monitor_request
