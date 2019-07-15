@@ -20,6 +20,27 @@ from raiden_libs.utils import private_key_to_address
 log = structlog.get_logger(__name__)
 
 
+def checked_transact(
+    web3: Web3, service_address: Address, function_call: ContractFunction, task_name: str
+) -> None:
+    log.info(f"Starting: {task_name}")
+    transaction_hash = function_call.transact({"from": service_address})
+    transaction_receipt = web3.eth.waitForTransactionReceipt(transaction_hash)
+    was_successful = transaction_receipt["status"] == 1
+
+    if not was_successful:
+        log.error(
+            f"Failed: {task_name}\nPlease check that the account "
+            f"{service_address} has sufficient funds.",
+            receipt=transaction_receipt,
+        )
+        sys.exit(1)
+
+    log.info(
+        f"Finished: {task_name}", successful=was_successful, transaction_hash=transaction_hash
+    )
+
+
 @blockchain_options(contracts=[CONTRACT_SERVICE_REGISTRY, CONTRACT_USER_DEPOSIT])
 @click.command()
 @click.option(
@@ -65,48 +86,83 @@ def main(
 
     # Register if not yet done
     if current_deposit <= 0:
-        log.info("Address not registered in ServiceRegistry")
-
-        deposit_token_address = contracts[CONTRACT_USER_DEPOSIT].functions.token().call()
-        deposit_token_contract = web3.eth.contract(
-            address=deposit_token_address,
-            abi=CONTRACT_MANAGER.get_contract_abi(CONTRACT_CUSTOM_TOKEN),
+        deposit_to_registry(
+            web3=web3,
+            service_registry_contract=service_registry_contract,
+            user_deposit_contract=contracts[CONTRACT_USER_DEPOSIT],
+            deposit=deposit,
+            service_address=service_address,
         )
 
-        # Check current token balance
+    update_service_url(
+        web3=web3,
+        service_registry_contract=service_registry_contract,
+        service_address=service_address,
+        service_url=service_url,
+        current_url=current_url,
+    )
+
+    current_deposit = service_registry_contract.functions.deposits(service_address).call()
+    current_url = service_registry_contract.functions.urls(service_address).call()
+
+    log.info("Updated infos", current_deposit=current_deposit, current_url=current_url)
+
+
+def deposit_to_registry(
+    web3: Web3,
+    service_registry_contract: Contract,
+    user_deposit_contract: Contract,
+    deposit: TokenAmount,
+    service_address: Address,
+) -> None:
+    log.info("Address not registered in ServiceRegistry")
+    deposit_token_address = user_deposit_contract.functions.token().call()
+    deposit_token_contract = web3.eth.contract(
+        address=deposit_token_address, abi=CONTRACT_MANAGER.get_contract_abi(CONTRACT_CUSTOM_TOKEN)
+    )
+
+    # Check current token balance
+    account_balance = deposit_token_contract.functions.balanceOf(service_address).call()
+    log.info("Current account balance", balance=account_balance, desired_deposit=deposit)
+
+    # mint tokens if necessary
+    if account_balance < deposit:
+        checked_transact(
+            web3=web3,
+            service_address=service_address,
+            function_call=deposit_token_contract.functions.mint(deposit),
+            task_name="Minting new Test RDN tokens",
+        )
+
         account_balance = deposit_token_contract.functions.balanceOf(service_address).call()
-        log.info("Current account balance", balance=account_balance, desired_deposit=deposit)
+        log.info("Updated account balance", balance=account_balance, desired_deposit=deposit)
 
-        # mint tokens if necessary
-        if account_balance < deposit:
-            checked_transact(
-                web3=web3,
-                service_address=service_address,
-                function_call=deposit_token_contract.functions.mint(deposit),
-                task_name="Minting new Test RDN tokens",
-            )
+    # Approve token transfer
+    checked_transact(
+        web3=web3,
+        service_address=service_address,
+        function_call=deposit_token_contract.functions.approve(
+            service_registry_contract.address, deposit
+        ),
+        task_name="Allowing token transfor for deposit",
+    )
 
-            account_balance = deposit_token_contract.functions.balanceOf(service_address).call()
-            log.info("Updated account balance", balance=account_balance, desired_deposit=deposit)
+    # Deposit tokens
+    checked_transact(
+        web3=web3,
+        service_address=service_address,
+        function_call=service_registry_contract.functions.deposit(deposit),
+        task_name="Depositing to service registry",
+    )
 
-        # Approve token transfer
-        checked_transact(
-            web3=web3,
-            service_address=service_address,
-            function_call=deposit_token_contract.functions.approve(
-                contracts[CONTRACT_SERVICE_REGISTRY].address, deposit
-            ),
-            task_name="Allowing token transfor for deposit",
-        )
 
-        # Deposit tokens
-        checked_transact(
-            web3=web3,
-            service_address=service_address,
-            function_call=service_registry_contract.functions.deposit(deposit),
-            task_name="Depositing to service registry",
-        )
-
+def update_service_url(
+    web3: Web3,
+    service_registry_contract: Contract,
+    service_address: Address,
+    service_url: str,
+    current_url: str,
+) -> None:
     # TODO: maybe check that the address is pingable
     if service_url and service_url != current_url:
         checked_transact(
@@ -115,31 +171,6 @@ def main(
             function_call=service_registry_contract.functions.setURL(service_url),
             task_name="Registering new URL",
         )
-
-    current_deposit = service_registry_contract.functions.deposits(service_address).call()
-    current_url = service_registry_contract.functions.urls(service_address).call()
-
-    log.info("Updated infos", current_deposit=current_deposit, current_url=current_url)
-
-
-def checked_transact(
-    web3: Web3, service_address: Address, function_call: ContractFunction, task_name: str
-) -> None:
-    log.info(f"Starting: {task_name}")
-    transaction_hash = function_call.transact({"from": service_address})
-    transaction_receipt = web3.eth.waitForTransactionReceipt(transaction_hash)
-    was_successful = transaction_receipt["status"] == 1
-
-    if not was_successful:
-        log.error(
-            f"Failed: {task_name}\nPlease check that you account is funded.",
-            receipt=transaction_receipt,
-        )
-        sys.exit(1)
-
-    log.info(
-        f"Finished: {task_name}", successful=was_successful, transaction_hash=transaction_hash
-    )
 
 
 if __name__ == "__main__":
