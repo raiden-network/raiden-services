@@ -1,5 +1,12 @@
-# For development. Start the desired services with
-# docker-compose up service1 service2
+# Local-changes setup.
+# Uses the development code on the local disc.
+#
+# Start the desired services with::
+#
+#   docker-compose up service1 service2
+#
+# Daemonize with the `-d` flag.
+#
 version: '3.4'
 
 x-defaults: &defaults
