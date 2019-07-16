@@ -182,7 +182,7 @@ class MatrixListener(gevent.Greenlet):
             )
 
         self.startup_finished = Event()
-        self.rate_limiter(
+        self.rate_limiter = RateLimiter(
             allowed_bytes=MATRIX_RATE_LIMIT_ALLOWED_BYTES,
             reset_interval=MATRIX_RATE_LIMIT_RESET_INTERVAL,
         )

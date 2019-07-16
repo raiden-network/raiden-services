@@ -16,6 +16,7 @@ from raiden.storage.serialization.serializer import DictSerializer
 from raiden.utils.typing import Address, ChainID, ChannelID, Nonce, TokenAmount
 from raiden_contracts.tests.utils import LOCKSROOT_OF_NO_LOCKS, deepcopy
 from raiden_libs.matrix import (
+    MatrixListener,
     RateLimiter,
     deserialize_messages,
     matrix_http_retry_delay,
@@ -163,3 +164,27 @@ def test_rate_limiter():
     time.sleep(0.1)
     limiter.reset_if_it_is_time()
     assert limiter.check_and_count(sender=sender, added_bytes=2)
+
+
+def test_matrix_lister_smoke_test(get_accounts, get_private_key):
+    c1, = get_accounts(1)
+    url = "http://example.com"
+    client_mock = Mock()
+    client_mock.api.base_url = url
+    client_mock.user_id = "1"
+    with patch.multiple(
+        "raiden_libs.matrix",
+        get_matrix_servers=Mock(return_value=[url]),
+        make_client=Mock(return_value=client_mock),
+        join_global_room=Mock(),
+    ):
+        listener = MatrixListener(
+            private_key=get_private_key(c1),
+            chain_id=ChainID(1),
+            service_room_suffix="_service",
+            message_received_callback=lambda _: None,
+            address_reachability_changed_callback=lambda _addr, _reachability: None,
+        )
+        listener._start_client()  # pylint: disable=protected-access
+
+    assert listener.startup_finished.is_set()
