@@ -18,11 +18,17 @@ jobs:
             # fallback to using the latest cache if no exact match is found
             - v1-dependencies-
 
+      - restore_cache:
+          keys: pip-cache
+
       - run:
           name: install dependencies
           command: |
-            python3 -m venv venv
+            if [ ! -x venv ]; then
+              python3 -m venv venv
+            fi
             . venv/bin/activate
+            pip config set global.progress_bar off
             pip install -r requirements-dev.txt
             pip install -e .
             pip install codecov
@@ -31,6 +37,11 @@ jobs:
           paths:
             - ./venv
           key: v1-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "requirements-dev.txt" }}
+
+      - save_cache:
+          key: pip-cache
+          paths:
+          - "~/.cache/pip"
 
       - run:
           name: make lint
