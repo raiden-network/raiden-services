@@ -1,8 +1,26 @@
+# Production-ready setup.
+# Uses the newest `stable` image of the `master` branch.
+# a traefik instance handles exposition of service instances.
+# All services are expected to be started, hence the following command
+# must be run to start the docker setup:
+#
+#   docker-compose up
+#
+# Add the `-d` flag to daemonize the containers.
+#
+# Updating the images is as easy as this:
+#
+#   docker-compose pull && docker-compose restart
+#
+# ..Note::
+#
+#   The above commands assume you're already in the directory where
+#   where this docker-compose file is located.
 version: '3.4'
 
 x-defaults: &defaults
   restart: always
-  image: raiden-services
+  image: raidennetwork/raiden-services:stable
   env_file: services.env
   volumes:
     - /data/state:/state
