@@ -36,7 +36,7 @@ services:
       - PFS_STATE_DB=/state/pfs-ropsten.db
     labels:
       - "traefik.enable=true"
-      - "traefik.frontend.rule=Host: pfs-ropsten.services-dev.raiden.network"
+      - "traefik.frontend.rule=Host: pfs-ropsten-stable.services-dev.raiden.network"
 
   pfs-ropsten-with-fee:
     << : *defaults
@@ -47,7 +47,7 @@ services:
       - PFS_SERVICE_FEE=100
     labels:
       - "traefik.enable=true"
-      - "traefik.frontend.rule=Host: pfs-ropsten-with-fee.services-dev.raiden.network"
+      - "traefik.frontend.rule=Host: pfs-ropsten-with-fee-stable.services-dev.raiden.network"
 
   pfs-rinkeby:
     << : *defaults
@@ -57,7 +57,7 @@ services:
       - PFS_STATE_DB=/state/pfs-rinkeby.db
     labels:
       - "traefik.enable=true"
-      - "traefik.frontend.rule=Host: pfs-rinkeby.services-dev.raiden.network"
+      - "traefik.frontend.rule=Host: pfs-rinkeby-stable.services-dev.raiden.network"
 
   pfs-rinkeby-with-fee:
     << : *defaults
@@ -68,7 +68,7 @@ services:
       - PFS_SERVICE_FEE=100
     labels:
       - "traefik.enable=true"
-      - "traefik.frontend.rule=Host: pfs-rinkeby-with-fee.services-dev.raiden.network"
+      - "traefik.frontend.rule=Host: pfs-rinkeby-with-fee-stable.services-dev.raiden.network"
 
   pfs-kovan:
     << : *defaults
@@ -78,7 +78,7 @@ services:
       - PFS_STATE_DB=/state/pfs-kovan.db
     labels:
       - "traefik.enable=true"
-      - "traefik.frontend.rule=Host: pfs-kovan.services-dev.raiden.network"
+      - "traefik.frontend.rule=Host: pfs-kovan-stable.services-dev.raiden.network"
 
   pfs-kovan-with-fee:
     << : *defaults
@@ -89,7 +89,7 @@ services:
       - PFS_SERVICE_FEE=100
     labels:
       - "traefik.enable=true"
-      - "traefik.frontend.rule=Host: pfs-kovan-with-fee.services-dev.raiden.network"
+      - "traefik.frontend.rule=Host: pfs-kovan-with-fee-stable.services-dev.raiden.network"
 
   pfs-goerli:
     <<: *defaults
@@ -99,7 +99,7 @@ services:
       - PFS_STATE_DB=/state/pfs-goerli.db
     labels:
       - "traefik.enable=true"
-      - "traefik.frontend.rule=Host: pfs-goerli.services-dev.raiden.network"
+      - "traefik.frontend.rule=Host: pfs-goerli-stable.services-dev.raiden.network"
 
   pfs-goerli-with-fee:
     <<: *defaults
@@ -110,7 +110,7 @@ services:
       - PFS_SERVICE_FEE=100
     labels:
       - "traefik.enable=true"
-      - "traefik.frontend.rule=Host: pfs-goerli-with-fee.services-dev.raiden.network"
+      - "traefik.frontend.rule=Host: pfs-goerli-with-fee-stable.services-dev.raiden.network"
 
   ms-ropsten:
     << : *defaults
