@@ -152,14 +152,14 @@ def test_deserialize_messages_that_is_too_big(request_monitoring_message, capsys
 
 
 def test_rate_limiter():
-    limiter = RateLimiter(allowed_bytes=100, reset_interval=timedelta(seconds=1))
+    limiter = RateLimiter(allowed_bytes=100, reset_interval=timedelta(seconds=0.1))
     sender = Address(b"1" * 20)
     for _ in range(50):
-        assert limiter.check_and_count(sender, 2)
+        assert limiter.check_and_count(sender=sender, added_bytes=2)
 
-    assert not limiter.check_and_count(sender, 2)
+    assert not limiter.check_and_count(sender=sender, added_bytes=2)
     limiter.reset_if_it_is_time()
-    assert not limiter.check_and_count(sender, 2)
-    time.sleep(1)
+    assert not limiter.check_and_count(sender=sender, added_bytes=2)
+    time.sleep(0.1)
     limiter.reset_if_it_is_time()
-    assert limiter.check_and_count(sender, 2)
+    assert limiter.check_and_count(sender=sender, added_bytes=2)
