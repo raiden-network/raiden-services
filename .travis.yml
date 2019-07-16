@@ -11,4 +11,3 @@ script:
   - pip install -e .
   - make lint
   - pytest -v --cov=./ tests/ -n auto
-  - codecov
