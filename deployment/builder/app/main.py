@@ -36,8 +36,12 @@ REPOS = {
 app = Flask(__name__)
 
 
-class BuildError(Exception):
+class ImageUpdateError(Exception):
     """Couldn't build/update our images."""
+
+
+def print_to_stderr(s):
+    print(s, file=sys.stderr)
 
 
 @app.route("/", methods=["get", "post"])
@@ -49,10 +53,10 @@ def main():
     if branch_config and branch in branch_config:
         try:
             res = update(branch, branch_config["names"], **branch_config[branch])
-        except BuildError:
-            print("Error building", file=sys.stderr)
+        except ImageUpdateError:
+            print_to_stderr("Error updating local images via docker registry!")
         except Exception as e:
-            print(f"Fatal Error while updating images: Unhandled exception encountered: {e}")
+            print_to_stderr(f"Fatal Error while updating images: Unhandled exception encountered: {e}")
             raise
         else:
             pprint(
@@ -69,28 +73,24 @@ def main():
             return "OK"
 
 
-def _print(s):
-    print(s, file=sys.stderr)
-
-
 def update(branch, container_names, source, deployment, **kw):
-    _print(f"Changing working directory to {deployment}")
+    print_to_stderr(f"Changing working directory to {deployment}")
     try:
         os.chdir(deployment)
     except FileNotFoundError as e:
-        _print(f"Could not change to directory {deployment} - Not found!")
-        raise BuildError from e
+        print_to_stderr(f"Could not change to directory {deployment} - Not found!")
+        raise ImageUpdateError from e
 
-    _print("Pulling containers containers: docker pull")
+    print_to_stderr("Pulling containers containers: docker pull")
     try:
         subprocess.run(["docker-compose", "pull"], check=True)
     except subprocess.SubprocessError as e:
-        _print(f"Pulling new images from docker registry failed: {e}")
-        raise BuildError from e
+        print_to_stderr(f"Pulling new images from docker registry failed: {e}")
+        raise ImageUpdateError from e
 
-    _print(f"Restarting containers: docker restart: {container_names}")
+    print_to_stderr(f"Restarting containers: docker restart: {container_names}")
     try:
         subprocess.run(["docker-compose", "restart"] + container_names, check=True)
     except subprocess.SubprocessError as e:
-        _print(f"Restarting containers {container_names} failed: {e}")
-        raise BuildError from e
+        print_to_stderr(f"Restarting containers {container_names} failed: {e}")
+        raise ImageUpdateError from e
