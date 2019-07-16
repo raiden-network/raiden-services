@@ -82,5 +82,6 @@ services:
       - RDN_REGISTRY_PASSWORD=${PASSWORD}
       - RDN_REGISTRY_DEPOSIT=${RDN_DEPOSIT}
       - RDN_REGISTRY_SERVICE_URL=${SERVER_NAME}
+      - RDN_REGISTRY_ETH_RPC=${ETH_RPC}
     depends_on:
       - traefik
