@@ -10,6 +10,7 @@ x-defaults: &defaults
 services:
   pfs:
     << : *defaults
+    build: ../
     command: ["python3", "-m", "pathfinding_service.cli"]
     restart: always
     ports:
