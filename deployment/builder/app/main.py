@@ -36,6 +36,10 @@ REPOS = {
 app = Flask(__name__)
 
 
+class BuildError(Exception):
+    """Couldn't build/update our images."""
+
+
 @app.route("/", methods=["get", "post"])
 def main():
     data = request.json or {}
@@ -43,8 +47,14 @@ def main():
     branch = data.get("ref", "").replace("refs/heads/", "")
     branch_config = REPOS.get(repo)
     if branch_config and branch in branch_config:
-        res = build(branch, branch_config["names"], **branch_config[branch])
-        if res:
+        try:
+            res = update(branch, branch_config["names"], **branch_config[branch])
+        except BuildError:
+            print("Error building", file=sys.stderr)
+        except Exception as e:
+            print(f"Fatal Error while updating images: Unhandled exception encountered: {e}")
+            raise
+        else:
             pprint(
                 {
                     "repo": repo,
@@ -55,38 +65,32 @@ def main():
                 },
                 stream=sys.stderr,
             )
-        else:
-            print("Error building", file=sys.stderr)
-    return "OK"
+        finally:
+            return "OK"
 
 
 def _print(s):
     print(s, file=sys.stderr)
 
 
-def build(branch, container_names, source, deployment, **kw):
+def update(branch, container_names, source, deployment, **kw):
+    _print(f"Changing working directory to {deployment}")
     try:
-        _print(f"Container names = {container_names}")
-        _print(f"Switching to {source}")
-        os.chdir(source)
-        _print("git fetch")
-        subprocess.check_output(["git", "fetch", "--all"])
-        _print("git reset")
-        subprocess.check_output(["git", "reset", "--hard", f"origin/{branch}"])
-
-        _print(f"Switching to {deployment}")
         os.chdir(deployment)
-        _print("Building containers: docker build")
-        subprocess.check_output(["docker-compose", "build"])
+    except FileNotFoundError as e:
+        _print(f"Could not change to directory {deployment} - Not found!")
+        raise BuildError from e
 
-        _print(f"Stopping containers: docker down: {container_names}")
-        subprocess.check_output(["docker-compose", "stop"] + container_names)
+    _print("Pulling containers containers: docker pull")
+    try:
+        subprocess.run(["docker-compose", "pull"], check=True)
+    except subprocess.SubprocessError as e:
+        _print(f"Pulling new images from docker registry failed: {e}")
+        raise BuildError from e
 
-        _print("Restarting containers: docker up")
-        subprocess.check_output(
-            ["docker-compose", "-f", "docker-compose.yml", "up", "-d"]
-        )
-    except Exception as e:
-        _print(str(e))
-        return False
-    return True
+    _print(f"Restarting containers: docker restart: {container_names}")
+    try:
+        subprocess.run(["docker-compose", "restart"] + container_names, check=True)
+    except subprocess.SubprocessError as e:
+        _print(f"Restarting containers {container_names} failed: {e}")
+        raise BuildError from e

@@ -1,0 +1,89 @@
+# Development Setup.
+# Uses the latest commit of the `master` branch to run each service.
+# Start individual services using the following command::
+#
+#   docker-compose up <service_1> <service_2> [..]
+#
+# Add the `-d` flag to daemonize the container.
+#
+# Updating the images is as easy as this:
+#
+#   docker-compose pull && docker-compose restart
+#
+# ..Note::
+#
+#   The above commands assume you're already in the directory where
+#   where this docker-compose file is located.
+version: '3.4'
+
+x-defaults: &defaults
+  restart: "no"
+  image: raidennetwork/raiden-services:latest
+  env_file: services.env
+    - ./state:/state
+    - ~/.ethereum/keystore:/keystore
+
+services:
+  pfs-ropsten:
+    << : *defaults
+    ports:
+      - 6001:6000
+
+  pfs-rinkeby:
+    << : *defaults
+    ports:
+      - 6002:6000
+
+  pfs-kovan:
+    << : *defaults
+    ports:
+      - 6003:6000
+
+  pfs-goerli:
+    <<: *defaults
+    ports:
+      - 6004:6000
+
+  pfs-ropsten-with-fee:
+    << : *defaults
+    ports:
+      - 6005:6000
+
+  pfs-rinkeby-with-fee:
+    << : *defaults
+    ports:
+      - 6006:6000
+
+  pfs-kovan-with-fee:
+    << : *defaults
+    ports:
+      - 6007:6000
+
+  pfs-goerli-with-fee:
+    <<: *defaults
+    ports:
+      - 6008:6000
+
+  ms-ropsten:
+    << : *defaults
+
+  ms-rinkeby:
+    << : *defaults
+
+  ms-kovan:
+    << : *defaults
+
+  ms-goerli:
+    <<: *defaults
+
+  msrc-ropsten:
+    << : *defaults
+
+  msrc-rinkeby:
+    << : *defaults
+
+  msrc-kovan:
+    << : *defaults
+
+  msrc-goerli:
+    <<: *defaults
