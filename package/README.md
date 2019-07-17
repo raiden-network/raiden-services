@@ -27,12 +27,6 @@ being operated by multiple independent entities.
 Therefore we provide this repository which allows easy setup of these services.
 It uses docker and docker-compose for easy installation and upgrades.
 
-### Used software
-
-- docker
-- docker-compose
-- Traefik
-
 ### Structure
 
 
@@ -92,7 +86,7 @@ Minimum recommended for a production setup:
 
 ### Other
 
-- A domain (or subdomain) for exclusive use by the services
+- A domain (or subdomain) for exclusive use by the services.
 - A synced Ethereum node, that is reachable from the server where the services are installed,
 is required. Setting one up is outside of the scope of this document, please refer to
  <some link to eth node setup instructions>.
@@ -104,15 +98,15 @@ amount of funding (0.1 ETH) should be enough.
 ### Preparation
 
 1. Provision a server that meets the [hardware](#hardware) and [software](#software) requirements listed above.
-1. Ensure a domain (or subdomain) is available
+2. Ensure a domain (or subdomain) is available
 
     Examples:
     - raidenservices.mydomain.tld
     - raidenservices-mydomain.tld
     - mydomain-raidenservices.tld
 
-1. Configure `A` (and optionally `AAAA`) DNS records for the domain pointing to the servers IP address(es)
-1. Configure a `CNAME` DNS record for `*.<domain>` pointing back to `<domain>`
+3. Configure `A` (and optionally `AAAA`) DNS records for the domain pointing to the servers IP address(es)
+4. Configure a `CNAME` DNS record for `*.<domain>` pointing back to `<domain>`
 
 
 ### Installing
@@ -123,7 +117,7 @@ amount of funding (0.1 ETH) should be enough.
    ```shell
    git clone https://github.com/raiden-network/raiden-services.git
    ```
-2. Copy the keystore file to be used by the services into the directory `./data/keystore/`  - whereas `.` refers to the location you cloned into in step 1
+2. Copy the keystore file to be used by the services into the directory `./data/keystore/` - whereas `.` refers to the location you cloned into in step 1
 3. Copy `.env.template` to `.env` and modify the values to fit your setup (see inline comments for details)
     - Set `KEYSTORE_FILE` to the filename of the keystore file
     - Set `PASSWORD` to the password of the keystore file
@@ -135,9 +129,7 @@ amount of funding (0.1 ETH) should be enough.
     - Please check that the registration was successful with `docker-compose logs -f registration`.
 7. The states of the services are stored in `./data/state/` (or `<DATA_DIR>/state/`). This directory should be backed up regularly, otherwise funds could be lost.
 
-We recommend that you provide your own monitoring. The setup of which is currently out of scope of this document.
-
-
+We recommend that you provide your own monitoring for the services. The setup of which is currently out of scope of this document.
 ## Upgrades
 
 To upgrade to a new release please check the [changelog](#changelog) for any necessary
