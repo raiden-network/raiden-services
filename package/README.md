@@ -55,8 +55,7 @@ It uses docker and docker-compose for easy installation and upgrades.
 ```
 
 
-We use Traefik as a reverse proxy and also utilize it's capability of automatically provision
-Let's Encrypt TLS certificates.
+We use Traefik as a reverse proxy and also utilize its capability of automatically provisioning `Let's Encrypt TLS` certificates.
 
 ### Network
 
@@ -88,8 +87,7 @@ Minimum recommended for a production setup:
 
 - A domain (or subdomain) for exclusive use by the services.
 - A synced Ethereum node, that is reachable from the server where the services are installed,
-is required. Setting one up is outside of the scope of this document, please refer to
- <some link to eth node setup instructions>.
+is required. Setting one up is outside of the scope of this document, please refer to [eth node setup guide](https://ethereum.gitbooks.io/frontier-guide/getting_a_client.html).
 - A fresh Ethereum account that will be used only by the services. The accounts needs a small
 amount of funding (0.1 ETH) should be enough.
 
@@ -117,8 +115,9 @@ amount of funding (0.1 ETH) should be enough.
    ```shell
    git clone https://github.com/raiden-network/raiden-services.git
    ```
-2. Copy the keystore file to be used by the services into the directory `./data/keystore/` - whereas `.` refers to the location you cloned into in step 1
-3. Copy `.env.template` to `.env` and modify the values to fit your setup (see inline comments for details)
+2. Go to `./package/` to conduct the next steps - whereas `.` refers to the location you cloned into in step 1
+3. Copy the keystore file to be used by the services into the directory `./package/data/keystore/`
+4. Copy `.env.template` to `.env` and modify the values to fit your setup (see inline comments for details)
     - Set `KEYSTORE_FILE` to the filename of the keystore file
     - Set `PASSWORD` to the password of the keystore file
     - Set `DATA_DIR`, if you used a different data directory (the keystore file is expected in `<DATA_DIR>/keystore/`)
