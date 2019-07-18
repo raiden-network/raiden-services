@@ -18,7 +18,8 @@ from pathfinding_service.model import TokenNetwork
 from pathfinding_service.model.channel_view import ChannelView
 from pathfinding_service.typing import DeferableMessage
 from raiden.constants import PATH_FINDING_BROADCASTING_ROOM, UINT256_MAX
-from raiden.messages import Message, PFSCapacityUpdate, PFSFeeUpdate
+from raiden.messages.abstract import Message
+from raiden.messages.path_finding_service import PFSCapacityUpdate, PFSFeeUpdate
 from raiden.network.transport.matrix import AddressReachability
 from raiden.utils.typing import Address, BlockNumber, ChainID, TokenNetworkAddress
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT

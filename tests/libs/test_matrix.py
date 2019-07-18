@@ -10,8 +10,8 @@ import pytest
 from eth_utils import decode_hex, encode_hex, to_canonical_address
 
 from monitoring_service.states import HashedBalanceProof
-from raiden.exceptions import InvalidProtocolMessage
-from raiden.messages import RequestMonitoring
+from raiden.exceptions import SerializationError
+from raiden.messages.monitoring_service import RequestMonitoring
 from raiden.storage.serialization.serializer import DictSerializer
 from raiden.utils.typing import Address, ChainID, ChannelID, Nonce, TokenAmount
 from raiden_contracts.tests.utils import LOCKSROOT_OF_NO_LOCKS, deepcopy
@@ -58,14 +58,14 @@ def test_message_from_dict(request_monitoring_message):
 
     # Test unknown message type
     message_json["_type"] = "SomeNonexistantMessage"
-    with pytest.raises(InvalidProtocolMessage) as excinfo:
+    with pytest.raises(SerializationError) as excinfo:
         message_from_dict(message_json)
 
     assert 'Invalid message type (data["type"]' in str(excinfo.value)
 
     # Test non-existant message type
     del message_json["_type"]
-    with pytest.raises(InvalidProtocolMessage) as excinfo:
+    with pytest.raises(SerializationError) as excinfo:
         message_from_dict(message_json)
 
     assert "Invalid message data. Can not find the data type" in str(excinfo.value)

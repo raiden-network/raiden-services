@@ -16,7 +16,7 @@ from pathfinding_service.config import (
 from pathfinding_service.exceptions import InvalidPFSFeeUpdate
 from pathfinding_service.model.channel_view import ChannelView, FeeSchedule
 from raiden.exceptions import UndefinedMediationFee
-from raiden.messages import PFSCapacityUpdate, PFSFeeUpdate
+from raiden.messages.path_finding_service import PFSCapacityUpdate, PFSFeeUpdate
 from raiden.network.transport.matrix import AddressReachability
 from raiden.utils.typing import (
     Address,

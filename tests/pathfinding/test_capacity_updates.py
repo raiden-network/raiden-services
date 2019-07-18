@@ -12,7 +12,7 @@ from pathfinding_service.exceptions import InvalidCapacityUpdate
 from pathfinding_service.model import TokenNetwork
 from pathfinding_service.service import DeferMessage, PathfindingService
 from raiden.constants import EMPTY_SIGNATURE, UINT256_MAX
-from raiden.messages import PFSCapacityUpdate
+from raiden.messages.path_finding_service import PFSCapacityUpdate
 from raiden.transfer.identifiers import CanonicalIdentifier
 from raiden.utils.signer import LocalSigner
 from raiden.utils.typing import (

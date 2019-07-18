@@ -16,14 +16,10 @@ from monitoring_service.constants import (
     MATRIX_RATE_LIMIT_RESET_INTERVAL,
 )
 from raiden.constants import Environment
-from raiden.exceptions import InvalidProtocolMessage, TransportError
-from raiden.messages import (
-    Message,
-    PFSCapacityUpdate,
-    PFSFeeUpdate,
-    RequestMonitoring,
-    SignedMessage,
-)
+from raiden.exceptions import SerializationError, TransportError
+from raiden.messages.abstract import Message, SignedMessage
+from raiden.messages.monitoring_service import RequestMonitoring
+from raiden.messages.path_finding_service import PFSCapacityUpdate, PFSFeeUpdate
 from raiden.network.transport.matrix.client import Room
 from raiden.network.transport.matrix.utils import (
     AddressReachability,
@@ -81,9 +77,9 @@ class RateLimiter:
 
 def message_from_dict(data: Dict[str, Any]) -> Message:
     if "_type" not in data:
-        raise InvalidProtocolMessage("Invalid message data. Can not find the data type") from None
+        raise SerializationError("Invalid message data. Can not find the data type") from None
     if data["_type"] not in VALID_MESSAGE_TYPES:
-        raise InvalidProtocolMessage(
+        raise SerializationError(
             'Invalid message type (data["type"] = {})'.format(data["_type"])
         ) from None
 
@@ -117,7 +113,7 @@ def deserialize_messages(
         except (UnicodeDecodeError, json.JSONDecodeError) as ex:
             logger.warning("Can't parse message data JSON", message_data=line, _exc=ex)
             continue
-        except (InvalidProtocolMessage, ValidationError, KeyError, ValueError) as ex:
+        except (SerializationError, ValidationError, KeyError, ValueError) as ex:
             logger.warning("Message data JSON is not a valid message", message_data=line, _exc=ex)
             continue
 
