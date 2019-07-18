@@ -3,7 +3,7 @@ from eth_utils import encode_hex, to_checksum_address
 from tests.constants import TEST_MSC_ADDRESS
 
 from monitoring_service.states import HashedBalanceProof
-from raiden.messages import RequestMonitoring
+from raiden.messages.monitoring_service import RequestMonitoring
 from raiden.utils.typing import ChannelID, Nonce, TokenAmount, TokenNetworkAddress
 from raiden_contracts.tests.utils.address import get_random_privkey
 from raiden_contracts.utils.type_aliases import ChainID

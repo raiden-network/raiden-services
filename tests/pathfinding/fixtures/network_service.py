@@ -9,7 +9,7 @@ from web3.contract import Contract
 from pathfinding_service.model.token_network import TokenNetwork
 from pathfinding_service.service import PathfindingService
 from raiden.constants import EMPTY_SIGNATURE
-from raiden.messages import PFSCapacityUpdate
+from raiden.messages.path_finding_service import PFSCapacityUpdate
 from raiden.network.transport.matrix import AddressReachability
 from raiden.transfer.identifiers import CanonicalIdentifier
 from raiden.utils.typing import (

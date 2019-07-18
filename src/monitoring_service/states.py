@@ -5,7 +5,7 @@ from eth_utils import decode_hex, encode_hex, to_checksum_address
 from web3 import Web3
 
 from raiden.constants import EMPTY_SIGNATURE
-from raiden.messages import RequestMonitoring, SignedBlindedBalanceProof
+from raiden.messages.monitoring_service import RequestMonitoring, SignedBlindedBalanceProof
 from raiden.utils.signer import LocalSigner, recover
 from raiden.utils.signing import pack_data
 from raiden.utils.typing import (
