@@ -381,6 +381,11 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
         non_closing_signer=event.non_closing_participant,
     )
     if monitor_request is None:
+        log.error(
+            "MonitorRequest cannot be found",
+            token_network_address=event.token_network_address,
+            channel_id=event.channel_identifier,
+        )
         return
 
     channel = context.db.get_channel(
@@ -388,9 +393,13 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
         channel_id=monitor_request.channel_identifier,
     )
     if channel is None:
+        log.error("Channel cannot be found", monitor_request=monitor_request)
         return
 
     if not _is_mr_valid(monitor_request, channel):
+        log.error(
+            "MonitorRequest lost its validity", monitor_request=monitor_request, channel=channel
+        )
         return
 
     last_onchain_nonce = 0
@@ -399,6 +408,11 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
 
     user_address = monitor_request.non_closing_signer
     user_deposit = context.user_deposit_contract.functions.effectiveBalance(user_address).call()
+
+    if monitor_request.nonce <= last_onchain_nonce:
+        log.info(
+            "Another MS submitted the last known channel state", monitor_request=monitor_request
+        )
 
     if monitor_request.reward_amount < context.min_reward:
         log.info(
