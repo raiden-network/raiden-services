@@ -45,7 +45,7 @@ last_requests: collections.deque = collections.deque([], maxlen=200)
 class ApiWithErrorHandler(Api):
     def handle_error(self, e: Exception) -> Response:
         if isinstance(e, exceptions.ApiException):
-            log.debug(
+            log.warning(
                 "Error while handling request", error=e, details=e.error_details, message=e.msg
             )
             return self.make_response(
