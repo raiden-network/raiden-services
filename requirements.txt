@@ -22,4 +22,5 @@ requests==2.22.0
 marshmallow==3.0.0rc8
 marshmallow-dataclass==6.0.0rc4
 
-sentry-sdk[flask]==0.10.1
+sentry-sdk[flask]==0.10.2
+structlog-sentry==1.0.0
