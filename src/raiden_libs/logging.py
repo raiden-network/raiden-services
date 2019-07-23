@@ -1,12 +1,10 @@
 import logging
-import os
 import sys
 from dataclasses import asdict
 from typing import Any, Dict
 
 import structlog
 from eth_utils import to_checksum_address, to_hex
-from structlog_sentry import SentryProcessor
 
 from raiden.messages.abstract import Message
 from raiden_libs.events import Event
@@ -29,10 +27,6 @@ def setup_logging(log_level: str) -> None:
         structlog.processors.StackInfoRenderer(),
         structlog.processors.format_exc_info,
     ]
-
-    sentry_dsn = os.environ.get("SENTRY_DSN")
-    if sentry_dsn is not None:
-        processors.append(SentryProcessor())  # requires structlog.stdlib.add_log_level before
 
     structlog.configure(
         processors=processors + [structlog.dev.ConsoleRenderer()],
