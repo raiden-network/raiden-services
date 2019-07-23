@@ -25,10 +25,12 @@ REPOS = {
             "ms-rinkeby",
             "ms-kovan",
             "ms-goerli",
+            "ms-goerli-backup",
             "msrc-ropsten",
             "msrc-rinkeby",
             "msrc-kovan",
             "msrc-goerli",
+            "msrc-goerli-backup",
         ],
     }
 }
