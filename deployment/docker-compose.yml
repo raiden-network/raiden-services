@@ -113,21 +113,21 @@ services:
       - "traefik.frontend.rule=Host: pfs-goerli-with-fee.services-dev.raiden.network"
 
   ms-ropsten:
-    << : *defaults
+    <<: *defaults
     command: ["python3", "-m", "monitoring_service.cli"]
     environment:
       - MS_ETH_RPC=http://geth.ropsten.ethnodes.brainbot.com:8545
       - MS_STATE_DB=/state/ms-ropsten.db
 
   ms-rinkeby:
-    << : *defaults
+    <<: *defaults
     command: ["python3", "-m", "monitoring_service.cli"]
     environment:
       - MS_ETH_RPC=http://geth.rinkeby.ethnodes.brainbot.com:8545
       - MS_STATE_DB=/state/ms-rinkeby.db
 
   ms-kovan:
-    << : *defaults
+    <<: *defaults
     command: ["python3", "-m", "monitoring_service.cli"]
     environment:
       - MS_ETH_RPC=http://parity.kovan.ethnodes.brainbot.com:8545
@@ -150,7 +150,7 @@ services:
       - MS_PASSWORD=${MS_BACKUP_PASSWORD}
 
   msrc-ropsten:
-    << : *defaults
+    <<: *defaults
     command: ["python3", "-m", "request_collector.cli"]
     environment:
       - MSRC_CHAIN_ID=ropsten
@@ -159,7 +159,7 @@ services:
       - ms-ropsten
 
   msrc-rinkeby:
-    << : *defaults
+    <<: *defaults
     command: ["python3", "-m", "request_collector.cli"]
     environment:
       - MSRC_CHAIN_ID=rinkeby
@@ -168,7 +168,7 @@ services:
       - ms-rinkeby
 
   msrc-kovan:
-    << : *defaults
+    <<: *defaults
     command: ["python3", "-m", "request_collector.cli"]
     environment:
       - MSRC_CHAIN_ID=kovan
