@@ -1,5 +1,4 @@
 import sys
-import traceback
 from typing import Any
 
 import structlog
@@ -9,7 +8,7 @@ log = structlog.get_logger(__name__)
 ORIGINAL_ERROR_HANDLER = Hub.handle_error
 
 
-def error_handler(_self: Any, _context: Any, etype: Any, value: Any, tb: Any) -> None:
+def error_handler(self: Any, _context: Any, etype: Any, value: Any, _tb: Any) -> None:
     if issubclass(etype, Hub.NOT_ERROR):
         return
     if issubclass(etype, KeyboardInterrupt):
@@ -21,8 +20,8 @@ def error_handler(_self: Any, _context: Any, etype: Any, value: Any, tb: Any) ->
         "Please report this issue at "
         "https://github.com/raiden-network/raiden-services/issues"
     )
-    traceback.print_exception(etype=etype, value=value, tb=tb)
-    sys.exit(1)
+    # This will properly raise the exception and stop the process
+    Hub.handle_system_error(self, etype, value)
 
 
 def register_error_handler() -> None:
