@@ -140,6 +140,15 @@ services:
       - MS_ETH_RPC=http://parity.goerli.ethnodes.brainbot.com:8545
       - MS_STATE_DB=/state/ms-goerli.db
 
+  ms-goerli-backup:
+    <<: *defaults
+    command: ["python3", "-m", "monitoring_service.cli"]
+    environment:
+      - MS_ETH_RPC=http://parity.goerli.ethnodes.brainbot.com:8545
+      - MS_STATE_DB=/state/ms-goerli-backup.db
+      - MS_KEYSTORE_FILE=${MS_BACKUP_KEYSTORE_FILE}
+      - MS_PASSWORD=${MS_BACKUP_PASSWORD}
+
   msrc-ropsten:
     << : *defaults
     command: ["python3", "-m", "request_collector.cli"]
@@ -167,14 +176,16 @@ services:
     depends_on:
       - ms-kovan
 
-  msrc-goerli:
-    << : *defaults
+  msrc-goerli-backup:
+    <<: *defaults
     command: ["python3", "-m", "request_collector.cli"]
     environment:
       - MSRC_CHAIN_ID=goerli
-      - MSRC_STATE_DB=/state/ms-goerli.db
+      - MSRC_STATE_DB=/state/ms-goerli-backup.db
+      - MSRC_KEYSTORE_FILE=${MS_BACKUP_KEYSTORE_FILE}
+      - MSRC_PASSWORD=${MS_BACKUP_PASSWORD}
     depends_on:
-      - ms-goerli
+      - ms-goerli-backup
 
   builder:
     restart: always
@@ -210,8 +221,10 @@ services:
       - ms-rinkeby
       - ms-kovan
       - ms-goerli
+      - ms-goerli-backup
       - msrc-ropsten
       - msrc-rinkeby
       - msrc-kovan
       - msrc-goerli
+      - msrc-goerli-backup
       - builder
