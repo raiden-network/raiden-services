@@ -76,6 +76,27 @@ def main():
 
 
 def update(branch, container_names, source, deployment, **kw):
+    print_to_stderr(f"Changing working directory to {source}")
+    try:
+        os.chdir(source)
+    except FileNotFoundError as e:
+        print_to_stderr(f"Could not change to directory {source} - Not found!")
+        raise ImageUpdateError from e
+
+    print_to_stderr("Fetching latest changes: git fetch")
+    try:
+        subprocess.check_output(["git", "fetch", "--all"])
+    except subprocess.SubprocessError as e:
+        print_to_stderr(f"Fetching latest changes failed: {e}")
+        raise ImageUpdateError from e
+
+    print_to_stderr("Resetting branch: git reset")
+    try:
+        subprocess.check_output(["git", "reset", "--hard", f"origin/{branch}"])
+    except subprocess.SubprocessError as e:
+        print_to_stderr(f"Resetting branch failed: {e}")
+        raise ImageUpdateError from e
+
     print_to_stderr(f"Changing working directory to {deployment}")
     try:
         os.chdir(deployment)
