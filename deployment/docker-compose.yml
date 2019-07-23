@@ -21,7 +21,6 @@ version: '3.4'
 x-defaults: &defaults
   restart: always
   image: raidennetwork/raiden-services:latest
-  env_file: services.env
   volumes:
     - /data/state:/state
     - /data/keystore:/keystore
@@ -175,6 +174,15 @@ services:
       - MSRC_STATE_DB=/state/ms-kovan.db
     depends_on:
       - ms-kovan
+
+  msrc-goerli:
+    <<: *defaults
+    command: ["python3", "-m", "request_collector.cli"]
+    environment:
+      - MSRC_CHAIN_ID=goerli
+      - MSRC_STATE_DB=/state/ms-goerli.db
+    depends_on:
+      - ms-goerli
 
   msrc-goerli-backup:
     <<: *defaults
