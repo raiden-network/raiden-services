@@ -20,6 +20,7 @@ version: '3.4'
 
 x-defaults: &defaults
   restart: always
+  env_file: .env
   image: raidennetwork/raiden-services:latest
   volumes:
     - /data/state:/state
