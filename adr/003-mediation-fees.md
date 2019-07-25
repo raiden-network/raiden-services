@@ -49,7 +49,7 @@ One important detail is that fees are not only calculated for the channel over w
 
 where for each channel
 
-`MF_channel = flat_fee + proportional_fee * amount + IP(C_before) - IP(C_after)`
+`MF_channel = flat_fee + proportional_fee * amount + IP(C_after) - IP(C_before)`
 
 where `IP` is the "Imbalance Penalty" function and `C_before/after` are the channel capacities before and after the payment. The channel capacity is the node's free capacity as reported to the PFS with the PFSCapacityUpdate messages.
 
@@ -65,7 +65,7 @@ IP
 |  X                  X
 |   X                X|
 |    X              X |
-|     X            X  |dIP = IP(C_before) - IP(C_after)
+|     X            X  |dIP = IP(C_after) - IP(C_before)
 |      XX        XX   |
 |        XX    XX----->
 |          XXXX  amount
@@ -73,7 +73,7 @@ IP
                 6     9
 ```
 
-If the node currently has a capacity of 6 and is asked to mediate a payment of 3 tokens coming from this channel, it will get into the less desired position of 9 capacity. To compensate for this, it will demand an imbalance fee of `dIP = IP(C_before) - IP(C_after)`. If the situation was reversed and the capacity would go from 9 to 6, the absolute value would be the same, but this time it would be negative and thus incentivize moving towards the preferred state. By viewing the channel balances in this way, the imbalance fee is a zero sum game in the long term. All tokens which are earned by going into a bad state will be spent for moving into a good state again, later.
+If the node currently has a capacity of 6 and is asked to mediate a payment of 3 tokens coming from this channel, it will get into the less desired position of 9 capacity. To compensate for this, it will demand an imbalance fee of `dIP = IP(C_after) - IP(C_before)`. If the situation was reversed and the capacity would go from 9 to 6, the absolute value would be the same, but this time it would be negative and thus incentivize moving towards the preferred state. By viewing the channel balances in this way, the imbalance fee is a zero sum game in the long term. All tokens which are earned by going into a bad state will be spent for moving into a good state again, later.
 
 Only mediating nodes demand mediation fees. The initiator and target could theoretically benefit if their IP was taken into account during routing, but this aspect is left out for now to avoid additional complexity.
 
@@ -153,7 +153,7 @@ The message format still has to be defined in detail, but the payload will look 
 {
     'flat': 10,
     // we have to deal with float values anyway, due to the interpolation
-    'proportional': 0.0001,  // factor of transfer amount
+    'proportional': 100,  // factor of transfer amount in parts-per-million
     'imbalance_penalty': [
         [0, 1000],
         [1000, 500],
