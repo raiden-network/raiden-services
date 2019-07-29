@@ -11,6 +11,7 @@ from pathfinding_service.database import PFSDatabase
 from pathfinding_service.model import IOU
 from raiden.utils.typing import BlockNumber, ChainID, TokenAmount
 from raiden_contracts.constants import CONTRACT_ONE_TO_N
+from raiden_contracts.contract_manager import gas_measurements
 from raiden_libs.cli import blockchain_options, common_options
 from raiden_libs.utils import private_key_to_address
 
@@ -48,7 +49,8 @@ def main(
     )
 
     web3.eth.setGasPriceStrategy(rpc_gas_price_strategy)
-    claim_cost_eth = 90897 * web3.eth.generateGasPrice()
+    claim_cost_gas = gas_measurements()["OneToN.claim"]
+    claim_cost_eth = claim_cost_gas * web3.eth.generateGasPrice()
     claim_cost_rdn = TokenAmount(int(claim_cost_eth / rdn_per_eth))
     ious = list(
         get_claimable_ious(
