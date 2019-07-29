@@ -5,6 +5,7 @@ import click
 import structlog
 from web3 import Web3
 from web3.contract import Contract
+from web3.gas_strategies.rpc import rpc_gas_price_strategy
 
 from pathfinding_service.database import PFSDatabase
 from pathfinding_service.model import IOU
@@ -46,7 +47,8 @@ def main(
         filename=state_db, chain_id=chain_id, pfs_address=pfs_address, sync_start_block=start_block
     )
 
-    claim_cost_eth = 90897
+    web3.eth.setGasPriceStrategy(rpc_gas_price_strategy)
+    claim_cost_eth = 90897 * web3.eth.generateGasPrice()
     claim_cost_rdn = TokenAmount(int(claim_cost_eth / rdn_per_eth))
     ious = list(
         get_claimable_ious(
