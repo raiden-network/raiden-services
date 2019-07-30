@@ -53,8 +53,8 @@ def ms_database():
 
 @pytest.fixture
 def register_service(custom_token, service_registry):
-    # any amount is sufficient for registration, right now
-    def f(address, deposit=10):
+    def f(address):
+        deposit = service_registry.functions.currentPrice().call()
         custom_token.functions.mint(deposit).transact({"from": address})
         custom_token.functions.approve(service_registry.address, deposit).transact(
             {"from": address}

@@ -57,8 +57,7 @@ def test_first_allowed_monitoring(
     node_deposit = 10
     deposit_to_udc(c1, node_deposit)
 
-    deposit = service_registry.functions.deposits(ms_address_hex).call()
-    assert deposit > 0
+    assert service_registry.functions.hasValidRegistration(ms_address_hex).call()
 
     # each client does a transfer
     channel_id = create_channel(c1, c2, settle_timeout=10)[0]
@@ -99,10 +98,12 @@ def test_first_allowed_monitoring(
     token_network.functions.closeChannel(
         channel_id,
         c1,
+        c2,
         balance_proof_c1.balance_hash,
         balance_proof_c1.nonce,
         balance_proof_c1.additional_hash,
         balance_proof_c1.signature,
+        balance_proof_c1.get_counter_signature(get_private_key(c2)),
     ).transact({"from": c2})
 
     monitoring_service._process_new_blocks(web3.eth.blockNumber)
@@ -168,8 +169,7 @@ def test_e2e(  # pylint: disable=too-many-arguments,too-many-locals
     node_deposit = 10
     deposit_to_udc(c1, node_deposit)
 
-    deposit = service_registry.functions.deposits(ms_address_hex).call()
-    assert deposit > 0
+    assert service_registry.functions.hasValidRegistration(ms_address_hex).call()
 
     # each client does a transfer
     channel_id = create_channel(c1, c2, settle_timeout=5)[0]
@@ -215,10 +215,12 @@ def test_e2e(  # pylint: disable=too-many-arguments,too-many-locals
     token_network.functions.closeChannel(
         channel_id,
         c1,
+        c2,
         balance_proof_c1.balance_hash,
         balance_proof_c1.nonce,
         balance_proof_c1.additional_hash,
         balance_proof_c1.signature,
+        balance_proof_c1.get_counter_signature(get_private_key(c2)),
     ).transact({"from": c2})
     # Wait until the MS reacts, which it does after giving the client some time
     # to update the channel itself.

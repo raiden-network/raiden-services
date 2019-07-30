@@ -171,11 +171,13 @@ def test_pfs_with_mocked_client(  # pylint: disable=too-many-arguments
         token_network.functions.closeChannel(
             channel_id,
             clients[p2_index],
+            clients[p1_index],
             balance_proof.balance_hash,
             balance_proof.nonce,
             balance_proof.additional_hash,
             balance_proof.signature,
-        ).transact({"from": clients[p1_index], "gas": 200_000})
+            balance_proof.get_counter_signature(get_private_key(clients[p1_index])),
+        ).call_and_transact({"from": clients[p1_index], "gas": 200_000})
 
     wait_for_blocks(1)
     gevent.sleep(0.1)
