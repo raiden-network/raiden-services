@@ -285,6 +285,22 @@ def test_get_info(api_url: str, api_sut, pathfinding_service_mock):
         "payment_address": to_checksum_address(pathfinding_service_mock.address),
     }
 
+    # Test with a custom info message
+    api_sut.info_message = "Other message"
+    response = requests.get(url)
+    assert response.status_code == 200
+    assert response.json() == {
+        "price_info": 123,
+        "network_info": {
+            "chain_id": pathfinding_service_mock.chain_id,
+            "registry_address": token_network_registry,
+        },
+        "version": pkg_resources.require("raiden-services")[0].version,
+        "operator": "John Doe",
+        "message": "Other message",
+        "payment_address": to_checksum_address(pathfinding_service_mock.address),
+    }
+
 
 #
 # tests for /payment/iou endpoint
