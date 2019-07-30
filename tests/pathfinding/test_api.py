@@ -264,7 +264,11 @@ def test_get_paths(api_url: str, addresses: List[Address], token_network_model: 
 #
 def test_get_info(api_url: str, api_sut, pathfinding_service_mock):
     api_sut.service_fee = 123
+    api_sut.operator = "John Doe"
+    api_sut.info_message = "This is your favorite pfs for token network registry "
     url = api_url + "/info"
+
+    token_network_registry = to_checksum_address(pathfinding_service_mock.registry_address)
 
     response = requests.get(url)
     assert response.status_code == 200
@@ -272,12 +276,12 @@ def test_get_info(api_url: str, api_sut, pathfinding_service_mock):
         "price_info": 123,
         "network_info": {
             "chain_id": pathfinding_service_mock.chain_id,
-            "registry_address": to_checksum_address(pathfinding_service_mock.registry_address),
+            "registry_address": token_network_registry,
         },
-        "settings": "PLACEHOLDER FOR PATHFINDER SETTINGS",
         "version": pkg_resources.require("raiden-services")[0].version,
-        "operator": "PLACEHOLDER FOR PATHFINDER OPERATOR",
-        "message": "PLACEHOLDER FOR ADDITIONAL MESSAGE BY THE PFS",
+        "operator": "John Doe",
+        "message": "This is your favorite pfs for token network registry "
+        + token_network_registry,
         "payment_address": to_checksum_address(pathfinding_service_mock.address),
     }
 

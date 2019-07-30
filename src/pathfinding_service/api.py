@@ -21,6 +21,7 @@ from pathfinding_service.config import (
     API_PATH,
     DEFAULT_API_HOST,
     DEFAULT_API_PORT,
+    DEFAULT_INFO_MESSAGE,
     DEFAULT_MAX_PATHS,
     MAX_AGE_OF_IOU_REQUESTS,
     MAX_PATHS_PER_REQUEST,
@@ -341,27 +342,23 @@ class InfoResource(PathfinderResource):
     version = pkg_resources.get_distribution("raiden-services").version
 
     def get(self) -> Tuple[dict, int]:
-        settings = "PLACEHOLDER FOR PATHFINDER SETTINGS"
-        operator = "PLACEHOLDER FOR PATHFINDER OPERATOR"
-        message = "PLACEHOLDER FOR ADDITIONAL MESSAGE BY THE PFS"
 
-        return (
-            {
-                "price_info": self.service_api.service_fee,
-                "network_info": {
-                    "chain_id": self.pathfinding_service.chain_id,
-                    "registry_address": to_checksum_address(
-                        self.pathfinding_service.registry_address
-                    ),
-                },
-                "settings": settings,
-                "version": self.version,
-                "operator": operator,
-                "message": message,
-                "payment_address": to_checksum_address(self.pathfinding_service.address),
+        info = {
+            "price_info": self.service_api.service_fee,
+            "network_info": {
+                "chain_id": self.pathfinding_service.chain_id,
+                "registry_address": to_checksum_address(self.pathfinding_service.registry_address),
             },
-            200,
-        )
+            "version": self.version,
+            "operator": self.service_api.operator,
+            "message": self.service_api.info_message,
+            "payment_address": to_checksum_address(self.pathfinding_service.address),
+        }
+        if info["message"] == DEFAULT_INFO_MESSAGE:
+            info["message"] = info["message"] + to_checksum_address(
+                self.pathfinding_service.registry_address
+            )
+        return (info, 200)
 
 
 class DebugPathResource(PathfinderResource):
@@ -423,10 +420,15 @@ class DebugStatsResource(PathfinderResource):
 
 
 class ServiceApi:
+    # pylint: disable=too-many-instance-attributes
+    # Nine is reasonable in this case.
+
     def __init__(
         self,
         pathfinding_service: PathfindingService,
         one_to_n_address: Address,
+        operator: str,
+        info_message: str,
         service_fee: TokenAmount = TokenAmount(0),
         debug_mode: bool = False,
     ) -> None:
@@ -436,6 +438,8 @@ class ServiceApi:
         self.one_to_n_address = one_to_n_address
         self.pathfinding_service = pathfinding_service
         self.service_fee = service_fee
+        self.operator = operator
+        self.info_message = info_message
 
         resources: List[Tuple[str, Resource, Dict, str]] = [
             (

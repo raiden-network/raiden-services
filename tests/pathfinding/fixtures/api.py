@@ -32,7 +32,12 @@ def api_sut(
     populate_token_network_case_1,  # pylint: disable=unused-argument
 ) -> Iterator[ServiceApi]:
     pathfinding_service_mock.address_to_reachability = address_to_reachability
-    api = ServiceApi(pathfinding_service_mock, one_to_n_address=Address(bytes([1] * 20)))
+    api = ServiceApi(
+        pathfinding_service=pathfinding_service_mock,
+        one_to_n_address=Address(bytes([1] * 20)),
+        operator="",
+        info_message="",
+    )
     api.run(port=free_port)
     yield api
     api.stop()
@@ -47,7 +52,11 @@ def api_sut_with_debug(
 ) -> Iterator[ServiceApi]:
     pathfinding_service_mock.address_to_reachability = address_to_reachability
     api = ServiceApi(
-        pathfinding_service_mock, one_to_n_address=Address(bytes([1] * 20)), debug_mode=True
+        pathfinding_service=pathfinding_service_mock,
+        one_to_n_address=Address(bytes([1] * 20)),
+        debug_mode=True,
+        operator="",
+        info_message="",
     )
     api.run(port=free_port)
     yield api
