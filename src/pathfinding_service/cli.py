@@ -13,7 +13,11 @@ from web3 import Web3
 from web3.contract import Contract
 
 from pathfinding_service.api import ServiceApi
-from pathfinding_service.config import DEFAULT_API_HOST, DEFAULT_POLL_INTERVALL
+from pathfinding_service.config import (
+    DEFAULT_API_HOST,
+    DEFAULT_INFO_MESSAGE,
+    DEFAULT_POLL_INTERVALL,
+)
 from pathfinding_service.service import PathfindingService
 from raiden.settings import DEFAULT_NUMBER_OF_BLOCK_CONFIRMATIONS
 from raiden.utils.typing import BlockNumber, TokenAmount
@@ -47,6 +51,13 @@ log = structlog.get_logger(__name__)
     help="Number of block confirmations to wait for",
 )
 @click.option("--enable-debug", default=False, is_flag=True, hidden=True)
+@click.option("--operator", default="John Doe", type=str, help="Name of the service operator")
+@click.option(
+    "--info-message",
+    default=DEFAULT_INFO_MESSAGE,
+    type=str,
+    help="Place for a personal message to the customers",
+)
 @common_options("raiden-pathfinding-service")
 def main(  # pylint: disable-msg=too-many-arguments
     private_key: str,
@@ -57,6 +68,8 @@ def main(  # pylint: disable-msg=too-many-arguments
     confirmations: int,
     host: str,
     service_fee: TokenAmount,
+    operator: str,
+    info_message: str,
     enable_debug: bool,
 ) -> int:
     """ The Pathfinding service for the Raiden Network. """
@@ -80,6 +93,8 @@ def main(  # pylint: disable-msg=too-many-arguments
             service_fee=service_fee,
             debug_mode=enable_debug,
             one_to_n_address=contracts[CONTRACT_ONE_TO_N].address,
+            operator=operator,
+            info_message=info_message,
         )
         api.run(host=host)
 
