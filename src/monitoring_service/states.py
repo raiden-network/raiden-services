@@ -156,6 +156,16 @@ class HashedBalanceProof:
             msc_address=msc_address,
         ).sign(privkey)
 
+    def get_counter_signature(self, privkey: str) -> Signature:
+        """Get a signature of this balance proof by the other party
+
+        Useful for `closing_signature` of `TokenNetwork.closeChannel`
+        """
+        signer = LocalSigner(decode_hex(privkey))
+        # TODO: use default message type id once
+        #       https://github.com/raiden-network/raiden-contracts/issues/1149 is fixed
+        return signer.sign(self.serialize_bin(MessageTypeId.BALANCE_PROOF_UPDATE) + self.signature)
+
 
 @dataclass
 class MonitoringServiceState:
