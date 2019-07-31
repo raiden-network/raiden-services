@@ -3,11 +3,12 @@ from typing import Dict
 
 import click
 import structlog
+from eth_utils import to_checksum_address, to_hex
 from web3 import Web3
 from web3.contract import Contract, ContractFunction
 from web3.middleware import construct_sign_and_send_raw_middleware
 
-from raiden.utils.typing import Address, BlockNumber, TokenAmount
+from raiden.utils.typing import Address, BlockNumber
 from raiden_contracts.constants import (
     CONTRACT_CUSTOM_TOKEN,
     CONTRACT_SERVICE_REGISTRY,
@@ -31,24 +32,20 @@ def checked_transact(
     if not was_successful:
         log.error(
             f"Failed: {task_name}\nPlease check that the account "
-            f"{service_address} has sufficient funds.",
+            f"{to_checksum_address(service_address)} has sufficient funds.",
             receipt=transaction_receipt,
         )
         sys.exit(1)
 
     log.info(
-        f"Finished: {task_name}", successful=was_successful, transaction_hash=transaction_hash
+        f"Finished: {task_name}",
+        successful=was_successful,
+        transaction_hash=to_hex(transaction_hash),
     )
 
 
 @blockchain_options(contracts=[CONTRACT_SERVICE_REGISTRY, CONTRACT_USER_DEPOSIT])
 @click.command()
-@click.option(
-    "--deposit",
-    default=100 * 10 ** 18,  # 100 RDN
-    type=click.IntRange(min=1),
-    help="Amount of tokens to deposit in the ServiceRegistry",
-)
 @click.option("--service-url", type=str, help="URL for the services to register")
 @common_options("register_service")
 def main(
@@ -57,7 +54,6 @@ def main(
     web3: Web3,
     contracts: Dict[str, Contract],
     start_block: BlockNumber,  # pylint: disable=unused-argument
-    deposit: TokenAmount,
     service_url: str,
 ) -> None:
     """
@@ -90,7 +86,6 @@ def main(
             web3=web3,
             service_registry_contract=service_registry_contract,
             user_deposit_contract=contracts[CONTRACT_USER_DEPOSIT],
-            deposit=deposit,
             service_address=service_address,
         )
 
@@ -112,7 +107,6 @@ def deposit_to_registry(
     web3: Web3,
     service_registry_contract: Contract,
     user_deposit_contract: Contract,
-    deposit: TokenAmount,
     service_address: Address,
 ) -> None:
     log.info("Address not registered in ServiceRegistry")
@@ -121,28 +115,33 @@ def deposit_to_registry(
         address=deposit_token_address, abi=CONTRACT_MANAGER.get_contract_abi(CONTRACT_CUSTOM_TOKEN)
     )
 
+    # Get required deposit
+    required_deposit = service_registry_contract.functions.currentPrice().call()
+
     # Check current token balance
     account_balance = deposit_token_contract.functions.balanceOf(service_address).call()
-    log.info("Current account balance", balance=account_balance, desired_deposit=deposit)
+    log.info("Current account balance", balance=account_balance, required_deposit=required_deposit)
 
     # mint tokens if necessary
-    if account_balance < deposit:
+    if account_balance < required_deposit:
         checked_transact(
             web3=web3,
             service_address=service_address,
-            function_call=deposit_token_contract.functions.mint(deposit),
+            function_call=deposit_token_contract.functions.mint(required_deposit),
             task_name="Minting new Test RDN tokens",
         )
 
         account_balance = deposit_token_contract.functions.balanceOf(service_address).call()
-        log.info("Updated account balance", balance=account_balance, desired_deposit=deposit)
+        log.info(
+            "Updated account balance", balance=account_balance, desired_deposit=required_deposit
+        )
 
     # Approve token transfer
     checked_transact(
         web3=web3,
         service_address=service_address,
         function_call=deposit_token_contract.functions.approve(
-            service_registry_contract.address, deposit
+            service_registry_contract.address, required_deposit
         ),
         task_name="Allowing token transfor for deposit",
     )
@@ -151,7 +150,7 @@ def deposit_to_registry(
     checked_transact(
         web3=web3,
         service_address=service_address,
-        function_call=service_registry_contract.functions.deposit(deposit),
+        function_call=service_registry_contract.functions.deposit(required_deposit),
         task_name="Depositing to service registry",
     )
 
