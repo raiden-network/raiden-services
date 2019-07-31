@@ -20,7 +20,7 @@ from raiden.utils.typing import (
     ChainID,
     ChannelID,
     Nonce,
-    TokenAmount,
+    TokenAmount as TA,
     TokenNetworkAddress,
 )
 from raiden_libs.utils import private_key_to_address
@@ -63,12 +63,12 @@ def setup_channel_with_deposits(service: PathfindingService) -> TokenNetwork:
     token_network.handle_channel_new_deposit_event(
         channel_identifier=DEFAULT_CHANNEL_ID,
         receiver=PRIVATE_KEY_1_ADDRESS,
-        total_deposit=TokenAmount(100),
+        total_deposit=TA(100),
     )
     token_network.handle_channel_new_deposit_event(
         channel_identifier=DEFAULT_CHANNEL_ID,
         receiver=PRIVATE_KEY_2_ADDRESS,
-        total_deposit=TokenAmount(100),
+        total_deposit=TA(100),
     )
     return token_network
 
@@ -81,8 +81,8 @@ def get_updatepfs_message(  # pylint: disable=too-many-arguments
     token_network_address: TokenNetworkAddress = DEFAULT_TOKEN_NETWORK_ADDRESS,
     updating_nonce=Nonce(1),
     other_nonce=Nonce(0),
-    updating_capacity=TokenAmount(90),
-    other_capacity=TokenAmount(110),
+    updating_capacity=TA(90),
+    other_capacity=TA(110),
     reveal_timeout: int = 2,
     privkey_signer: bytes = PRIVATE_KEY_1,
 ) -> PFSCapacityUpdate:
@@ -165,10 +165,10 @@ def test_pfs_rejects_capacity_update_with_impossible_updating_capacity(
     message = get_updatepfs_message(
         updating_participant=PRIVATE_KEY_1_ADDRESS,
         other_participant=PRIVATE_KEY_2_ADDRESS,
-        updating_capacity=TokenAmount(UINT256_MAX),
+        updating_capacity=TA(UINT256_MAX),
         privkey_signer=PRIVATE_KEY_1,
     )
-    message.updating_capacity = TokenAmount(UINT256_MAX + 1)
+    message.updating_capacity = TA(UINT256_MAX + 1)
 
     with pytest.raises(InvalidCapacityUpdate) as exinfo:
         pathfinding_service_web3_mock.on_capacity_update(message)
@@ -183,10 +183,10 @@ def test_pfs_rejects_capacity_update_with_impossible_other_capacity(
     message = get_updatepfs_message(
         updating_participant=PRIVATE_KEY_1_ADDRESS,
         other_participant=PRIVATE_KEY_2_ADDRESS,
-        other_capacity=TokenAmount(UINT256_MAX),
+        other_capacity=TA(UINT256_MAX),
         privkey_signer=PRIVATE_KEY_1,
     )
-    message.other_capacity = TokenAmount(UINT256_MAX + 1)
+    message.other_capacity = TA(UINT256_MAX + 1)
 
     with pytest.raises(InvalidCapacityUpdate) as exinfo:
         pathfinding_service_web3_mock.on_capacity_update(message)
@@ -253,7 +253,7 @@ def test_pfs_edge_case_capacity_updates_before_deposit(
     token_network.handle_channel_new_deposit_event(
         channel_identifier=DEFAULT_CHANNEL_ID,
         receiver=PRIVATE_KEY_1_ADDRESS,
-        total_deposit=TokenAmount(100),
+        total_deposit=TA(100),
     )
 
     # So te PFS did not receive a deposit for P2.
@@ -289,7 +289,7 @@ def test_pfs_edge_case_capacity_updates_before_deposit(
     token_network.handle_channel_new_deposit_event(
         channel_identifier=DEFAULT_CHANNEL_ID,
         receiver=PRIVATE_KEY_2_ADDRESS,
-        total_deposit=TokenAmount(100),
+        total_deposit=TA(100),
     )
     assert view_to_partner.capacity == 90
     assert view_from_partner.capacity == 110
@@ -317,8 +317,8 @@ def test_pfs_min_calculation_with_capacity_updates(
         updating_participant=PRIVATE_KEY_1_ADDRESS,
         other_participant=PRIVATE_KEY_2_ADDRESS,
         privkey_signer=PRIVATE_KEY_1,
-        updating_capacity=90,
-        other_capacity=110,
+        updating_capacity=TA(90),
+        other_capacity=TA(110),
     )
 
     pathfinding_service_web3_mock.on_capacity_update(message1)
@@ -332,8 +332,8 @@ def test_pfs_min_calculation_with_capacity_updates(
         updating_participant=PRIVATE_KEY_2_ADDRESS,
         other_participant=PRIVATE_KEY_1_ADDRESS,
         privkey_signer=PRIVATE_KEY_2,
-        updating_capacity=110,
-        other_capacity=90,
+        updating_capacity=TA(110),
+        other_capacity=TA(90),
     )
 
     pathfinding_service_web3_mock.on_capacity_update(message2)
@@ -352,8 +352,8 @@ def test_pfs_min_calculation_with_capacity_updates(
         updating_participant=PRIVATE_KEY_1_ADDRESS,
         other_participant=PRIVATE_KEY_2_ADDRESS,
         privkey_signer=PRIVATE_KEY_1,
-        updating_capacity=10000,
-        other_capacity=110,
+        updating_capacity=TA(10000),
+        other_capacity=TA(110),
     )
     pathfinding_service_web3_mock.on_capacity_update(message3)
 
@@ -367,8 +367,8 @@ def test_pfs_min_calculation_with_capacity_updates(
         updating_participant=PRIVATE_KEY_1_ADDRESS,
         other_participant=PRIVATE_KEY_2_ADDRESS,
         privkey_signer=PRIVATE_KEY_1,
-        updating_capacity=90,
-        other_capacity=0,
+        updating_capacity=TA(90),
+        other_capacity=TA(0),
     )
     pathfinding_service_web3_mock.on_capacity_update(message4)
 
@@ -382,8 +382,8 @@ def test_pfs_min_calculation_with_capacity_updates(
         updating_participant=PRIVATE_KEY_1_ADDRESS,
         other_participant=PRIVATE_KEY_2_ADDRESS,
         privkey_signer=PRIVATE_KEY_1,
-        updating_capacity=90,
-        other_capacity=10000,
+        updating_capacity=TA(90),
+        other_capacity=TA(10000),
     )
     pathfinding_service_web3_mock.on_capacity_update(message4)
 
@@ -397,7 +397,7 @@ def test_pfs_min_calculation_with_capacity_updates(
     token_network.handle_channel_new_deposit_event(
         channel_identifier=DEFAULT_CHANNEL_ID,
         receiver=PRIVATE_KEY_1_ADDRESS,
-        total_deposit=TokenAmount(200),
+        total_deposit=TA(200),
     )
     assert view_to_partner.capacity == 190
     assert view_from_partner.capacity == 110
