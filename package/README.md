@@ -4,8 +4,7 @@
 
 This repository contains the documentation and configuration necessary to run the Raiden Services. The services consist of the Raiden Monitoring service (MS) and the Raiden Pathfinding service (PFS).
 
-## TODO
-<!-- **Current release:** [2018.12.0](https://github.com/raiden-network/raiden-transport/tree/2018.12.0) -->
+**Current release:** 2019.7.1
 
 ## Table of Contents
 
@@ -139,7 +138,7 @@ configuration changes and then run the following commands:
 
 ```shell
 git fetch origin --tags
-git reset --hard <new-release-tag>
+git reset --hard master
 docker-compose build
 docker-compose down
 docker-compose up -d
@@ -159,6 +158,9 @@ or contact us via email at contact@raiden.nework.
 
 ## Changelog
 
+- 2019-07-31 - `2019.7.1`
+  - Add options to set *operator* and and the *info message*, please update your `.env` accordingly
+  - Update the registration script to the new `ServiceRegistry`.
 - 2019-07-10 - `2019.7.0` - **Initial version**
 
 
