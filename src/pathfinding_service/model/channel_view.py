@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from typing import ClassVar, Type
 
 import marshmallow
+from eth_utils import to_checksum_address
 from marshmallow_dataclass import add_schema
 
 from pathfinding_service.config import DEFAULT_REVEAL_TIMEOUT
@@ -88,5 +89,7 @@ class ChannelView:
 
     def __repr__(self) -> str:
         return "<ChannelView from={} to={} capacity={}>".format(
-            self.participant1, self.participant2, self.capacity
+            to_checksum_address(self.participant1),
+            to_checksum_address(self.participant2),
+            self.capacity,
         )
