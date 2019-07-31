@@ -71,17 +71,19 @@ def main(
     service_registry_contract = contracts[CONTRACT_SERVICE_REGISTRY]
 
     # check if already registered
-    current_deposit = service_registry_contract.functions.deposits(service_address).call()
+    currently_registered = service_registry_contract.functions.hasValidRegistration(
+        service_address
+    ).call()
     current_url = service_registry_contract.functions.urls(service_address).call()
     log.info(
         "Current ServiceRegistry information for service address",
         service_address=service_address,
-        current_deposit=current_deposit,
+        currently_registered=currently_registered,
         current_url=current_url,
     )
 
     # Register if not yet done
-    if current_deposit <= 0:
+    if not currently_registered:
         deposit_to_registry(
             web3=web3,
             service_registry_contract=service_registry_contract,
