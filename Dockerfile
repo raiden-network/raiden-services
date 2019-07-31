@@ -1,6 +1,6 @@
 FROM python:3.7
 
-LABEL Name=pathfinding-service-dev Version=0.0.1 Author="Paul Lange"
+LABEL Name=raiden-services Version=0.2.0 Author="Raiden Services Team"
 EXPOSE 6000
 
 WORKDIR /services
