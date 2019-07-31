@@ -88,7 +88,8 @@ class ChannelView:
         setattr(self, attr_name, fee_schedule)
 
     def __repr__(self) -> str:
-        return "<ChannelView from={} to={} capacity={}>".format(
+        return "<ChannelView cid={} from={} to={} capacity={}>".format(
+            self.channel_id,
             to_checksum_address(self.participant1),
             to_checksum_address(self.participant2),
             self.capacity,
