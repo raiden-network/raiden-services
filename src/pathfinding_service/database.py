@@ -144,14 +144,7 @@ class PFSDatabase(BaseDatabase):
 
     def upsert_channel_view(self, channel_view: ChannelView) -> None:
         cv_dict = ChannelView.Schema().dump(channel_view)
-        for key in (
-            "channel_id",
-            "settle_timeout",
-            "capacity",
-            "reveal_timeout",
-            "deposit",
-            "update_nonce",
-        ):
+        for key in ("channel_id", "settle_timeout", "capacity", "reveal_timeout", "update_nonce"):
             cv_dict[key] = hex256(cv_dict[key])
         cv_dict["fee_schedule_sender"] = json.dumps(cv_dict["fee_schedule_sender"])
         cv_dict["fee_schedule_receiver"] = json.dumps(cv_dict["fee_schedule_receiver"])

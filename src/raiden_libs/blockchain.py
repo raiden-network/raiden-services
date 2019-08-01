@@ -21,7 +21,6 @@ from raiden_contracts.contract_manager import ContractManager
 from raiden_libs.events import (
     Event,
     ReceiveChannelClosedEvent,
-    ReceiveChannelNewDepositEvent,
     ReceiveChannelOpenedEvent,
     ReceiveChannelSettledEvent,
     ReceiveMonitoringNewBalanceProofEvent,
@@ -101,12 +100,6 @@ def parse_token_network_event(event: dict) -> Optional[Event]:
             participant1=decode_hex(event["args"]["participant1"]),
             participant2=decode_hex(event["args"]["participant2"]),
             settle_timeout=event["args"]["settle_timeout"],
-            **common_infos,
-        )
-    if event_name == ChannelEvent.DEPOSIT:
-        return ReceiveChannelNewDepositEvent(
-            participant_address=decode_hex(event["args"]["participant"]),
-            total_deposit=event["args"]["total_deposit"],
             **common_infos,
         )
     if event_name == ChannelEvent.CLOSED:

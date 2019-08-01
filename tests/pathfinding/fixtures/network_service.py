@@ -34,13 +34,11 @@ def channel_descriptions_case_1() -> List:
     # The tuples in channel_descriptions define the following:
     # (
     #     p1_index,
-    #     p1_deposit,
     #     p1_capacity,
     #     p1_fee,
     #     p1_reveal_timeout,
     #     p1_reachability,
     #     p2_index,
-    #     p2_deposit,
     #     p2_capacity,
     #     p2_fee,
     #     p2_reveal_timeout,
@@ -55,13 +53,13 @@ def channel_descriptions_case_1() -> List:
     reach = AddressReachability.REACHABLE
 
     channel_descriptions = [
-        (0, 100, 90, 10, 2, reach, 1, 50, 60, 15, 2, reach, 14),  # capacities  90 --  60
-        (1, 40, 130, 8, 2, reach, 2, 130, 40, 12, 2, reach, 14),  # capacities 130 --  40
-        (2, 90, 80, 7, 2, reach, 3, 10, 20, 10, 2, reach, 3),  # capacities  80 --  20
-        (3, 50, 50, 11, 2, reach, 4, 50, 50, 11, 2, reach, 14),  # capacities  50 --  50
-        (0, 40, 0, 15, 2, reach, 2, 80, 120, 25, 2, reach, 14),  # capacities   0 -- 120
-        (1, 30, 35, 100, 2, reach, 4, 40, 35, 18, 2, reach, 14),  # capacities  35 --  35
-        (5, 500, 550, 30, 2, reach, 6, 750, 700, 40, 2, reach, 14),  # capacities 550 -- 700
+        (0, 90, 10, 2, reach, 1, 60, 15, 2, reach, 14),  # capacities  90 --  60
+        (1, 130, 8, 2, reach, 2, 40, 12, 2, reach, 14),  # capacities 130 --  40
+        (2, 80, 7, 2, reach, 3, 20, 10, 2, reach, 3),  # capacities  80 --  20
+        (3, 50, 11, 2, reach, 4, 50, 11, 2, reach, 14),  # capacities  50 --  50
+        (0, 0, 15, 2, reach, 2, 120, 25, 2, reach, 14),  # capacities   0 -- 120
+        (1, 35, 100, 2, reach, 4, 35, 18, 2, reach, 14),  # capacities  35 --  35
+        (5, 550, 30, 2, reach, 6, 700, 40, 2, reach, 14),  # capacities 550 -- 700
     ]
     return channel_descriptions
 
@@ -77,13 +75,11 @@ def channel_descriptions_case_2() -> List:
     # The tuples in channel_descriptions define the following:
     # (
     #     p1_index,
-    #     p1_deposit,
     #     p1_capacity,
     #     p1_fee,
     #     p1_reveal_timeout,
     #     p1_reachability,
     #     p2_index,
-    #     p2_deposit,
     #     p2_capacity,
     #     p2_fee,
     #     p2_reveal_timeout,
@@ -98,13 +94,13 @@ def channel_descriptions_case_2() -> List:
     reach = AddressReachability.REACHABLE
 
     channel_descriptions = [
-        (0, 100, 90, 3000, 2, reach, 1, 50, 60, 3000, 2, reach, 15),  # capacities  90 --  60
-        (1, 40, 130, 2000, 2, reach, 4, 130, 40, 2000, 2, reach, 15),  # capacities 130 --  40
-        (0, 90, 80, 1000, 2, reach, 2, 10, 10, 1000, 2, reach, 15),  # capacities  80 --  10
-        (2, 50, 50, 1500, 2, reach, 3, 50, 50, 1500, 2, reach, 15),  # capacities  50 --  50
-        (3, 100, 60, 1000, 2, reach, 4, 80, 120, 1000, 2, reach, 15),  # capacities  60 -- 120
-        (2, 30, 35, 1000, 2, reach, 5, 40, 35, 1000, 2, reach, 15),  # capacities  35 --  35
-        (5, 500, 550, 1000, 2, reach, 4, 750, 700, 1000, 2, reach, 15),  # capacities 550 -- 700
+        (0, 90, 3000, 2, reach, 1, 60, 3000, 2, reach, 15),  # capacities  90 --  60
+        (1, 130, 2000, 2, reach, 4, 40, 2000, 2, reach, 15),  # capacities 130 --  40
+        (0, 80, 1000, 2, reach, 2, 10, 1000, 2, reach, 15),  # capacities  80 --  10
+        (2, 50, 1500, 2, reach, 3, 50, 1500, 2, reach, 15),  # capacities  50 --  50
+        (3, 60, 1000, 2, reach, 4, 120, 1000, 2, reach, 15),  # capacities  60 -- 120
+        (2, 35, 1000, 2, reach, 5, 35, 1000, 2, reach, 15),  # capacities  35 --  35
+        (5, 550, 1000, 2, reach, 4, 700, 1000, 2, reach, 15),  # capacities 550 -- 700
     ]
     return channel_descriptions
 
@@ -117,13 +113,11 @@ def channel_descriptions_case_3() -> List:
     # The tuples in channel_descriptions define the following:
     # (
     #     p1_index,
-    #     p1_deposit,
     #     p1_capacity,
     #     p1_fee,
     #     p1_reveal_timeout,
     #     p1_reachability,
     #     p2_index,
-    #     p2_deposit,
     #     p2_capacity,
     #     p2_fee,
     #     p2_reveal_timeout,
@@ -140,7 +134,7 @@ def channel_descriptions_case_3() -> List:
     reach = AddressReachability.REACHABLE
 
     channel_descriptions = [
-        (a, 100, 100, 0, 2, reach, b, 100, 100, 0, 2, reach, 15)
+        (a, 100, 0, 2, reach, b, 100, 0, 2, reach, 15)
         for a, b in [
             (0, 1),
             (1, 2),
@@ -174,13 +168,11 @@ def populate_token_network() -> Callable:
             channel_id,
             (
                 p1_index,
-                p1_deposit,
                 p1_capacity,
                 _p1_fee,
                 p1_reveal_timeout,
                 p1_reachability,
                 p2_index,
-                p2_deposit,
                 p2_capacity,
                 _p2_fee,
                 p2_reveal_timeout,
@@ -195,17 +187,6 @@ def populate_token_network() -> Callable:
                 participant1=participant1,
                 participant2=participant2,
                 settle_timeout=settle_timeout,
-            )
-
-            token_network.handle_channel_new_deposit_event(
-                channel_identifier=ChannelID(channel_id),
-                receiver=participant1,
-                total_deposit=p1_deposit,
-            )
-            token_network.handle_channel_new_deposit_event(
-                channel_identifier=ChannelID(channel_id),
-                receiver=participant2,
-                total_deposit=p2_deposit,
             )
 
             token_network.handle_channel_balance_update_message(

@@ -179,7 +179,6 @@ class TokenNetwork:
                 participant1=participant1,
                 participant2=participant2,
                 settle_timeout=settle_timeout,
-                deposit=TokenAmount(0),
             ),
             ChannelView(
                 token_network_address=self.address,
@@ -187,7 +186,6 @@ class TokenNetwork:
                 participant1=participant2,
                 participant2=participant1,
                 settle_timeout=settle_timeout,
-                deposit=TokenAmount(0),
             ),
         ]
 
@@ -207,32 +205,6 @@ class TokenNetwork:
                 channel_view.participant2,
             )
         self.G.add_edge(channel_view.participant1, channel_view.participant2, view=channel_view)
-
-    def handle_channel_new_deposit_event(
-        self, channel_identifier: ChannelID, receiver: Address, total_deposit: TokenAmount
-    ) -> Optional[ChannelView]:
-        """ Register a new balance for the beneficiary.
-
-        Corresponds to the ChannelNewDeposit event. Called by the contract event listener. """
-
-        try:
-            participant1, participant2 = self.channel_id_to_addresses[channel_identifier]
-            if receiver == participant1:
-                channel_view = self.G[participant1][participant2]["view"]
-            elif receiver == participant2:
-                channel_view = self.G[participant2][participant1]["view"]
-            else:
-                log.error("Receiver in ChannelNewDeposit does not fit the internal channel")
-                return None
-        except KeyError:
-            log.error(
-                "Received ChannelNewDeposit event for unknown channel",
-                channel_identifier=channel_identifier,
-            )
-            return None
-
-        channel_view.update_deposit(total_deposit=total_deposit)
-        return channel_view
 
     def handle_channel_closed_event(self, channel_identifier: ChannelID) -> None:
         """ Close a channel. This doesn't mean that the channel is settled yet, but it cannot

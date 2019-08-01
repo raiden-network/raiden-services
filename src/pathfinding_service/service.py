@@ -28,7 +28,6 @@ from raiden_libs.contract_info import CONTRACT_MANAGER
 from raiden_libs.events import (
     Event,
     ReceiveChannelClosedEvent,
-    ReceiveChannelNewDepositEvent,
     ReceiveChannelOpenedEvent,
     ReceiveTokenNetworkCreatedEvent,
     UpdatedHeadBlockEvent,
@@ -183,8 +182,6 @@ class PathfindingService(gevent.Greenlet):
             self.handle_token_network_created(event)
         elif isinstance(event, ReceiveChannelOpenedEvent):
             self.handle_channel_opened(event)
-        elif isinstance(event, ReceiveChannelNewDepositEvent):
-            self.handle_channel_new_deposit(event)
         elif isinstance(event, ReceiveChannelClosedEvent):
             self.handle_channel_closed(event)
         elif isinstance(event, UpdatedHeadBlockEvent):
@@ -225,21 +222,6 @@ class PathfindingService(gevent.Greenlet):
                 token_network_address=token_network.address, channel_id=event.channel_identifier
             ):
                 self.handle_message(message)
-
-    def handle_channel_new_deposit(self, event: ReceiveChannelNewDepositEvent) -> None:
-        token_network = self.get_token_network(event.token_network_address)
-        if token_network is None:
-            return
-
-        log.info("Received ChannelNewDeposit event", event_=event)
-
-        channel_view = token_network.handle_channel_new_deposit_event(
-            channel_identifier=event.channel_identifier,
-            receiver=event.participant_address,
-            total_deposit=event.total_deposit,
-        )
-        if channel_view:
-            self.database.upsert_channel_view(channel_view)
 
     def handle_channel_closed(self, event: ReceiveChannelClosedEvent) -> None:
         token_network = self.get_token_network(event.token_network_address)

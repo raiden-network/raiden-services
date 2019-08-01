@@ -70,14 +70,12 @@ def test_pfs_with_mocked_client(  # pylint: disable=too-many-arguments
     channel_identifiers = []
     for (
         p1_index,
-        p1_deposit,
-        _p1_capacity,
+        p1_capacity,
         _p1_fee,
         _p1_reveal_timeout,
         _p1_reachability,
         p2_index,
-        p2_deposit,
-        _p2_capacity,
+        p2_capacity,
         _p2_fee,
         _p2_reveal_timeout,
         _p2_reachability,
@@ -88,8 +86,8 @@ def test_pfs_with_mocked_client(  # pylint: disable=too-many-arguments
         channel_identifiers.append(channel_id)
 
         for address, partner_address, amount in [
-            (clients[p1_index], clients[p2_index], p1_deposit),
-            (clients[p2_index], clients[p1_index], p2_deposit),
+            (clients[p1_index], clients[p2_index], p1_capacity),
+            (clients[p2_index], clients[p1_index], p2_capacity),
         ]:
             custom_token.functions.mint(amount).transact({"from": address})
             custom_token.functions.approve(token_network.address, amount).transact(
@@ -108,30 +106,11 @@ def test_pfs_with_mocked_client(  # pylint: disable=too-many-arguments
     )
 
     # check that deposits, settle_timeout and transfers got registered
-    for (
-        index,
-        (
-            _p1_index,
-            p1_deposit,
-            _p1_capacity,
-            _p1_fee,
-            _p1_reveal_timeout,
-            _p1_reachability,
-            _p2_index,
-            p2_deposit,
-            _p2_capacity,
-            _p2_fee,
-            _p2_reveal_timeout,
-            _p2_reachability,
-            _settle_timeout,
-        ),
-    ) in enumerate(channel_descriptions_case_1):
+    for index, _ in enumerate(channel_descriptions_case_1):
         channel_identifier = channel_identifiers[index]
         p1_address, p2_address = token_network_model.channel_id_to_addresses[channel_identifier]
         view1: ChannelView = graph[p1_address][p2_address]["view"]
         view2: ChannelView = graph[p2_address][p1_address]["view"]
-        assert view1.deposit == p1_deposit
-        assert view2.deposit == p2_deposit
         assert view1.settle_timeout == TEST_SETTLE_TIMEOUT_MIN
         assert view2.settle_timeout == TEST_SETTLE_TIMEOUT_MIN
         assert view1.reveal_timeout == DEFAULT_REVEAL_TIMEOUT
@@ -142,13 +121,11 @@ def test_pfs_with_mocked_client(  # pylint: disable=too-many-arguments
         index,
         (
             p1_index,
-            _p1_deposit,
             _p1_capacity,
             _p1_fee,
             _p1_reveal_timeout,
             _p1_reachability,
             p2_index,
-            _p2_deposit,
             _p2_capacity,
             _p2_fee,
             _p2_reveal_timeout,
