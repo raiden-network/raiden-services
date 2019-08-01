@@ -106,7 +106,7 @@ def test_pfs_with_mocked_client(  # pylint: disable=too-many-arguments
     )
 
     # check that deposits, settle_timeout and transfers got registered
-    for index, _ in enumerate(channel_descriptions_case_1):
+    for index in range(len(channel_descriptions_case_1)):
         channel_identifier = channel_identifiers[index]
         p1_address, p2_address = token_network_model.channel_id_to_addresses[channel_identifier]
         view1: ChannelView = graph[p1_address][p2_address]["view"]
