@@ -28,7 +28,6 @@ from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT
 from raiden_contracts.tests.utils import get_random_privkey, to_canonical_address
 from raiden_libs.events import (
     ReceiveChannelClosedEvent,
-    ReceiveChannelNewDepositEvent,
     ReceiveChannelOpenedEvent,
     ReceiveTokenNetworkCreatedEvent,
     UpdatedHeadBlockEvent,
@@ -204,29 +203,6 @@ def test_token_channel_opened(pathfinding_service_mock, token_network_model):
     pathfinding_service_mock.matrix_listener.follow_address_presence.assert_has_calls(
         [call(PARTICIPANT1, refresh=True), call(PARTICIPANT2, refresh=True)]
     )
-
-
-def test_token_channel_new_deposit(pathfinding_service_mock, token_network_model):
-    setup_channel(pathfinding_service_mock, token_network_model)
-
-    deposit_event = ReceiveChannelNewDepositEvent(
-        token_network_address=token_network_model.address,
-        channel_identifier=ChannelID(1),
-        participant_address=PARTICIPANT1,
-        total_deposit=TokenAmount(123),
-        block_number=BlockNumber(2),
-    )
-
-    pathfinding_service_mock.handle_event(deposit_event)
-    assert len(pathfinding_service_mock.token_networks) == 1
-    assert len(token_network_model.channel_id_to_addresses) == 1
-
-    # Test invalid token network address
-    deposit_event.token_network_address = TokenNetworkAddress(bytes([0] * 20))
-
-    pathfinding_service_mock.handle_event(deposit_event)
-    assert len(pathfinding_service_mock.token_networks) == 1
-    assert len(token_network_model.channel_id_to_addresses) == 1
 
 
 def test_token_channel_closed(pathfinding_service_mock, token_network_model):

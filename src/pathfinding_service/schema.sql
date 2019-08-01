@@ -19,7 +19,6 @@ CREATE TABLE channel_view (
     settle_timeout  HEX_INT NOT NULL,
     capacity        HEX_INT NOT NULL,
     reveal_timeout  HEX_INT NOT NULL,
-    deposit         HEX_INT NOT NULL,
     update_nonce    HEX_INT,
     fee_schedule_sender    JSON,
     fee_schedule_receiver  JSON,

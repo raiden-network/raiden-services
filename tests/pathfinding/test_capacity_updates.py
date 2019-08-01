@@ -3,8 +3,6 @@ The tests in this module mock Capacity Updates and call on_capacity_update().
 
 The Capacity Updates show different correct and incorrect values to test all edge cases
 """
-from unittest.mock import call
-
 import pytest
 from eth_utils import decode_hex
 
@@ -57,23 +55,7 @@ def setup_channel(service: PathfindingService) -> TokenNetwork:
     return token_network
 
 
-def setup_channel_with_deposits(service: PathfindingService) -> TokenNetwork:
-    token_network = setup_channel(service)
-
-    token_network.handle_channel_new_deposit_event(
-        channel_identifier=DEFAULT_CHANNEL_ID,
-        receiver=PRIVATE_KEY_1_ADDRESS,
-        total_deposit=TA(100),
-    )
-    token_network.handle_channel_new_deposit_event(
-        channel_identifier=DEFAULT_CHANNEL_ID,
-        receiver=PRIVATE_KEY_2_ADDRESS,
-        total_deposit=TA(100),
-    )
-    return token_network
-
-
-def get_updatepfs_message(  # pylint: disable=too-many-arguments
+def get_capacity_update_message(  # pylint: disable=too-many-arguments
     updating_participant: Address,
     other_participant: Address,
     chain_identifier=ChainID(1),
@@ -112,7 +94,7 @@ def test_pfs_rejects_capacity_update_with_wrong_chain_id(
 ):
     setup_channel(pathfinding_service_web3_mock)
 
-    message = get_updatepfs_message(
+    message = get_capacity_update_message(
         chain_identifier=ChainID(121212),
         updating_participant=PRIVATE_KEY_1_ADDRESS,
         other_participant=PRIVATE_KEY_2_ADDRESS,
@@ -129,7 +111,7 @@ def test_pfs_rejects_capacity_update_with_wrong_token_network_address(
 ):
     setup_channel(pathfinding_service_web3_mock)
 
-    message = get_updatepfs_message(
+    message = get_capacity_update_message(
         token_network_address=TokenNetworkAddress(decode_hex("0x" + "1" * 40)),
         updating_participant=PRIVATE_KEY_1_ADDRESS,
         other_participant=PRIVATE_KEY_2_ADDRESS,
@@ -146,7 +128,7 @@ def test_pfs_rejects_capacity_update_with_wrong_channel_identifier(
 ):
     setup_channel(pathfinding_service_web3_mock)
 
-    message = get_updatepfs_message(
+    message = get_capacity_update_message(
         channel_identifier=ChannelID(35),
         updating_participant=PRIVATE_KEY_1_ADDRESS,
         other_participant=PRIVATE_KEY_2_ADDRESS,
@@ -160,9 +142,9 @@ def test_pfs_rejects_capacity_update_with_wrong_channel_identifier(
 def test_pfs_rejects_capacity_update_with_impossible_updating_capacity(
     pathfinding_service_web3_mock: PathfindingService,
 ):
-    setup_channel_with_deposits(pathfinding_service_web3_mock)
+    setup_channel(pathfinding_service_web3_mock)
 
-    message = get_updatepfs_message(
+    message = get_capacity_update_message(
         updating_participant=PRIVATE_KEY_1_ADDRESS,
         other_participant=PRIVATE_KEY_2_ADDRESS,
         updating_capacity=TA(UINT256_MAX),
@@ -178,9 +160,9 @@ def test_pfs_rejects_capacity_update_with_impossible_updating_capacity(
 def test_pfs_rejects_capacity_update_with_impossible_other_capacity(
     pathfinding_service_web3_mock: PathfindingService,
 ):
-    setup_channel_with_deposits(pathfinding_service_web3_mock)
+    setup_channel(pathfinding_service_web3_mock)
 
-    message = get_updatepfs_message(
+    message = get_capacity_update_message(
         updating_participant=PRIVATE_KEY_1_ADDRESS,
         other_participant=PRIVATE_KEY_2_ADDRESS,
         other_capacity=TA(UINT256_MAX),
@@ -196,9 +178,9 @@ def test_pfs_rejects_capacity_update_with_impossible_other_capacity(
 def test_pfs_rejects_capacity_update_with_wrong_updating_participant(
     pathfinding_service_web3_mock: PathfindingService,
 ):
-    setup_channel_with_deposits(pathfinding_service_web3_mock)
+    setup_channel(pathfinding_service_web3_mock)
 
-    message = get_updatepfs_message(
+    message = get_capacity_update_message(
         updating_participant=PRIVATE_KEY_3_ADDRESS,
         other_participant=PRIVATE_KEY_2_ADDRESS,
         privkey_signer=PRIVATE_KEY_3,
@@ -212,9 +194,9 @@ def test_pfs_rejects_capacity_update_with_wrong_updating_participant(
 def test_pfs_rejects_capacity_update_with_wrong_other_participant(
     pathfinding_service_web3_mock: PathfindingService
 ):
-    setup_channel_with_deposits(pathfinding_service_web3_mock)
+    setup_channel(pathfinding_service_web3_mock)
 
-    message = get_updatepfs_message(
+    message = get_capacity_update_message(
         updating_participant=PRIVATE_KEY_1_ADDRESS,
         other_participant=PRIVATE_KEY_3_ADDRESS,
         privkey_signer=PRIVATE_KEY_1,
@@ -228,9 +210,9 @@ def test_pfs_rejects_capacity_update_with_wrong_other_participant(
 def test_pfs_rejects_capacity_update_with_incorrect_signature(
     pathfinding_service_web3_mock: PathfindingService
 ):
-    setup_channel_with_deposits(pathfinding_service_web3_mock)
+    setup_channel(pathfinding_service_web3_mock)
 
-    message = get_updatepfs_message(
+    message = get_capacity_update_message(
         updating_participant=PRIVATE_KEY_1_ADDRESS,
         other_participant=PRIVATE_KEY_2_ADDRESS,
         privkey_signer=PRIVATE_KEY_3,
@@ -241,79 +223,15 @@ def test_pfs_rejects_capacity_update_with_incorrect_signature(
     assert "Capacity Update not signed correctly" in str(exinfo.value)
 
 
-def test_pfs_edge_case_capacity_updates_before_deposit(
-    pathfinding_service_web3_mock: PathfindingService
-):
-    token_network = setup_channel(pathfinding_service_web3_mock)
-
-    view_to_partner, view_from_partner = token_network.get_channel_views_for_partner(
-        updating_participant=PRIVATE_KEY_1_ADDRESS, other_participant=PRIVATE_KEY_2_ADDRESS
-    )
-
-    token_network.handle_channel_new_deposit_event(
-        channel_identifier=DEFAULT_CHANNEL_ID,
-        receiver=PRIVATE_KEY_1_ADDRESS,
-        total_deposit=TA(100),
-    )
-
-    # So te PFS did not receive a deposit for P2.
-    assert view_to_partner.capacity == 100
-    assert view_from_partner.capacity == 0
-
-    message1 = get_updatepfs_message(
-        updating_participant=PRIVATE_KEY_1_ADDRESS,
-        other_participant=PRIVATE_KEY_2_ADDRESS,
-        privkey_signer=PRIVATE_KEY_1,
-        updating_capacity=90,
-        other_capacity=10,
-    )
-    message2 = get_updatepfs_message(
-        updating_participant=PRIVATE_KEY_2_ADDRESS,
-        other_participant=PRIVATE_KEY_1_ADDRESS,
-        privkey_signer=PRIVATE_KEY_2,
-        updating_capacity=10,
-        other_capacity=90,
-    )
-
-    # we expect no capacity at all since we don't know anything from P2
-    pathfinding_service_web3_mock.on_capacity_update(message1)
-    assert view_to_partner.capacity == 0
-    assert view_from_partner.capacity == 0
-
-    # we expect now the capacity as stated in both consistent messages
-    pathfinding_service_web3_mock.on_capacity_update(message2)
-    assert view_to_partner.capacity == 90
-    assert view_from_partner.capacity == 10
-
-    # now the pfs gets the deposit message from P2 and we expect the capacity of P2 to be 110
-    token_network.handle_channel_new_deposit_event(
-        channel_identifier=DEFAULT_CHANNEL_ID,
-        receiver=PRIVATE_KEY_2_ADDRESS,
-        total_deposit=TA(100),
-    )
-    assert view_to_partner.capacity == 90
-    assert view_from_partner.capacity == 110
-
-    # Check that presence of these addresses is followed
-    pathfinding_service_web3_mock.matrix_listener.follow_address_presence.assert_has_calls(  # type: ignore # noqa
-        [call(PRIVATE_KEY_1_ADDRESS, refresh=True), call(PRIVATE_KEY_2_ADDRESS, refresh=True)]
-    )
-
-
 def test_pfs_min_calculation_with_capacity_updates(
     pathfinding_service_web3_mock: PathfindingService
 ):
-    token_network = setup_channel_with_deposits(pathfinding_service_web3_mock)
-
+    token_network = setup_channel(pathfinding_service_web3_mock)
     view_to_partner, view_from_partner = token_network.get_channel_views_for_partner(
         updating_participant=PRIVATE_KEY_1_ADDRESS, other_participant=PRIVATE_KEY_2_ADDRESS
     )
 
-    # Assert initial capacity with no Capacity Updates
-    assert view_to_partner.capacity == 100
-    assert view_from_partner.capacity == 100
-
-    message1 = get_updatepfs_message(
+    message1 = get_capacity_update_message(
         updating_participant=PRIVATE_KEY_1_ADDRESS,
         other_participant=PRIVATE_KEY_2_ADDRESS,
         privkey_signer=PRIVATE_KEY_1,
@@ -328,7 +246,7 @@ def test_pfs_min_calculation_with_capacity_updates(
     assert view_from_partner.capacity == 0
 
     # We need two Capacity Updates, one from each side to set the capacities due to min calculation
-    message2 = get_updatepfs_message(
+    message2 = get_capacity_update_message(
         updating_participant=PRIVATE_KEY_2_ADDRESS,
         other_participant=PRIVATE_KEY_1_ADDRESS,
         privkey_signer=PRIVATE_KEY_2,
@@ -348,7 +266,7 @@ def test_pfs_min_calculation_with_capacity_updates(
     assert view_from_partner.capacity == 110
 
     # Now P1 tries to cheat and lies about his own capacity (10000) to mediate more
-    message3 = get_updatepfs_message(
+    message3 = get_capacity_update_message(
         updating_participant=PRIVATE_KEY_1_ADDRESS,
         other_participant=PRIVATE_KEY_2_ADDRESS,
         privkey_signer=PRIVATE_KEY_1,
@@ -363,7 +281,7 @@ def test_pfs_min_calculation_with_capacity_updates(
     assert view_from_partner.capacity == 110
 
     # Now P1 tries to cheat and lies about his partner's capacity (0) to block him
-    message4 = get_updatepfs_message(
+    message4 = get_capacity_update_message(
         updating_participant=PRIVATE_KEY_1_ADDRESS,
         other_participant=PRIVATE_KEY_2_ADDRESS,
         privkey_signer=PRIVATE_KEY_1,
@@ -378,7 +296,7 @@ def test_pfs_min_calculation_with_capacity_updates(
     assert view_from_partner.capacity == 0
 
     # Now P1 tries to cheat and lies about his partner's capacity (10000) for no obvious reason
-    message4 = get_updatepfs_message(
+    message4 = get_capacity_update_message(
         updating_participant=PRIVATE_KEY_1_ADDRESS,
         other_participant=PRIVATE_KEY_2_ADDRESS,
         privkey_signer=PRIVATE_KEY_1,
@@ -389,15 +307,4 @@ def test_pfs_min_calculation_with_capacity_updates(
 
     # The capacities should be calculated out of the minimum of the two capacity updates
     assert view_to_partner.capacity == 90
-    assert view_from_partner.capacity == 110
-
-    # Test if new deposits work as expected, so P1 deposits 100 new tokens
-    # (total deposit 200, but capacity must be 190)
-
-    token_network.handle_channel_new_deposit_event(
-        channel_identifier=DEFAULT_CHANNEL_ID,
-        receiver=PRIVATE_KEY_1_ADDRESS,
-        total_deposit=TA(200),
-    )
-    assert view_to_partner.capacity == 190
     assert view_from_partner.capacity == 110

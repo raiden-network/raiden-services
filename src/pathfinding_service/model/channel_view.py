@@ -47,22 +47,12 @@ class ChannelView:
     token_network_address: TokenNetworkAddress = field(
         metadata={"marshmallow_field": ChecksumAddress(required=True)}
     )
-    capacity: TokenAmount = None  # type: ignore
+    capacity: TokenAmount = TokenAmount(0)
     reveal_timeout: int = DEFAULT_REVEAL_TIMEOUT
-    deposit: TokenAmount = TokenAmount(0)
     update_nonce: Nonce = Nonce(0)
     fee_schedule_sender: FeeSchedule = field(default_factory=FeeSchedule)
     fee_schedule_receiver: FeeSchedule = field(default_factory=FeeSchedule)
     Schema: ClassVar[Type[marshmallow.Schema]]
-
-    def __post_init__(self) -> None:
-        if self.capacity is None:
-            self.capacity = self.deposit
-
-    def update_deposit(self, total_deposit: TokenAmount) -> None:
-        if total_deposit > self.deposit:
-            self.capacity = TokenAmount(self.capacity + total_deposit - self.deposit)
-            self.deposit = TokenAmount(total_deposit)
 
     def update_capacity(
         self, capacity: TokenAmount, nonce: Nonce = Nonce(0), reveal_timeout: int = None

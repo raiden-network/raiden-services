@@ -33,15 +33,6 @@ class ReceiveChannelOpenedEvent(Event):
 
 
 @dataclass
-class ReceiveChannelNewDepositEvent(Event):
-    token_network_address: TokenNetworkAddress
-    channel_identifier: ChannelID
-    participant_address: Address
-    total_deposit: TokenAmount
-    block_number: BlockNumber
-
-
-@dataclass
 class ReceiveChannelClosedEvent(Event):
     token_network_address: TokenNetworkAddress
     channel_identifier: ChannelID
