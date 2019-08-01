@@ -49,7 +49,9 @@ def _open_keystore(keystore_file: str, password: str) -> str:
             sys.exit(1)
 
 
-def validate_address(_ctx: click.Context, _param: click.Parameter, value: str) -> Optional[str]:
+def validate_address(
+    _ctx: click.Context, _param: click.Parameter, value: Optional[str]
+) -> Optional[str]:
     if value is None:
         # None as default value allowed
         return None

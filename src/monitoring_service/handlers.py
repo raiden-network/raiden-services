@@ -490,8 +490,7 @@ def action_claim_reward_triggered_event_handler(event: Event, context: Context) 
 
     # check that the latest update was ours and that we didn't send a transaction yet
     can_claim = (
-        channel is not None
-        and channel.claim_tx_hash is None
+        channel.claim_tx_hash is None
         and channel.update_status is not None
         and channel.update_status.update_sender_address == context.ms_state.address
     )
