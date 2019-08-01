@@ -99,7 +99,6 @@ def test_routing_simple(
     view01: ChannelView = token_network_model.G[addresses[0]][addresses[1]]["view"]
     view10: ChannelView = token_network_model.G[addresses[1]][addresses[0]]["view"]
 
-    # assert view01.deposit == 100
     assert view01.fee_schedule_sender.flat == 0
     assert view01.capacity == 90
     assert view10.capacity == 60
