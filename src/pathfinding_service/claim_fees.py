@@ -17,6 +17,8 @@ from raiden_libs.utils import private_key_to_address
 
 log = structlog.get_logger(__name__)
 
+GAS_COST_SAFETY_MARGIN = 1.1
+
 
 @blockchain_options(contracts=[CONTRACT_ONE_TO_N])
 @click.command()
@@ -65,7 +67,7 @@ def main(
 def calc_claim_cost_rdn(web3: Web3, rdn_per_eth: float) -> TokenAmount:
     web3.eth.setGasPriceStrategy(rpc_gas_price_strategy)
     claim_cost_gas = gas_measurements()["OneToN.claim"]
-    claim_cost_eth = claim_cost_gas * web3.eth.generateGasPrice()
+    claim_cost_eth = claim_cost_gas * web3.eth.generateGasPrice() * GAS_COST_SAFETY_MARGIN
     claim_cost_rdn = TokenAmount(int(claim_cost_eth / rdn_per_eth))
     return claim_cost_rdn
 
