@@ -241,6 +241,7 @@ class PathfindingService(gevent.Greenlet):
                 changed_cvs = self.on_fee_update(message)
             else:
                 log.debug("Ignoring message", message=message)
+                return
 
             for cv in changed_cvs:
                 self.database.upsert_channel_view(cv)
