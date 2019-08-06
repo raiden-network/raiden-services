@@ -31,8 +31,8 @@ def test_process_payment_errors(
 
     def test_payment(iou, service_fee=TokenAmount(1)):
         process_payment(
-            iou,
-            pfs,
+            iou=iou,
+            pathfinding_service=pfs,
             service_fee=service_fee,
             one_to_n_address=decode_hex(one_to_n_contract.address),
         )
