@@ -240,7 +240,7 @@ class PathfindingService(gevent.Greenlet):
             elif isinstance(message, PFSFeeUpdate):
                 changed_cvs = self.on_fee_update(message)
             else:
-                log.debug("Ignoring message", message=message)
+                log.debug("Ignoring message", unknown_message=message)
                 return
 
             for cv in changed_cvs:

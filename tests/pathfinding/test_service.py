@@ -10,6 +10,7 @@ from pathfinding_service import exceptions
 from pathfinding_service.model.token_network import PFSFeeUpdate
 from pathfinding_service.service import PathfindingService
 from raiden.constants import EMPTY_SIGNATURE
+from raiden.messages.synchronization import Processed
 from raiden.network.transport.matrix import AddressReachability
 from raiden.tests.utils.factories import make_privkey_address
 from raiden.transfer.identifiers import CanonicalIdentifier
@@ -21,6 +22,7 @@ from raiden.utils.typing import (
     ChainID,
     ChannelID,
     FeeAmount,
+    MessageID,
     TokenAmount,
     TokenNetworkAddress,
 )
@@ -306,6 +308,14 @@ def test_invalid_fee_update(pathfinding_service_mock, token_network_model):
     # bad/missing signature
     with pytest.raises(exceptions.InvalidPFSFeeUpdate):
         pathfinding_service_mock.on_fee_update(fee_update)
+
+
+def test_unhandled_message(pathfinding_service_mock, log):
+    unknown_message = Processed(MessageID(123), signature=EMPTY_SIGNATURE)
+    unknown_message.sign(LocalSigner(PARTICIPANT1_PRIVKEY))
+
+    pathfinding_service_mock.handle_message(unknown_message)
+    assert log.has("Ignoring message", unknown_message=unknown_message)
 
 
 def test_logging_processor():
