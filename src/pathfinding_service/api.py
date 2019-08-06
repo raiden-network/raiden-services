@@ -35,6 +35,7 @@ from pathfinding_service.service import PathfindingService
 from raiden.exceptions import InvalidSignature
 from raiden.utils.signer import recover
 from raiden.utils.typing import Address, PaymentAmount, Signature, TokenAmount, TokenNetworkAddress
+from raiden_libs.blockchain import get_pessimistic_udc_balance
 from raiden_libs.marshmallow import ChecksumAddress, HexedBytes
 
 log = structlog.get_logger(__name__)
@@ -230,7 +231,13 @@ def process_payment(  # pylint: disable=too-many-branches
 
     # Check client's deposit in UserDeposit contract
     udc = pathfinding_service.user_deposit_contract
-    udc_balance = udc.functions.effectiveBalance(iou.sender).call()
+    latest_block = pathfinding_service.web3.eth.blockNumber
+    udc_balance = get_pessimistic_udc_balance(
+        udc=udc,
+        address=iou.sender,
+        from_block=latest_block - pathfinding_service.required_confirmations,
+        to_block=latest_block,
+    )
     required_deposit = round(expected_amount * UDC_SECURITY_MARGIN_FACTOR)
     if udc_balance < required_deposit:
         raise exceptions.DepositTooLow(required_deposit=required_deposit)

@@ -47,8 +47,13 @@ def test_process_payment_errors(
     with pytest.raises(exceptions.DepositTooLow):
         test_payment(iou)
 
-    # must succeed if we add enough deposit to UDC
+    # adding deposit does not help immediately
     deposit_to_udc(sender, 10)
+    with pytest.raises(exceptions.DepositTooLow):
+        test_payment(iou)
+
+    # must succeed after deposit is confirmed
+    web3.testing.mine(pathfinding_service_web3_mock.required_confirmations)
     test_payment(iou)
 
     # wrong recipient
@@ -79,12 +84,14 @@ def test_process_payment(
     get_private_key,
     make_iou,
     one_to_n_contract,
+    web3,
 ):
     pfs = pathfinding_service_web3_mock
     service_fee = TokenAmount(1)
     sender = create_account()
     privkey = get_private_key(sender)
     deposit_to_udc(sender, round(1 * UDC_SECURITY_MARGIN_FACTOR))
+    web3.testing.mine(pathfinding_service_web3_mock.required_confirmations)
     one_to_n_address = Address(decode_hex(one_to_n_contract.address))
 
     # Make payment
@@ -104,6 +111,7 @@ def test_process_payment(
 
     # With the higher amount and enough deposit, it works again!
     deposit_to_udc(sender, round(2 * UDC_SECURITY_MARGIN_FACTOR))
+    web3.testing.mine(pathfinding_service_web3_mock.required_confirmations)
     iou = make_iou(privkey, pfs.address, amount=2)
     process_payment(iou, pfs, service_fee, one_to_n_address)
 

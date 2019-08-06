@@ -323,6 +323,7 @@ def pathfinding_service_web3_mock(
             },
             private_key="3a1076bf45ab87712ad64ccb3b10217737f7faacbf2872e88fdd9a537d8fe266",
             db_filename=":memory:",
+            required_confirmations=1,
         )
 
         yield pathfinding_service
