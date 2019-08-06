@@ -78,20 +78,17 @@ def dockerhub():
             if callback_url:
                 requests.post(url=callback_url, json={"state": "success"})
 
-            if callback_url:
-                requests.post(url=callback_url, json={"state": "success"})
-            return "OK"
-
         except ImageUpdateError:
             print_to_stderr("Error updating local images via docker registry!")
+            if callback_url:
+                requests.post(url=callback_url, json={"state": "error"})
         except Exception as e:
             print_to_stderr(
                 f"Fatal Error while updating images: Unhandled exception encountered: {e}"
             )
-            raise
-        finally:
             if callback_url:
                 requests.post(url=callback_url, json={"state": "error"})
+
     return "OK"
 
 
