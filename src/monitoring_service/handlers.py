@@ -406,67 +406,78 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
     if channel.update_status:
         last_onchain_nonce = channel.update_status.nonce
 
-    user_address = monitor_request.non_closing_signer
-    user_deposit = context.user_deposit_contract.functions.effectiveBalance(user_address).call()
-
     if monitor_request.nonce <= last_onchain_nonce:
         log.info(
             "Another MS submitted the last known channel state", monitor_request=monitor_request
         )
+        return
 
+    user_address = monitor_request.non_closing_signer
+    user_deposit = context.user_deposit_contract.functions.effectiveBalance(user_address).call()
     if monitor_request.reward_amount < context.min_reward:
         log.info(
             "Monitor request not executed due to insufficient reward amount",
             monitor_request=monitor_request,
             min_reward=context.min_reward,
         )
+        return
 
-    call_monitor = (
+    if user_deposit < monitor_request.reward_amount * DEFAULT_PAYMENT_RISK_FAKTOR:
+        log.debug(
+            "User deposit is insufficient -> reschedule",
+            monitor_request=monitor_request,
+            min_reward=context.min_reward,
+        )
+        context.db.upsert_scheduled_event(
+            ScheduledEvent(
+                trigger_block_number=BlockNumber(context.last_known_block + 1), event=event
+            )
+        )
+        return
+
+    assert (
         channel.closing_tx_hash is None
-        and monitor_request.nonce > last_onchain_nonce
-        and user_deposit >= monitor_request.reward_amount * DEFAULT_PAYMENT_RISK_FAKTOR
-        and monitor_request.reward_amount >= context.min_reward
-    )
-    if call_monitor:
-        try:
-            # Attackers might be able to construct MRs that make this fail.
-            # Since we execute a gas estimation before doing the `transact`,
-            # the gas estimation will fail before any gas is used.
-            # If we stop doing a gas estimation, a `call` has to be done before
-            # the `transact` to prevent attackers from wasting the MS's gas.
-            tx_hash = TransactionHash(
-                bytes(
-                    context.monitoring_service_contract.functions.monitor(
-                        monitor_request.signer,
-                        monitor_request.non_closing_signer,
-                        monitor_request.balance_hash,
-                        monitor_request.nonce,
-                        monitor_request.additional_hash,
-                        monitor_request.closing_signature,
-                        monitor_request.non_closing_signature,
-                        monitor_request.reward_amount,
-                        monitor_request.token_network_address,
-                        monitor_request.reward_proof_signature,
-                    ).transact({"from": context.ms_state.address})
-                )
+    ), "This MS already monitored this channel. Should be impossible."
+
+    try:
+        # Attackers might be able to construct MRs that make this fail.
+        # Since we execute a gas estimation before doing the `transact`,
+        # the gas estimation will fail before any gas is used.
+        # If we stop doing a gas estimation, a `call` has to be done before
+        # the `transact` to prevent attackers from wasting the MS's gas.
+        tx_hash = TransactionHash(
+            bytes(
+                context.monitoring_service_contract.functions.monitor(
+                    monitor_request.signer,
+                    monitor_request.non_closing_signer,
+                    monitor_request.balance_hash,
+                    monitor_request.nonce,
+                    monitor_request.additional_hash,
+                    monitor_request.closing_signature,
+                    monitor_request.non_closing_signature,
+                    monitor_request.reward_amount,
+                    monitor_request.token_network_address,
+                    monitor_request.reward_proof_signature,
+                ).transact({"from": context.ms_state.address})
             )
+        )
 
-            log.info(
-                "Sent transaction calling `monitor` for channel",
-                token_network_address=channel.token_network_address,
-                channel_identifier=channel.identifier,
-                transaction_hash=encode_hex(tx_hash),
-            )
-            assert tx_hash is not None
+        log.info(
+            "Sent transaction calling `monitor` for channel",
+            token_network_address=channel.token_network_address,
+            channel_identifier=channel.identifier,
+            transaction_hash=encode_hex(tx_hash),
+        )
+        assert tx_hash is not None
 
-            with context.db.conn:
-                # Add tx hash to list of waiting transactions
-                context.db.add_waiting_transaction(tx_hash)
+        with context.db.conn:
+            # Add tx hash to list of waiting transactions
+            context.db.add_waiting_transaction(tx_hash)
 
-                channel.closing_tx_hash = tx_hash
-                context.db.upsert_channel(channel)
-        except Exception as exc:  # pylint: disable=broad-except
-            log.error("Sending tx failed", exc_info=True, err=exc)
+            channel.closing_tx_hash = tx_hash
+            context.db.upsert_channel(channel)
+    except Exception as exc:  # pylint: disable=broad-except
+        log.error("Sending tx failed", exc_info=True, err=exc)
 
 
 def action_claim_reward_triggered_event_handler(event: Event, context: Context) -> None:
