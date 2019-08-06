@@ -21,6 +21,7 @@ from monitoring_service.states import (
 )
 from raiden.utils.typing import BlockNumber, TokenNetworkAddress, TransactionHash
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK, ChannelState
+from raiden_libs.blockchain import get_pessimistic_udc_balance
 from raiden_libs.contract_info import CONTRACT_MANAGER
 from raiden_libs.events import (
     Event,
@@ -45,6 +46,7 @@ class Context:
     monitoring_service_contract: Contract
     user_deposit_contract: Contract
     min_reward: int
+    required_confirmations: int
 
 
 def channel_opened_event_handler(event: Event, context: Context) -> None:
@@ -412,8 +414,16 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
         )
         return
 
+    latest_block = context.w3.eth.blockNumber
+    last_confirmed_block = latest_block - context.required_confirmations
     user_address = monitor_request.non_closing_signer
-    user_deposit = context.user_deposit_contract.functions.effectiveBalance(user_address).call()
+    user_deposit = get_pessimistic_udc_balance(
+        udc=context.user_deposit_contract,
+        address=user_address,
+        from_block=last_confirmed_block,
+        to_block=latest_block,
+    )
+    context.user_deposit_contract.functions.effectiveBalance(user_address).call()
     if monitor_request.reward_amount < context.min_reward:
         log.info(
             "Monitor request not executed due to insufficient reward amount",
@@ -424,14 +434,12 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
 
     if user_deposit < monitor_request.reward_amount * DEFAULT_PAYMENT_RISK_FAKTOR:
         log.debug(
-            "User deposit is insufficient -> reschedule",
+            "User deposit is insufficient -> try monitoring again later",
             monitor_request=monitor_request,
             min_reward=context.min_reward,
         )
         context.db.upsert_scheduled_event(
-            ScheduledEvent(
-                trigger_block_number=BlockNumber(context.last_known_block + 1), event=event
-            )
+            ScheduledEvent(trigger_block_number=BlockNumber(last_confirmed_block + 1), event=event)
         )
         return
 

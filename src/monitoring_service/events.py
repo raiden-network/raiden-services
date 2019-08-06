@@ -4,7 +4,7 @@ from raiden.utils.typing import Address, BlockNumber, ChannelID, TokenNetworkAdd
 from raiden_libs.events import Event
 
 
-@dataclass
+@dataclass(frozen=True)
 class ScheduledEvent(Event):
     """ An event to be triggered a t a certain block number. """
 
@@ -12,14 +12,14 @@ class ScheduledEvent(Event):
     event: Event
 
 
-@dataclass
+@dataclass(frozen=True)
 class ActionMonitoringTriggeredEvent(Event):
     token_network_address: TokenNetworkAddress
     channel_identifier: ChannelID
     non_closing_participant: Address
 
 
-@dataclass
+@dataclass(frozen=True)
 class ActionClaimRewardTriggeredEvent(Event):
     token_network_address: TokenNetworkAddress
     channel_identifier: ChannelID
