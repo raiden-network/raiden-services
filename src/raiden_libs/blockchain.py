@@ -5,10 +5,10 @@ import structlog
 from eth_utils import decode_hex, encode_hex, to_checksum_address
 from eth_utils.abi import event_abi_to_log_topic
 from web3 import Web3
-from web3.contract import get_event_data
+from web3.contract import Contract, get_event_data
 from web3.utils.abi import filter_by_type
 
-from raiden.utils.typing import Address, BlockNumber
+from raiden.utils.typing import Address, BlockNumber, TokenAmount
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
     CONTRACT_TOKEN_NETWORK,
@@ -238,3 +238,16 @@ def get_monitoring_blockchain_events(
             )
 
     return events
+
+
+def get_pessimistic_udc_balance(
+    udc: Contract, address: Address, from_block: BlockNumber, to_block: BlockNumber
+) -> TokenAmount:
+    """ Get the effective UDC balance using the block with the lowest result.
+
+    Blocks between the latest confirmed block and the latest block are considered.
+    """
+    return min(
+        udc.functions.effectiveBalance(address).call(block_identifier=block)
+        for block in range(from_block, to_block + 1)
+    )

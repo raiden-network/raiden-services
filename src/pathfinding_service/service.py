@@ -69,7 +69,7 @@ class PathfindingService(gevent.Greenlet):
         self.user_deposit_contract = contracts[CONTRACT_USER_DEPOSIT]
         self.chain_id = ChainID(int(web3.net.version))
         self.address = private_key_to_address(private_key)
-        self._required_confirmations = required_confirmations
+        self.required_confirmations = required_confirmations
         self._poll_interval = poll_interval
         self._is_running = gevent.event.Event()
 
@@ -128,7 +128,7 @@ class PathfindingService(gevent.Greenlet):
             start_block=self.database.get_latest_known_block(),
         )
         while not self._is_running.is_set():
-            last_confirmed_block = self.web3.eth.blockNumber - self._required_confirmations
+            last_confirmed_block = self.web3.eth.blockNumber - self.required_confirmations
 
             max_query_interval_end_block = (
                 self.database.get_latest_known_block() + MAX_FILTER_INTERVAL
