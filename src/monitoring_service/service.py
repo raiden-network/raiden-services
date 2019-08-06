@@ -99,6 +99,7 @@ class MonitoringService:  # pylint: disable=too-few-public-methods
             monitoring_service_contract=monitoring_contract,
             user_deposit_contract=user_deposit_contract,
             min_reward=min_reward,
+            required_confirmations=required_confirmations,
         )
 
     def start(

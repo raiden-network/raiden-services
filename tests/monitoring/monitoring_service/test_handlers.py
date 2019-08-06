@@ -1,8 +1,9 @@
 # pylint: disable=redefined-outer-name
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 from eth_utils import to_checksum_address
+from tests.libs.mocks.web3 import Web3Mock
 from tests.monitoring.monitoring_service.factories import (
     DEFAULT_CHANNEL_IDENTIFIER,
     DEFAULT_PARTICIPANT1,
@@ -12,6 +13,7 @@ from tests.monitoring.monitoring_service.factories import (
     create_signed_monitor_request,
 )
 
+from monitoring_service.constants import DEFAULT_PAYMENT_RISK_FAKTOR
 from monitoring_service.database import Database
 from monitoring_service.events import (
     ActionClaimRewardTriggeredEvent,
@@ -96,11 +98,12 @@ def context(ms_database: Database):
     return Context(
         ms_state=ms_database.load_state(),
         db=ms_database,
-        w3=Mock(),
+        w3=Web3Mock(),
         last_known_block=0,
         monitoring_service_contract=Mock(),
         user_deposit_contract=Mock(),
         min_reward=1,
+        required_confirmations=1,
     )
 
 
@@ -480,6 +483,41 @@ def test_action_monitoring_triggered_event_handler_does_not_trigger_monitor_call
     assert context.db.channel_count() == 1
     assert channel
     assert channel.closing_tx_hash is None
+
+
+def test_action_monitoring_rescheduling_when_user_lacks_funds(context: Context):
+    reward_amount = TokenAmount(10)
+    context = setup_state_with_closed_channel(context)
+    context.db.upsert_monitor_request(
+        create_signed_monitor_request(nonce=Nonce(6), reward_amount=reward_amount)
+    )
+
+    event = ActionMonitoringTriggeredEvent(
+        token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
+        channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
+        non_closing_participant=DEFAULT_PARTICIPANT2,
+    )
+    scheduled_events_before = context.db.get_scheduled_events(max_trigger_block=BlockNumber(10000))
+
+    # Try to call monitor when the user has insufficient funds
+    with patch("monitoring_service.handlers.get_pessimistic_udc_balance", Mock(return_value=0)):
+        action_monitoring_triggered_event_handler(event, context)
+    assert not context.monitoring_service_contract.functions.monitor.called
+
+    # Now the event must have been rescheduled
+    # TODO: check that the event is rescheduled to trigger at the right block
+    scheduled_events_after = context.db.get_scheduled_events(max_trigger_block=BlockNumber(10000))
+    new_events = set(scheduled_events_after) - set(scheduled_events_before)
+    assert len(new_events) == 1
+    assert new_events.pop().event == event
+
+    # With sufficient funds it must succeed
+    with patch(
+        "monitoring_service.handlers.get_pessimistic_udc_balance",
+        Mock(return_value=reward_amount * DEFAULT_PAYMENT_RISK_FAKTOR),
+    ):
+        action_monitoring_triggered_event_handler(event, context)
+    assert context.monitoring_service_contract.functions.monitor.called
 
 
 def test_action_monitoring_triggered_event_handler_with_sufficient_balance_does_trigger_monitor_call(  # noqa
