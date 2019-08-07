@@ -167,14 +167,30 @@ class MonitoringService:  # pylint: disable=too-few-public-methods
             handle_event(event, self.context)
             self.context.db.remove_scheduled_event(scheduled_event)
 
-        # check pending transactions
-        # this is done here so we don't have to block waiting for receipts in the state machine
+        # Check pending transactions
+        # This is done here so we don't have to block waiting for receipts in the state machine
+        self._check_pending_transactions()
+
+    def _check_pending_transactions(self) -> None:
+        """ Checks if pending transaction have been mined and confirmed.
+
+        In theory it's not necessary to check all pending transactions, but only the one with the
+        smallest nonce, and continue from there when this one is mined and confirmed. However,
+        as it is not expected that this list becomes to big this isn't optimized currently.
+        """
+
         for tx_hash in self.context.db.get_waiting_transactions():
             receipt = self.web3.eth.getTransactionReceipt(tx_hash)
-
             if receipt is not None:
-                self.context.db.remove_waiting_transaction(tx_hash)
+                tx_block = receipt.get("blockNumber")
+                if tx_block is None:
+                    return
 
+                confirmation_block = tx_block + self.context.required_confirmations
+                if self.context.last_known_block < confirmation_block:
+                    return
+
+                self.context.db.remove_waiting_transaction(tx_hash)
                 if receipt["status"] == 1:
                     log.info(
                         "Transaction was mined successfully",
