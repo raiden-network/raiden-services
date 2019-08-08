@@ -178,31 +178,30 @@ class MonitoringService:  # pylint: disable=too-few-public-methods
         smallest nonce, and continue from there when this one is mined and confirmed. However,
         as it is not expected that this list becomes to big this isn't optimized currently.
         """
-
         for tx_hash in self.context.db.get_waiting_transactions():
             receipt = self.web3.eth.getTransactionReceipt(tx_hash)
-            if receipt is not None:
-                tx_block = receipt.get("blockNumber")
-                if tx_block is None:
-                    return
+            if receipt is None:
+                continue
 
-                confirmation_block = tx_block + self.context.required_confirmations
-                if self.context.last_known_block < confirmation_block:
-                    return
+            tx_block = receipt.get("blockNumber")
+            if tx_block is None:
+                continue
 
-                self.context.db.remove_waiting_transaction(tx_hash)
-                if receipt["status"] == 1:
-                    log.info(
-                        "Transaction was mined successfully",
-                        transaction_hash=tx_hash,
-                        receipt=receipt,
-                    )
-                else:
-                    log.error(
-                        "Transaction was not mined successfully",
-                        transaction_hash=tx_hash,
-                        receipt=receipt,
-                    )
+            confirmation_block = tx_block + self.context.required_confirmations
+            if self.web3.eth.blockNumber < confirmation_block:
+                continue
+
+            self.context.db.remove_waiting_transaction(tx_hash)
+            if receipt["status"] == 1:
+                log.info(
+                    "Transaction was mined successfully", transaction_hash=tx_hash, receipt=receipt
+                )
+            else:
+                log.error(
+                    "Transaction was not mined successfully",
+                    transaction_hash=tx_hash,
+                    receipt=receipt,
+                )
 
     def _purge_old_monitor_requests(self) -> None:
         """ Delete all old MRs for which still no channel exists.
