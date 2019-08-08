@@ -367,7 +367,7 @@ class InfoResource(PathfinderResource):
             "payment_address": to_checksum_address(self.pathfinding_service.address),
         }
         if info["message"] == DEFAULT_INFO_MESSAGE:
-            info["message"] = info["message"] + to_checksum_address(  # type: ignore
+            info["message"] = str(info["message"]) + to_checksum_address(
                 self.pathfinding_service.registry_address
             )
         return info, 200
