@@ -26,7 +26,6 @@ from pathfinding_service.config import (
     MAX_AGE_OF_IOU_REQUESTS,
     MAX_PATHS_PER_REQUEST,
     MIN_IOU_EXPIRY,
-    UDC_SECURITY_MARGIN_FACTOR,
 )
 from pathfinding_service.model import IOU
 from pathfinding_service.model.feedback import FeedbackToken
@@ -36,6 +35,7 @@ from raiden.exceptions import InvalidSignature
 from raiden.utils.signer import recover
 from raiden.utils.typing import Address, PaymentAmount, Signature, TokenAmount, TokenNetworkAddress
 from raiden_libs.blockchain import get_pessimistic_udc_balance
+from raiden_libs.constants import UDC_SECURITY_MARGIN_FACTOR
 from raiden_libs.marshmallow import ChecksumAddress, HexedBytes
 
 log = structlog.get_logger(__name__)

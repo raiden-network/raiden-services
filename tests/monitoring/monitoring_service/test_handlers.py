@@ -13,7 +13,6 @@ from tests.monitoring.monitoring_service.factories import (
     create_signed_monitor_request,
 )
 
-from monitoring_service.constants import DEFAULT_PAYMENT_RISK_FAKTOR
 from monitoring_service.database import Database
 from monitoring_service.events import (
     ActionClaimRewardTriggeredEvent,
@@ -35,6 +34,7 @@ from monitoring_service.states import OnChainUpdateStatus
 from raiden.utils.typing import Address, BlockNumber, ChannelID, Nonce, TokenAmount
 from raiden_contracts.constants import ChannelState
 from raiden_contracts.tests.utils import get_random_privkey
+from raiden_libs.constants import UDC_SECURITY_MARGIN_FACTOR
 from raiden_libs.events import (
     Event,
     ReceiveChannelClosedEvent,
@@ -514,7 +514,7 @@ def test_action_monitoring_rescheduling_when_user_lacks_funds(context: Context):
     # With sufficient funds it must succeed
     with patch(
         "monitoring_service.handlers.get_pessimistic_udc_balance",
-        Mock(return_value=reward_amount * DEFAULT_PAYMENT_RISK_FAKTOR),
+        Mock(return_value=reward_amount * UDC_SECURITY_MARGIN_FACTOR),
     ):
         action_monitoring_triggered_event_handler(event, context)
     assert context.monitoring_service_contract.functions.monitor.called
