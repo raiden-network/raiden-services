@@ -423,7 +423,6 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
         from_block=last_confirmed_block,
         to_block=latest_block,
     )
-    context.user_deposit_contract.functions.effectiveBalance(user_address).call()
     if monitor_request.reward_amount < context.min_reward:
         log.info(
             "Monitor request not executed due to insufficient reward amount",
