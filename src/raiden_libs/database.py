@@ -4,7 +4,7 @@ import sys
 from typing import Any, Dict, Union
 
 import structlog
-from eth_utils import to_checksum_address
+from eth_utils import to_canonical_address, to_checksum_address
 
 from raiden.utils.typing import Address, BlockNumber, ChainID, TokenNetworkAddress
 from raiden_libs.states import BlockchainState
@@ -134,7 +134,8 @@ class BaseDatabase:
     def get_blockchain_state(self) -> BlockchainState:
         blockchain = self.conn.execute("SELECT * FROM blockchain").fetchone()
         token_network_addresses = [
-            row[0] for row in self.conn.execute("SELECT address FROM token_network")
+            TokenNetworkAddress(to_canonical_address(row[0]))
+            for row in self.conn.execute("SELECT address FROM token_network")
         ]
         latest_known_block = blockchain["latest_known_block"]
 
@@ -153,7 +154,7 @@ class BaseDatabase:
         # assumes that token_networks are not removed
         self.conn.executemany(
             "INSERT OR REPLACE INTO token_network VALUES (?)",
-            [[address] for address in state.token_network_addresses],
+            [[to_checksum_address(address)] for address in state.token_network_addresses],
         )
 
     def upsert_token_network(self, token_network_address: TokenNetworkAddress) -> None:

@@ -2,7 +2,7 @@ import os
 from typing import List
 from unittest.mock import Mock
 
-from eth_utils import encode_hex, to_canonical_address
+from eth_utils import encode_hex, to_canonical_address, to_checksum_address
 from tests.constants import TEST_MSC_ADDRESS
 
 from monitoring_service.events import ActionMonitoringTriggeredEvent
@@ -103,7 +103,8 @@ def test_crash(
     crashy_ms = new_ms("crashy.db")
     for ms in [stable_ms, crashy_ms]:
         ms.database.conn.execute(
-            "INSERT INTO token_network(address) VALUES (?)", [token_network_address]
+            "INSERT INTO token_network(address) VALUES (?)",
+            [to_checksum_address(token_network_address)],
         )
         ms.context.ms_state.blockchain_state.token_network_addresses = [token_network_address]
         ms.database.upsert_monitor_request(monitor_request)
