@@ -5,7 +5,7 @@ from typing import Iterator, List, Optional, Tuple
 from uuid import UUID
 
 import structlog
-from eth_utils import decode_hex, to_canonical_address, to_checksum_address
+from eth_utils import to_canonical_address, to_checksum_address
 
 from pathfinding_service.model import IOU
 from pathfinding_service.model.channel_view import ChannelView
@@ -219,7 +219,7 @@ class PFSDatabase(BaseDatabase):
         if token:
             return FeedbackToken(
                 token_network_address=TokenNetworkAddress(
-                    decode_hex(token["token_network_address"])
+                    to_canonical_address(token["token_network_address"])
                 ),
                 id=UUID(token["token_id"]),
                 creation_time=token["creation_time"],

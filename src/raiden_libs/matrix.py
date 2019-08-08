@@ -284,9 +284,7 @@ class MatrixListener(gevent.Greenlet):
             return False
 
         for message in messages:
-            if message.sender is None:
-                continue
-
+            assert message.sender, "Message has no sender"
             log.debug(
                 "Message received", message=message, sender=to_checksum_address(message.sender)
             )

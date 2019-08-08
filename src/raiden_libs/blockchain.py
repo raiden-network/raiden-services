@@ -149,7 +149,7 @@ def get_blockchain_events(
     events: List[Event] = []
     for event_dict in registry_events:
         token_network_address = TokenNetworkAddress(
-            decode_hex(event_dict["args"]["token_network_address"])
+            to_canonical_address(event_dict["args"]["token_network_address"])
         )
         events.append(
             ReceiveTokenNetworkCreatedEvent(
@@ -223,7 +223,7 @@ def get_monitoring_blockchain_events(
             events.append(
                 ReceiveMonitoringNewBalanceProofEvent(
                     token_network_address=TokenNetworkAddress(
-                        decode_hex(event["args"]["token_network_address"])
+                        to_canonical_address(event["args"]["token_network_address"])
                     ),
                     channel_identifier=event["args"]["channel_identifier"],
                     reward_amount=event["args"]["reward_amount"],
