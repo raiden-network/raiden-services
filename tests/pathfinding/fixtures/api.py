@@ -5,7 +5,7 @@ from typing import Dict, Iterator
 import pytest
 
 from pathfinding_service.api import ServiceApi
-from pathfinding_service.config import API_PATH
+from pathfinding_service.constants import API_PATH
 from raiden.network.transport.matrix import AddressReachability
 from raiden.utils.typing import Address
 

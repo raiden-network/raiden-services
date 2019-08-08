@@ -13,7 +13,7 @@ from web3 import Web3
 from web3.contract import Contract
 
 from pathfinding_service.api import ServiceApi
-from pathfinding_service.config import (
+from pathfinding_service.constants import (
     DEFAULT_API_HOST,
     DEFAULT_INFO_MESSAGE,
     DEFAULT_POLL_INTERVALL,

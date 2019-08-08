@@ -6,7 +6,7 @@ import marshmallow
 from eth_utils import to_checksum_address
 from marshmallow_dataclass import add_schema
 
-from pathfinding_service.config import DEFAULT_REVEAL_TIMEOUT
+from pathfinding_service.constants import DEFAULT_REVEAL_TIMEOUT
 from pathfinding_service.exceptions import InvalidPFSFeeUpdate
 from raiden.transfer.mediated_transfer.mediation_fee import FeeScheduleState as FeeScheduleRaiden
 from raiden.utils.typing import (

@@ -11,7 +11,7 @@ import gevent
 from eth_utils import decode_hex, encode_hex
 
 from monitoring_service.states import HashedBalanceProof
-from pathfinding_service.config import DEFAULT_REVEAL_TIMEOUT
+from pathfinding_service.constants import DEFAULT_REVEAL_TIMEOUT
 from pathfinding_service.model import ChannelView
 from pathfinding_service.service import PathfindingService
 from raiden.utils.typing import BlockNumber, ChainID, Nonce

@@ -5,7 +5,7 @@ import pytest
 from eth_utils import decode_hex, to_checksum_address
 from networkx import NetworkXNoPath
 
-from pathfinding_service.config import DIVERSITY_PEN_DEFAULT
+from pathfinding_service.constants import DIVERSITY_PEN_DEFAULT
 from pathfinding_service.model import ChannelView, TokenNetwork
 from raiden.network.transport.matrix import AddressReachability
 from raiden.utils.typing import (

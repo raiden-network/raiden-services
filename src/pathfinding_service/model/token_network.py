@@ -8,7 +8,7 @@ import structlog
 from eth_utils import to_checksum_address
 from networkx import DiGraph
 
-from pathfinding_service.config import (
+from pathfinding_service.constants import (
     DEFAULT_SETTLE_TO_REVEAL_TIMEOUT_RATIO,
     DIVERSITY_PEN_DEFAULT,
     FEE_PEN_DEFAULT,
