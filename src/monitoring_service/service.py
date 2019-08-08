@@ -95,7 +95,6 @@ class MonitoringService:  # pylint: disable=too-few-public-methods
             ms_state=ms_state,
             db=self.database,
             w3=self.web3,
-            last_known_block=0,
             monitoring_service_contract=monitoring_contract,
             user_deposit_contract=user_deposit_contract,
             min_reward=min_reward,
@@ -134,8 +133,6 @@ class MonitoringService:  # pylint: disable=too-few-public-methods
                 sys.exit(0)
 
     def _process_new_blocks(self, last_block: BlockNumber) -> None:
-        self.context.last_known_block = last_block
-
         # BCL return a new state and events related to channel lifecycle
         new_chain_state, events = get_blockchain_events(
             web3=self.web3,
