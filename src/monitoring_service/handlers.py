@@ -6,7 +6,6 @@ from eth_utils import encode_hex, to_checksum_address
 from web3 import Web3
 from web3.contract import Contract
 
-from monitoring_service.constants import DEFAULT_PAYMENT_RISK_FAKTOR
 from monitoring_service.database import Database
 from monitoring_service.events import (
     ActionClaimRewardTriggeredEvent,
@@ -22,6 +21,7 @@ from monitoring_service.states import (
 from raiden.utils.typing import BlockNumber, TokenNetworkAddress, TransactionHash
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK, ChannelState
 from raiden_libs.blockchain import get_pessimistic_udc_balance
+from raiden_libs.constants import UDC_SECURITY_MARGIN_FACTOR
 from raiden_libs.contract_info import CONTRACT_MANAGER
 from raiden_libs.events import (
     Event,
@@ -432,7 +432,7 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
         )
         return
 
-    if user_deposit < monitor_request.reward_amount * DEFAULT_PAYMENT_RISK_FAKTOR:
+    if user_deposit < monitor_request.reward_amount * UDC_SECURITY_MARGIN_FACTOR:
         log.debug(
             "User deposit is insufficient -> try monitoring again later",
             monitor_request=monitor_request,

@@ -3,9 +3,9 @@ from eth_utils import decode_hex
 
 import pathfinding_service.exceptions as exceptions
 from pathfinding_service.api import process_payment
-from pathfinding_service.config import UDC_SECURITY_MARGIN_FACTOR
 from raiden.utils.typing import Address, TokenAmount
 from raiden_contracts.tests.utils import get_random_privkey
+from raiden_libs.constants import UDC_SECURITY_MARGIN_FACTOR
 
 
 def test_save_and_load_iou(pathfinding_service_mock, make_iou):
