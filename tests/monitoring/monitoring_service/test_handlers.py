@@ -99,7 +99,6 @@ def context(ms_database: Database):
         ms_state=ms_database.load_state(),
         db=ms_database,
         w3=Web3Mock(),
-        last_known_block=0,
         monitoring_service_contract=Mock(),
         user_deposit_contract=Mock(),
         min_reward=1,
@@ -152,7 +151,7 @@ def test_channel_opened_event_handler_adds_channel(context: Context):
 
 def test_channel_closed_event_handler_closes_existing_channel(context: Context):
     context = setup_state_with_open_channel(context)
-    context.last_known_block = 60
+    context.ms_state.blockchain_state.latest_known_block = BlockNumber(60)
 
     event = ReceiveChannelClosedEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
@@ -171,7 +170,7 @@ def test_channel_closed_event_handler_closes_existing_channel(context: Context):
 
 def test_channel_closed_event_handler_idempotency(context: Context):
     context = setup_state_with_open_channel(context)
-    context.last_known_block = 60
+    context.ms_state.blockchain_state.latest_known_block = BlockNumber(60)
 
     event = ReceiveChannelClosedEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
@@ -193,7 +192,7 @@ def test_channel_closed_event_handler_idempotency(context: Context):
 
 def test_channel_closed_event_handler_ignores_existing_channel_after_timeout(context: Context):
     context = setup_state_with_open_channel(context)
-    context.last_known_block = 200
+    context.ms_state.blockchain_state.latest_known_block = BlockNumber(200)
 
     event = ReceiveChannelClosedEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,

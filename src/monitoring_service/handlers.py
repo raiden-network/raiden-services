@@ -42,11 +42,14 @@ class Context:
     ms_state: MonitoringServiceState
     db: Database
     w3: Web3
-    last_known_block: int
     monitoring_service_contract: Contract
     user_deposit_contract: Contract
     min_reward: int
     required_confirmations: int
+
+    @property
+    def latest_known_block(self) -> BlockNumber:
+        return self.ms_state.blockchain_state.latest_known_block
 
 
 def channel_opened_event_handler(event: Event, context: Context) -> None:
@@ -110,7 +113,7 @@ def channel_closed_event_handler(event: Event, context: Context) -> None:
     # Check if the settle timeout is already over.
     # This is important when starting up the MS.
     settle_period_end_block = event.block_number + channel.settle_timeout
-    settle_period_over = settle_period_end_block < context.last_known_block
+    settle_period_over = settle_period_end_block < context.latest_known_block
     if not settle_period_over:
         # Trigger the monitoring action event handler, this will check if a
         # valid MR is available.
@@ -154,7 +157,7 @@ def channel_closed_event_handler(event: Event, context: Context) -> None:
             token_network_address=event.token_network_address,
             identifier=channel.identifier,
             settle_period_end_block=settle_period_end_block,
-            known_block=context.last_known_block,
+            known_block=context.latest_known_block,
         )
 
     channel.state = ChannelState.CLOSED
