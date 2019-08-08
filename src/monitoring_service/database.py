@@ -106,7 +106,7 @@ class SharedDatabase(BaseDatabase):
             channel.state,
             hex256(channel.closing_block) if channel.closing_block else None,
             channel.closing_participant,
-            encode_hex(channel.closing_tx_hash) if channel.closing_tx_hash else None,
+            encode_hex(channel.monitor_tx_hash) if channel.monitor_tx_hash else None,
             encode_hex(channel.claim_tx_hash) if channel.claim_tx_hash else None,
         ]
         if channel.update_status:
@@ -141,8 +141,8 @@ class SharedDatabase(BaseDatabase):
         kwargs["token_network_address"] = decode_hex(kwargs["token_network_address"])
         kwargs["participant1"] = decode_hex(kwargs["participant1"])
         kwargs["participant2"] = decode_hex(kwargs["participant2"])
-        if kwargs["closing_tx_hash"] is not None:
-            kwargs["closing_tx_hash"] = decode_hex(kwargs["closing_tx_hash"])
+        if kwargs["monitor_tx_hash"] is not None:
+            kwargs["monitor_tx_hash"] = decode_hex(kwargs["monitor_tx_hash"])
         if kwargs["claim_tx_hash"] is not None:
             kwargs["claim_tx_hash"] = decode_hex(kwargs["claim_tx_hash"])
 

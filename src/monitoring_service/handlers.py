@@ -446,7 +446,7 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
         return
 
     assert (
-        channel.closing_tx_hash is None
+        channel.monitor_tx_hash is None
     ), "This MS already monitored this channel. Should be impossible."
 
     try:
@@ -484,7 +484,7 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
             # Add tx hash to list of waiting transactions
             context.db.add_waiting_transaction(tx_hash)
 
-            channel.closing_tx_hash = tx_hash
+            channel.monitor_tx_hash = tx_hash
             context.db.upsert_channel(channel)
     except Exception as exc:  # pylint: disable=broad-except
         log.error("Sending tx failed", exc_info=True, err=exc)
