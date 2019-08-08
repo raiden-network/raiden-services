@@ -27,6 +27,7 @@ ALL_SERVICE_NAMES = [
     "msrc-kovan",
     "msrc-goerli",
     "msrc-goerli-backup",
+    "builder",
 ]
 
 REPOS = {
