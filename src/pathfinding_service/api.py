@@ -17,7 +17,7 @@ from networkx.exception import NetworkXNoPath, NodeNotFound
 from web3 import Web3
 
 import pathfinding_service.exceptions as exceptions
-from pathfinding_service.config import (
+from pathfinding_service.constants import (
     API_PATH,
     DEFAULT_API_HOST,
     DEFAULT_API_PORT,
