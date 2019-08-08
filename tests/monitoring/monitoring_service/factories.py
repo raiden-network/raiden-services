@@ -69,7 +69,7 @@ def create_channel(update_status: OnChainUpdateStatus = None) -> Channel:
         state=random.choice(list(ChannelState)),
         closing_block=BlockNumber(random.randint(0, UINT256_MAX)),
         closing_participant=DEFAULT_PARTICIPANT1,
-        closing_tx_hash=make_transaction_hash(),
+        monitor_tx_hash=make_transaction_hash(),
         claim_tx_hash=make_transaction_hash(),
         update_status=update_status,
     )

@@ -475,13 +475,13 @@ def test_action_monitoring_triggered_event_handler_does_not_trigger_monitor_call
     channel = context.db.get_channel(event4.token_network_address, event4.channel_identifier)
     assert channel
     assert channel.update_status is not None
-    assert channel.closing_tx_hash is None
+    assert channel.monitor_tx_hash is None
 
     action_monitoring_triggered_event_handler(event4, context)
 
     assert context.db.channel_count() == 1
     assert channel
-    assert channel.closing_tx_hash is None
+    assert channel.monitor_tx_hash is None
 
 
 def test_action_monitoring_rescheduling_when_user_lacks_funds(context: Context):
@@ -544,7 +544,7 @@ def test_action_monitoring_triggered_event_handler_with_sufficient_balance_does_
         trigger_event.token_network_address, trigger_event.channel_identifier
     )
     assert channel
-    assert channel.closing_tx_hash is None
+    assert channel.monitor_tx_hash is None
 
     context.user_deposit_contract.functions.effectiveBalance(
         DEFAULT_PARTICIPANT2
@@ -577,7 +577,7 @@ def test_action_monitoring_triggered_event_handler_with_insufficient_reward_amou
         trigger_event.token_network_address, trigger_event.channel_identifier
     )
     assert channel
-    assert channel.closing_tx_hash is None
+    assert channel.monitor_tx_hash is None
 
     context.user_deposit_contract.functions.effectiveBalance(
         DEFAULT_PARTICIPANT2
@@ -612,7 +612,7 @@ def test_action_monitoring_triggered_event_handler_without_sufficient_balance_do
         trigger_event.token_network_address, trigger_event.channel_identifier
     )
     assert channel
-    assert channel.closing_tx_hash is None
+    assert channel.monitor_tx_hash is None
 
     context.user_deposit_contract.functions.effectiveBalance(
         DEFAULT_PARTICIPANT2

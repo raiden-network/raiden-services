@@ -125,8 +125,8 @@ def test_first_allowed_monitoring(
     assert [e.event for e in query()] == []
 
     # If our `monitor` call fails, we won't try again. Force a retry in this
-    # test by clearing closing_tx_hash.
-    channel.closing_tx_hash = None
+    # test by clearing monitor_tx_hash.
+    channel.monitor_tx_hash = None
     monitoring_service.database.upsert_channel(channel)
 
     # Now we can try again. The first try mined a new block, so now we're one

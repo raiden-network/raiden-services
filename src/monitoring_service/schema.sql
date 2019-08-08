@@ -23,7 +23,7 @@ CREATE TABLE channel (
     state                   INT NOT NULL CHECK (state >= 0 AND state <= 4),
     closing_block           HEX_INT,
     closing_participant     CHAR(42),
-    closing_tx_hash         CHAR(66),
+    monitor_tx_hash         CHAR(66),
     claim_tx_hash           CHAR(66),
     update_status_sender    CHAR(42),
     update_status_nonce     HEX_INT,

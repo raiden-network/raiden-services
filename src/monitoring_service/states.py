@@ -41,7 +41,7 @@ class Channel:
     closing_block: Optional[BlockNumber] = None
     closing_participant: Optional[Address] = None
 
-    closing_tx_hash: Optional[TransactionHash] = None
+    monitor_tx_hash: Optional[TransactionHash] = None
     claim_tx_hash: Optional[TransactionHash] = None
 
     update_status: Optional[OnChainUpdateStatus] = None
