@@ -1,11 +1,18 @@
 import gevent
-from eth_utils import decode_hex, encode_hex, to_checksum_address
+from eth_utils import decode_hex, encode_hex, to_canonical_address, to_checksum_address
 from request_collector.server import RequestCollector
 from web3 import Web3
 
 from monitoring_service.service import MonitoringService, handle_event
 from monitoring_service.states import HashedBalanceProof
-from raiden.utils.typing import Address, BlockNumber, ChainID, Nonce, TokenAmount
+from raiden.utils.typing import (
+    Address,
+    BlockNumber,
+    ChainID,
+    Nonce,
+    TokenAmount,
+    TokenNetworkAddress,
+)
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
     LOCKSROOT_OF_NO_LOCKS,
@@ -114,7 +121,8 @@ def test_first_allowed_monitoring(
 
     monitor_trigger = triggered_events[0]
     channel = monitoring_service.database.get_channel(
-        token_network_address=decode_hex(token_network.address), channel_id=channel_id
+        token_network_address=TokenNetworkAddress(to_canonical_address(token_network.address)),
+        channel_id=channel_id,
     )
     assert channel
 

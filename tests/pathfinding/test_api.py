@@ -5,7 +5,13 @@ from uuid import uuid4
 import pkg_resources
 import pytest
 import requests
-from eth_utils import decode_hex, encode_hex, to_bytes, to_checksum_address, to_normalized_address
+from eth_utils import (
+    decode_hex,
+    encode_hex,
+    to_canonical_address,
+    to_checksum_address,
+    to_normalized_address,
+)
 from tests.pathfinding.test_database import db_has_feedback_for
 
 import pathfinding_service.exceptions as exceptions
@@ -113,7 +119,7 @@ def test_get_ious_via_debug_endpoint(
         amount=TokenAmount(111),
         expiration_block=BlockNumber(7619644),
         signature=Signature(
-            to_bytes(hexstr="118a93e9fd0a3a1c3d6edbad194b5c9d95715c754881d80e23e985793b1e13de")
+            decode_hex("118a93e9fd0a3a1c3d6edbad194b5c9d95715c754881d80e23e985793b1e13de")
         ),
         claimed=False,
         chain_id=ChainID(1),
@@ -366,7 +372,7 @@ def test_get_iou(api_sut: ServiceApi, api_url: str, token_network_model: TokenNe
 def test_feedback(api_sut: ServiceApi, api_url: str, token_network_model: TokenNetwork):
     database = api_sut.pathfinding_service.database
     default_path_hex = ["0x" + "1" * 40, "0x" + "2" * 40, "0x" + "3" * 40]
-    default_path = [decode_hex(e) for e in default_path_hex]
+    default_path = [to_canonical_address(e) for e in default_path_hex]
 
     def make_request(token_id: str = None, success: bool = True, path: List[str] = None):
         url = api_url + f"/{to_checksum_address(token_network_model.address)}/feedback"

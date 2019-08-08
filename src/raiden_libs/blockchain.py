@@ -2,13 +2,13 @@ from copy import deepcopy
 from typing import Dict, List, Optional, Tuple
 
 import structlog
-from eth_utils import decode_hex, encode_hex, to_checksum_address
+from eth_utils import decode_hex, encode_hex, to_canonical_address, to_checksum_address
 from eth_utils.abi import event_abi_to_log_topic
 from web3 import Web3
 from web3.contract import Contract, get_event_data
 from web3.utils.abi import filter_by_type
 
-from raiden.utils.typing import Address, BlockNumber, TokenAmount
+from raiden.utils.typing import Address, BlockNumber, TokenAmount, TokenNetworkAddress
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
     CONTRACT_TOKEN_NETWORK,
@@ -97,18 +97,19 @@ def parse_token_network_event(event: dict) -> Optional[Event]:
 
     if event_name == ChannelEvent.OPENED:
         return ReceiveChannelOpenedEvent(
-            participant1=decode_hex(event["args"]["participant1"]),
-            participant2=decode_hex(event["args"]["participant2"]),
+            participant1=to_canonical_address(event["args"]["participant1"]),
+            participant2=to_canonical_address(event["args"]["participant2"]),
             settle_timeout=event["args"]["settle_timeout"],
             **common_infos,
         )
     if event_name == ChannelEvent.CLOSED:
         return ReceiveChannelClosedEvent(
-            closing_participant=decode_hex(event["args"]["closing_participant"]), **common_infos
+            closing_participant=to_canonical_address(event["args"]["closing_participant"]),
+            **common_infos,
         )
     if event_name == ChannelEvent.BALANCE_PROOF_UPDATED:
         return ReceiveNonClosingBalanceProofUpdatedEvent(
-            closing_participant=decode_hex(event["args"]["closing_participant"]),
+            closing_participant=to_canonical_address(event["args"]["closing_participant"]),
             nonce=event["args"]["nonce"],
             **common_infos,
         )
@@ -147,14 +148,17 @@ def get_blockchain_events(
 
     events: List[Event] = []
     for event_dict in registry_events:
+        token_network_address = TokenNetworkAddress(
+            decode_hex(event_dict["args"]["token_network_address"])
+        )
         events.append(
             ReceiveTokenNetworkCreatedEvent(
-                token_network_address=decode_hex(event_dict["args"]["token_network_address"]),
-                token_address=decode_hex(event_dict["args"]["token_address"]),
+                token_network_address=token_network_address,
+                token_address=to_canonical_address(event_dict["args"]["token_address"]),
                 block_number=event_dict["blockNumber"],
             )
         )
-        new_chain_state.token_network_addresses.append(event_dict["args"]["token_network_address"])
+        new_chain_state.token_network_addresses.append(token_network_address)
 
     # then check all token networks
     for token_network_address in new_chain_state.token_network_addresses:
@@ -218,19 +222,21 @@ def get_monitoring_blockchain_events(
         if event_name == MonitoringServiceEvent.NEW_BALANCE_PROOF_RECEIVED:
             events.append(
                 ReceiveMonitoringNewBalanceProofEvent(
-                    token_network_address=decode_hex(event["args"]["token_network_address"]),
+                    token_network_address=TokenNetworkAddress(
+                        decode_hex(event["args"]["token_network_address"])
+                    ),
                     channel_identifier=event["args"]["channel_identifier"],
                     reward_amount=event["args"]["reward_amount"],
                     nonce=event["args"]["nonce"],
-                    ms_address=decode_hex(event["args"]["ms_address"]),
-                    raiden_node_address=decode_hex(event["args"]["raiden_node_address"]),
+                    ms_address=to_canonical_address(event["args"]["ms_address"]),
+                    raiden_node_address=to_canonical_address(event["args"]["raiden_node_address"]),
                     block_number=block_number,
                 )
             )
         elif event_name == MonitoringServiceEvent.REWARD_CLAIMED:
             events.append(
                 ReceiveMonitoringRewardClaimedEvent(
-                    ms_address=decode_hex(event["args"]["ms_address"]),
+                    ms_address=to_canonical_address(event["args"]["ms_address"]),
                     amount=event["args"]["amount"],
                     reward_identifier=encode_hex(event["args"]["reward_identifier"]),
                     block_number=block_number,

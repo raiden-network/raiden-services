@@ -7,7 +7,12 @@ from uuid import UUID
 import marshmallow
 import pkg_resources
 import structlog
-from eth_utils import decode_hex, is_checksum_address, is_same_address, to_checksum_address
+from eth_utils import (
+    is_checksum_address,
+    is_same_address,
+    to_canonical_address,
+    to_checksum_address,
+)
 from flask import Flask, Response, request
 from flask_restful import Api, Resource
 from gevent.pywsgi import WSGIServer
@@ -70,7 +75,7 @@ class PathfinderResource(Resource):
             )
 
         token_network = self.pathfinding_service.get_token_network(
-            TokenNetworkAddress(decode_hex(token_network_address))
+            TokenNetworkAddress(to_canonical_address(token_network_address))
         )
         if token_network is None:
             raise exceptions.UnsupportedTokenNetwork(token_network=token_network_address)
@@ -362,10 +367,10 @@ class InfoResource(PathfinderResource):
             "payment_address": to_checksum_address(self.pathfinding_service.address),
         }
         if info["message"] == DEFAULT_INFO_MESSAGE:
-            info["message"] = info["message"] + to_checksum_address(
+            info["message"] = info["message"] + to_checksum_address(  # type: ignore
                 self.pathfinding_service.registry_address
             )
-        return (info, 200)
+        return info, 200
 
 
 class DebugPathResource(PathfinderResource):

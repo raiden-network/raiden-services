@@ -4,7 +4,7 @@ The tests in this module mock Capacity Updates and call on_capacity_update().
 The Capacity Updates show different correct and incorrect values to test all edge cases
 """
 import pytest
-from eth_utils import decode_hex
+from eth_utils import decode_hex, to_canonical_address
 
 from pathfinding_service.exceptions import InvalidCapacityUpdate
 from pathfinding_service.model import TokenNetwork
@@ -112,7 +112,7 @@ def test_pfs_rejects_capacity_update_with_wrong_token_network_address(
     setup_channel(pathfinding_service_web3_mock)
 
     message = get_capacity_update_message(
-        token_network_address=TokenNetworkAddress(decode_hex("0x" + "1" * 40)),
+        token_network_address=TokenNetworkAddress(to_canonical_address("0x" + "1" * 40)),
         updating_participant=PRIVATE_KEY_1_ADDRESS,
         other_participant=PRIVATE_KEY_2_ADDRESS,
         privkey_signer=PRIVATE_KEY_1,
