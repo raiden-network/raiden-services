@@ -4,13 +4,14 @@ import gevent
 import structlog
 from eth_utils import encode_hex
 
+from monitoring_service.constants import CHANNEL_CLOSE_MARGIN
 from monitoring_service.database import SharedDatabase
 from monitoring_service.states import MonitorRequest
 from raiden.constants import MONITORING_BROADCASTING_ROOM
 from raiden.exceptions import InvalidSignature
 from raiden.messages.abstract import Message
 from raiden.messages.monitoring_service import RequestMonitoring
-from raiden.utils.typing import Signature, TokenNetworkAddress
+from raiden.utils.typing import TokenNetworkAddress
 from raiden_libs.gevent_error_handler import register_error_handler
 from raiden_libs.matrix import MatrixListener
 
@@ -78,8 +79,7 @@ class RequestCollector(gevent.Greenlet):
                 closing_signature=request_monitoring.balance_proof.signature,
                 non_closing_signature=request_monitoring.non_closing_signature,
                 reward_amount=request_monitoring.reward_amount,
-                # FIXME: not sure why the Signature call is necessary
-                reward_proof_signature=Signature(request_monitoring.signature),
+                reward_proof_signature=request_monitoring.signature,
                 msc_address=request_monitoring.monitoring_service_contract_address,
             )
         except InvalidSignature:
@@ -92,6 +92,21 @@ class RequestCollector(gevent.Greenlet):
             return
         if monitor_request.non_closing_signer != monitor_request.reward_proof_signer:
             log.debug("The two MR signatures don't match", monitor_request=monitor_request)
+            return
+
+        # Ignore MRs for channels that are already closed for a while.
+        # We need to do this to prevent clients from wasting the MS' gas by
+        # updating the BP after the MS has already called `monitor`, see
+        # https://github.com/raiden-network/raiden-services/issues/504.
+        close_age = self.state_db.channel_close_age(
+            token_network_address=monitor_request.token_network_address,
+            channel_id=monitor_request.channel_identifier,
+        )
+        # This is x blocks after that event is already confirmed, so that should be plenty!
+        if close_age is not None and close_age >= CHANNEL_CLOSE_MARGIN:
+            log.warning(
+                "MR for long closed channel", monitor_request=monitor_request, close_age=close_age
+            )
             return
 
         # Check that received MR is newer by comparing nonces
@@ -121,5 +136,4 @@ class RequestCollector(gevent.Greenlet):
             reward_amount=monitor_request.reward_amount,
         )
 
-        with self.state_db.conn:
-            self.state_db.upsert_monitor_request(monitor_request)
+        self.state_db.upsert_monitor_request(monitor_request)

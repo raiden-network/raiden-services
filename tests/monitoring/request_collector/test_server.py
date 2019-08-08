@@ -1,9 +1,13 @@
 # pylint: disable=redefined-outer-name
 from unittest.mock import Mock, patch
 
+import pytest
 from eth_utils import to_checksum_address
 
+from monitoring_service.constants import CHANNEL_CLOSE_MARGIN
+from monitoring_service.states import Channel
 from raiden.storage.serialization.serializer import DictSerializer
+from raiden.utils.typing import Address
 
 
 def test_invalid_request(ms_database, build_request_monitoring, request_collector):
@@ -56,3 +60,34 @@ def test_request_collector_doesnt_crash_with_invalid_messages(request_collector)
     # In theory, the collector crashed before, when on_monitor_request raised an AssertionError
     with patch.object(request_collector, "on_monitor_request", side_effect=AssertionError):
         request_collector.handle_message(Mock())
+
+
+@pytest.mark.parametrize(
+    "closing_block", [None, 100 - CHANNEL_CLOSE_MARGIN, 100 - CHANNEL_CLOSE_MARGIN + 1]
+)
+def test_ignore_mr_for_closed_channel(
+    request_collector, build_request_monitoring, ms_database, closing_block
+):
+    """ MRs that come in >=10 blocks after the channel has been closed must be ignored."""
+    request_monitoring = build_request_monitoring()
+    ms_database.conn.execute("UPDATE blockchain SET latest_known_block = ?", [100])
+    ms_database.conn.execute(
+        "INSERT INTO token_network(address) VALUES (?)",
+        [to_checksum_address(request_monitoring.balance_proof.token_network_address)],
+    )
+    ms_database.upsert_channel(
+        Channel(
+            identifier=request_monitoring.balance_proof.channel_identifier,
+            token_network_address=request_monitoring.balance_proof.token_network_address,
+            participant1=Address(b"1" * 20),
+            participant2=Address(b"2" * 20),
+            settle_timeout=10,
+            closing_block=closing_block if closing_block else None,
+        )
+    )
+    request_collector.on_monitor_request(request_monitoring)
+
+    # When the channel is not closed, of the closing is less than 10 blocks
+    # before the current block (100), the MR must be saved.
+    expected_mrs = 0 if closing_block == 100 - CHANNEL_CLOSE_MARGIN else 1
+    assert ms_database.monitor_request_count() == expected_mrs
