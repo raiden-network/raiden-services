@@ -2,7 +2,7 @@ import sys
 from typing import Dict, List, Tuple
 
 import structlog
-from eth_utils import decode_hex
+from eth_utils import to_canonical_address
 
 from raiden.utils.typing import Address, BlockNumber, ChainID
 from raiden_contracts.contract_manager import (
@@ -44,7 +44,9 @@ def get_contract_addresses_and_start_block(
 
     # Get deployed addresses for those contracts which have no overwrites
     addresses = {
-        c: address_overwrites.get(c, Address(decode_hex(contract_data["contracts"][c]["address"])))
+        c: address_overwrites.get(
+            c, to_canonical_address(contract_data["contracts"][c]["address"])
+        )
         for c in contracts
     }
 

@@ -9,7 +9,9 @@ from raiden.messages.monitoring_service import RequestMonitoring, SignedBlindedB
 from raiden.utils.signer import LocalSigner, recover
 from raiden.utils.signing import pack_data
 from raiden.utils.typing import (
+    AdditionalHash,
     Address,
+    BalanceHash,
     BlockNumber,
     ChainID,
     ChannelID,
@@ -126,10 +128,10 @@ class HashedBalanceProof:
             channel_identifier=self.channel_identifier,
             token_network_address=self.token_network_address,
             nonce=self.nonce,
-            additional_hash=decode_hex(self.additional_hash),
+            additional_hash=AdditionalHash(decode_hex(self.additional_hash)),
             chain_id=self.chain_id,
             signature=self.signature,
-            balance_hash=decode_hex(self.balance_hash),
+            balance_hash=BalanceHash(decode_hex(self.balance_hash)),
         )
         request_monitoring = RequestMonitoring(
             balance_proof=partner_signed_self,

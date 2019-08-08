@@ -148,7 +148,7 @@ class SharedDatabase(BaseDatabase):
 
         return Channel(
             update_status=OnChainUpdateStatus(
-                update_sender_address=decode_hex(row["update_status_sender"]),
+                update_sender_address=to_canonical_address(row["update_status_sender"]),
                 nonce=row["update_status_nonce"],
             )
             if row["update_status_nonce"] is not None
@@ -185,7 +185,7 @@ class SharedDatabase(BaseDatabase):
         def create_scheduled_event(row: sqlite3.Row) -> ScheduledEvent:
             event_type = EVENT_ID_TYPE_MAP[row["event_type"]]
             sub_event = event_type(
-                decode_hex(row["token_network_address"]),
+                TokenNetworkAddress(to_canonical_address(row["token_network_address"])),
                 row["channel_identifier"],
                 row["non_closing_participant"],
             )
@@ -240,7 +240,7 @@ class SharedDatabase(BaseDatabase):
         blockchain = self.conn.execute("SELECT * FROM blockchain").fetchone()
         ms_state = MonitoringServiceState(
             blockchain_state=self.get_blockchain_state(),
-            address=decode_hex(blockchain["receiver"]),
+            address=to_canonical_address(blockchain["receiver"]),
         )
         return ms_state
 

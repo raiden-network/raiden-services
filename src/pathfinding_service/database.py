@@ -5,7 +5,7 @@ from typing import Iterator, List, Optional, Tuple
 from uuid import UUID
 
 import structlog
-from eth_utils import decode_hex, to_checksum_address
+from eth_utils import decode_hex, to_canonical_address, to_checksum_address
 
 from pathfinding_service.model import IOU
 from pathfinding_service.model.channel_view import ChannelView
@@ -163,7 +163,9 @@ class PFSDatabase(BaseDatabase):
 
     def get_token_networks(self) -> Iterator[TokenNetwork]:
         for row in self.conn.execute("SELECT address FROM token_network"):
-            yield TokenNetwork(token_network_address=decode_hex(row[0]))
+            yield TokenNetwork(
+                token_network_address=TokenNetworkAddress(to_canonical_address(row[0]))
+            )
 
     def prepare_feedback(self, token: FeedbackToken, route: List[Address]) -> None:
         hexed_route = [to_checksum_address(e) for e in route]
@@ -216,7 +218,9 @@ class PFSDatabase(BaseDatabase):
 
         if token:
             return FeedbackToken(
-                token_network_address=decode_hex(token["token_network_address"]),
+                token_network_address=TokenNetworkAddress(
+                    decode_hex(token["token_network_address"])
+                ),
                 id=UUID(token["token_id"]),
                 creation_time=token["creation_time"],
             )

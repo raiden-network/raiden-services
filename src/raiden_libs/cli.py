@@ -11,7 +11,7 @@ import requests.exceptions
 import sentry_sdk
 import structlog
 from eth_account import Account
-from eth_utils import decode_hex, is_checksum_address, to_checksum_address
+from eth_utils import is_checksum_address, to_canonical_address, to_checksum_address
 from sentry_sdk.integrations.flask import FlaskIntegration
 from sentry_sdk.integrations.logging import LoggingIntegration
 from web3 import HTTPProvider, Web3
@@ -51,13 +51,13 @@ def _open_keystore(keystore_file: str, password: str) -> str:
 
 def validate_address(
     _ctx: click.Context, _param: click.Parameter, value: Optional[str]
-) -> Optional[str]:
+) -> Optional[Address]:
     if value is None:
         # None as default value allowed
         return None
     if not is_checksum_address(value):
         raise click.BadParameter("not an EIP-55 checksummed address")
-    return decode_hex(value)
+    return to_canonical_address(value)
 
 
 def common_options(app_name: str) -> Callable:

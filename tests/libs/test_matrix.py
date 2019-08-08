@@ -7,13 +7,20 @@ from datetime import timedelta
 from unittest.mock import Mock, patch
 
 import pytest
-from eth_utils import decode_hex, encode_hex, to_canonical_address
+from eth_utils import encode_hex, to_canonical_address
 
 from monitoring_service.states import HashedBalanceProof
 from raiden.exceptions import SerializationError
 from raiden.messages.monitoring_service import RequestMonitoring
 from raiden.storage.serialization.serializer import DictSerializer
-from raiden.utils.typing import Address, ChainID, ChannelID, Nonce, TokenAmount
+from raiden.utils.typing import (
+    Address,
+    ChainID,
+    ChannelID,
+    Nonce,
+    TokenAmount,
+    TokenNetworkAddress,
+)
 from raiden_contracts.tests.utils import LOCKSROOT_OF_NO_LOCKS, deepcopy
 from raiden_libs.matrix import (
     MatrixListener,
@@ -32,7 +39,7 @@ def request_monitoring_message(token_network, get_accounts, get_private_key) -> 
 
     balance_proof_c2 = HashedBalanceProof(
         channel_identifier=ChannelID(1),
-        token_network_address=decode_hex(token_network.address),
+        token_network_address=TokenNetworkAddress(to_canonical_address(token_network.address)),
         chain_id=ChainID(1),
         nonce=Nonce(2),
         additional_hash="0x%064x" % 0,

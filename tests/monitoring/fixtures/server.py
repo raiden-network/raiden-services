@@ -4,7 +4,7 @@ from typing import List
 from unittest.mock import patch
 
 import pytest
-from eth_utils import decode_hex
+from eth_utils import to_canonical_address
 from request_collector.server import RequestCollector
 from tests.constants import TEST_MSC_ADDRESS
 from web3 import Web3
@@ -25,7 +25,7 @@ TEST_POLL_INTERVAL = 0.001
 
 @pytest.fixture(scope="session")
 def ms_address(create_account) -> Address:
-    return decode_hex(create_account())
+    return to_canonical_address(create_account())
 
 
 @pytest.fixture

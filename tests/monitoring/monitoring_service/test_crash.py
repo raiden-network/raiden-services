@@ -2,7 +2,7 @@ import os
 from typing import List
 from unittest.mock import Mock
 
-from eth_utils import decode_hex, encode_hex
+from eth_utils import encode_hex, to_canonical_address
 from tests.constants import TEST_MSC_ADDRESS
 
 from monitoring_service.events import ActionMonitoringTriggeredEvent
@@ -38,7 +38,7 @@ def test_crash(
     """
     channel_identifier = ChannelID(3)
     c1, c2 = get_accounts(2)
-    token_network_address = TokenNetworkAddress(decode_hex(get_random_address()))
+    token_network_address = TokenNetworkAddress(to_canonical_address(get_random_address()))
     balance_proof = HashedBalanceProof(
         nonce=Nonce(1),
         transferred_amount=TokenAmount(2),

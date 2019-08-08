@@ -8,13 +8,13 @@ from typing import List
 from unittest.mock import Mock, patch
 
 import gevent
-from eth_utils import decode_hex, encode_hex
+from eth_utils import encode_hex, to_canonical_address
 
 from monitoring_service.states import HashedBalanceProof
 from pathfinding_service.constants import DEFAULT_REVEAL_TIMEOUT
 from pathfinding_service.model import ChannelView
 from pathfinding_service.service import PathfindingService
-from raiden.utils.typing import BlockNumber, ChainID, Nonce
+from raiden.utils.typing import BlockNumber, ChainID, Nonce, TokenNetworkAddress
 from raiden_contracts.constants import (
     CONTRACT_TOKEN_NETWORK_REGISTRY,
     CONTRACT_USER_DEPOSIT,
@@ -41,7 +41,7 @@ def test_pfs_with_mocked_client(  # pylint: disable=too-many-arguments
     the channel_description fixture. Tests all PFS methods w.r.t. to that topology
     """
     clients = get_accounts(7)
-    token_network_address = decode_hex(token_network.address)
+    token_network_address = TokenNetworkAddress(to_canonical_address(token_network.address))
 
     with patch("pathfinding_service.service.MatrixListener", new=Mock):
         pfs = PathfindingService(

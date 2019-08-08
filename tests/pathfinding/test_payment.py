@@ -1,5 +1,5 @@
 import pytest
-from eth_utils import decode_hex
+from eth_utils import to_canonical_address
 
 import pathfinding_service.exceptions as exceptions
 from pathfinding_service.api import process_payment
@@ -34,7 +34,7 @@ def test_process_payment_errors(
             iou=iou,
             pathfinding_service=pfs,
             service_fee=service_fee,
-            one_to_n_address=decode_hex(one_to_n_contract.address),
+            one_to_n_address=to_canonical_address(one_to_n_contract.address),
         )
 
     # expires too early
@@ -92,7 +92,7 @@ def test_process_payment(
     privkey = get_private_key(sender)
     deposit_to_udc(sender, round(1 * UDC_SECURITY_MARGIN_FACTOR))
     web3.testing.mine(pathfinding_service_web3_mock.required_confirmations)
-    one_to_n_address = Address(decode_hex(one_to_n_contract.address))
+    one_to_n_address = to_canonical_address(one_to_n_contract.address)
 
     # Make payment
     iou = make_iou(privkey, pfs.address, amount=1)
