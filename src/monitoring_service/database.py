@@ -244,6 +244,22 @@ class SharedDatabase(BaseDatabase):
         )
         return ms_state
 
+    def channel_close_age(
+        self, token_network_address: TokenNetworkAddress, channel_id: ChannelID
+    ) -> Optional[int]:
+        """ How many blocks ago was the given channel closed? """
+        row = self.conn.execute(
+            """
+                SELECT blockchain.latest_known_block, channel.closing_block
+                FROM channel, blockchain
+                WHERE identifier = ? AND token_network_address = ?
+            """,
+            [hex256(channel_id), to_checksum_address(token_network_address)],
+        ).fetchone()
+        if not row or row["closing_block"] is None:
+            return None
+        return row["latest_known_block"] - row["closing_block"]
+
 
 class Database(SharedDatabase):
     """ Holds all MS state which can't be quickly regenerated after a crash/shutdown """
