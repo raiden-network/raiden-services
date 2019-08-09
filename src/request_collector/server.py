@@ -105,7 +105,9 @@ class RequestCollector(gevent.Greenlet):
         # This is x blocks after that event is already confirmed, so that should be plenty!
         if close_age is not None and close_age >= CHANNEL_CLOSE_MARGIN:
             log.warning(
-                "MR for long closed channel", monitor_request=monitor_request, close_age=close_age
+                "Ignore MR for long closed channel",
+                monitor_request=monitor_request,
+                close_age=close_age,
             )
             return
 

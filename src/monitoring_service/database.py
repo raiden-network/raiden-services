@@ -252,7 +252,7 @@ class SharedDatabase(BaseDatabase):
             """
                 SELECT blockchain.latest_known_block, channel.closing_block
                 FROM channel, blockchain
-                WHERE identifier = ? AND token_network_address = ?
+                WHERE channel.identifier = ? AND channel.token_network_address = ?
             """,
             [hex256(channel_id), to_checksum_address(token_network_address)],
         ).fetchone()
