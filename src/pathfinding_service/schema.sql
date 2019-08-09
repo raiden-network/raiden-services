@@ -2,7 +2,7 @@ CREATE TABLE blockchain (
     chain_id                        INTEGER,
     receiver                        CHAR(42),
     token_network_registry_address  CHAR(42),
-    latest_known_block              INT,
+    latest_commited_block           INT,
     user_deposit_contract_address   CHAR(42)
 );
 INSERT INTO blockchain DEFAULT VALUES;

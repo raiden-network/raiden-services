@@ -55,7 +55,7 @@ def mockchain(monkeypatch):
         to_block: int,
         query_ms: bool = True,
     ):  # pylint: disable=unused-argument
-        from_block = chain_state.latest_known_block + 1
+        from_block = chain_state.latest_commited_block + 1
         blocks = state["block_events"][from_block : to_block + 1]
         events = [ev for block in blocks for ev in block]  # flatten
         return chain_state, events

@@ -118,7 +118,7 @@ class MonitoringService:  # pylint: disable=too-few-public-methods
                 last_gas_check_block = last_confirmed_block
 
             max_query_interval_end_block = (
-                self.context.ms_state.blockchain_state.latest_known_block + MAX_FILTER_INTERVAL
+                self.context.ms_state.blockchain_state.latest_commited_block + MAX_FILTER_INTERVAL
             )
             # Limit the max number of blocks that is processed per iteration
             last_block = BlockNumber(min(last_confirmed_block, max_query_interval_end_block))

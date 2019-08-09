@@ -125,8 +125,8 @@ def get_blockchain_events(
     chain_state: BlockchainState,
     to_block: BlockNumber,
 ) -> Tuple[BlockchainState, List[Event]]:
-    # increment by one, as latest_known_block has been queried last time already
-    from_block = BlockNumber(chain_state.latest_known_block + 1)
+    # increment by one, as `latest_commited_block` has been queried last time already
+    from_block = BlockNumber(chain_state.latest_commited_block + 1)
 
     # Check if the current block was already processed
     if from_block > to_block:

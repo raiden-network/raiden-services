@@ -51,7 +51,7 @@ class Context:
     def latest_commited_block(self) -> BlockNumber:
         """ The latest block for which all events have been processed and which
         has been written to the DB. """
-        return self.ms_state.blockchain_state.latest_known_block
+        return self.ms_state.blockchain_state.latest_commited_block
 
     @property
     def latest_confirmed_block(self) -> BlockNumber:
@@ -365,7 +365,7 @@ def updated_head_block_event_handler(event: Event, context: Context) -> None:
     """ Triggers commit of the new block number. """
     assert isinstance(event, UpdatedHeadBlockEvent)
     blockchain_state = context.ms_state.blockchain_state
-    blockchain_state.latest_known_block = event.head_block_number
+    blockchain_state.latest_commited_block = event.head_block_number
     context.db.update_blockchain_state(blockchain_state)
 
 
