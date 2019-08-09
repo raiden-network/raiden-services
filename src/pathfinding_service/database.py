@@ -86,11 +86,13 @@ class PFSDatabase(BaseDatabase):
         except StopIteration:
             return TokenAmount(0), TokenAmount(0)
 
-    def get_latest_known_block(self) -> BlockNumber:
-        return self.conn.execute("SELECT latest_known_block FROM blockchain").fetchone()[0]
+    def get_latest_commited_block(self) -> BlockNumber:
+        return self.conn.execute("SELECT latest_commited_block FROM blockchain").fetchone()[0]
 
-    def update_lastest_known_block(self, latest_known_block: BlockNumber) -> None:
-        self.conn.execute("UPDATE blockchain SET latest_known_block = ?", [latest_known_block])
+    def update_lastest_committed_block(self, latest_commited_block: BlockNumber) -> None:
+        self.conn.execute(
+            "UPDATE blockchain SET latest_commited_block = ?", [latest_commited_block]
+        )
 
     def upsert_iou(self, iou: IOU) -> None:
         iou_dict = IOU.Schema(exclude=["receiver", "chain_id"]).dump(iou)

@@ -3,7 +3,7 @@ CREATE TABLE blockchain (
     receiver                        CHAR(42),
     token_network_registry_address  CHAR(42),
     monitor_contract_address        CHAR(42),
-    latest_known_block              INT
+    latest_commited_block           INT
 );
 INSERT INTO blockchain DEFAULT VALUES;
 

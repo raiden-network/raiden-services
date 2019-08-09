@@ -76,7 +76,7 @@ class PathfindingService(gevent.Greenlet):
         log.info("PFS payment address", address=self.address)
 
         self.blockchain_state = BlockchainState(
-            latest_known_block=BlockNumber(0),
+            latest_commited_block=BlockNumber(0),
             token_network_registry_address=self.registry_address,
             chain_id=self.chain_id,
         )
@@ -125,13 +125,13 @@ class PathfindingService(gevent.Greenlet):
         log.info(
             "Listening to token network registry",
             registry_address=self.registry_address,
-            start_block=self.database.get_latest_known_block(),
+            start_block=self.database.get_latest_commited_block(),
         )
         while not self._is_running.is_set():
             last_confirmed_block = self.web3.eth.blockNumber - self.required_confirmations
 
             max_query_interval_end_block = (
-                self.database.get_latest_known_block() + MAX_FILTER_INTERVAL
+                self.database.get_latest_commited_block() + MAX_FILTER_INTERVAL
             )
             # Limit the max number of blocks that is processed per iteration
             last_block = min(last_confirmed_block, max_query_interval_end_block)
@@ -145,7 +145,7 @@ class PathfindingService(gevent.Greenlet):
                 sys.exit(0)
 
     def _process_new_blocks(self, last_block: BlockNumber) -> None:
-        self.blockchain_state.latest_known_block = self.database.get_latest_known_block()
+        self.blockchain_state.latest_commited_block = self.database.get_latest_commited_block()
         self.blockchain_state.token_network_addresses = list(self.token_networks.keys())
 
         _, events = get_blockchain_events(
@@ -185,7 +185,7 @@ class PathfindingService(gevent.Greenlet):
         elif isinstance(event, ReceiveChannelClosedEvent):
             self.handle_channel_closed(event)
         elif isinstance(event, UpdatedHeadBlockEvent):
-            self.database.update_lastest_known_block(event.head_block_number)
+            self.database.update_lastest_committed_block(event.head_block_number)
         else:
             log.debug("Unhandled event", evt=event)
 

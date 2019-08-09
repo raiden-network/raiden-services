@@ -250,7 +250,7 @@ class SharedDatabase(BaseDatabase):
         """ How many blocks ago was the given channel closed? """
         row = self.conn.execute(
             """
-                SELECT blockchain.latest_known_block, channel.closing_block
+                SELECT blockchain.latest_commited_block, channel.closing_block
                 FROM channel, blockchain
                 WHERE channel.identifier = ? AND channel.token_network_address = ?
             """,
@@ -258,7 +258,7 @@ class SharedDatabase(BaseDatabase):
         ).fetchone()
         if not row or row["closing_block"] is None:
             return None
-        return row["latest_known_block"] - row["closing_block"]
+        return row["latest_commited_block"] - row["closing_block"]
 
 
 class Database(SharedDatabase):
