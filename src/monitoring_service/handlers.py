@@ -41,7 +41,7 @@ log = structlog.get_logger(__name__)
 class Context:
     ms_state: MonitoringServiceState
     db: Database
-    w3: Web3
+    web3: Web3
     monitoring_service_contract: Contract
     user_deposit_contract: Contract
     min_reward: int
@@ -56,7 +56,7 @@ class Context:
     @property
     def latest_confirmed_block(self) -> BlockNumber:
         """ The latest confirmed block. """
-        return self.w3.eth.blockNumber - self.required_confirmations
+        return self.web3.eth.blockNumber - self.required_confirmations
 
 
 def channel_opened_event_handler(event: Event, context: Context) -> None:
@@ -83,14 +83,12 @@ def _first_allowed_block_to_monitor(
 ) -> BlockNumber:
     # Get token_network_contract
     abi = CONTRACT_MANAGER.get_contract_abi(CONTRACT_TOKEN_NETWORK)
-    token_network_contract = context.w3.eth.contract(abi=abi, address=token_network_address)
+    token_network_contract = context.web3.eth.contract(abi=abi, address=token_network_address)
 
     # Use the same assumptions as the MS contract, which can't get the real
     # channel timeout and close block.
     settle_block_number, _ = token_network_contract.functions.getChannelInfo(
-        channel.identifier,
-        channel.participant1,
-        channel.participant2,
+        channel.identifier, channel.participant1, channel.participant2
     ).call()
     assumed_settle_timeout = token_network_contract.functions.settlement_timeout_min().call()
     assumed_close_block = settle_block_number - assumed_settle_timeout
@@ -427,7 +425,7 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
         )
         return
 
-    latest_block = context.w3.eth.blockNumber
+    latest_block = context.web3.eth.blockNumber
     last_confirmed_block = context.latest_confirmed_block
     user_address = monitor_request.non_closing_signer
     user_deposit = get_pessimistic_udc_balance(
