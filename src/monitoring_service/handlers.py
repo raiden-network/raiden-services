@@ -48,8 +48,15 @@ class Context:
     required_confirmations: int
 
     @property
-    def latest_known_block(self) -> BlockNumber:
+    def latest_commited_block(self) -> BlockNumber:
+        """ The latest block for which all events have been processed and which
+        has been written to the DB. """
         return self.ms_state.blockchain_state.latest_known_block
+
+    @property
+    def latest_confirmed_block(self) -> BlockNumber:
+        """ The latest confirmed block. """
+        return self.w3.eth.blockNumber - self.required_confirmations
 
 
 def channel_opened_event_handler(event: Event, context: Context) -> None:
@@ -113,7 +120,7 @@ def channel_closed_event_handler(event: Event, context: Context) -> None:
     # Check if the settle timeout is already over.
     # This is important when starting up the MS.
     settle_period_end_block = event.block_number + channel.settle_timeout
-    settle_period_over = settle_period_end_block < context.latest_known_block
+    settle_period_over = settle_period_end_block < context.latest_confirmed_block
     if not settle_period_over:
         # Trigger the monitoring action event handler, this will check if a
         # valid MR is available.
@@ -157,7 +164,8 @@ def channel_closed_event_handler(event: Event, context: Context) -> None:
             token_network_address=event.token_network_address,
             identifier=channel.identifier,
             settle_period_end_block=settle_period_end_block,
-            known_block=context.latest_known_block,
+            latest_commited_block=context.latest_commited_block,
+            latest_confirmed_block=context.latest_confirmed_block,
         )
 
     channel.state = ChannelState.CLOSED
@@ -418,7 +426,7 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
         return
 
     latest_block = context.w3.eth.blockNumber
-    last_confirmed_block = latest_block - context.required_confirmations
+    last_confirmed_block = context.latest_confirmed_block
     user_address = monitor_request.non_closing_signer
     user_deposit = get_pessimistic_udc_balance(
         udc=context.user_deposit_contract,

@@ -106,7 +106,7 @@ class MonitoringService:  # pylint: disable=too-few-public-methods
     ) -> None:
         last_gas_check_block = 0
         while True:
-            last_confirmed_block = self.web3.eth.blockNumber - self.required_confirmations
+            last_confirmed_block = self.context.latest_confirmed_block
 
             # check gas reserve
             do_gas_reserve_check = (
