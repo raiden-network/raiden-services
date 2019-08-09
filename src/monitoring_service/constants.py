@@ -12,5 +12,5 @@ KEEP_MRS_WITHOUT_CHANNEL: timedelta = timedelta(minutes=15)
 MATRIX_RATE_LIMIT_ALLOWED_BYTES = 5_000_000
 MATRIX_RATE_LIMIT_RESET_INTERVAL = timedelta(minutes=5)
 
-# Number of blocks after the close, during which MR are still being accepted
+# Number of blocks after the close, during which MRs are still being accepted
 CHANNEL_CLOSE_MARGIN: int = 10
