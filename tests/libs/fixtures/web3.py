@@ -6,9 +6,11 @@ import gevent
 import pytest
 from eth_account import Account
 from tests.constants import KEYSTORE_FILE_NAME, KEYSTORE_PASSWORD
+from web3 import Web3
 
 from raiden_contracts.contract_manager import ContractManager, contracts_precompiled_path
 from raiden_libs.events import Event
+from raiden_libs.states import BlockchainState
 
 log = logging.getLogger(__name__)
 
@@ -47,7 +49,11 @@ def mockchain(monkeypatch):
     state: Dict[str, List[List[Event]]] = dict(block_events=[])
 
     def get_events(
-        web3, contract_manager, chain_state, to_block: int, query_ms=True
+        web3: Web3,
+        contract_manager: ContractManager,
+        chain_state: BlockchainState,
+        to_block: int,
+        query_ms: bool = True,
     ):  # pylint: disable=unused-argument
         from_block = chain_state.latest_known_block + 1
         blocks = state["block_events"][from_block : to_block + 1]

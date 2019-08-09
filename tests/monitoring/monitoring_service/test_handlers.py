@@ -53,10 +53,19 @@ def mock_first_allowed_block(monkeypatch):
     )
 
 
-def assert_channel_state(context, state):
-    channel = context.db.get_channel(DEFAULT_TOKEN_NETWORK_ADDRESS, DEFAULT_CHANNEL_IDENTIFIER)
+def assert_channel_state(context: Context, state: ChannelState):
+    channel = context.db.get_channel(
+        token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS, channel_id=DEFAULT_CHANNEL_IDENTIFIER
+    )
     assert channel
     assert channel.state == state
+
+
+def create_default_token_network(context):
+    context.db.conn.execute(
+        "INSERT INTO token_network (address) VALUES (?)",
+        [to_checksum_address(DEFAULT_TOKEN_NETWORK_ADDRESS)],
+    )
 
 
 def setup_state_with_open_channel(context: Context) -> Context:
@@ -79,13 +88,13 @@ def setup_state_with_open_channel(context: Context) -> Context:
 def setup_state_with_closed_channel(context: Context) -> Context:
     context = setup_state_with_open_channel(context)
 
-    event2 = ReceiveChannelClosedEvent(
+    event = ReceiveChannelClosedEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
         closing_participant=DEFAULT_PARTICIPANT2,
         block_number=BlockNumber(52),
     )
-    channel_closed_event_handler(event2, context)
+    channel_closed_event_handler(event, context)
 
     assert context.db.channel_count() == 1
     assert_channel_state(context, ChannelState.CLOSED)
@@ -103,13 +112,6 @@ def context(ms_database: Database):
         user_deposit_contract=Mock(),
         min_reward=1,
         required_confirmations=1,
-    )
-
-
-def create_default_token_network(context):
-    context.db.conn.execute(
-        "INSERT INTO token_network (address) VALUES (?)",
-        [to_checksum_address(DEFAULT_TOKEN_NETWORK_ADDRESS)],
     )
 
 
