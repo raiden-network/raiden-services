@@ -121,9 +121,10 @@ class MonitoringService:  # pylint: disable=too-few-public-methods
                 self.context.ms_state.blockchain_state.latest_known_block + MAX_FILTER_INTERVAL
             )
             # Limit the max number of blocks that is processed per iteration
-            last_block = min(last_confirmed_block, max_query_interval_end_block)
+            last_block = BlockNumber(min(last_confirmed_block, max_query_interval_end_block))
 
             self._process_new_blocks(last_block)
+            self._check_pending_transactions()
             self._purge_old_monitor_requests()
 
             try:
@@ -167,12 +168,10 @@ class MonitoringService:  # pylint: disable=too-few-public-methods
             handle_event(event, self.context)
             self.context.db.remove_scheduled_event(scheduled_event)
 
-        # Check pending transactions
-        # This is done here so we don't have to block waiting for receipts in the state machine
-        self._check_pending_transactions()
-
     def _check_pending_transactions(self) -> None:
         """ Checks if pending transaction have been mined and confirmed.
+
+        This is done here so we don't have to block waiting for receipts in the state machine.
 
         In theory it's not necessary to check all pending transactions, but only the one with the
         smallest nonce, and continue from there when this one is mined and confirmed. However,
