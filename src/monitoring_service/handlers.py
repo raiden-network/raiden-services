@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import cast
 
 import structlog
-from eth_utils import encode_hex, to_checksum_address
+from eth_utils import encode_hex
 from web3 import Web3
 from web3.contract import Contract
 
@@ -87,8 +87,10 @@ def _first_allowed_block_to_monitor(
 
     # Use the same assumptions as the MS contract, which can't get the real
     # channel timeout and close block.
-    (settle_block_number, _) = token_network_contract.functions.getChannelInfo(
-        channel.identifier, channel.participant1, channel.participant2
+    settle_block_number, _ = token_network_contract.functions.getChannelInfo(
+        channel.identifier,
+        channel.participant1,
+        channel.participant2,
     ).call()
     assumed_settle_timeout = token_network_contract.functions.settlement_timeout_min().call()
     assumed_close_block = settle_block_number - assumed_settle_timeout
@@ -98,8 +100,8 @@ def _first_allowed_block_to_monitor(
         context.monitoring_service_contract.functions.firstBlockAllowedToMonitor(
             closed_at_block=assumed_close_block,
             settle_timeout=assumed_settle_timeout,
-            participant1=to_checksum_address(channel.participant1),
-            participant2=to_checksum_address(channel.participant2),
+            participant1=channel.participant1,
+            participant2=channel.participant2,
             monitoring_service_address=context.ms_state.address,
         ).call()
     )
