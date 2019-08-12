@@ -1,13 +1,13 @@
 # Changelog
 
-### 0.3.0 (2019-08-12)
+### 0.3.0 (2019-08-13)
 
-* Fix crash related to handling of settled channels (https://github.com/raiden-network/raiden-services/pull/512)
-* Ignore MonitorRequests after channel closing (https://github.com/raiden-network/raiden-services/pull/510)
 * Wait for confirmation of transactions in monitoring service (https://github.com/raiden-network/raiden-services/pull/503)
 * Take unconfirmed state into account if necessary, e.g. user deposit check (https://github.com/raiden-network/raiden-services/pull/502)
-* Fix possible crash when receiving unexpected message types (https://github.com/raiden-network/raiden-services/pull/499)
 * Remove handling of ChannelNewDeposit event (https://github.com/raiden-network/raiden-services/pull/496)
+* Bugfix: Fix possible crash when receiving unexpected message types (https://github.com/raiden-network/raiden-services/pull/499)
+* Bugfix: Fix crash related to handling of settled channels (https://github.com/raiden-network/raiden-services/pull/512)
+* Bugfix: Ignore MonitorRequests after channel closing (https://github.com/raiden-network/raiden-services/pull/510)
 
 ### 0.2.0 (2019-07-30)
 
