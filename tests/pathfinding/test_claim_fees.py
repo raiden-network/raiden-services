@@ -7,21 +7,23 @@ from eth_utils import decode_hex, to_canonical_address
 
 from pathfinding_service.claim_fees import claim_ious, get_claimable_ious, main
 from pathfinding_service.model import IOU
+from pathfinding_service.service import PathfindingService
 from raiden.utils.signer import LocalSigner
 from raiden.utils.typing import BlockNumber, ChainID, Signature, TokenAmount
 
 
 def test_claim_fees(  # pylint: disable=too-many-locals
-    pathfinding_service_mock,
+    pathfinding_service_web3_mock: PathfindingService,
     one_to_n_contract,
     web3,
     deposit_to_udc,
     get_accounts,
     get_private_key,
 ):
+    pfs = pathfinding_service_web3_mock
+
     # Prepare test data
     accounts = [decode_hex(acc) for acc in get_accounts(6)]
-    pfs = pathfinding_service_mock
     iou_inputs: List[dict] = [
         dict(sender=accounts[0], amount=100, deposit=200),
         dict(sender=accounts[1], amount=200, deposit=100),
@@ -56,14 +58,16 @@ def test_claim_fees(  # pylint: disable=too-many-locals
     expected_claimable = ious[:4]
     claimable_ious = list(
         get_claimable_ious(
-            pfs.database, expires_before=BlockNumber(1000), claim_cost_rdn=TokenAmount(100)
+            database=pfs.database,
+            expires_before=BlockNumber(1000),
+            claim_cost_rdn=TokenAmount(100),
         )
     )
     assert claimable_ious == expected_claimable
 
     # Claim IOUs
     skipped, failures = claim_ious(
-        claimable_ious,
+        ious=claimable_ious,
         claim_cost_rdn=TokenAmount(100),
         one_to_n_contract=one_to_n_contract,
         web3=web3,
@@ -80,6 +84,7 @@ def test_claim_fees(  # pylint: disable=too-many-locals
         expected_claimed = iou in claimable_with_enough_deposit
 
         iou_in_db = pfs.database.get_iou(sender=iou.sender, expiration_block=iou.expiration_block)
+        assert iou_in_db
         assert iou_in_db.claimed == expected_claimed
 
         is_settled = bool(one_to_n_contract.functions.settled_sessions(iou.session_id).call())

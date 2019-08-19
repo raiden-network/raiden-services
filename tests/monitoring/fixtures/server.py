@@ -24,8 +24,8 @@ TEST_POLL_INTERVAL = 0.001
 
 
 @pytest.fixture(scope="session")
-def ms_address(create_account) -> Address:
-    return to_canonical_address(create_account())
+def ms_address(create_service_account) -> Address:
+    return to_canonical_address(create_service_account())
 
 
 @pytest.fixture
@@ -52,19 +52,6 @@ def ms_database():
 
 
 @pytest.fixture
-def register_service(custom_token, service_registry):
-    def f(address):
-        deposit = service_registry.functions.currentPrice().call()
-        custom_token.functions.mint(deposit).transact({"from": address})
-        custom_token.functions.approve(service_registry.address, deposit).transact(
-            {"from": address}
-        )
-        service_registry.functions.deposit(deposit).transact({"from": address})
-
-    return f
-
-
-@pytest.fixture
 def monitoring_service(  # pylint: disable=too-many-arguments
     ms_address,
     web3: Web3,
@@ -73,9 +60,7 @@ def monitoring_service(  # pylint: disable=too-many-arguments
     token_network_registry_contract,
     ms_database,
     get_private_key,
-    register_service,
 ):
-    register_service(ms_address)
     ms = MonitoringService(
         web3=web3,
         private_key=get_private_key(ms_address),

@@ -164,9 +164,7 @@ class HashedBalanceProof:
         Useful for `closing_signature` of `TokenNetwork.closeChannel`
         """
         signer = LocalSigner(decode_hex(privkey))
-        # TODO: use default message type id once
-        #       https://github.com/raiden-network/raiden-contracts/issues/1149 is fixed
-        return signer.sign(self.serialize_bin(MessageTypeId.BALANCE_PROOF_UPDATE) + self.signature)
+        return signer.sign(self.serialize_bin() + self.signature)
 
 
 @dataclass

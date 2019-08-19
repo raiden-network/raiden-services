@@ -4,6 +4,7 @@ from typing import Callable, Dict, Generator, List
 from unittest.mock import Mock, patch
 
 import pytest
+from eth_utils import to_canonical_address
 from web3 import Web3
 from web3.contract import Contract
 
@@ -23,6 +24,11 @@ from raiden.utils.typing import (
 )
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
 from raiden_libs.utils import private_key_to_address
+
+
+@pytest.fixture(scope="session")
+def pfs_address(create_service_account) -> Address:
+    return to_canonical_address(create_service_account())
 
 
 @pytest.fixture(scope="session")
@@ -314,7 +320,7 @@ def pathfinding_service_mock(
 
 @pytest.fixture
 def pathfinding_service_web3_mock(
-    web3: Web3, user_deposit_contract: Contract
+    web3: Web3, user_deposit_contract: Contract, get_private_key: Callable, pfs_address: Address
 ) -> Generator[PathfindingService, None, None]:
     with patch("pathfinding_service.service.MatrixListener", new=Mock):
         pathfinding_service = PathfindingService(
@@ -323,7 +329,7 @@ def pathfinding_service_web3_mock(
                 CONTRACT_TOKEN_NETWORK_REGISTRY: Mock(address="0x" + "9" * 40),
                 CONTRACT_USER_DEPOSIT: user_deposit_contract,
             },
-            private_key="3a1076bf45ab87712ad64ccb3b10217737f7faacbf2872e88fdd9a537d8fe266",
+            private_key=get_private_key(pfs_address),
             db_filename=":memory:",
             required_confirmations=1,
         )

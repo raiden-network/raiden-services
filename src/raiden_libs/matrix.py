@@ -191,6 +191,7 @@ class MatrixListener(gevent.Greenlet):
         self._start_client()
 
         self.client.start_listener_thread()
+        assert self.client.sync_thread
         self.client.sync_thread.get()
 
     def stop(self) -> None:
