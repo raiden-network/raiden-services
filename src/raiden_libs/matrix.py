@@ -195,10 +195,15 @@ class MatrixListener(gevent.Greenlet):
         self.client.sync_thread.get()
 
     def stop(self) -> None:
+        if self.user_manager:
+            self.user_manager.stop()
         self.client.stop_listener_thread()
 
     def _start_client(self) -> None:
         try:
+            if self.user_manager:
+                self.user_manager.start()
+
             login_or_register(
                 self.client, signer=LocalSigner(private_key=decode_hex(self.private_key))
             )
