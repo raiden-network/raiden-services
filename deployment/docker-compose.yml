@@ -34,6 +34,11 @@ services:
     environment:
       - PFS_ETH_RPC=http://geth.ropsten.ethnodes.brainbot.com:8545
       - PFS_STATE_DB=/state/pfs-ropsten.db
+    healthcheck:
+      test: curl --fail -s pfs-ropsten.services-dev.raiden.network/api/v1/info || exit 1
+      interval: 1m
+      timeout: 10s
+      retries: 3
     labels:
       - "traefik.enable=true"
       - "traefik.frontend.rule=Host: pfs-ropsten.services-dev.raiden.network"
@@ -45,6 +50,11 @@ services:
       - PFS_ETH_RPC=http://geth.ropsten.ethnodes.brainbot.com:8545
       - PFS_STATE_DB=/state/pfs-ropsten-with-fee.db
       - PFS_SERVICE_FEE=100
+    healthcheck:
+      test: curl --fail -s pfs-ropsten-with-fee.services-dev.raiden.network/api/v1/info || exit 1
+      interval: 1m
+      timeout: 10s
+      retries: 3
     labels:
       - "traefik.enable=true"
       - "traefik.frontend.rule=Host: pfs-ropsten-with-fee.services-dev.raiden.network"
@@ -55,6 +65,11 @@ services:
     environment:
       - PFS_ETH_RPC=http://geth.rinkeby.ethnodes.brainbot.com:8545
       - PFS_STATE_DB=/state/pfs-rinkeby.db
+    healthcheck:
+      test: curl --fail -s pfs-rinkeby.services-dev.raiden.network/api/v1/info || exit 1
+      interval: 1m
+      timeout: 10s
+      retries: 3
     labels:
       - "traefik.enable=true"
       - "traefik.frontend.rule=Host: pfs-rinkeby.services-dev.raiden.network"
@@ -66,6 +81,11 @@ services:
       - PFS_ETH_RPC=http://geth.rinkeby.ethnodes.brainbot.com:8545
       - PFS_STATE_DB=/state/pfs-rinkeby-with-fee.db
       - PFS_SERVICE_FEE=100
+    healthcheck:
+      test: curl --fail -s pfs-rinkeby-with-fee.services-dev.raiden.network/api/v1/info || exit 1
+      interval: 1m
+      timeout: 10s
+      retries: 3
     labels:
       - "traefik.enable=true"
       - "traefik.frontend.rule=Host: pfs-rinkeby-with-fee.services-dev.raiden.network"
@@ -76,6 +96,11 @@ services:
     environment:
       - PFS_ETH_RPC=http://parity.kovan.ethnodes.brainbot.com:8545
       - PFS_STATE_DB=/state/pfs-kovan.db
+    healthcheck:
+      test: curl --fail -s pfs-kovan.services-dev.raiden.network/api/v1/info || exit 1
+      interval: 1m
+      timeout: 10s
+      retries: 3
     labels:
       - "traefik.enable=true"
       - "traefik.frontend.rule=Host: pfs-kovan.services-dev.raiden.network"
@@ -87,6 +112,11 @@ services:
       - PFS_ETH_RPC=http://parity.kovan.ethnodes.brainbot.com:8545
       - PFS_STATE_DB=/state/pfs-kovan-with-fee.db
       - PFS_SERVICE_FEE=100
+    healthcheck:
+      test: curl --fail -s pfs-kovan-with-fee.services-dev.raiden.network/api/v1/info || exit 1
+      interval: 1m
+      timeout: 10s
+      retries: 3
     labels:
       - "traefik.enable=true"
       - "traefik.frontend.rule=Host: pfs-kovan-with-fee.services-dev.raiden.network"
@@ -97,6 +127,11 @@ services:
     environment:
       - PFS_ETH_RPC=http://parity.goerli.ethnodes.brainbot.com:8545
       - PFS_STATE_DB=/state/pfs-goerli.db
+    healthcheck:
+      test: curl --fail -s pfs-goerli.services-dev.raiden.network/api/v1/info || exit 1
+      interval: 1m
+      timeout: 10s
+      retries: 3
     labels:
       - "traefik.enable=true"
       - "traefik.frontend.rule=Host: pfs-goerli.services-dev.raiden.network"
@@ -108,6 +143,11 @@ services:
       - PFS_ETH_RPC=http://parity.goerli.ethnodes.brainbot.com:8545
       - PFS_STATE_DB=/state/pfs-goerli-with-fee.db
       - PFS_SERVICE_FEE=100
+    healthcheck:
+      test: curl --fail -s pfs-goerli-with-fee.services-dev.raiden.network/api/v1/info || exit 1
+      interval: 1m
+      timeout: 10s
+      retries: 3
     labels:
       - "traefik.enable=true"
       - "traefik.frontend.rule=Host: pfs-goerli-with-fee.services-dev.raiden.network"
