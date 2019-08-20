@@ -1,9 +1,11 @@
+import random
+import time
 from copy import deepcopy
 from typing import Dict, List
 
+import networkx
 import pytest
-from eth_utils import decode_hex, to_checksum_address
-from networkx import NetworkXNoPath
+from eth_utils import decode_hex, to_canonical_address, to_checksum_address
 
 from pathfinding_service.constants import DIVERSITY_PEN_DEFAULT
 from pathfinding_service.model import ChannelView, TokenNetwork
@@ -338,3 +340,50 @@ def test_reachability_target(
         )
         == []
     )
+
+
+@pytest.mark.skip('Just run it locally for now')
+@pytest.mark.usefixtures("populate_token_network_random")
+def test_routing_benchmark(token_network_model: TokenNetwork):  # pylint: disable=too-many-locals
+    value = PaymentAmount(100)
+    G = token_network_model.G
+    addresses_to_reachabilities = {
+        node: random.choice(
+            (
+                AddressReachability.REACHABLE,
+                AddressReachability.UNKNOWN,
+                AddressReachability.UNREACHABLE,
+            )
+        )
+        for node in G.nodes
+    }
+
+    times = []
+    start = time.time()
+    for _ in range(100):
+        tic = time.time()
+        source, target = random.sample(G.nodes, 2)
+        paths = token_network_model.get_paths(
+            source=source,
+            target=target,
+            value=value,
+            max_paths=5,
+            address_to_reachability=addresses_to_reachabilities,
+        )
+
+        toc = time.time()
+        times.append(toc - tic)
+    end = time.time()
+
+    for path_object in paths:
+        path = path_object["path"]
+        fees = path_object["estimated_fee"]
+        for node1, node2 in zip(path[:-1], path[1:]):
+            view: ChannelView = G[to_canonical_address(node1)][to_canonical_address(node2)]["view"]
+            print("capacity = ", view.capacity)
+        print("fee sum = ", fees)
+    print("Paths: ", paths)
+    print("Mean runtime: ", sum(times) / len(times))
+    print("Min runtime: ", min(times))
+    print("Max runtime: ", max(times))
+    print("Total runtime: ", end - start)
