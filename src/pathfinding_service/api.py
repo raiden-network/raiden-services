@@ -18,7 +18,6 @@ from flask_restful import Api, Resource
 from gevent.pywsgi import WSGIServer
 from marshmallow import fields
 from marshmallow_dataclass import add_schema
-from networkx.exception import NetworkXNoPath, NodeNotFound
 from web3 import Web3
 
 import pathfinding_service.exceptions as exceptions
@@ -133,17 +132,17 @@ class PathsResource(PathfinderResource):
             value = getattr(path_req, arg)
             if value is not None:
                 optional_args[arg] = value
-        try:
-            paths = token_network.get_paths(
-                source=path_req.from_,
-                target=path_req.to,
-                value=path_req.value,
-                address_to_reachability=self.pathfinding_service.address_to_reachability,
-                max_paths=path_req.max_paths,
-                **optional_args,
-            )
-        except (NetworkXNoPath, NodeNotFound):
-            # this is for assertion via the scenario player
+
+        paths = token_network.get_paths(
+            source=path_req.from_,
+            target=path_req.to,
+            value=path_req.value,
+            address_to_reachability=self.pathfinding_service.address_to_reachability,
+            max_paths=path_req.max_paths,
+            **optional_args,
+        )
+        # this is for assertion via the scenario player
+        if len(paths) == 0:
             if self.debug_mode:
                 last_requests.append(
                     dict(
@@ -154,7 +153,9 @@ class PathsResource(PathfinderResource):
                     )
                 )
             raise exceptions.NoRouteFound(
-                from_=to_checksum_address(path_req.from_), to=to_checksum_address(path_req.to)
+                from_=to_checksum_address(path_req.from_),
+                to=to_checksum_address(path_req.to),
+                value=path_req.value,
             )
 
         # this is for assertion via the scenario player

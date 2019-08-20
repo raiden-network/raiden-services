@@ -7,6 +7,7 @@ import networkx as nx
 import structlog
 from eth_utils import to_checksum_address
 from networkx import DiGraph
+from networkx.exception import NetworkXNoPath, NodeNotFound
 
 from pathfinding_service.constants import (
     DEFAULT_SETTLE_TO_REVEAL_TIMEOUT_RATIO,
@@ -28,6 +29,23 @@ from raiden.utils.typing import (
 )
 
 log = structlog.get_logger(__name__)
+
+
+def prune_graph(
+    graph: DiGraph, address_to_reachability: Dict[Address, AddressReachability]
+) -> DiGraph:
+    """ Prunes the given `graph` of all channels where the participants are not  reachable. """
+    pruned_graph = DiGraph()
+    for p1, p2 in graph.edges:
+        nodes_online = (
+            address_to_reachability[p1] == AddressReachability.REACHABLE
+            and address_to_reachability[p2] == AddressReachability.REACHABLE
+        )
+        if nodes_online:
+            pruned_graph.add_edge(p1, p2, view=graph[p1][p2]["view"])
+            pruned_graph.add_edge(p2, p1, view=graph[p2][p1]["view"])
+
+    return pruned_graph
 
 
 def window(seq: Sequence, n: int = 2) -> Iterable[tuple]:
@@ -295,8 +313,9 @@ class TokenNetwork:
             no_refund_weight = 1
         return 1 + diversity_weight + fee_weight + no_refund_weight
 
-    def _get_single_path(  # pylint: disable=too-many-arguments
+    def _get_single_path(  # pylint: disable=too-many-arguments, too-many-locals
         self,
+        graph: DiGraph,
         source: Address,
         target: Address,
         value: PaymentAmount,
@@ -306,14 +325,14 @@ class TokenNetwork:
         fee_penalty: float,
     ) -> Optional[Path]:
         # update edge weights
-        for node1, node2 in self.G.edges():
-            edge = self.G[node1][node2]
-            backwards_edge = self.G[node2][node1]
+        for node1, node2 in graph.edges():
+            edge = graph[node1][node2]
+            backwards_edge = graph[node2][node1]
             edge["weight"] = self.edge_weight(visited, edge, backwards_edge, value, fee_penalty)
 
         # find next path
         all_paths: Iterable[List[Address]] = nx.shortest_simple_paths(
-            G=self.G, source=source, target=target, weight="weight"
+            G=graph, source=source, target=target, weight="weight"
         )
         try:
             # skip duplicates and invalid paths
@@ -349,8 +368,8 @@ class TokenNetwork:
 
         log.debug(
             "Finding paths for payment",
-            source=to_checksum_address(source),
-            target=to_checksum_address(target),
+            source=source,
+            target=target,
             value=value,
             max_paths=max_paths,
             diversity_penalty=diversity_penalty,
@@ -358,16 +377,26 @@ class TokenNetwork:
             reachabilities=address_to_reachability,
         )
 
+        # TODO: improve the pruning
+        # Currently we make a snapshot of the currently reachable nodes, so the serached graph
+        # becomes smaller
+        pruned_graph = prune_graph(graph=self.G, address_to_reachability=address_to_reachability)
+
         while len(paths) < max_paths:
-            path = self._get_single_path(
-                source=source,
-                target=target,
-                value=value,
-                address_to_reachability=address_to_reachability,
-                visited=visited,
-                disallowed_paths=[p.nodes for p in paths],
-                fee_penalty=fee_penalty,
-            )
+            try:
+                path = self._get_single_path(
+                    graph=pruned_graph,
+                    source=source,
+                    target=target,
+                    value=value,
+                    address_to_reachability=address_to_reachability,
+                    visited=visited,
+                    disallowed_paths=[p.nodes for p in paths],
+                    fee_penalty=fee_penalty,
+                )
+            except (NetworkXNoPath, NodeNotFound):
+                return []
+
             if path is None:
                 break
             paths.append(path)

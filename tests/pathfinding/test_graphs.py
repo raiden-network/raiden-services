@@ -3,7 +3,6 @@ import time
 from copy import deepcopy
 from typing import Dict, List
 
-import networkx
 import pytest
 from eth_utils import decode_hex, to_canonical_address, to_checksum_address
 
@@ -120,14 +119,14 @@ def test_routing_simple(
     }
 
     # Not connected.
-    with pytest.raises(NetworkXNoPath):
-        token_network_model.get_paths(
-            source=addresses[0],
-            target=addresses[5],
-            value=PaymentAmount(10),
-            max_paths=1,
-            address_to_reachability=address_to_reachability,
-        )
+    no_paths = token_network_model.get_paths(
+        source=addresses[0],
+        target=addresses[5],
+        value=PaymentAmount(10),
+        max_paths=1,
+        address_to_reachability=address_to_reachability,
+    )
+    assert [] == no_paths
 
 
 @pytest.mark.usefixtures("populate_token_network_case_1")
@@ -139,8 +138,8 @@ def test_capacity_check(
     """ Test that the mediation fees are included in the capacity check """
     # First get a path without mediation fees. This must return the shortest path: 4->1->0
     paths = token_network_model.get_paths(
-        addresses[4],
-        addresses[0],
+        source=addresses[4],
+        target=addresses[0],
         value=PaymentAmount(35),
         max_paths=1,
         address_to_reachability=address_to_reachability,
@@ -156,8 +155,8 @@ def test_capacity_check(
     # value of 35. But 35 + 1 exceeds the capacity for channel 4->1, which is
     # 35. So we should now get the next best route instead.
     paths = model_with_fees.get_paths(
-        addresses[4],
-        addresses[0],
+        source=addresses[4],
+        target=addresses[0],
         value=PaymentAmount(35),
         max_paths=1,
         address_to_reachability=address_to_reachability,
@@ -175,8 +174,8 @@ def test_routing_result_order(
 ):
     hex_addrs = [to_checksum_address(addr) for addr in addresses]
     paths = token_network_model.get_paths(
-        addresses[0],
-        addresses[2],
+        source=addresses[0],
+        target=addresses[2],
         value=PaymentAmount(10),
         max_paths=5,
         address_to_reachability=address_to_reachability,
@@ -342,7 +341,7 @@ def test_reachability_target(
     )
 
 
-@pytest.mark.skip('Just run it locally for now')
+@pytest.mark.skip("Just run it locally for now")
 @pytest.mark.usefixtures("populate_token_network_random")
 def test_routing_benchmark(token_network_model: TokenNetwork):  # pylint: disable=too-many-locals
     value = PaymentAmount(100)
