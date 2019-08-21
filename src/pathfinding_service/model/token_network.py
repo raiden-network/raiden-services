@@ -38,8 +38,8 @@ def prune_graph(
     pruned_graph = DiGraph()
     for p1, p2 in graph.edges:
         nodes_online = (
-            address_to_reachability[p1] == AddressReachability.REACHABLE
-            and address_to_reachability[p2] == AddressReachability.REACHABLE
+            address_to_reachability.get(p1) == AddressReachability.REACHABLE
+            and address_to_reachability.get(p2) == AddressReachability.REACHABLE
         )
         if nodes_online:
             pruned_graph.add_edge(p1, p2, view=graph[p1][p2]["view"])

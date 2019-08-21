@@ -82,3 +82,13 @@ def test_graph_pruning():
     p2_not_reachable[participant2] = AddressReachability.UNREACHABLE
     pruned_p2_unreachbale = prune_graph(graph=graph, address_to_reachability=p2_not_reachable)
     assert len(pruned_p2_unreachbale.edges) == 0  # 2 is part of all channels
+
+    # test handling of unknown nodes
+    p1_not_in_reachble_map = all_reachable.copy()
+    del p1_not_in_reachble_map[participant1]
+    pruned_p1_not_in_reachable_map = prune_graph(
+        graph=graph, address_to_reachability=p1_not_in_reachble_map
+    )
+    assert (
+        len(pruned_p1_not_in_reachable_map.edges) == 2
+    )  # just the two edges between 2 and 3 left
