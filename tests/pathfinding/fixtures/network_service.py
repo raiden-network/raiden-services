@@ -27,11 +27,6 @@ from raiden_libs.utils import private_key_to_address
 
 
 @pytest.fixture(scope="session")
-def pfs_address(create_service_account) -> Address:
-    return to_canonical_address(create_service_account())
-
-
-@pytest.fixture(scope="session")
 def channel_descriptions_case_1() -> List:
     """ Creates a network with some edge cases.
 
@@ -320,8 +315,12 @@ def pathfinding_service_mock(
 
 @pytest.fixture
 def pathfinding_service_web3_mock(
-    web3: Web3, user_deposit_contract: Contract, get_private_key: Callable, pfs_address: Address
+    web3: Web3,
+    user_deposit_contract: Contract,
+    get_private_key: Callable,
+    create_service_account: Callable,
 ) -> Generator[PathfindingService, None, None]:
+    pfs_address = to_canonical_address(create_service_account())
     with patch("pathfinding_service.service.MatrixListener", new=Mock):
         pathfinding_service = PathfindingService(
             web3=web3,
