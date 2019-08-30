@@ -23,6 +23,7 @@ from raiden.utils.typing import (
     ChannelID,
     FeeAmount,
     MessageID,
+    ProportionalFeeAmount,
     TokenAmount,
     TokenNetworkAddress,
 )
@@ -265,7 +266,7 @@ def test_update_fee(order, pathfinding_service_mock, token_network_model):
 
     fee_schedule = FeeScheduleState(
         flat=FeeAmount(1),
-        proportional=int(0.1e9),
+        proportional=ProportionalFeeAmount(int(0.1e9)),
         imbalance_penalty=[(TokenAmount(0), FeeAmount(0)), (TokenAmount(10), FeeAmount(10))],
     )
     fee_update = PFSFeeUpdate(
