@@ -1,6 +1,6 @@
 import sys
 from datetime import datetime, timedelta
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, Iterable, List, Optional, Union
 
 import gevent
 import structlog
@@ -17,8 +17,6 @@ from monitoring_service.constants import (
 from raiden.constants import Environment
 from raiden.exceptions import SerializationError, TransportError
 from raiden.messages.abstract import Message, SignedMessage
-from raiden.messages.monitoring_service import RequestMonitoring
-from raiden.messages.path_finding_service import PFSCapacityUpdate, PFSFeeUpdate
 from raiden.network.transport.matrix.client import Room
 from raiden.network.transport.matrix.utils import (
     AddressReachability,
@@ -41,10 +39,6 @@ from raiden.utils.signer import LocalSigner
 from raiden.utils.typing import Address, ChainID
 
 log = structlog.get_logger(__name__)
-
-
-SERVICE_MESSAGES: Tuple = (PFSCapacityUpdate, RequestMonitoring, PFSFeeUpdate)
-VALID_MESSAGE_TYPES = set(klass.__module__ + "." + klass.__name__ for klass in SERVICE_MESSAGES)
 
 
 class RateLimiter:
