@@ -1,4 +1,3 @@
-import json
 import sys
 from datetime import datetime, timedelta
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
@@ -36,7 +35,7 @@ from raiden.settings import (
     DEFAULT_TRANSPORT_MATRIX_RETRY_INTERVAL,
     DEFAULT_TRANSPORT_RETRIES_BEFORE_BACKOFF,
 )
-from raiden.storage.serialization import DictSerializer
+from raiden.storage.serialization.serializer import MessageSerializer
 from raiden.utils.cli import get_matrix_servers
 from raiden.utils.signer import LocalSigner
 from raiden.utils.typing import Address, ChainID
@@ -75,17 +74,6 @@ class RateLimiter:
         return True
 
 
-def message_from_dict(data: Dict[str, Any]) -> Message:
-    if "_type" not in data:
-        raise SerializationError("Invalid message data. Can not find the data type") from None
-    if data["_type"] not in VALID_MESSAGE_TYPES:
-        raise SerializationError(
-            'Invalid message type (data["type"] = {})'.format(data["_type"])
-        ) from None
-
-    return DictSerializer.deserialize(data)
-
-
 def deserialize_messages(
     data: str, peer_address: Address, rate_limiter: Optional[RateLimiter] = None
 ) -> List[SignedMessage]:
@@ -108,11 +96,7 @@ def deserialize_messages(
 
         logger = log.bind(peer_address=to_checksum_address(peer_address))
         try:
-            message_dict = json.loads(line)
-            message = message_from_dict(message_dict)
-        except (UnicodeDecodeError, json.JSONDecodeError) as ex:
-            logger.warning("Can't parse message data JSON", message_data=line, _exc=ex)
-            continue
+            message = MessageSerializer.deserialize(line)
         except (SerializationError, ValidationError, KeyError, ValueError) as ex:
             logger.warning("Message data JSON is not a valid message", message_data=line, _exc=ex)
             continue
