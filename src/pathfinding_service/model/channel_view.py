@@ -70,12 +70,15 @@ class ChannelView:
         """Return the mediation fee for this channel when receiving the given amount"""
         return self.fee_schedule_receiver.fee(amount, Balance(self.capacity))
 
-    def set_fee_schedule(self, party: str, fee_schedule: FeeSchedule) -> None:
-        assert party in ["sender", "receiver"]
-        attr_name = "fee_schedule_" + party
-        if getattr(self, attr_name).timestamp >= fee_schedule.timestamp:
+    def set_sender_fee_schedule(self, fee_schedule: FeeSchedule) -> None:
+        if self.fee_schedule_sender.timestamp >= fee_schedule.timestamp:
             raise InvalidPFSFeeUpdate("Timestamp must increase between fee updates")
-        setattr(self, attr_name, fee_schedule)
+        self.fee_schedule_sender = fee_schedule
+
+    def set_receiver_fee_schedule(self, fee_schedule: FeeSchedule) -> None:
+        if self.fee_schedule_receiver.timestamp >= fee_schedule.timestamp:
+            raise InvalidPFSFeeUpdate("Timestamp must increase between fee updates")
+        self.fee_schedule_receiver = fee_schedule
 
     def __repr__(self) -> str:
         return "<ChannelView cid={} from={} to={} capacity={}>".format(
