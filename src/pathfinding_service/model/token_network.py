@@ -286,8 +286,8 @@ class TokenNetwork:
             updating_participant=message.updating_participant, other_participant=other_participant
         )
         fee_schedule = FeeSchedule.from_raiden(message.fee_schedule, timestamp=message.timestamp)
-        channel_view_to_partner.set_fee_schedule("sender", fee_schedule)
-        channel_view_from_partner.set_fee_schedule("receiver", fee_schedule.reversed())
+        channel_view_to_partner.set_sender_fee_schedule(fee_schedule)
+        channel_view_from_partner.set_receiver_fee_schedule(fee_schedule.reversed())
         return [channel_view_to_partner, channel_view_from_partner]
 
     @staticmethod
