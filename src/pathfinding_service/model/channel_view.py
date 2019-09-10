@@ -8,6 +8,7 @@ from marshmallow_dataclass import add_schema
 
 from pathfinding_service.constants import DEFAULT_REVEAL_TIMEOUT
 from pathfinding_service.exceptions import InvalidPFSFeeUpdate
+from raiden.exceptions import UndefinedMediationFee
 from raiden.transfer.mediated_transfer.mediation_fee import FeeScheduleState as FeeScheduleRaiden
 from raiden.utils.typing import (
     Address,
@@ -68,7 +69,26 @@ class ChannelView:
 
     def forward_fee_receiver(self, amount: PaymentWithFeeAmount) -> FeeAmount:
         """Return the mediation fee for this channel when receiving the given amount"""
-        return self.fee_schedule_receiver.fee_payee(amount, Balance(self.capacity))
+        temp_fee = round(
+            (amount + self.fee_schedule_receiver.flat)
+            / (1 - (self.fee_schedule_receiver.proportional / 1e6))
+            - amount
+        )
+
+        penalty_func = self.fee_schedule_receiver._penalty_func  # pylint: disable=protected-access
+        if penalty_func:
+            # Total channel balance - node balance = balance (used as x-axis for the penalty)
+            balance = penalty_func.x_list[-1] - self.capacity
+            try:
+                imbalance_fee = round(
+                    penalty_func(balance + amount + temp_fee) - penalty_func(balance)
+                )
+            except ValueError:
+                raise UndefinedMediationFee()
+        else:
+            imbalance_fee = 0
+
+        return FeeAmount(temp_fee + imbalance_fee)
 
     def set_sender_fee_schedule(self, fee_schedule: FeeSchedule) -> None:
         if self.fee_schedule_sender.timestamp >= fee_schedule.timestamp:

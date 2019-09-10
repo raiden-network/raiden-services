@@ -76,19 +76,21 @@ class Path:
         self.value = value
         self.address_to_reachability = address_to_reachability
         self.fees: List[FeeAmount] = []
-        self._calc_fees()
+        self._calculate_fees()
 
-        log.debug("Creating Path object", nodes=nodes, is_valid=self.is_valid)
+        log.debug("Creating Path object", nodes=nodes, is_valid=self.is_valid, fees=self.fees)
 
-    def _calc_fees(self) -> None:
+    def _calculate_fees(self) -> None:
         total = self.value
         try:
             for prev_node, mediator, next_node in reversed(list(window(self.nodes, 3))):
-                fee_for_this_mediator = self.G[prev_node][mediator]["view"].forward_fee_receiver(
-                    total
-                ) + self.G[mediator][next_node]["view"].forward_fee_sender(total)
-                total += fee_for_this_mediator
-                self.fees.append(fee_for_this_mediator)
+                fee_out = self.G[mediator][next_node]["view"].forward_fee_sender(total)
+                total += fee_out
+
+                fee_in = self.G[prev_node][mediator]["view"].forward_fee_receiver(total)
+                total += fee_in
+
+                self.fees.append(fee_in + fee_out)
         except UndefinedMediationFee:
             self._is_valid = False
 
@@ -390,7 +392,7 @@ class TokenNetwork:
         )
 
         # TODO: improve the pruning
-        # Currently we make a snapshot of the currently reachable nodes, so the serached graph
+        # Currently we make a snapshot of the currently reachable nodes, so the searched graph
         # becomes smaller
         pruned_graph = prune_graph(graph=self.G, address_to_reachability=address_to_reachability)
 
