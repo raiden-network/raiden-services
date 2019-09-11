@@ -39,7 +39,7 @@ from raiden.exceptions import InvalidSignature
 from raiden.utils.signer import recover
 from raiden.utils.typing import Address, PaymentAmount, Signature, TokenAmount, TokenNetworkAddress
 from raiden_libs.blockchain import get_pessimistic_udc_balance
-from raiden_libs.constants import UDC_SECURITY_MARGIN_FACTOR
+from raiden_libs.constants import UDC_SECURITY_MARGIN_FACTOR_PFS
 from raiden_libs.marshmallow import ChecksumAddress, HexedBytes
 
 log = structlog.get_logger(__name__)
@@ -244,7 +244,7 @@ def process_payment(  # pylint: disable=too-many-branches
         from_block=latest_block - pathfinding_service.required_confirmations,
         to_block=latest_block,
     )
-    required_deposit = round(expected_amount * UDC_SECURITY_MARGIN_FACTOR)
+    required_deposit = round(expected_amount * UDC_SECURITY_MARGIN_FACTOR_PFS)
     if udc_balance < required_deposit:
         raise exceptions.DepositTooLow(required_deposit=required_deposit)
 

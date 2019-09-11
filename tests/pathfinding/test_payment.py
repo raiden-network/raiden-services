@@ -5,7 +5,7 @@ import pathfinding_service.exceptions as exceptions
 from pathfinding_service.api import process_payment
 from raiden.utils.typing import Address, TokenAmount
 from raiden_contracts.tests.utils import get_random_privkey
-from raiden_libs.constants import UDC_SECURITY_MARGIN_FACTOR
+from raiden_libs.constants import UDC_SECURITY_MARGIN_FACTOR_PFS
 
 
 def test_save_and_load_iou(pathfinding_service_mock, make_iou):
@@ -90,7 +90,7 @@ def test_process_payment(
     service_fee = TokenAmount(1)
     sender = create_account()
     privkey = get_private_key(sender)
-    deposit_to_udc(sender, round(1 * UDC_SECURITY_MARGIN_FACTOR))
+    deposit_to_udc(sender, round(1 * UDC_SECURITY_MARGIN_FACTOR_PFS))
     web3.testing.mine(pathfinding_service_web3_mock.required_confirmations)
     one_to_n_address = to_canonical_address(one_to_n_contract.address)
 
@@ -104,13 +104,13 @@ def test_process_payment(
 
     # Increasing the amount would make the payment work again, if we had enough
     # deposit. But we set the deposit one token too low.
-    deposit_to_udc(sender, round(2 * UDC_SECURITY_MARGIN_FACTOR) - 1)
+    deposit_to_udc(sender, round(2 * UDC_SECURITY_MARGIN_FACTOR_PFS) - 1)
     iou = make_iou(privkey, pfs.address, amount=2)
     with pytest.raises(exceptions.DepositTooLow):
         process_payment(iou, pfs, service_fee, one_to_n_address)
 
     # With the higher amount and enough deposit, it works again!
-    deposit_to_udc(sender, round(2 * UDC_SECURITY_MARGIN_FACTOR))
+    deposit_to_udc(sender, round(2 * UDC_SECURITY_MARGIN_FACTOR_PFS))
     web3.testing.mine(pathfinding_service_web3_mock.required_confirmations)
     iou = make_iou(privkey, pfs.address, amount=2)
     process_payment(iou, pfs, service_fee, one_to_n_address)

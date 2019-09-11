@@ -21,7 +21,7 @@ from monitoring_service.states import (
 from raiden.utils.typing import BlockNumber, TokenNetworkAddress, TransactionHash
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK, ChannelState
 from raiden_libs.blockchain import get_pessimistic_udc_balance
-from raiden_libs.constants import UDC_SECURITY_MARGIN_FACTOR
+from raiden_libs.constants import UDC_SECURITY_MARGIN_FACTOR_MS
 from raiden_libs.contract_info import CONTRACT_MANAGER
 from raiden_libs.events import (
     Event,
@@ -442,7 +442,7 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
         )
         return
 
-    if user_deposit < monitor_request.reward_amount * UDC_SECURITY_MARGIN_FACTOR:
+    if user_deposit < monitor_request.reward_amount * UDC_SECURITY_MARGIN_FACTOR_MS:
         log.debug(
             "User deposit is insufficient -> try monitoring again later",
             monitor_request=monitor_request,

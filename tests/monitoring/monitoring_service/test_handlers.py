@@ -34,7 +34,7 @@ from monitoring_service.states import OnChainUpdateStatus
 from raiden.utils.typing import Address, BlockNumber, ChannelID, Nonce, TokenAmount
 from raiden_contracts.constants import ChannelState
 from raiden_contracts.tests.utils import get_random_privkey
-from raiden_libs.constants import UDC_SECURITY_MARGIN_FACTOR
+from raiden_libs.constants import UDC_SECURITY_MARGIN_FACTOR_MS
 from raiden_libs.events import (
     Event,
     ReceiveChannelClosedEvent,
@@ -514,7 +514,7 @@ def test_action_monitoring_rescheduling_when_user_lacks_funds(context: Context):
     # With sufficient funds it must succeed
     with patch(
         "monitoring_service.handlers.get_pessimistic_udc_balance",
-        Mock(return_value=reward_amount * UDC_SECURITY_MARGIN_FACTOR),
+        Mock(return_value=reward_amount * UDC_SECURITY_MARGIN_FACTOR_MS),
     ):
         action_monitoring_triggered_event_handler(event, context)
     assert context.monitoring_service_contract.functions.monitor.called
