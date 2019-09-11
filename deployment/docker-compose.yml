@@ -262,4 +262,4 @@ services:
       - RDN_REGISTRY_SERVICE_URL=""
       - RDN_REGISTRY_ETH_RPC=http://parity.goerli.ethnodes.brainbot.com:8545
     depends_on:
-      - traefik
+      - registration-goerli  # The registrations need to run serially
