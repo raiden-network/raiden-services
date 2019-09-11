@@ -237,3 +237,29 @@ services:
       - msrc-goerli
       - msrc-goerli-backup
       - builder
+
+  # This registers the service and stops afterwards
+  registration-goerli:
+    <<: *defaults
+    command: ["python3", "-m", "raiden_libs.register_service"]
+    environment:
+      - RDN_REGISTRY_LOG_LEVEL=DEBUG
+      - RDN_REGISTRY_KEYSTORE_FILE=${MS_KEYSTORE_FILE}
+      - RDN_REGISTRY_PASSWORD=${MS_PASSWORD}
+      - RDN_REGISTRY_SERVICE_URL="https://pfs-goerli-with-fee.services-dev.raiden.network"
+      - RDN_REGISTRY_ETH_RPC=http://parity.goerli.ethnodes.brainbot.com:8545
+    depends_on:
+      - traefik
+
+  # This registers the service and stops afterwards
+  registration-goerli-backup:
+    <<: *defaults
+    command: ["python3", "-m", "raiden_libs.register_service"]
+    environment:
+      - RDN_REGISTRY_LOG_LEVEL=DEBUG
+      - RDN_REGISTRY_KEYSTORE_FILE=${MS_BACKUP_KEYSTORE_FILE}
+      - RDN_REGISTRY_PASSWORD=${MS_BACKUP_PASSWORD}
+      - RDN_REGISTRY_SERVICE_URL=""
+      - RDN_REGISTRY_ETH_RPC=http://parity.goerli.ethnodes.brainbot.com:8545
+    depends_on:
+      - traefik
