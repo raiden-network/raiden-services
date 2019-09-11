@@ -99,10 +99,9 @@ def main(
         current_url=current_url,
     )
 
-    current_deposit = service_registry_contract.functions.deposits(service_address).call()
     current_url = service_registry_contract.functions.urls(service_address).call()
 
-    log.info("Updated infos", current_deposit=current_deposit, current_url=current_url)
+    log.info("Updated infos", current_url=current_url)
 
 
 def deposit_to_registry(
