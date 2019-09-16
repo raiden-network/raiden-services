@@ -24,6 +24,7 @@ from raiden.utils.typing import (
     ChannelID,
     FeeAmount,
     PaymentAmount,
+    PaymentWithFeeAmount,
     TokenAmount,
     TokenNetworkAddress,
 )
@@ -83,9 +84,9 @@ class Path:
         total = self.value
         try:
             for prev_node, mediator, next_node in reversed(list(window(self.nodes, 3))):
-                fee_for_this_mediator = self.G[prev_node][mediator]["view"].fee_receiver(
+                fee_for_this_mediator = self.G[prev_node][mediator]["view"].forward_fee_receiver(
                     total
-                ) + self.G[mediator][next_node]["view"].fee_sender(total)
+                ) + self.G[mediator][next_node]["view"].forward_fee_sender(total)
                 total += fee_for_this_mediator
                 self.fees.append(fee_for_this_mediator)
         except UndefinedMediationFee:
@@ -293,19 +294,24 @@ class TokenNetwork:
     @staticmethod
     def edge_weight(
         visited: Dict[ChannelID, float],
-        attr: Dict[str, Any],
-        attr_backwards: Dict[str, Any],
+        view: ChannelView,
+        view_from_partner: ChannelView,
         amount: PaymentAmount,
         fee_penalty: float,
     ) -> float:
-        view: ChannelView = attr["view"]
-        view_from_partner: ChannelView = attr_backwards["view"]
         diversity_weight = visited.get(view.channel_id, 0)
         # Fees for initiator and target are included here. This promotes routes
         # that are nice to the initiator's and target's capacities, but it's
         # inconsistent with the estimated total fee.
         try:
-            fee_weight = (view.fee_sender(amount) + view.fee_receiver(amount)) / 1e18 * fee_penalty
+            fee_weight = (
+                (
+                    view.forward_fee_sender(PaymentWithFeeAmount(amount))
+                    + view.forward_fee_receiver(PaymentWithFeeAmount(amount))
+                )
+                / 1e18
+                * fee_penalty
+            )
         except UndefinedMediationFee:
             return float("inf")
         no_refund_weight = 0
