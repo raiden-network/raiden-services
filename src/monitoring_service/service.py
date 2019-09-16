@@ -3,6 +3,7 @@ import time
 from datetime import datetime
 from typing import Callable, Dict
 
+import sentry_sdk
 import structlog
 from web3 import Web3
 from web3.contract import Contract
@@ -50,12 +51,25 @@ def check_gas_reserve(web3: Web3, private_key: str) -> None:
 
 
 def handle_event(event: Event, context: Context) -> None:
+    """ Calls the handler for the given event.
+
+    Exceptions are caught and generate both error logs and sentry issues.
+    Events are not retried after an exception.
+    """
     log.debug("Processing event", event_=event)
     handler = HANDLERS.get(type(event))
 
     if handler:
-        handler(event, context)
-        log.debug("Processed event", num_scheduled_events=context.db.scheduled_event_count())
+        with sentry_sdk.push_scope() as sentry_scope:
+            sentry_scope.set_tag("event", event.__class__.__name__)
+            try:
+                handler(event, context)
+                log.debug(
+                    "Processed event", num_scheduled_events=context.db.scheduled_event_count()
+                )
+            except Exception as ex:  # pylint: disable=broad-except
+                log.error("Error during event handler", event=event, exc_info=ex)
+                sentry_sdk.capture_exception(ex)
 
 
 class MonitoringService:  # pylint: disable=too-few-public-methods,too-many-instance-attributes
