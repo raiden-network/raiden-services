@@ -15,7 +15,7 @@ from raiden.utils.typing import (
     ChannelID,
     FeeAmount,
     Nonce,
-    PaymentAmount,
+    PaymentWithFeeAmount,
     TokenAmount,
     TokenNetworkAddress,
 )
@@ -62,13 +62,13 @@ class ChannelView:
         if reveal_timeout is not None:
             self.reveal_timeout = reveal_timeout
 
-    def fee_sender(self, amount: PaymentAmount) -> FeeAmount:
+    def forward_fee_sender(self, amount: PaymentWithFeeAmount) -> FeeAmount:
         """Return the mediation fee for this channel when transferring the given amount"""
-        return self.fee_schedule_sender.fee(amount, Balance(self.capacity))
+        return self.fee_schedule_sender.fee_payer(amount, Balance(self.capacity))
 
-    def fee_receiver(self, amount: PaymentAmount) -> FeeAmount:
+    def forward_fee_receiver(self, amount: PaymentWithFeeAmount) -> FeeAmount:
         """Return the mediation fee for this channel when receiving the given amount"""
-        return self.fee_schedule_receiver.fee(amount, Balance(self.capacity))
+        return self.fee_schedule_receiver.fee_payee(amount, Balance(self.capacity))
 
     def set_sender_fee_schedule(self, fee_schedule: FeeSchedule) -> None:
         if self.fee_schedule_sender.timestamp >= fee_schedule.timestamp:
