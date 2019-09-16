@@ -14,6 +14,7 @@ from monitoring_service.service import MonitoringService
 from raiden.utils.typing import Address, ChainID
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
+    CONTRACT_SERVICE_REGISTRY,
     CONTRACT_TOKEN_NETWORK_REGISTRY,
     CONTRACT_USER_DEPOSIT,
 )
@@ -60,6 +61,7 @@ def monitoring_service(  # pylint: disable=too-many-arguments
     token_network_registry_contract,
     ms_database,
     get_private_key,
+    service_registry,
 ):
     ms = MonitoringService(
         web3=web3,
@@ -68,6 +70,7 @@ def monitoring_service(  # pylint: disable=too-many-arguments
             CONTRACT_TOKEN_NETWORK_REGISTRY: token_network_registry_contract,
             CONTRACT_MONITORING_SERVICE: monitoring_service_contract,
             CONTRACT_USER_DEPOSIT: user_deposit_contract,
+            CONTRACT_SERVICE_REGISTRY: service_registry,
         },
         required_confirmations=0,  # for faster tests
         poll_interval=0.01,  # for faster tests

@@ -20,6 +20,7 @@ from raiden.settings import DEFAULT_NUMBER_OF_BLOCK_CONFIRMATIONS
 from raiden.utils.typing import BlockNumber, ChainID
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
+    CONTRACT_SERVICE_REGISTRY,
     CONTRACT_TOKEN_NETWORK_REGISTRY,
     CONTRACT_USER_DEPOSIT,
 )
@@ -57,7 +58,7 @@ def handle_event(event: Event, context: Context) -> None:
         log.debug("Processed event", num_scheduled_events=context.db.scheduled_event_count())
 
 
-class MonitoringService:  # pylint: disable=too-few-public-methods
+class MonitoringService:  # pylint: disable=too-few-public-methods,too-many-instance-attributes
     def __init__(  # pylint: disable=too-many-arguments
         self,
         web3: Web3,
@@ -74,6 +75,7 @@ class MonitoringService:  # pylint: disable=too-few-public-methods
         self.address = private_key_to_address(private_key)
         self.required_confirmations = required_confirmations
         self.poll_interval = poll_interval
+        self.service_registry = contracts[CONTRACT_SERVICE_REGISTRY]
 
         web3.middleware_stack.add(construct_sign_and_send_raw_middleware(private_key))
 
@@ -104,6 +106,10 @@ class MonitoringService:  # pylint: disable=too-few-public-methods
     def start(
         self, wait_function: Callable = time.sleep, check_account_gas_reserve: bool = True
     ) -> None:
+        if not self.service_registry.functions.hasValidRegistration(self.address).call():
+            log.error("No valid registration in ServiceRegistry", address=self.address)
+            exit(1)
+
         last_gas_check_block = 0
         while True:
             last_confirmed_block = self.context.latest_confirmed_block
