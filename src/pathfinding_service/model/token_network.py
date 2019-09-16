@@ -1,7 +1,7 @@
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from itertools import islice
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
 import networkx as nx
 import structlog
@@ -334,7 +334,13 @@ class TokenNetwork:
         for node1, node2 in graph.edges():
             edge = graph[node1][node2]
             backwards_edge = graph[node2][node1]
-            edge["weight"] = self.edge_weight(visited, edge, backwards_edge, value, fee_penalty)
+            edge["weight"] = self.edge_weight(
+                visited=visited,
+                view=edge["view"],
+                view_from_partner=backwards_edge["view"],
+                amount=value,
+                fee_penalty=fee_penalty,
+            )
 
         # find next path
         all_paths: Iterable[List[Address]] = nx.shortest_simple_paths(

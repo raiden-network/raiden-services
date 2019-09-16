@@ -49,7 +49,7 @@ def test_edge_weight(addresses):
     # no penalty
     assert (
         TokenNetwork.edge_weight(
-            dict(), dict(view=view), dict(view=view_partner), amount=amount, fee_penalty=0
+            visited=dict(), view=view, view_from_partner=view_partner, amount=amount, fee_penalty=0
         )
         == 1
     )
@@ -57,7 +57,11 @@ def test_edge_weight(addresses):
     # channel already used in a previous route
     assert (
         TokenNetwork.edge_weight(
-            {channel_id: 2}, dict(view=view), dict(view=view_partner), amount=amount, fee_penalty=0
+            visited={channel_id: 2},
+            view=view,
+            view_from_partner=view_partner,
+            amount=amount,
+            fee_penalty=0,
         )
         == 3
     )
@@ -66,7 +70,11 @@ def test_edge_weight(addresses):
     view.fee_schedule_sender.flat = FeeAmount(int(0.03e18))
     assert (
         TokenNetwork.edge_weight(
-            dict(), dict(view=view), dict(view=view_partner), amount=amount, fee_penalty=100
+            visited=dict(),
+            view=view,
+            view_from_partner=view_partner,
+            amount=amount,
+            fee_penalty=100,
         )
         == 4
     )
@@ -76,7 +84,11 @@ def test_edge_weight(addresses):
     view.fee_schedule_sender.proportional = ProportionalFeeAmount(int(0.01e6))
     assert (
         TokenNetwork.edge_weight(
-            dict(), dict(view=view), dict(view=view_partner), amount=amount, fee_penalty=100
+            visited=dict(),
+            view=view,
+            view_from_partner=view_partner,
+            amount=amount,
+            fee_penalty=100,
         )
         == 2
     )
@@ -85,7 +97,11 @@ def test_edge_weight(addresses):
     view_partner.capacity = TokenAmount(0)
     assert (
         TokenNetwork.edge_weight(
-            dict(), dict(view=view), dict(view=view_partner), amount=amount, fee_penalty=100
+            visited=dict(),
+            view=view,
+            view_from_partner=view_partner,
+            amount=amount,
+            fee_penalty=100,
         )
         == 3
     )
