@@ -18,6 +18,7 @@ from raiden.utils.typing import (
 )
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
+    CONTRACT_SERVICE_REGISTRY,
     CONTRACT_TOKEN_NETWORK_REGISTRY,
     CONTRACT_USER_DEPOSIT,
     LOCKSROOT_OF_NO_LOCKS,
@@ -83,6 +84,7 @@ def test_crash(
         CONTRACT_TOKEN_NETWORK_REGISTRY: ContractMock(),
         CONTRACT_MONITORING_SERVICE: ContractMock(),
         CONTRACT_USER_DEPOSIT: ContractMock(),
+        CONTRACT_SERVICE_REGISTRY: ContractMock(),
     }
 
     def new_ms(filename):

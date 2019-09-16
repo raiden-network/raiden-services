@@ -10,6 +10,7 @@ from raiden.settings import DEFAULT_NUMBER_OF_BLOCK_CONFIRMATIONS
 from raiden.utils.typing import BlockNumber
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
+    CONTRACT_SERVICE_REGISTRY,
     CONTRACT_TOKEN_NETWORK_REGISTRY,
     CONTRACT_USER_DEPOSIT,
 )
@@ -19,7 +20,12 @@ log = structlog.get_logger(__name__)
 
 
 @blockchain_options(
-    contracts=[CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT, CONTRACT_MONITORING_SERVICE]
+    contracts=[
+        CONTRACT_TOKEN_NETWORK_REGISTRY,
+        CONTRACT_USER_DEPOSIT,
+        CONTRACT_MONITORING_SERVICE,
+        CONTRACT_SERVICE_REGISTRY,
+    ]
 )
 @click.command()
 @click.option(
