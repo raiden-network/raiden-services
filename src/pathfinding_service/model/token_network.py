@@ -19,8 +19,10 @@ from pathfinding_service.model.channel_view import ChannelView, FeeSchedule
 from raiden.exceptions import UndefinedMediationFee
 from raiden.messages.path_finding_service import PFSCapacityUpdate, PFSFeeUpdate
 from raiden.network.transport.matrix import AddressReachability
+from raiden.transfer.mediated_transfer.mediation_fee import FeeScheduleState
 from raiden.utils.typing import (
     Address,
+    Balance,
     ChannelID,
     FeeAmount,
     PaymentAmount,
@@ -63,6 +65,39 @@ def window(seq: Sequence, n: int = 2) -> Iterable[tuple]:
         yield result
 
 
+def backwards_fee_sender(
+    fee_schedule: FeeScheduleState, balance: Balance, amount: PaymentWithFeeAmount
+) -> Optional[FeeAmount]:
+    """Returns the mediation fee for this channel when transferring the given amount"""
+    try:
+        return fee_schedule.fee_payer(amount, balance)
+    except UndefinedMediationFee:
+        return None
+
+
+def backwards_fee_receiver(
+    fee_schedule: FeeScheduleState, balance: Balance, amount: PaymentWithFeeAmount
+) -> Optional[FeeAmount]:
+    """Returns the mediation fee for this channel when receiving the given amount"""
+
+    def fee_in(imbalance_fee: FeeAmount) -> FeeAmount:
+        return FeeAmount(
+            round(
+                (
+                    (amount + fee_schedule.flat + imbalance_fee)
+                    / (1 - fee_schedule.proportional / 1e6)
+                )
+                - amount
+            )
+        )
+
+    imbalance_fee = fee_schedule.imbalance_fee(
+        amount=PaymentWithFeeAmount(amount - fee_in(imbalance_fee=FeeAmount(0))), balance=balance
+    )
+
+    return fee_in(imbalance_fee=imbalance_fee)
+
+
 class Path:
     def __init__(
         self,
@@ -81,16 +116,35 @@ class Path:
         log.debug("Creating Path object", nodes=nodes, is_valid=self.is_valid, fees=self.fees)
 
     def _calculate_fees(self) -> None:
-        total = self.value
+        total = PaymentWithFeeAmount(self.value)
         try:
             for prev_node, mediator, next_node in reversed(list(window(self.nodes, 3))):
-                fee_out = self.G[mediator][next_node]["view"].forward_fee_sender(total)
-                total += fee_out
+                view_in: ChannelView = self.G[prev_node][mediator]["view"]
+                view_out: ChannelView = self.G[mediator][next_node]["view"]
 
-                fee_in = self.G[prev_node][mediator]["view"].forward_fee_receiver(total)
-                total += fee_in
+                fee_out = backwards_fee_sender(
+                    fee_schedule=view_out.fee_schedule_sender,
+                    balance=Balance(view_out.capacity),
+                    amount=total,
+                )
+                if fee_out is None:
+                    self._is_valid = False
+                    return
 
-                self.fees.append(fee_in + fee_out)
+                total += fee_out  # type: ignore
+
+                fee_in = backwards_fee_receiver(
+                    fee_schedule=view_in.fee_schedule_receiver,
+                    balance=Balance(view_in.capacity),
+                    amount=total,
+                )
+                if fee_in is None:
+                    self._is_valid = False
+                    return
+
+                total += fee_in  # type: ignore
+
+                self.fees.append(FeeAmount(fee_in + fee_out))
         except UndefinedMediationFee:
             self._is_valid = False
 
