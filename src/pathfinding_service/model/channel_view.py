@@ -16,6 +16,7 @@ from raiden.utils.typing import (
     ChannelID,
     FeeAmount,
     Nonce,
+    Optional,
     PaymentWithFeeAmount,
     TokenAmount,
     TokenNetworkAddress,
@@ -63,32 +64,40 @@ class ChannelView:
         if reveal_timeout is not None:
             self.reveal_timeout = reveal_timeout
 
-    def forward_fee_sender(self, amount: PaymentWithFeeAmount) -> FeeAmount:
-        """Return the mediation fee for this channel when transferring the given amount"""
-        return self.fee_schedule_sender.fee_payer(amount, Balance(self.capacity))
+    def backwards_fee_sender(
+        self, balance: Balance, amount: PaymentWithFeeAmount
+    ) -> Optional[FeeAmount]:
+        """Returns the mediation fee for this channel when transferring the given amount"""
+        try:
+            return self.fee_schedule_sender.fee_payer(amount, balance)
+        except UndefinedMediationFee:
+            return None
 
-    def forward_fee_receiver(self, amount: PaymentWithFeeAmount) -> FeeAmount:
-        """Return the mediation fee for this channel when receiving the given amount"""
-        temp_fee = round(
-            (amount + self.fee_schedule_receiver.flat)
-            / (1 - (self.fee_schedule_receiver.proportional / 1e6))
-            - amount
-        )
+    def backwards_fee_receiver(
+        self, balance: Balance, amount: PaymentWithFeeAmount
+    ) -> Optional[FeeAmount]:
+        """Returns the mediation fee for this channel when receiving the given amount"""
 
-        penalty_func = self.fee_schedule_receiver._penalty_func  # pylint: disable=protected-access
-        if penalty_func:
-            # Total channel balance - node balance = balance (used as x-axis for the penalty)
-            balance = penalty_func.x_list[-1] - self.capacity
-            try:
-                imbalance_fee = round(
-                    penalty_func(balance + amount + temp_fee) - penalty_func(balance)
+        def fee_in(imbalance_fee: FeeAmount) -> FeeAmount:
+            return FeeAmount(
+                round(
+                    (
+                        (amount + self.fee_schedule_receiver.flat + imbalance_fee)
+                        / (1 - self.fee_schedule_receiver.proportional / 1e6)
+                    )
+                    - amount
                 )
-            except ValueError:
-                raise UndefinedMediationFee()
-        else:
-            imbalance_fee = 0
+            )
 
-        return FeeAmount(temp_fee + imbalance_fee)
+        try:
+            imbalance_fee = self.fee_schedule_receiver.imbalance_fee(
+                amount=PaymentWithFeeAmount(amount - fee_in(imbalance_fee=FeeAmount(0))),
+                balance=balance,
+            )
+        except UndefinedMediationFee:
+            return None
+
+        return fee_in(imbalance_fee=imbalance_fee)
 
     def set_sender_fee_schedule(self, fee_schedule: FeeSchedule) -> None:
         if self.fee_schedule_sender.timestamp >= fee_schedule.timestamp:

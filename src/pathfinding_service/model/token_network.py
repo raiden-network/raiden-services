@@ -122,10 +122,8 @@ class Path:
                 view_in: ChannelView = self.G[prev_node][mediator]["view"]
                 view_out: ChannelView = self.G[mediator][next_node]["view"]
 
-                fee_out = backwards_fee_sender(
-                    fee_schedule=view_out.fee_schedule_sender,
-                    balance=Balance(view_out.capacity),
-                    amount=total,
+                fee_out = view_out.backwards_fee_sender(
+                    balance=Balance(view_out.capacity), amount=total
                 )
                 if fee_out is None:
                     self._is_valid = False
@@ -133,10 +131,8 @@ class Path:
 
                 total += fee_out  # type: ignore
 
-                fee_in = backwards_fee_receiver(
-                    fee_schedule=view_in.fee_schedule_receiver,
-                    balance=Balance(view_in.capacity),
-                    amount=total,
+                fee_in = view_in.backwards_fee_receiver(
+                    balance=Balance(view_in.capacity), amount=total
                 )
                 if fee_in is None:
                     self._is_valid = False
@@ -360,14 +356,19 @@ class TokenNetwork:
         # that are nice to the initiator's and target's capacities, but it's
         # inconsistent with the estimated total fee.
         try:
-            fee_weight = (
-                (
-                    view.forward_fee_sender(PaymentWithFeeAmount(amount))
-                    + view.forward_fee_receiver(PaymentWithFeeAmount(amount))
-                )
-                / 1e18
-                * fee_penalty
+            fee_out = view.backwards_fee_sender(
+                balance=Balance(view.capacity), amount=PaymentWithFeeAmount(amount)
             )
+            if fee_out is None:
+                return float("inf")
+
+            fee_in = view.backwards_fee_receiver(
+                balance=Balance(view.capacity), amount=PaymentWithFeeAmount(amount)
+            )
+            if fee_in is None:
+                return float("inf")
+
+            fee_weight = (fee_in + fee_out) / 1e18 * fee_penalty
         except UndefinedMediationFee:
             return float("inf")
         no_refund_weight = 0
