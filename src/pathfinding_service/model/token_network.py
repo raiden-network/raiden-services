@@ -19,7 +19,6 @@ from pathfinding_service.model.channel_view import ChannelView, FeeSchedule
 from raiden.exceptions import UndefinedMediationFee
 from raiden.messages.path_finding_service import PFSCapacityUpdate, PFSFeeUpdate
 from raiden.network.transport.matrix import AddressReachability
-from raiden.transfer.mediated_transfer.mediation_fee import FeeScheduleState
 from raiden.utils.typing import (
     Address,
     Balance,
@@ -63,39 +62,6 @@ def window(seq: Sequence, n: int = 2) -> Iterable[tuple]:
     for elem in remaining_elements:
         result = result[1:] + (elem,)
         yield result
-
-
-def backwards_fee_sender(
-    fee_schedule: FeeScheduleState, balance: Balance, amount: PaymentWithFeeAmount
-) -> Optional[FeeAmount]:
-    """Returns the mediation fee for this channel when transferring the given amount"""
-    try:
-        return fee_schedule.fee_payer(amount, balance)
-    except UndefinedMediationFee:
-        return None
-
-
-def backwards_fee_receiver(
-    fee_schedule: FeeScheduleState, balance: Balance, amount: PaymentWithFeeAmount
-) -> Optional[FeeAmount]:
-    """Returns the mediation fee for this channel when receiving the given amount"""
-
-    def fee_in(imbalance_fee: FeeAmount) -> FeeAmount:
-        return FeeAmount(
-            round(
-                (
-                    (amount + fee_schedule.flat + imbalance_fee)
-                    / (1 - fee_schedule.proportional / 1e6)
-                )
-                - amount
-            )
-        )
-
-    imbalance_fee = fee_schedule.imbalance_fee(
-        amount=PaymentWithFeeAmount(amount - fee_in(imbalance_fee=FeeAmount(0))), balance=balance
-    )
-
-    return fee_in(imbalance_fee=imbalance_fee)
 
 
 class Path:
