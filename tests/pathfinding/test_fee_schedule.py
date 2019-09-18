@@ -131,6 +131,8 @@ def test_fees_in_routing():
     # Now let's try imbalance fees
     tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(0)), (TA(200), FA(200))])
     assert tn.estimate_fee(1, 3) == 10
+
+    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(200)), (TA(200), FA(0))])
     assert tn.estimate_fee(3, 1) == -10
 
     # When the range covered by the imbalance_penalty does include the
