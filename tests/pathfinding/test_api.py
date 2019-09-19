@@ -451,3 +451,15 @@ def test_stats_endpoint(
 
     database.update_feedback(feedback_token2, default_path2, True)
     check_response(2, 2, 1)
+
+
+@pytest.mark.usefixtures("api_sut")
+def test_cors(api_url: str):
+    headers = {
+        "Origin": "http://example.com/",
+        "Access-Control-Request-Method": "GET",
+        "Access-Control-Request-Headers": "X-Requested-With",
+    }
+
+    response = requests.options(api_url, headers=headers)
+    assert response.headers["Access-Control-Allow-Origin"] == "*"

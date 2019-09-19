@@ -454,6 +454,13 @@ class ServiceApi:
         self.operator = operator
         self.info_message = info_message
 
+        # Enable cross origin requests
+        @self.flask_app.after_request
+        def after_request(response: Response) -> Response:  # pylint: disable=unused-variable
+            response.headers.add("Access-Control-Allow-Origin", "*")
+            response.headers.add("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
+            return response
+
         resources: List[Tuple[str, Resource, Dict, str]] = [
             (
                 "/<token_network_address>/paths",
