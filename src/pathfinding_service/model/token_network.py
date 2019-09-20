@@ -382,7 +382,7 @@ class TokenNetwork:
         except StopIteration:
             return None
 
-    def get_paths(  # pylint: disable=too-many-arguments
+    def get_paths(  # pylint: disable=too-many-arguments, too-many-locals
         self,
         source: Address,
         target: Address,
@@ -441,4 +441,15 @@ class TokenNetwork:
                 channel_id = edge["view"].channel_id
                 visited[channel_id] += diversity_penalty
 
-        return [p.to_dict() for p in paths]
+        found_paths = [p.to_dict() for p in paths]
+        log.info(
+            "Returning paths for payment",
+            source=source,
+            target=target,
+            value=value,
+            max_paths=max_paths,
+            diversity_penalty=diversity_penalty,
+            fee_penalty=fee_penalty,
+            paths=found_paths,
+        )
+        return found_paths
