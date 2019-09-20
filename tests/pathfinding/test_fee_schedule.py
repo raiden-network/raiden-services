@@ -145,20 +145,25 @@ def test_fees_in_routing():
 
 
 @pytest.mark.parametrize(
-    "prop_fee_cli, estimated_fee",
+    "flat_fee_cli, prop_fee_cli, estimated_fee",
     [
+        # flat fees
+        (100, 0, 100 + 100),
+        (10, 0, 10 + 10),
+        # proportional fees
         # TODO: There are some rounding problems with the 100% case
-        (1_000_000, 999 + 1998),  # 100% per hop mediation fee
-        (100_000, 100 + 110),  # 10% per hop mediation fee
-        (50_000, 50 + 53),  # 5% per hop mediation fee
-        (10_000, 10 + 10),  # 1% per hop mediation fee
+        (0, 1_000_000, 999 + 1998),  # 100% per hop mediation fee
+        (0, 100_000, 100 + 110),  # 10% per hop mediation fee
+        (0, 50_000, 50 + 53),  # 5% per hop mediation fee
+        (0, 10_000, 10 + 10),  # 1% per hop mediation fee
     ],
 )
-def test_compounding_fees(prop_fee_cli, estimated_fee):
+def test_compounding_fees(flat_fee_cli, prop_fee_cli, estimated_fee):
     """ The transferred amount needs to include the fees for all mediators.
     Earlier mediators will apply the proportional fee not only on the payment
     amount, but also on the fees for later mediators.
     """
+    flat_fee = flat_fee_cli // 2
     prop_fee = ppm_fee_per_channel(ProportionalFeeAmount(prop_fee_cli))
 
     tn = TokenNetworkForTests(
@@ -170,10 +175,10 @@ def test_compounding_fees(prop_fee_cli, estimated_fee):
         capacity=TA(10_000),
     )
 
-    tn.set_fee(2, 1, proportional=prop_fee)
-    tn.set_fee(2, 3, proportional=prop_fee)
-    tn.set_fee(3, 2, proportional=prop_fee)
-    tn.set_fee(3, 4, proportional=prop_fee)
+    tn.set_fee(2, 1, flat=flat_fee, proportional=prop_fee)
+    tn.set_fee(2, 3, flat=flat_fee, proportional=prop_fee)
+    tn.set_fee(3, 2, flat=flat_fee, proportional=prop_fee)
+    tn.set_fee(3, 4, flat=flat_fee, proportional=prop_fee)
     assert tn.estimate_fee(1, 4, value=PA(1_000)) == estimated_fee
 
 
