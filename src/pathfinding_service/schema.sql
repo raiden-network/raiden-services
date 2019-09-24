@@ -31,11 +31,10 @@ CREATE TABLE channel (
     fee_schedule2   JSON,
 
     PRIMARY KEY (token_network_address, channel_id),
+    CHECK (participant1 < participant2),
+    UNIQUE (participant1, participant2),
     FOREIGN KEY (token_network_address)
         REFERENCES token_network(address)
-);
-CREATE UNIQUE INDEX channel_unique_for_partners On channel(
-    min(participant1, participant2), max(participant1, participant2)
 );
 
 CREATE TABLE iou (

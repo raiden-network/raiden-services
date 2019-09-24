@@ -208,7 +208,11 @@ class TokenNetwork:
     ) -> Channel:
         """ Register the channel in the graph, add participents to graph if necessary.
 
-        Corresponds to the ChannelOpened event. Called by the contract event listener. """
+        Corresponds to the ChannelOpened event. Called by the contract event listener.
+        We swap participants unless participant1 < participant2."""
+
+        if participant1 > participant2:
+            (participant1, participant2) = (participant2, participant1)
 
         channel = Channel(
             token_network_address=self.address,
