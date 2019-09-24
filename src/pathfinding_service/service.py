@@ -15,7 +15,7 @@ from pathfinding_service.exceptions import (
     InvalidPFSFeeUpdate,
 )
 from pathfinding_service.model import TokenNetwork
-from pathfinding_service.model.channel_view import Channel
+from pathfinding_service.model.channel import Channel
 from pathfinding_service.typing import DeferableMessage
 from raiden.constants import PATH_FINDING_BROADCASTING_ROOM, UINT256_MAX
 from raiden.messages.abstract import Message
@@ -233,10 +233,9 @@ class PathfindingService(gevent.Greenlet):
         self.database.delete_channel(event.token_network_address, event.channel_identifier)
 
     def handle_message(self, message: Message) -> None:
-        changed_channel: Optional[Channel]
         try:
             if isinstance(message, PFSCapacityUpdate):
-                changed_channel = self.on_capacity_update(message)
+                changed_channel: Optional[Channel] = self.on_capacity_update(message)
             elif isinstance(message, PFSFeeUpdate):
                 changed_channel = self.on_fee_update(message)
             else:
