@@ -104,8 +104,7 @@ class PathfindingService(gevent.Greenlet):
 
     def _load_token_networks(self) -> Dict[TokenNetworkAddress, TokenNetwork]:
         network_for_address = {n.address: n for n in self.database.get_token_networks()}
-        channels = self.database.get_channels()
-        for channel in channels:
+        for channel in self.database.get_channels():
             for cv in channel.views:
                 network_for_address[cv.token_network_address].add_channel_view(cv)
 
@@ -208,14 +207,13 @@ class PathfindingService(gevent.Greenlet):
         self.matrix_listener.follow_address_presence(event.participant1, refresh=True)
         self.matrix_listener.follow_address_presence(event.participant2, refresh=True)
 
-        channel_views = token_network.handle_channel_opened_event(
+        channel = token_network.handle_channel_opened_event(
             channel_identifier=event.channel_identifier,
             participant1=event.participant1,
             participant2=event.participant2,
             settle_timeout=event.settle_timeout,
         )
-        for cv in channel_views:
-            self.database.upsert_channel(cv.channel)
+        self.database.upsert_channel(channel)
 
         # Handle messages for this channel which where received before ChannelOpened
         with self.database.conn:
