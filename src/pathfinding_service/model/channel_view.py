@@ -1,6 +1,6 @@
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
-from typing import ClassVar, Type
+from typing import ClassVar, Tuple, Type
 
 import marshmallow
 from eth_utils import to_checksum_address
@@ -37,24 +37,102 @@ class FeeSchedule(FeeScheduleRaiden):
 
 @add_schema
 @dataclass
-class ChannelView:
-    """
-    Unidirectional view of a bidirectional channel.
-    """
-
+class Channel:
+    token_network_address: TokenNetworkAddress = field(
+        metadata={"marshmallow_field": ChecksumAddress(required=True)}
+    )
     channel_id: ChannelID
     participant1: Address = field(metadata={"marshmallow_field": ChecksumAddress(required=True)})
     participant2: Address = field(metadata={"marshmallow_field": ChecksumAddress(required=True)})
     settle_timeout: int
-    token_network_address: TokenNetworkAddress = field(
-        metadata={"marshmallow_field": ChecksumAddress(required=True)}
-    )
-    capacity: TokenAmount = TokenAmount(0)
-    reveal_timeout: int = DEFAULT_REVEAL_TIMEOUT
-    update_nonce: Nonce = Nonce(0)
-    fee_schedule_sender: FeeSchedule = field(default_factory=FeeSchedule)
-    fee_schedule_receiver: FeeSchedule = field(default_factory=FeeSchedule)
+    fee_schedule1: FeeSchedule = field(default_factory=FeeSchedule)
+    fee_schedule2: FeeSchedule = field(default_factory=FeeSchedule)
+
+    capacity1: TokenAmount = TokenAmount(0)
+    reveal_timeout1: int = DEFAULT_REVEAL_TIMEOUT
+    update_nonce1: Nonce = Nonce(0)
+    capacity2: TokenAmount = TokenAmount(0)
+    reveal_timeout2: int = DEFAULT_REVEAL_TIMEOUT
+    update_nonce2: Nonce = Nonce(0)
+
     Schema: ClassVar[Type[marshmallow.Schema]]
+
+    @property
+    def views(self) -> Tuple["ChannelView", "ChannelView"]:
+        return (ChannelView(channel=self), ChannelView(channel=self, reverse=True))
+
+
+@dataclass
+class ChannelView:
+    """
+    Unidirectional view of a bidirectional channel
+
+    No data is stored inside the ChannelView.
+    """
+
+    channel: Channel
+    reverse: bool = False
+
+    @property
+    def channel_id(self) -> ChannelID:
+        return self.channel.channel_id
+
+    @property
+    def participant1(self) -> Address:
+        return self.channel.participant2 if self.reverse else self.channel.participant1
+
+    @property
+    def participant2(self) -> Address:
+        return self.channel.participant1 if self.reverse else self.channel.participant2
+
+    @property
+    def settle_timeout(self) -> int:
+        return self.channel.settle_timeout
+
+    @property
+    def token_network_address(self) -> TokenNetworkAddress:
+        return self.channel.token_network_address
+
+    @property
+    def capacity(self) -> TokenAmount:
+        return self.channel.capacity2 if self.reverse else self.channel.capacity1
+
+    @capacity.setter
+    def capacity(self, value: TokenAmount) -> None:
+        if self.reverse:
+            self.channel.capacity2 = value
+        else:
+            self.channel.capacity1 = value
+
+    @property
+    def reveal_timeout(self) -> int:
+        return self.channel.reveal_timeout2 if self.reverse else self.channel.reveal_timeout1
+
+    @reveal_timeout.setter
+    def reveal_timeout(self, value: int) -> None:
+        if self.reverse:
+            self.channel.reveal_timeout2 = value
+        else:
+            self.channel.reveal_timeout1 = value
+
+    @property
+    def update_nonce(self) -> Nonce:
+        return self.channel.update_nonce2 if self.reverse else self.channel.update_nonce1
+
+    @update_nonce.setter
+    def update_nonce(self, value: Nonce) -> None:
+        if self.reverse:
+            self.channel.update_nonce2 = value
+        else:
+            self.channel.update_nonce1 = value
+
+    @property
+    def fee_schedule_sender(self) -> FeeSchedule:
+        return self.channel.fee_schedule2 if self.reverse else self.channel.fee_schedule1
+
+    @property
+    def fee_schedule_receiver(self) -> FeeSchedule:
+        return self.channel.fee_schedule1 if self.reverse else self.channel.fee_schedule2
 
     def update_capacity(
         self, capacity: TokenAmount, nonce: Nonce = Nonce(0), reveal_timeout: int = None
@@ -103,15 +181,12 @@ class ChannelView:
 
         return fee_in(imbalance_fee=imbalance_fee)
 
-    def set_sender_fee_schedule(self, fee_schedule: FeeSchedule) -> None:
+    def set_fee_schedule(self, fee_schedule: FeeSchedule) -> None:
         if self.fee_schedule_sender.timestamp >= fee_schedule.timestamp:
             raise InvalidPFSFeeUpdate("Timestamp must increase between fee updates")
-        self.fee_schedule_sender = fee_schedule
-
-    def set_receiver_fee_schedule(self, fee_schedule: FeeSchedule) -> None:
-        if self.fee_schedule_receiver.timestamp >= fee_schedule.timestamp:
-            raise InvalidPFSFeeUpdate("Timestamp must increase between fee updates")
-        self.fee_schedule_receiver = fee_schedule
+        if self.reverse:
+            self.channel.fee_schedule2 = fee_schedule
+        self.channel.fee_schedule1 = fee_schedule
 
     def __repr__(self) -> str:
         return "<ChannelView cid={} from={} to={} capacity={}>".format(

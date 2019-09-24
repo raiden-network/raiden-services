@@ -8,6 +8,7 @@ from eth_utils import decode_hex, to_canonical_address, to_checksum_address
 
 from pathfinding_service.constants import DIVERSITY_PEN_DEFAULT
 from pathfinding_service.model import ChannelView, TokenNetwork
+from pathfinding_service.model.channel_view import Channel
 from raiden.network.transport.matrix import AddressReachability
 from raiden.utils.typing import (
     Address,
@@ -28,22 +29,16 @@ def test_edge_weight(addresses):
     capacity = TokenAmount(int(20 * 1e18))
     capacity_partner = TokenAmount(int(10 * 1e18))
     settle_timeout = 15
-    view = ChannelView(
+    channel = Channel(
         token_network_address=TokenNetworkAddress(bytes([1])),
         channel_id=channel_id,
         participant1=participant1,
         participant2=participant2,
-        capacity=capacity,
+        capacity1=capacity,
+        capacity2=capacity_partner,
         settle_timeout=settle_timeout,
     )
-    view_partner = ChannelView(
-        token_network_address=TokenNetworkAddress(bytes([1])),
-        channel_id=channel_id,
-        participant1=participant2,
-        participant2=participant1,
-        capacity=capacity_partner,
-        settle_timeout=settle_timeout,
-    )
+    view, view_partner = channel.views
     amount = PaymentAmount(int(1e18))  # one RDN
 
     # no penalty

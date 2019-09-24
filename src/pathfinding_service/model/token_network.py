@@ -15,7 +15,7 @@ from pathfinding_service.constants import (
     FEE_PEN_DEFAULT,
 )
 from pathfinding_service.exceptions import InvalidPFSFeeUpdate
-from pathfinding_service.model.channel_view import ChannelView, FeeSchedule
+from pathfinding_service.model.channel_view import Channel, ChannelView, FeeSchedule
 from raiden.exceptions import UndefinedMediationFee
 from raiden.messages.path_finding_service import PFSCapacityUpdate, PFSFeeUpdate
 from raiden.network.transport.matrix import AddressReachability
@@ -205,26 +205,18 @@ class TokenNetwork:
         participant1: Address,
         participant2: Address,
         settle_timeout: int,
-    ) -> List[ChannelView]:
+    ) -> Tuple[ChannelView, ChannelView]:
         """ Register the channel in the graph, add participents to graph if necessary.
 
         Corresponds to the ChannelOpened event. Called by the contract event listener. """
-        views = [
-            ChannelView(
-                token_network_address=self.address,
-                channel_id=channel_identifier,
-                participant1=participant1,
-                participant2=participant2,
-                settle_timeout=settle_timeout,
-            ),
-            ChannelView(
-                token_network_address=self.address,
-                channel_id=channel_identifier,
-                participant1=participant2,
-                participant2=participant1,
-                settle_timeout=settle_timeout,
-            ),
-        ]
+        channel = Channel(
+            token_network_address=self.address,
+            channel_id=channel_identifier,
+            participant1=participant1,
+            participant2=participant2,
+            settle_timeout=settle_timeout,
+        )
+        views = channel.views
 
         for cv in views:
             self.add_channel_view(cv)
@@ -305,8 +297,7 @@ class TokenNetwork:
             updating_participant=message.updating_participant, other_participant=other_participant
         )
         fee_schedule = FeeSchedule.from_raiden(message.fee_schedule, timestamp=message.timestamp)
-        channel_view_to_partner.set_sender_fee_schedule(fee_schedule)
-        channel_view_from_partner.set_receiver_fee_schedule(fee_schedule)
+        channel_view_to_partner.set_fee_schedule(fee_schedule)
         return [channel_view_to_partner, channel_view_from_partner]
 
     @staticmethod
