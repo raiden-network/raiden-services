@@ -11,20 +11,31 @@ CREATE TABLE token_network (
     address                 CHAR(42) PRIMARY KEY
 );
 
-CREATE TABLE channel_view (
+CREATE TABLE channel (
     token_network_address   CHAR(42) NOT NULL,
     channel_id      HEX_INT NOT NULL,
     participant1    CHAR(42) NOT NULL,
     participant2    CHAR(42) NOT NULL,
     settle_timeout  HEX_INT NOT NULL,
-    capacity        HEX_INT NOT NULL,
-    reveal_timeout  HEX_INT NOT NULL,
-    update_nonce    HEX_INT,
-    fee_schedule_sender    JSON,
-    fee_schedule_receiver  JSON,
-    PRIMARY KEY (token_network_address, channel_id, participant1),
+
+    -- From PFSCapacityUpdate
+    capacity1       HEX_INT NOT NULL,
+    reveal_timeout1 HEX_INT NOT NULL,
+    update_nonce1   HEX_INT,
+    capacity2       HEX_INT NOT NULL,
+    reveal_timeout2 HEX_INT NOT NULL,
+    update_nonce2   HEX_INT,
+
+    -- From PFSFeeUpdate
+    fee_schedule1   JSON,
+    fee_schedule2   JSON,
+
+    PRIMARY KEY (token_network_address, channel_id),
     FOREIGN KEY (token_network_address)
         REFERENCES token_network(address)
+);
+CREATE UNIQUE INDEX channel_unique_for_partners On channel(
+    min(participant1, participant2), max(participant1, participant2)
 );
 
 CREATE TABLE iou (

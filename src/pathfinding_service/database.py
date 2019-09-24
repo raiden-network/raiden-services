@@ -8,7 +8,7 @@ import structlog
 from eth_utils import to_canonical_address, to_checksum_address
 
 from pathfinding_service.model import IOU
-from pathfinding_service.model.channel_view import ChannelView
+from pathfinding_service.model.channel_view import Channel
 from pathfinding_service.model.feedback import FeedbackToken
 from pathfinding_service.model.token_network import TokenNetwork
 from pathfinding_service.typing import DeferableMessage
@@ -144,24 +144,33 @@ class PFSDatabase(BaseDatabase):
         except StopIteration:
             return None
 
-    def upsert_channel_view(self, channel_view: ChannelView) -> None:
-        cv_dict = ChannelView.Schema().dump(channel_view)
-        for key in ("channel_id", "settle_timeout", "capacity", "reveal_timeout", "update_nonce"):
-            cv_dict[key] = hex256(cv_dict[key])
-        cv_dict["fee_schedule_sender"] = json.dumps(cv_dict["fee_schedule_sender"])
-        cv_dict["fee_schedule_receiver"] = json.dumps(cv_dict["fee_schedule_receiver"])
-        self.upsert("channel_view", cv_dict)
+    def upsert_channel(self, channel: Channel) -> None:
+        channel_dict = Channel.Schema().dump(channel)
+        for key in (
+            "channel_id",
+            "settle_timeout",
+            "capacity1",
+            "reveal_timeout1",
+            "update_nonce1",
+            "capacity2",
+            "reveal_timeout2",
+            "update_nonce2",
+        ):
+            channel_dict[key] = hex256(channel_dict[key])
+        channel_dict["fee_schedule1"] = json.dumps(channel_dict["fee_schedule1"])
+        channel_dict["fee_schedule2"] = json.dumps(channel_dict["fee_schedule2"])
+        self.upsert("channel", channel_dict)
 
-    def get_channel_views(self) -> Iterator[ChannelView]:
-        query = "SELECT * FROM channel_view"
-        for row in self.conn.execute(query):
-            cv_dict = dict(zip(row.keys(), row))
-            cv_dict["fee_schedule_sender"] = json.loads(cv_dict["fee_schedule_sender"])
-            cv_dict["fee_schedule_receiver"] = json.loads(cv_dict["fee_schedule_receiver"])
-            yield ChannelView.Schema().load(cv_dict)
+    def get_channels(self) -> Iterator[Channel]:
+        for row in self.conn.execute("SELECT * FROM channel"):
+            channel_dict = dict(zip(row.keys(), row))
+            channel_dict["fee_schedule1"] = json.loads(channel_dict["fee_schedule1"])
+            channel_dict["fee_schedule2"] = json.loads(channel_dict["fee_schedule2"])
+            yield Channel.Schema().load(channel_dict)
 
-    def delete_channel_views(self, channel_id: ChannelID) -> None:
-        self.conn.execute("DELETE FROM channel_view WHERE channel_id = ?", [channel_id])
+    # FIXME: channel_id is not unique!
+    def delete_channel(self, channel_id: ChannelID) -> None:
+        self.conn.execute("DELETE FROM channel WHERE channel_id = ?", [channel_id])
 
     def get_token_networks(self) -> Iterator[TokenNetwork]:
         for row in self.conn.execute("SELECT address FROM token_network"):

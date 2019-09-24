@@ -104,13 +104,14 @@ class PathfindingService(gevent.Greenlet):
 
     def _load_token_networks(self) -> Dict[TokenNetworkAddress, TokenNetwork]:
         network_for_address = {n.address: n for n in self.database.get_token_networks()}
-        channel_views = self.database.get_channel_views()
-        for cv in channel_views:
-            network_for_address[cv.token_network_address].add_channel_view(cv)
+        channels = self.database.get_channels()
+        for channel in channels:
+            for cv in channel.views:
+                network_for_address[cv.token_network_address].add_channel_view(cv)
 
             # Register channel participants for presence tracking
-            self.matrix_listener.follow_address_presence(cv.participant1)
-            self.matrix_listener.follow_address_presence(cv.participant2)
+            self.matrix_listener.follow_address_presence(channel.participant1)
+            self.matrix_listener.follow_address_presence(channel.participant2)
 
         return network_for_address
 
@@ -214,7 +215,7 @@ class PathfindingService(gevent.Greenlet):
             settle_timeout=event.settle_timeout,
         )
         for cv in channel_views:
-            self.database.upsert_channel_view(cv)
+            self.database.upsert_channel(cv.channel)
 
         # Handle messages for this channel which where received before ChannelOpened
         with self.database.conn:
@@ -231,7 +232,7 @@ class PathfindingService(gevent.Greenlet):
         log.info("Received ChannelClosed event", event_=event)
 
         token_network.handle_channel_closed_event(channel_identifier=event.channel_identifier)
-        self.database.delete_channel_views(event.channel_identifier)
+        self.database.delete_channel(event.channel_identifier)
 
     def handle_message(self, message: Message) -> None:
         try:
@@ -244,7 +245,7 @@ class PathfindingService(gevent.Greenlet):
                 return
 
             for cv in changed_cvs:
-                self.database.upsert_channel_view(cv)
+                self.database.upsert_channel(cv.channel)
 
         except DeferMessage as ex:
             self.defer_message_until_channel_is_open(ex.deferred_message)
