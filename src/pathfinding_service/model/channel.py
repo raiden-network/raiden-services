@@ -48,12 +48,13 @@ class Channel:
     fee_schedule1: FeeSchedule = field(default_factory=FeeSchedule)
     fee_schedule2: FeeSchedule = field(default_factory=FeeSchedule)
 
+    # Set by PFSCapacityUpdate
     capacity1: TokenAmount = TokenAmount(0)
-    reveal_timeout1: int = DEFAULT_REVEAL_TIMEOUT
-    update_nonce1: Nonce = Nonce(0)
     capacity2: TokenAmount = TokenAmount(0)
-    reveal_timeout2: int = DEFAULT_REVEAL_TIMEOUT
+    update_nonce1: Nonce = Nonce(0)
     update_nonce2: Nonce = Nonce(0)
+    reveal_timeout1: int = DEFAULT_REVEAL_TIMEOUT
+    reveal_timeout2: int = DEFAULT_REVEAL_TIMEOUT
 
     Schema: ClassVar[Type[marshmallow.Schema]]
 
