@@ -206,7 +206,7 @@ class TokenNetwork:
         participant2: Address,
         settle_timeout: int,
     ) -> Channel:
-        """ Register the channel in the graph, add participents to graph if necessary.
+        """ Register the channel in the graph, add participants to graph if necessary.
 
         Corresponds to the ChannelOpened event. Called by the contract event listener.
         We swap participants unless participant1 < participant2."""
