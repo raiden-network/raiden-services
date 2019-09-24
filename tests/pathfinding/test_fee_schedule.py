@@ -10,7 +10,10 @@ from raiden.constants import EMPTY_SIGNATURE
 from raiden.messages.path_finding_service import PFSFeeUpdate
 from raiden.network.transport.matrix.utils import AddressReachability
 from raiden.transfer.identifiers import CanonicalIdentifier
-from raiden.transfer.mediated_transfer.mediation_fee import FeeScheduleState as RaidenFeeSchedule
+from raiden.transfer.mediated_transfer.mediation_fee import (
+    FeeScheduleState as RaidenFeeSchedule,
+    calculate_imbalance_fees,
+)
 from raiden.utils.mediation_fees import ppm_fee_per_channel
 from raiden.utils.typing import (
     Address,
@@ -183,32 +186,40 @@ def test_compounding_fees(flat_fee_cli, prop_fee_cli, estimated_fee):
 
 
 @pytest.mark.parametrize(
-    "flat_fee, prop_fee_cli, target_amount, expected_fee",
+    "flat_fee, prop_fee_cli, imbalance_fee_cli, target_amount, expected_fee",
     [
         # proportional fees
-        (0, 1_000_000, 1000, 999),  # 100% per hop mediation fee
-        (0, 100_000, 1000, 100),  # 10% per hop mediation fee
-        (0, 50_000, 1000, 50),  # 5% per hop mediation fee
-        (0, 10_000, 1000, 10),  # 1% per hop mediation fee
-        (0, 10_000, 100, 0),  # 1% per hop mediation fee
-        (0, 5_000, 101, 0),  # 0,5% per hop mediation fee gets rounded away
+        (0, 1_000_000, 0, 1000, 999),  # 100% per hop mediation fee
+        (0, 100_000, 0, 1000, 100),  # 10% per hop mediation fee
+        (0, 50_000, 0, 1000, 50),  # 5% per hop mediation fee
+        (0, 10_000, 0, 1000, 10),  # 1% per hop mediation fee
+        (0, 10_000, 0, 100, 0),  # 1% per hop mediation fee
+        (0, 5_000, 0, 101, 0),  # 0,5% per hop mediation fee gets rounded away
         # pure flat fee
-        (50, 0, 1000, 100),
+        (50, 0, 0, 1000, 100),
         # mixed tests
-        (10, 100_000, 1000, 121),
-        (100, 500_000, 1000, 750),
-        (100, 500_000, 967, 733),
-        # TODO: Add tests with imbalance fee
+        (10, 100_000, 0, 1000, 121),
+        (100, 500_000, 0, 1000, 750),
+        (100, 500_000, 0, 967, 733),
+        # imbalance fee
+        (0, 0, 10_000, 1_000, 4),
+        (0, 0, 100_000, 1_000, 41),
     ],
 )
-def test_fee_estimate(flat_fee, prop_fee_cli, target_amount, expected_fee):
+def test_fee_estimate(flat_fee, prop_fee_cli, imbalance_fee_cli, target_amount, expected_fee):
     """ Tests the backwards fee calculation. """
+    capacity = TA(10_000)
+
     prop_fee = ppm_fee_per_channel(ProportionalFeeAmount(prop_fee_cli))
+    imbalance_fee = calculate_imbalance_fees(
+        channel_capacity=TA(2 * capacity),
+        proportional_imbalance_fee=ProportionalFeeAmount(imbalance_fee_cli),
+    )
     tn = TokenNetworkForTests(
         channels=[dict(participant1=1, participant2=2), dict(participant1=2, participant2=3)],
-        capacity=TA(10_000),
+        capacity=capacity,
     )
 
-    tn.set_fee(2, 1, flat=flat_fee, proportional=prop_fee)
-    tn.set_fee(2, 3, flat=flat_fee, proportional=prop_fee)
+    tn.set_fee(2, 1, flat=flat_fee, proportional=prop_fee, imbalance_penalty=imbalance_fee)
+    tn.set_fee(2, 3, flat=flat_fee, proportional=prop_fee, imbalance_penalty=imbalance_fee)
     assert tn.estimate_fee(1, 3, value=PA(target_amount)) == expected_fee
