@@ -186,7 +186,8 @@ class ChannelView:
             raise InvalidPFSFeeUpdate("Timestamp must increase between fee updates")
         if self.reverse:
             self.channel.fee_schedule2 = fee_schedule
-        self.channel.fee_schedule1 = fee_schedule
+        else:
+            self.channel.fee_schedule1 = fee_schedule
 
     def __repr__(self) -> str:
         return "<ChannelView cid={} from={} to={} capacity={}>".format(
