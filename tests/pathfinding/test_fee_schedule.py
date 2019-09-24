@@ -10,10 +10,7 @@ from raiden.constants import EMPTY_SIGNATURE
 from raiden.messages.path_finding_service import PFSFeeUpdate
 from raiden.network.transport.matrix.utils import AddressReachability
 from raiden.transfer.identifiers import CanonicalIdentifier
-from raiden.transfer.mediated_transfer.mediation_fee import (
-    FeeScheduleState as RaidenFeeSchedule,
-    calculate_imbalance_fees,
-)
+from raiden.transfer.mediated_transfer.mediation_fee import FeeScheduleState as RaidenFeeSchedule
 from raiden.utils.mediation_fees import ppm_fee_per_channel
 from raiden.utils.typing import (
     Address,
@@ -186,7 +183,7 @@ def test_compounding_fees(flat_fee_cli, prop_fee_cli, estimated_fee):
 
 
 @pytest.mark.parametrize(
-    "flat_fee, prop_fee_cli, imbalance_fee_cli, target_amount, expected_fee",
+    "flat_fee, prop_fee_cli, max_lin_imbalance_fee, target_amount, expected_fee",
     [
         # proportional fees
         (0, 1_000_000, 0, 1000, 999),  # 100% per hop mediation fee
@@ -202,19 +199,20 @@ def test_compounding_fees(flat_fee_cli, prop_fee_cli, estimated_fee):
         (100, 500_000, 0, 1000, 750),
         (100, 500_000, 0, 967, 733),
         # imbalance fee
-        (0, 0, 10_000, 1_000, 4),
-        (0, 0, 100_000, 1_000, 41),
+        (0, 0, 100, 1_000, 10),
+        (0, 0, 1_000, 1_000, 100),
     ],
 )
-def test_fee_estimate(flat_fee, prop_fee_cli, imbalance_fee_cli, target_amount, expected_fee):
+def test_fee_estimate(flat_fee, prop_fee_cli, max_lin_imbalance_fee, target_amount, expected_fee):
     """ Tests the backwards fee calculation. """
     capacity = TA(10_000)
 
     prop_fee = ppm_fee_per_channel(ProportionalFeeAmount(prop_fee_cli))
-    imbalance_fee = calculate_imbalance_fees(
-        channel_capacity=TA(2 * capacity),
-        proportional_imbalance_fee=ProportionalFeeAmount(imbalance_fee_cli),
-    )
+    imbalance_fee = None
+    if max_lin_imbalance_fee > 0:
+        # This created a simple unsymmetric imbalance fee
+        imbalance_fee = [(0, 0), (capacity, 0), (2 * capacity, max_lin_imbalance_fee)]
+
     tn = TokenNetworkForTests(
         channels=[dict(participant1=1, participant2=2), dict(participant1=2, participant2=3)],
         capacity=capacity,
