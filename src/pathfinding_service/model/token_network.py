@@ -269,7 +269,7 @@ class TokenNetwork:
         message: PFSCapacityUpdate,
         updating_capacity_partner: TokenAmount,
         other_capacity_partner: TokenAmount,
-    ) -> List[ChannelView]:
+    ) -> Channel:
         """ Sends Capacity Update to PFS including the reveal timeout """
         channel_view_to_partner, channel_view_from_partner = self.get_channel_views_for_partner(
             updating_participant=message.updating_participant,
@@ -284,9 +284,9 @@ class TokenNetwork:
             nonce=message.other_nonce,
             capacity=min(message.other_capacity, updating_capacity_partner),
         )
-        return [channel_view_to_partner, channel_view_from_partner]
+        return channel_view_to_partner.channel
 
-    def handle_channel_fee_update(self, message: PFSFeeUpdate) -> List[ChannelView]:
+    def handle_channel_fee_update(self, message: PFSFeeUpdate) -> Channel:
         if message.timestamp > datetime.now(timezone.utc) + timedelta(hours=1):
             # We don't really care about the time, but if we accept a time far
             # in the future, the client will have problems sending fee updates
@@ -300,7 +300,7 @@ class TokenNetwork:
         )
         fee_schedule = FeeSchedule.from_raiden(message.fee_schedule, timestamp=message.timestamp)
         channel_view_to_partner.set_fee_schedule(fee_schedule)
-        return [channel_view_to_partner, channel_view_from_partner]
+        return channel_view_from_partner.channel
 
     @staticmethod
     def edge_weight(
