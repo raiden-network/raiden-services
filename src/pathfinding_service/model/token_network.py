@@ -205,10 +205,11 @@ class TokenNetwork:
         participant1: Address,
         participant2: Address,
         settle_timeout: int,
-    ) -> Tuple[ChannelView, ChannelView]:
+    ) -> Channel:
         """ Register the channel in the graph, add participents to graph if necessary.
 
         Corresponds to the ChannelOpened event. Called by the contract event listener. """
+
         channel = Channel(
             token_network_address=self.address,
             channel_id=channel_identifier,
@@ -221,14 +222,11 @@ class TokenNetwork:
         for cv in views:
             self.add_channel_view(cv)
 
-        return views
+        return channel
 
     def add_channel_view(self, channel_view: ChannelView) -> None:
-        # Choosing which direction to add by execution order is not very
-        # robust. We might want to change this to either
-        # * participant1 < participant2 or
-        # * same as in contract (which would require an additional attribute on ChannelView)
-        if channel_view.channel_id not in self.channel_id_to_addresses:
+        # Only add it once per channel, not once per ChannelView
+        if channel_view.participant1 < channel_view.participant2:
             self.channel_id_to_addresses[channel_view.channel_id] = (
                 channel_view.participant1,
                 channel_view.participant2,

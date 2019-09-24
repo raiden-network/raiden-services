@@ -47,10 +47,10 @@ def setup_channel(service: PathfindingService) -> TokenNetwork:
     )
 
     # Check that the new channel has id == 0
-    assert token_network.channel_id_to_addresses[DEFAULT_CHANNEL_ID] == (
+    assert set(token_network.channel_id_to_addresses[DEFAULT_CHANNEL_ID]) == {
         PRIVATE_KEY_1_ADDRESS,
         PRIVATE_KEY_2_ADDRESS,
-    )
+    }
 
     return token_network
 
