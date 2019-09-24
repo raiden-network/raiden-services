@@ -168,9 +168,13 @@ class PFSDatabase(BaseDatabase):
             channel_dict["fee_schedule2"] = json.loads(channel_dict["fee_schedule2"])
             yield Channel.Schema().load(channel_dict)
 
-    # FIXME: channel_id is not unique!
-    def delete_channel(self, channel_id: ChannelID) -> None:
-        self.conn.execute("DELETE FROM channel WHERE channel_id = ?", [channel_id])
+    def delete_channel(
+        self, token_network_address: TokenNetworkAddress, channel_id: ChannelID
+    ) -> None:
+        self.conn.execute(
+            "DELETE FROM channel WHERE token_network_address = ? AND channel_id = ?",
+            [token_network_address, channel_id],
+        )
 
     def get_token_networks(self) -> Iterator[TokenNetwork]:
         for row in self.conn.execute("SELECT address FROM token_network"):
