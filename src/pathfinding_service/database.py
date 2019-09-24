@@ -8,7 +8,7 @@ import structlog
 from eth_utils import to_canonical_address, to_checksum_address
 
 from pathfinding_service.model import IOU
-from pathfinding_service.model.channel_view import Channel
+from pathfinding_service.model.channel import Channel
 from pathfinding_service.model.feedback import FeedbackToken
 from pathfinding_service.model.token_network import TokenNetwork
 from pathfinding_service.typing import DeferableMessage
