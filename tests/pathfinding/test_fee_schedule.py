@@ -3,7 +3,6 @@ from datetime import datetime, timezone
 from typing import Dict, List
 
 import pytest
-from eth_utils import decode_hex
 
 from pathfinding_service.model import ChannelView
 from pathfinding_service.model.token_network import TokenNetwork
@@ -99,16 +98,7 @@ def test_fees_in_balanced_routing():
     )
 
     # Make sure that routing works and the default fees are zero
-    result = tn.get_paths(
-        source=a(1),
-        target=a(3),
-        value=PA(10),
-        max_paths=1,
-        address_to_reachability=tn.address_to_reachability,
-    )
-    assert len(result) == 1
-    assert [PrettyBytes(decode_hex(node)) for node in result[0]["path"]] == [a(1), a(2), a(3)]
-    assert result[0]["estimated_fee"] == 0
+    assert tn.estimate_fee(1, 3) == 0
 
     # Fees for the initiator are ignored
     tn.set_fee(1, 2, flat=FA(1))
@@ -130,15 +120,39 @@ def test_fees_in_balanced_routing():
     tn.set_fee(2, 1)
     tn.set_fee(2, 3)
 
-    # Now let's try imbalance fees
-    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(0)), (TA(200), FA(200))])
+    # Let's try imbalance fees
+
+    # Incoming channel
+    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(0)), (TA(200), FA(200))])
     assert tn.estimate_fee(1, 3) == 10
     assert tn.estimate_fee(3, 1) == -10
 
     # The opposite fee schedule should give opposite results
-    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(200)), (TA(200), FA(0))])
+    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(200)), (TA(200), FA(0))])
     assert tn.estimate_fee(1, 3) == -10
     assert tn.estimate_fee(3, 1) == 10
+
+    # Outgoing channel
+    tn.set_fee(2, 1)
+    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(0)), (TA(200), FA(200))])
+    assert tn.estimate_fee(1, 3) == -10
+    assert tn.estimate_fee(3, 1) == 10
+
+    # The opposite fee schedule should give opposite results
+    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(200)), (TA(200), FA(0))])
+    assert tn.estimate_fee(1, 3) == 10
+    assert tn.estimate_fee(3, 1) == -10
+
+    # Combined fees cancel out
+    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(0)), (TA(200), FA(20))])
+    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(0)), (TA(200), FA(20))])
+    assert tn.estimate_fee(1, 3) == 0
+    assert tn.estimate_fee(3, 1) == 0
+
+    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(20)), (TA(200), FA(0))])
+    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(20)), (TA(200), FA(0))])
+    assert tn.estimate_fee(1, 3) == 0
+    assert tn.estimate_fee(3, 1) == 0
 
     # When the range covered by the imbalance_penalty does include the
     # necessary balance values, the route should be considered invalid.
@@ -155,16 +169,7 @@ def test_fees_in_unbalanced_routing():
     )
 
     # Make sure that routing works and the default fees are zero
-    result = tn.get_paths(
-        source=a(1),
-        target=a(3),
-        value=PA(10),
-        max_paths=1,
-        address_to_reachability=tn.address_to_reachability,
-    )
-    assert len(result) == 1
-    assert [PrettyBytes(decode_hex(node)) for node in result[0]["path"]] == [a(1), a(2), a(3)]
-    assert result[0]["estimated_fee"] == 0
+    assert tn.estimate_fee(1, 3) == 0
 
     # Fees for the initiator are ignored
     tn.set_fee(1, 2, flat=FA(1))
@@ -186,15 +191,39 @@ def test_fees_in_unbalanced_routing():
     tn.set_fee(2, 1)
     tn.set_fee(2, 3)
 
-    # Now let's try imbalance fees
-    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(0)), (TA(200), FA(200))])
+    # Let's try imbalance fees
+
+    # Incoming channel
+    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(0)), (TA(100), FA(100))])
     assert tn.estimate_fee(1, 3) == 10
-    assert tn.estimate_fee(3, 1) is None
+    assert tn.estimate_fee(3, 1) is None  # no balance in channel
 
     # The opposite fee schedule should give opposite results
-    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(200)), (TA(200), FA(0))])
+    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(100)), (TA(100), FA(0))])
     assert tn.estimate_fee(1, 3) == -10
-    assert tn.estimate_fee(3, 1) is None
+    assert tn.estimate_fee(3, 1) is None  # no balance in channel
+
+    # Outgoing channel
+    tn.set_fee(2, 1)
+    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(0)), (TA(100), FA(100))])
+    assert tn.estimate_fee(1, 3) == -10
+    assert tn.estimate_fee(3, 1) is None  # no balance in channel
+
+    # The opposite fee schedule should give opposite results
+    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(100)), (TA(100), FA(0))])
+    assert tn.estimate_fee(1, 3) == 10
+    assert tn.estimate_fee(3, 1) is None  # no balance in channel
+
+    # Combined fees cancel out
+    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(0)), (TA(100), FA(20))])
+    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(0)), (TA(100), FA(20))])
+    assert tn.estimate_fee(1, 3) == 0
+    assert tn.estimate_fee(3, 1) is None  # no balance in channel
+
+    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(20)), (TA(100), FA(0))])
+    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(20)), (TA(100), FA(0))])
+    assert tn.estimate_fee(1, 3) == 0
+    assert tn.estimate_fee(3, 1) is None  # no balance in channel
 
     # When the range covered by the imbalance_penalty does include the
     # necessary balance values, the route should be considered invalid.
