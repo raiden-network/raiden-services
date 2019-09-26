@@ -1,11 +1,13 @@
 from dataclasses import dataclass, field
 from typing import Iterable, Optional
 
+from eth_typing.evm import HexAddress
 from eth_utils import decode_hex, encode_hex, to_checksum_address
 from web3 import Web3
 
 from raiden.constants import EMPTY_SIGNATURE
 from raiden.messages.monitoring_service import RequestMonitoring, SignedBlindedBalanceProof
+from raiden.utils import privatekey_to_address
 from raiden.utils.signer import LocalSigner, recover
 from raiden.utils.signing import pack_data
 from raiden.utils.typing import (
@@ -135,6 +137,7 @@ class HashedBalanceProof:
         )
         request_monitoring = RequestMonitoring(
             balance_proof=partner_signed_self,
+            non_closing_participant=privatekey_to_address(decode_hex(privkey)),
             reward_amount=reward_amount,
             signature=EMPTY_SIGNATURE,
             monitoring_service_contract_address=monitoring_service_contract_address,
@@ -155,6 +158,7 @@ class HashedBalanceProof:
             additional_hash=self.additional_hash,
             closing_signature=self.signature,
             reward_amount=reward_amount,
+            non_closing_participant=privatekey_to_address(decode_hex(privkey)),
             msc_address=msc_address,
         ).sign(privkey)
 
@@ -188,6 +192,7 @@ class UnsignedMonitorRequest:
     # reward info
     msc_address: Address
     reward_amount: TokenAmount
+    non_closing_participant: Address
 
     # extracted from signature
     signer: Address = field(init=False)
@@ -195,22 +200,6 @@ class UnsignedMonitorRequest:
     def __post_init__(self) -> None:
         self.signer = recover(
             data=self.packed_balance_proof_data(), signature=self.closing_signature
-        )
-
-    @classmethod
-    def from_balance_proof(
-        cls, balance_proof: HashedBalanceProof, reward_amount: TokenAmount, msc_address: Address
-    ) -> "UnsignedMonitorRequest":
-        return cls(
-            channel_identifier=balance_proof.channel_identifier,
-            token_network_address=balance_proof.token_network_address,
-            chain_id=balance_proof.chain_id,
-            balance_hash=balance_proof.balance_hash,
-            nonce=balance_proof.nonce,
-            additional_hash=balance_proof.additional_hash,
-            closing_signature=balance_proof.signature,
-            reward_amount=reward_amount,
-            msc_address=msc_address,
         )
 
     def sign(self, priv_key: str) -> "MonitorRequest":
@@ -226,6 +215,7 @@ class UnsignedMonitorRequest:
             closing_signature=self.closing_signature,
             non_closing_signature=non_closing_signature,
             reward_amount=self.reward_amount,
+            non_closing_participant=self.non_closing_participant,
             reward_proof_signature=local_signer.sign(
                 self.packed_reward_proof_data(non_closing_signature)
             ),
@@ -250,6 +240,8 @@ class UnsignedMonitorRequest:
         return pack_reward_proof(
             monitoring_service_contract_address=to_checksum_address(self.msc_address),
             chain_id=self.chain_id,
+            token_network_address=HexAddress(to_checksum_address(self.token_network_address)),
+            non_closing_participant=HexAddress(to_checksum_address(self.non_closing_participant)),
             non_closing_signature=non_closing_signature,
             reward_amount=self.reward_amount,
         )

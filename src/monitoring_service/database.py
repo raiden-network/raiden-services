@@ -84,11 +84,12 @@ class SharedDatabase(BaseDatabase):
         kwargs = {
             key: val
             for key, val in zip(row.keys(), row)
-            if key not in ("non_closing_signer", "saved_at", "waiting_for_channel")
+            if key not in ("saved_at", "waiting_for_channel")
         }
         kwargs["token_network_address"] = to_canonical_address(kwargs["token_network_address"])
         kwargs["msc_address"] = to_canonical_address(kwargs["msc_address"])
         kwargs["closing_signature"] = decode_hex(kwargs["closing_signature"])
+        kwargs["non_closing_participant"] = to_canonical_address(kwargs.pop("non_closing_signer"))
         kwargs["non_closing_signature"] = decode_hex(kwargs["non_closing_signature"])
         kwargs["reward_proof_signature"] = decode_hex(kwargs["reward_proof_signature"])
         return MonitorRequest(**kwargs)

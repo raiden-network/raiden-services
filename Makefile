@@ -29,6 +29,7 @@ install:
 
 install-dev:
 	pip install -r requirements-dev.txt
+	pip install -e .
 
 dist:
 	python3 setup.py sdist bdist_wheel

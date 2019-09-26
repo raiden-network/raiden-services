@@ -79,6 +79,7 @@ class RequestCollector(gevent.Greenlet):
                 closing_signature=request_monitoring.balance_proof.signature,
                 non_closing_signature=request_monitoring.non_closing_signature,
                 reward_amount=request_monitoring.reward_amount,
+                non_closing_participant=request_monitoring.non_closing_participant,
                 reward_proof_signature=request_monitoring.signature,
                 msc_address=request_monitoring.monitoring_service_contract_address,
             )
