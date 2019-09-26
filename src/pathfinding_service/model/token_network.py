@@ -92,6 +92,12 @@ class Path:
                     balance=Balance(view_out.capacity), amount=total
                 )
                 if fee_out is None:
+                    log.warning(
+                        "Invalid fee calculation (outgoing)",
+                        amount=total,
+                        view_out=view_out,
+                        fee_schedule_sender=view_out.fee_schedule_sender,
+                    )
                     self._is_valid = False
                     return
 
@@ -101,6 +107,12 @@ class Path:
                     balance=Balance(view_in.capacity), amount=total
                 )
                 if fee_in is None:
+                    log.warning(
+                        "Invalid fee calculation (incoming)",
+                        amount=total,
+                        view_out=view_in,
+                        fee_schedule_receiver=view_in.fee_schedule_receiver,
+                    )
                     self._is_valid = False
                     return
 
