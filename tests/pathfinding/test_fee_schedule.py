@@ -231,7 +231,8 @@ def test_fees_in_unbalanced_routing():
     assert tn.estimate_fee(1, 3) is None
 
 
-def test_regression():
+def test_regression_issue_554():
+    """ Regression test for https://github.com/raiden-network/raiden-services/issues/554 """
     tn = TokenNetworkForTests(
         channels=[
             dict(participant1=1, participant2=2, capacity1=100, capacity2=0),
@@ -242,20 +243,18 @@ def test_regression():
     tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(20)), (TA(100), FA(0))])
     assert tn.estimate_fee(1, 3) is not None
 
-
-def test_regression2():
     capacity = TA(100_000)
-    tn = TokenNetworkForTests(
+    tn2 = TokenNetworkForTests(
         channels=[
             dict(participant1=1, participant2=2, capacity1=capacity, capacity2=0),
             dict(participant1=2, participant2=3, capacity1=capacity, capacity2=0),
         ]
     )
 
-    tn.set_fee(
+    tn2.set_fee(
         2, 1, imbalance_penalty=[(TA(0), FA(1000)), (capacity // 2, 0), (capacity, FA(1000))]
     )
-    assert tn.estimate_fee(1, 3, value=10_000) is not None
+    assert tn2.estimate_fee(1, 3, value=PA(10_000)) is not None
 
 
 @pytest.mark.parametrize(
