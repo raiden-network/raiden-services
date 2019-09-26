@@ -16,7 +16,6 @@ from raiden.utils.typing import (
     ChannelID,
     FeeAmount,
     Nonce,
-    Optional,
     PaymentWithFeeAmount,
     TokenAmount,
     TokenNetworkAddress,
@@ -35,30 +34,30 @@ class FeeSchedule(FeeScheduleRaiden):
         return FeeSchedule(timestamp=timestamp, **kwargs)
 
     def imbalance_fee_receiver(self, amount: PaymentWithFeeAmount, balance: Balance) -> FeeAmount:
-        if self._penalty_func:
-            # Calculate the mediators balance
-            balance = self._penalty_func.x_list[-1] - balance
-            try:
-                return FeeAmount(
-                    # Mediator is gaining balance on his channel side
-                    round(self._penalty_func(balance + amount) - self._penalty_func(balance))
-                )
-            except ValueError:
-                raise UndefinedMediationFee()
+        if not self._penalty_func:
+            return FeeAmount(0)
 
-        return FeeAmount(0)
+        # Calculate the mediators balance
+        balance = self._penalty_func.x_list[-1] - balance
+        try:
+            return FeeAmount(
+                # Mediator is gaining balance on his channel side
+                round(self._penalty_func(balance + amount) - self._penalty_func(balance))
+            )
+        except ValueError:
+            raise UndefinedMediationFee()
 
     def imbalance_fee_sender(self, amount: PaymentWithFeeAmount, balance: Balance) -> FeeAmount:
-        if self._penalty_func:
-            try:
-                return FeeAmount(
-                    # Mediator is loosing balance on his channel side
-                    round(self._penalty_func(balance - amount) - self._penalty_func(balance))
-                )
-            except ValueError:
-                raise UndefinedMediationFee()
+        if not self._penalty_func:
+            return FeeAmount(0)
 
-        return FeeAmount(0)
+        try:
+            return FeeAmount(
+                # Mediator is loosing balance on his channel side
+                round(self._penalty_func(balance - amount) - self._penalty_func(balance))
+            )
+        except ValueError:
+            raise UndefinedMediationFee()
 
 
 @add_schema
@@ -169,24 +168,16 @@ class ChannelView:
         if reveal_timeout is not None:
             self.reveal_timeout = reveal_timeout
 
-    def backwards_fee_sender(
-        self, balance: Balance, amount: PaymentWithFeeAmount
-    ) -> Optional[FeeAmount]:
+    def backwards_fee_sender(self, balance: Balance, amount: PaymentWithFeeAmount) -> FeeAmount:
         """Returns the mediation fee for this channel when transferring the given amount"""
-        try:
-            imbalance_fee = self.fee_schedule_sender.imbalance_fee_sender(
-                amount=amount, balance=balance
-            )
-        except UndefinedMediationFee:
-            return None
-
+        imbalance_fee = self.fee_schedule_sender.imbalance_fee_sender(
+            amount=amount, balance=balance
+        )
         flat_fee = self.fee_schedule_sender.flat
         prop_fee = int(round(amount * self.fee_schedule_sender.proportional / 1e6))
         return FeeAmount(flat_fee + prop_fee + imbalance_fee)
 
-    def backwards_fee_receiver(
-        self, balance: Balance, amount: PaymentWithFeeAmount
-    ) -> Optional[FeeAmount]:
+    def backwards_fee_receiver(self, balance: Balance, amount: PaymentWithFeeAmount) -> FeeAmount:
         """Returns the mediation fee for this channel when receiving the given amount"""
 
         def fee_in(imbalance_fee: FeeAmount) -> FeeAmount:
@@ -200,13 +191,10 @@ class ChannelView:
                 )
             )
 
-        try:
-            imbalance_fee = self.fee_schedule_receiver.imbalance_fee_receiver(
-                amount=PaymentWithFeeAmount(amount - fee_in(imbalance_fee=FeeAmount(0))),
-                balance=balance,
-            )
-        except UndefinedMediationFee:
-            return None
+        imbalance_fee = self.fee_schedule_receiver.imbalance_fee_receiver(
+            amount=PaymentWithFeeAmount(amount - fee_in(imbalance_fee=FeeAmount(0))),
+            balance=balance,
+        )
 
         return fee_in(imbalance_fee=imbalance_fee)
 

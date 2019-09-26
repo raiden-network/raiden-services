@@ -93,6 +93,7 @@ class TokenNetworkForTests(TokenNetwork):
 
 
 def test_fees_in_balanced_routing():
+    """ Tests fee estimation in a network where both participants have funds in a channel. """
     tn = TokenNetworkForTests(
         channels=[dict(participant1=1, participant2=2), dict(participant1=2, participant2=3)]
     )
@@ -161,6 +162,7 @@ def test_fees_in_balanced_routing():
 
 
 def test_fees_in_unbalanced_routing():
+    """ Tests fee estimation in a network where only one participant has funds in a channel. """
     tn = TokenNetworkForTests(
         channels=[
             dict(participant1=1, participant2=2, capacity1=100, capacity2=0),

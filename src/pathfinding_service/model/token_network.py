@@ -83,44 +83,34 @@ class Path:
 
     def _calculate_fees(self) -> None:
         total = PaymentWithFeeAmount(self.value)
-        try:
-            for prev_node, mediator, next_node in reversed(list(window(self.nodes, 3))):
+        for prev_node, mediator, next_node in reversed(list(window(self.nodes, 3))):
+            try:
                 view_in: ChannelView = self.G[prev_node][mediator]["view"]
                 view_out: ChannelView = self.G[mediator][next_node]["view"]
 
                 fee_out = view_out.backwards_fee_sender(
                     balance=Balance(view_out.capacity), amount=total
                 )
-                if fee_out is None:
-                    log.warning(
-                        "Invalid fee calculation (outgoing)",
-                        amount=total,
-                        view_out=view_out,
-                        fee_schedule_sender=view_out.fee_schedule_sender,
-                    )
-                    self._is_valid = False
-                    return
 
                 total += fee_out  # type: ignore
 
                 fee_in = view_in.backwards_fee_receiver(
                     balance=Balance(view_in.capacity), amount=total
                 )
-                if fee_in is None:
-                    log.warning(
-                        "Invalid fee calculation (incoming)",
-                        amount=total,
-                        view_out=view_in,
-                        fee_schedule_receiver=view_in.fee_schedule_receiver,
-                    )
-                    self._is_valid = False
-                    return
 
                 total += fee_in  # type: ignore
 
                 self.fees.append(FeeAmount(fee_in + fee_out))
-        except UndefinedMediationFee:
-            self._is_valid = False
+            except UndefinedMediationFee:
+                log.warning(
+                    "Invalid fee calculation",
+                    amount=total,
+                    view_out=view_out,
+                    view_in=view_in,
+                    fee_schedule_sender=view_out.fee_schedule_sender,
+                    fee_schedule_receiver=view_in.fee_schedule_receiver,
+                )
+                self._is_valid = False
 
     @property
     def edge_attrs(self) -> Iterable[dict]:
@@ -330,14 +320,10 @@ class TokenNetwork:
             fee_out = view.backwards_fee_sender(
                 balance=Balance(view.capacity), amount=PaymentWithFeeAmount(amount)
             )
-            if fee_out is None:
-                return float("inf")
 
             fee_in = view.backwards_fee_receiver(
                 balance=Balance(view.capacity), amount=PaymentWithFeeAmount(amount)
             )
-            if fee_in is None:
-                return float("inf")
 
             fee_weight = (fee_in + fee_out) / 1e18 * fee_penalty
         except UndefinedMediationFee:
