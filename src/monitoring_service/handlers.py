@@ -370,10 +370,6 @@ def updated_head_block_event_handler(event: Event, context: Context) -> None:
 
 
 def _is_mr_valid(monitor_request: MonitorRequest, channel: Channel) -> bool:
-    if monitor_request.non_closing_signer != monitor_request.non_closing_participant:
-        log.info("MR not signed by non_closing_participant", channel=channel)
-        return False
-
     if (
         monitor_request.signer not in channel.participants
         or monitor_request.non_closing_signer not in channel.participants

@@ -11,11 +11,13 @@ from raiden.utils.typing import Address
 
 
 def test_invalid_request(ms_database, build_request_monitoring, request_collector):
-    def store_successful(reward_proof_signature=None, **kwargs):
+    def store_successful(reward_proof_signature=None, non_closing_participant=None, **kwargs):
         request_monitoring = build_request_monitoring(**kwargs)
         rm_dict = DictSerializer.serialize(request_monitoring)
         if reward_proof_signature:
             rm_dict["signature"] = reward_proof_signature
+        if non_closing_participant:
+            rm_dict["non_closing_participant"] = non_closing_participant
         request_collector.on_monitor_request(DictSerializer.deserialize(rm_dict))
         return ms_database.monitor_request_count() == 1
 
@@ -25,6 +27,9 @@ def test_invalid_request(ms_database, build_request_monitoring, request_collecto
 
     # wrong chain_id
     assert not store_successful(chain_id=2)
+
+    # wrong non_closing_participant
+    assert not store_successful(non_closing_participant=b"1" * 20)
 
     # success
     assert store_successful()
