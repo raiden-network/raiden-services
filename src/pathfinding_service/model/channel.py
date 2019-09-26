@@ -34,6 +34,32 @@ class FeeSchedule(FeeScheduleRaiden):
         kwargs.pop("_penalty_func")
         return FeeSchedule(timestamp=timestamp, **kwargs)
 
+    def imbalance_fee_receiver(self, amount: PaymentWithFeeAmount, balance: Balance) -> FeeAmount:
+        if self._penalty_func:
+            # Calculate the mediators balance
+            balance = self._penalty_func.x_list[-1] - balance
+            try:
+                return FeeAmount(
+                    # Mediator is gaining balance on his channel side
+                    round(self._penalty_func(balance + amount) - self._penalty_func(balance))
+                )
+            except ValueError:
+                raise UndefinedMediationFee()
+
+        return FeeAmount(0)
+
+    def imbalance_fee_sender(self, amount: PaymentWithFeeAmount, balance: Balance) -> FeeAmount:
+        if self._penalty_func:
+            try:
+                return FeeAmount(
+                    # Mediator is loosing balance on his channel side
+                    round(self._penalty_func(balance - amount) - self._penalty_func(balance))
+                )
+            except ValueError:
+                raise UndefinedMediationFee()
+
+        return FeeAmount(0)
+
 
 @add_schema
 @dataclass
@@ -148,7 +174,9 @@ class ChannelView:
     ) -> Optional[FeeAmount]:
         """Returns the mediation fee for this channel when transferring the given amount"""
         try:
-            imbalance_fee = self.fee_schedule_sender.imbalance_fee(amount=amount, balance=balance)
+            imbalance_fee = self.fee_schedule_sender.imbalance_fee_sender(
+                amount=amount, balance=balance
+            )
         except UndefinedMediationFee:
             return None
 
@@ -173,8 +201,8 @@ class ChannelView:
             )
 
         try:
-            imbalance_fee = self.fee_schedule_receiver.imbalance_fee(
-                amount=PaymentWithFeeAmount(-(amount - fee_in(imbalance_fee=FeeAmount(0)))),
+            imbalance_fee = self.fee_schedule_receiver.imbalance_fee_receiver(
+                amount=PaymentWithFeeAmount(amount - fee_in(imbalance_fee=FeeAmount(0))),
                 balance=balance,
             )
         except UndefinedMediationFee:
