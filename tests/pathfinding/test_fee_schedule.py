@@ -5,6 +5,7 @@ from typing import Dict, List
 import pytest
 from eth_utils import decode_hex
 
+from pathfinding_service.model import ChannelView
 from pathfinding_service.model.token_network import TokenNetwork
 from raiden.constants import EMPTY_SIGNATURE
 from raiden.messages.path_finding_service import PFSFeeUpdate
@@ -40,7 +41,7 @@ def a(int_addr) -> Address:  # pylint: disable=invalid-name
 
 
 class TokenNetworkForTests(TokenNetwork):
-    def __init__(self, channels: List[dict], capacity: TA = TA(100)):
+    def __init__(self, channels: List[dict], default_capacity: TA = TA(100)):
         super().__init__(token_network_address=TokenNetworkAddress(a(255)))
 
         # open channels
@@ -53,9 +54,10 @@ class TokenNetworkForTests(TokenNetwork):
                 settle_timeout=100,
             )
 
-        # set default capacity
-        for _, _, cv in self.G.edges(data="view"):
-            cv.capacity = capacity
+            cv1: ChannelView = self.G[a(chan["participant1"])][a(chan["participant2"])]["view"]
+            cv1.capacity = chan.get("capacity1", default_capacity)
+            cv2: ChannelView = self.G[a(chan["participant2"])][a(chan["participant1"])]["view"]
+            cv2.capacity = chan.get("capacity2", default_capacity)
 
         # create reachability mapping for testing
         self.address_to_reachability: Dict[Address, AddressReachability] = {
@@ -91,7 +93,7 @@ class TokenNetworkForTests(TokenNetwork):
         return result[0]["estimated_fee"]
 
 
-def test_fees_in_routing():
+def test_fees_in_balanced_routing():
     tn = TokenNetworkForTests(
         channels=[dict(participant1=1, participant2=2), dict(participant1=2, participant2=3)]
     )
@@ -144,6 +146,62 @@ def test_fees_in_routing():
     assert tn.estimate_fee(1, 3) is None
 
 
+def test_fees_in_unbalanced_routing():
+    tn = TokenNetworkForTests(
+        channels=[
+            dict(participant1=1, participant2=2, capacity1=100, capacity2=0),
+            dict(participant1=2, participant2=3, capacity1=100, capacity2=0),
+        ]
+    )
+
+    # Make sure that routing works and the default fees are zero
+    result = tn.get_paths(
+        source=a(1),
+        target=a(3),
+        value=PA(10),
+        max_paths=1,
+        address_to_reachability=tn.address_to_reachability,
+    )
+    assert len(result) == 1
+    assert [PrettyBytes(decode_hex(node)) for node in result[0]["path"]] == [a(1), a(2), a(3)]
+    assert result[0]["estimated_fee"] == 0
+
+    # Fees for the initiator are ignored
+    tn.set_fee(1, 2, flat=FA(1))
+    assert tn.estimate_fee(1, 3) == 0
+
+    # Node 2 demands fees for incoming transfers
+    tn.set_fee(2, 1, flat=FA(1))
+    assert tn.estimate_fee(1, 3) == 1
+
+    # Node 2 demands fees for outgoing transfers
+    tn.set_fee(2, 3, flat=FA(1))
+    assert tn.estimate_fee(1, 3) == 2
+
+    # No capacity in the opposite direction
+    assert tn.estimate_fee(3, 1) is None
+
+    # Reset fees to zero
+    tn.set_fee(1, 2)
+    tn.set_fee(2, 1)
+    tn.set_fee(2, 3)
+
+    # Now let's try imbalance fees
+    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(0)), (TA(200), FA(200))])
+    assert tn.estimate_fee(1, 3) == 10
+    assert tn.estimate_fee(3, 1) is None
+
+    # The opposite fee schedule should give opposite results
+    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(200)), (TA(200), FA(0))])
+    assert tn.estimate_fee(1, 3) == -10
+    assert tn.estimate_fee(3, 1) is None
+
+    # When the range covered by the imbalance_penalty does include the
+    # necessary balance values, the route should be considered invalid.
+    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(0)), (TA(80), FA(200))])
+    assert tn.estimate_fee(1, 3) is None
+
+
 @pytest.mark.parametrize(
     "flat_fee_cli, prop_fee_cli, estimated_fee",
     [
@@ -172,7 +230,7 @@ def test_compounding_fees(flat_fee_cli, prop_fee_cli, estimated_fee):
             dict(participant1=2, participant2=3),
             dict(participant1=3, participant2=4),
         ],
-        capacity=TA(10_000),
+        default_capacity=TA(10_000),
     )
 
     tn.set_fee(2, 1, flat=flat_fee, proportional=prop_fee)
@@ -215,7 +273,7 @@ def test_fee_estimate(flat_fee, prop_fee_cli, max_lin_imbalance_fee, target_amou
 
     tn = TokenNetworkForTests(
         channels=[dict(participant1=1, participant2=2), dict(participant1=2, participant2=3)],
-        capacity=capacity,
+        default_capacity=capacity,
     )
 
     tn.set_fee(2, 1, flat=flat_fee, proportional=prop_fee, imbalance_penalty=imbalance_fee)
