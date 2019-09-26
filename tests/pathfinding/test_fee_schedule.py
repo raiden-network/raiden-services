@@ -239,7 +239,7 @@ def test_regression():
         ]
     )
 
-    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(200)), (TA(100), FA(0))])
+    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(20)), (TA(100), FA(0))])
     assert tn.estimate_fee(1, 3) is not None
 
 
