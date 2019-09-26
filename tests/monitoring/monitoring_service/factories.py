@@ -7,7 +7,6 @@ from monitoring_service.states import (
     HashedBalanceProof,
     MonitorRequest,
     OnChainUpdateStatus,
-    UnsignedMonitorRequest,
 )
 from raiden.constants import UINT256_MAX
 from raiden.tests.utils.factories import make_transaction_hash
@@ -47,9 +46,9 @@ def create_signed_monitor_request(
         additional_hash="",
         priv_key=closing_privkey,
     )
-    monitor_request = UnsignedMonitorRequest.from_balance_proof(
-        bp, reward_amount=reward_amount, msc_address=TEST_MSC_ADDRESS
-    ).sign(nonclosing_privkey)
+    monitor_request = bp.get_monitor_request(
+        privkey=nonclosing_privkey, reward_amount=reward_amount, msc_address=TEST_MSC_ADDRESS
+    )
 
     # Some signature correctness checks
     assert monitor_request.signer == private_key_to_address(closing_privkey)
