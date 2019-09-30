@@ -463,3 +463,4 @@ def test_cors(api_url: str):
 
     response = requests.options(api_url, headers=headers)
     assert response.headers["Access-Control-Allow-Origin"] == "*"
+    assert response.headers["Access-Control-Allow-Headers"] == "Origin, Content-Type, Accept"
