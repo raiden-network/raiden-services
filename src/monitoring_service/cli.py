@@ -40,8 +40,14 @@ log = structlog.get_logger(__name__)
     type=click.IntRange(min=0),
     help="Number of block confirmations to wait for",
 )
+@click.option(
+    "--debug-shell",
+    default=False,
+    type=bool,
+    help="Open a python shell with an initialized MonitoringService instance",
+)
 @common_options("raiden-monitoring-service")
-def main(
+def main(  # pylint: disable=too-many-arguments
     private_key: str,
     state_db: str,
     web3: Web3,
@@ -49,6 +55,7 @@ def main(
     start_block: BlockNumber,
     confirmations: BlockNumber,
     min_reward: int,
+    debug_shell: bool,
 ) -> int:
     """ The Monitoring service for the Raiden Network. """
     log.info("Starting Raiden Monitoring Service")
@@ -62,6 +69,13 @@ def main(
         db_filename=state_db,
         min_reward=min_reward,
     )
+
+    if debug_shell:
+        import IPython
+
+        IPython.embed()
+        return 0
+
     ms.start()
 
     return 0
