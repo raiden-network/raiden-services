@@ -246,7 +246,7 @@ services:
       - RDN_REGISTRY_LOG_LEVEL=DEBUG
       - RDN_REGISTRY_KEYSTORE_FILE=${MS_KEYSTORE_FILE}
       - RDN_REGISTRY_PASSWORD=${MS_PASSWORD}
-      - RDN_REGISTRY_SERVICE_URL="https://pfs-goerli-with-fee.services-dev.raiden.network"
+      - RDN_REGISTRY_SERVICE_URL=https://pfs-goerli-with-fee.services-dev.raiden.network
       - RDN_REGISTRY_ETH_RPC=http://parity.goerli.ethnodes.brainbot.com:8545
     depends_on:
       - traefik
