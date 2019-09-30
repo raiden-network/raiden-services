@@ -19,7 +19,7 @@ log = structlog.get_logger(__name__)
 @click.command()
 @click.option(
     "--chain-id",
-    type=NetworkChoiceType(["mainnet", "ropsten", "rinkeby", "goerli", "kovan", "<NETWORK_ID>"]),
+    type=NetworkChoiceType(["mainnet", "ropsten", "rinkeby", "goerli", "kovan", "<CHAIN_ID>"]),
     required=True,
     show_default=True,
     help=(
@@ -30,7 +30,7 @@ log = structlog.get_logger(__name__)
         '"rinkeby" - network id: 4\n'
         '"goerli" - network id: 5\n'
         '"kovan" - network id: 42\n'
-        '"<NETWORK_ID>": use the given network id directly\n'
+        '"<CHAIN_ID>": use the given chain id directly\n'
     ),
 )
 @common_options("raiden-monitoring-service")
