@@ -458,6 +458,7 @@ class ServiceApi:
         @self.flask_app.after_request
         def after_request(response: Response) -> Response:  # pylint: disable=unused-variable
             response.headers.add("Access-Control-Allow-Origin", "*")
+            response.headers.add("Access-Control-Allow-Headers", "Origin, Content-Type, Accept")
             response.headers.add("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
             return response
 
