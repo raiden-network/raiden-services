@@ -8,8 +8,7 @@ from marshmallow_dataclass import add_schema
 
 from pathfinding_service.constants import DEFAULT_REVEAL_TIMEOUT
 from pathfinding_service.exceptions import InvalidPFSFeeUpdate
-from raiden.exceptions import UndefinedMediationFee
-from raiden.tests.utils.mediation_fees import fee_receiver
+from raiden.tests.utils.mediation_fees import fee_receiver, fee_sender
 from raiden.transfer.mediated_transfer.mediation_fee import FeeScheduleState as FeeScheduleRaiden
 from raiden.utils.typing import (
     Address,
@@ -33,32 +32,6 @@ class FeeSchedule(FeeScheduleRaiden):
         kwargs = asdict(fee_schedule)
         kwargs.pop("_penalty_func")
         return FeeSchedule(timestamp=timestamp, **kwargs)
-
-    def imbalance_fee_receiver(self, amount: PaymentWithFeeAmount, balance: Balance) -> FeeAmount:
-        if not self._penalty_func:
-            return FeeAmount(0)
-
-        # Calculate the mediators balance
-        balance = self._penalty_func.x_list[-1] - balance
-        try:
-            return FeeAmount(
-                # Mediator is gaining balance on his channel side
-                round(self._penalty_func(balance + amount) - self._penalty_func(balance))
-            )
-        except ValueError:
-            raise UndefinedMediationFee()
-
-    def imbalance_fee_sender(self, amount: PaymentWithFeeAmount, balance: Balance) -> FeeAmount:
-        if not self._penalty_func:
-            return FeeAmount(0)
-
-        try:
-            return FeeAmount(
-                # Mediator is loosing balance on his channel side
-                round(self._penalty_func(balance - amount) - self._penalty_func(balance))
-            )
-        except ValueError:
-            raise UndefinedMediationFee()
 
 
 @add_schema
@@ -171,12 +144,7 @@ class ChannelView:
 
     def backwards_fee_sender(self, balance: Balance, amount: PaymentWithFeeAmount) -> FeeAmount:
         """Returns the mediation fee for this channel when transferring the given amount"""
-        imbalance_fee = self.fee_schedule_sender.imbalance_fee_sender(
-            amount=amount, balance=balance
-        )
-        flat_fee = self.fee_schedule_sender.flat
-        prop_fee = int(round(amount * self.fee_schedule_sender.proportional / 1e6))
-        return FeeAmount(flat_fee + prop_fee + imbalance_fee)
+        return fee_sender(self.fee_schedule_sender, balance, amount)
 
     def backwards_fee_receiver(self, balance: Balance, amount: PaymentWithFeeAmount) -> FeeAmount:
         """Returns the mediation fee for this channel when receiving the given amount"""
