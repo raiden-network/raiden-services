@@ -9,6 +9,7 @@ from marshmallow_dataclass import add_schema
 from pathfinding_service.constants import DEFAULT_REVEAL_TIMEOUT
 from pathfinding_service.exceptions import InvalidPFSFeeUpdate
 from raiden.exceptions import UndefinedMediationFee
+from raiden.tests.utils.mediation_fees import fee_receiver
 from raiden.transfer.mediated_transfer.mediation_fee import FeeScheduleState as FeeScheduleRaiden
 from raiden.utils.typing import (
     Address,
@@ -180,23 +181,7 @@ class ChannelView:
     def backwards_fee_receiver(self, balance: Balance, amount: PaymentWithFeeAmount) -> FeeAmount:
         """Returns the mediation fee for this channel when receiving the given amount"""
 
-        def fee_in(imbalance_fee: FeeAmount) -> FeeAmount:
-            return FeeAmount(
-                round(
-                    (
-                        (amount + self.fee_schedule_receiver.flat + imbalance_fee)
-                        / (1 - self.fee_schedule_receiver.proportional / 1e6)
-                    )
-                    - amount
-                )
-            )
-
-        imbalance_fee = self.fee_schedule_receiver.imbalance_fee_receiver(
-            amount=PaymentWithFeeAmount(amount - fee_in(imbalance_fee=FeeAmount(0))),
-            balance=balance,
-        )
-
-        return fee_in(imbalance_fee=imbalance_fee)
+        return fee_receiver(self.fee_schedule_receiver, balance, amount)
 
     def set_fee_schedule(self, fee_schedule: FeeSchedule) -> None:
         if self.fee_schedule_sender.timestamp >= fee_schedule.timestamp:

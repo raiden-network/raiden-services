@@ -40,7 +40,7 @@ def a(int_addr) -> Address:  # pylint: disable=invalid-name
 
 
 class TokenNetworkForTests(TokenNetwork):
-    def __init__(self, channels: List[dict], default_capacity: TA = TA(100)):
+    def __init__(self, channels: List[dict], default_capacity: TA = TA(1000)):
         super().__init__(token_network_address=TokenNetworkAddress(a(255)))
 
         # open channels
@@ -79,7 +79,7 @@ class TokenNetworkForTests(TokenNetwork):
             )
         )
 
-    def estimate_fee(self, initator: int, target: int, value=PA(10), max_paths=1):
+    def estimate_fee(self, initator: int, target: int, value=PA(100), max_paths=1):
         result = self.get_paths(
             source=a(initator),
             target=a(target),
@@ -122,42 +122,43 @@ def test_fees_in_balanced_routing():
     tn.set_fee(2, 3)
 
     # Let's try imbalance fees
+    # When approximation iterations matter, those are given as sums of the steps.
 
     # Incoming channel
-    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(0)), (TA(200), FA(200))])
-    assert tn.estimate_fee(1, 3) == 10
+    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(0)), (TA(2000), FA(200))])
+    assert tn.estimate_fee(1, 3) == 10 + 1
     assert tn.estimate_fee(3, 1) == -10
 
     # The opposite fee schedule should give opposite results
-    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(200)), (TA(200), FA(0))])
-    assert tn.estimate_fee(1, 3) == -10
+    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(200)), (TA(2000), FA(0))])
+    assert tn.estimate_fee(1, 3) == -10 + 1
     assert tn.estimate_fee(3, 1) == 10
 
     # Outgoing channel
     tn.set_fee(2, 1)
-    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(0)), (TA(200), FA(200))])
+    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(0)), (TA(2000), FA(200))])
     assert tn.estimate_fee(1, 3) == -10
-    assert tn.estimate_fee(3, 1) == 10
+    assert tn.estimate_fee(3, 1) == 10 + 1
 
     # The opposite fee schedule should give opposite results
-    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(200)), (TA(200), FA(0))])
+    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(200)), (TA(2000), FA(0))])
     assert tn.estimate_fee(1, 3) == 10
-    assert tn.estimate_fee(3, 1) == -10
+    assert tn.estimate_fee(3, 1) == -10 + 1
 
     # Combined fees cancel out
-    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(0)), (TA(200), FA(20))])
-    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(0)), (TA(200), FA(20))])
+    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(0)), (TA(2000), FA(20))])
+    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(0)), (TA(2000), FA(20))])
     assert tn.estimate_fee(1, 3) == 0
     assert tn.estimate_fee(3, 1) == 0
 
-    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(20)), (TA(200), FA(0))])
-    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(20)), (TA(200), FA(0))])
+    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(20)), (TA(2000), FA(0))])
+    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(20)), (TA(2000), FA(0))])
     assert tn.estimate_fee(1, 3) == 0
     assert tn.estimate_fee(3, 1) == 0
 
     # When the range covered by the imbalance_penalty does include the
     # necessary balance values, the route should be considered invalid.
-    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(0)), (TA(80), FA(200))])
+    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(0)), (TA(800), FA(200))])
     assert tn.estimate_fee(1, 3) is None
 
 
@@ -165,8 +166,8 @@ def test_fees_in_unbalanced_routing():
     """ Tests fee estimation in a network where only one participant has funds in a channel. """
     tn = TokenNetworkForTests(
         channels=[
-            dict(participant1=1, participant2=2, capacity1=100, capacity2=0),
-            dict(participant1=2, participant2=3, capacity1=100, capacity2=0),
+            dict(participant1=1, participant2=2, capacity1=1000, capacity2=0),
+            dict(participant1=2, participant2=3, capacity1=1000, capacity2=0),
         ]
     )
 
@@ -193,37 +194,38 @@ def test_fees_in_unbalanced_routing():
     tn.set_fee(2, 1)
     tn.set_fee(2, 3)
 
-    # Let's try imbalance fees
+    # Let's try imbalance fees!
+    # When approximation iterations matter, those are given as sums of the steps.
 
     # Incoming channel
-    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(0)), (TA(100), FA(100))])
-    assert tn.estimate_fee(1, 3) == 10
+    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(0)), (TA(1000), FA(100))])
+    assert tn.estimate_fee(1, 3) == 10 + 1
     assert tn.estimate_fee(3, 1) is None  # no balance in channel
 
     # The opposite fee schedule should give opposite results
-    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(100)), (TA(100), FA(0))])
-    assert tn.estimate_fee(1, 3) == -10
+    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(100)), (TA(1000), FA(0))])
+    assert tn.estimate_fee(1, 3) == -10 + 1
     assert tn.estimate_fee(3, 1) is None  # no balance in channel
 
     # Outgoing channel
     tn.set_fee(2, 1)
-    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(0)), (TA(100), FA(100))])
+    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(0)), (TA(1000), FA(100))])
     assert tn.estimate_fee(1, 3) == -10
     assert tn.estimate_fee(3, 1) is None  # no balance in channel
 
     # The opposite fee schedule should give opposite results
-    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(100)), (TA(100), FA(0))])
+    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(100)), (TA(1000), FA(0))])
     assert tn.estimate_fee(1, 3) == 10
     assert tn.estimate_fee(3, 1) is None  # no balance in channel
 
     # Combined fees cancel out
-    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(0)), (TA(100), FA(20))])
-    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(0)), (TA(100), FA(20))])
+    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(0)), (TA(1000), FA(20))])
+    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(0)), (TA(1000), FA(20))])
     assert tn.estimate_fee(1, 3) == 0
     assert tn.estimate_fee(3, 1) is None  # no balance in channel
 
-    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(20)), (TA(100), FA(0))])
-    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(20)), (TA(100), FA(0))])
+    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(20)), (TA(1000), FA(0))])
+    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(20)), (TA(1000), FA(0))])
     assert tn.estimate_fee(1, 3) == 0
     assert tn.estimate_fee(3, 1) is None  # no balance in channel
 
@@ -315,7 +317,7 @@ def test_compounding_fees(flat_fee_cli, prop_fee_cli, estimated_fee):
         (100, 500_000, 0, 967, 733),
         # imbalance fee
         (0, 0, 100, 1_000, 10),
-        (0, 0, 1_000, 1_000, 100),
+        (0, 0, 1_000, 1_000, 110),
     ],
 )
 def test_fee_estimate(flat_fee, prop_fee_cli, max_lin_imbalance_fee, target_amount, expected_fee):
