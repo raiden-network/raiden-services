@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-import io
 import os
 import re
 from glob import glob
-from os.path import basename, dirname, join, splitext
+from os.path import basename, splitext
 from typing import List
 
 from setuptools import find_packages, setup
@@ -29,8 +28,8 @@ def read_requirements(path: str) -> List[str]:
     return ret
 
 
-def read(*names: str, **kwargs: str) -> str:
-    return io.open(join(dirname(__file__), *names), encoding=kwargs.get("encoding", "utf8")).read()
+with open("README.md") as readme_file:
+    README = readme_file.read()
 
 
 setup(
@@ -38,6 +37,8 @@ setup(
     version="0.4.0",
     license="MIT",
     description=DESCRIPTION,
+    long_description=README,
+    long_description_content_type="text/markdown",
     author="Brainbot Labs Est.",
     author_email="contact@brainbot.li",
     url="https://github.com/raiden-network/raiden-services",
