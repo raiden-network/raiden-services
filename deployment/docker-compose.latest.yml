@@ -17,52 +17,48 @@
 version: '3.4'
 
 x-defaults: &defaults
-  restart: "no"
   image: raidennetwork/raiden-services:latest
-  env_file: services.env
-    - ./state:/state
-    - ~/.ethereum/keystore:/keystore
 
 services:
   pfs-ropsten:
     << : *defaults
-    ports:
-      - 6001:6000
+    labels:
+      - "traefik.frontend.rule=Host: pfs-ropsten.services-dev.raiden.network"
 
   pfs-rinkeby:
     << : *defaults
-    ports:
-      - 6002:6000
+    labels:
+      - "traefik.frontend.rule=Host: pfs-rinkeby.services-dev.raiden.network"
 
   pfs-kovan:
     << : *defaults
-    ports:
-      - 6003:6000
+    labels:
+      - "traefik.frontend.rule=Host: pfs-kovan.services-dev.raiden.network"
 
   pfs-goerli:
     <<: *defaults
-    ports:
-      - 6004:6000
+    labels:
+      - "traefik.frontend.rule=Host: pfs-goerli.services-dev.raiden.network"
 
   pfs-ropsten-with-fee:
     << : *defaults
-    ports:
-      - 6005:6000
+    labels:
+      - "traefik.frontend.rule=Host: pfs-ropsten-with-fee.services-dev.raiden.network"
 
   pfs-rinkeby-with-fee:
     << : *defaults
-    ports:
-      - 6006:6000
+    labels:
+      - "traefik.frontend.rule=Host: pfs-rinkeby-with-fee.services-dev.raiden.network"
 
   pfs-kovan-with-fee:
     << : *defaults
-    ports:
-      - 6007:6000
+    labels:
+      - "traefik.frontend.rule=Host: pfs-kovan-with-fee.services-dev.raiden.network"
 
   pfs-goerli-with-fee:
     <<: *defaults
-    ports:
-      - 6008:6000
+    labels:
+      - "traefik.frontend.rule=Host: pfs-goerli-with-fee.services-dev.raiden.network"
 
   ms-ropsten:
     << : *defaults
