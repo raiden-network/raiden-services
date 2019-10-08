@@ -5,11 +5,8 @@ docker-compose*
 .gitignore
 .mypy_cache
 .pytest_cache
-README.md
-LICENSE
 .vscode
 .idea
 venv
-
 docs
 tests
