@@ -1,4 +1,4 @@
-git+https://github.com/raiden-network/raiden.git@90f9b42ce467a4e8a32680212a5398d797129737
+raiden==0.200.0rc1
 raiden-contracts==0.32.0
 
 structlog==19.1.0
