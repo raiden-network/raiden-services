@@ -2,11 +2,11 @@
 
 ### 0.4.0 (2019-10-04)
 
-* Improve accuracy of imbalance fee calculation (https://github.com/raiden-network/raiden-ya(services/pull/565)
-* Allow CORS requests to PFS (https://github.com/raiden-network/raiden-ya(services/pull/559)
-* Check MS registration at startup (https://github.com/raiden-network/raiden-ya(services/pull/545)
-* Improve PFS routing performance (https://github.com/raiden-network/raiden-ya(services/pull/521)
-* Bugfix: handle nodes with unknown visibility (https://github.com/raiden-network/raiden-ya(services/pull/525)
+* Improve accuracy of imbalance fee calculation (https://github.com/raiden-network/raiden-services/pull/565)
+* Allow CORS requests to PFS (https://github.com/raiden-network/raiden-services/pull/559)
+* Check MS registration at startup (https://github.com/raiden-network/raiden-services/pull/545)
+* Improve PFS routing performance (https://github.com/raiden-network/raiden-services/pull/521)
+* Bugfix: handle nodes with unknown visibility (https://github.com/raiden-network/raiden-services/pull/525)
 
 ### 0.3.0 (2019-08-13)
 
