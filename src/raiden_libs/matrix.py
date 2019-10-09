@@ -14,7 +14,6 @@ from monitoring_service.constants import (
     MATRIX_RATE_LIMIT_ALLOWED_BYTES,
     MATRIX_RATE_LIMIT_RESET_INTERVAL,
 )
-from raiden.constants import Environment
 from raiden.exceptions import SerializationError, TransportError
 from raiden.messages.abstract import Message, SignedMessage
 from raiden.network.transport.matrix.client import Room
@@ -29,12 +28,10 @@ from raiden.network.transport.matrix.utils import (
 )
 from raiden.network.transport.utils import timeout_exponential_backoff
 from raiden.settings import (
-    DEFAULT_MATRIX_KNOWN_SERVERS,
     DEFAULT_TRANSPORT_MATRIX_RETRY_INTERVAL,
     DEFAULT_TRANSPORT_RETRIES_BEFORE_BACKOFF,
 )
 from raiden.storage.serialization.serializer import MessageSerializer
-from raiden.utils.cli import get_matrix_servers
 from raiden.utils.signer import LocalSigner
 from raiden.utils.typing import Address, ChainID
 
@@ -135,9 +132,7 @@ class MatrixListener(gevent.Greenlet):
         self.service_room_suffix = service_room_suffix
         self.message_received_callback = message_received_callback
 
-        self.available_servers = get_matrix_servers(
-            DEFAULT_MATRIX_KNOWN_SERVERS[Environment.DEVELOPMENT]
-        )
+        self.available_servers = ["https://transport01.raiden.network"]
 
         self.client = make_client(
             servers=self.available_servers,
