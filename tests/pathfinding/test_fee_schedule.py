@@ -125,36 +125,68 @@ def test_fees_in_balanced_routing():
     # When approximation iterations matter, those are given as sums of the steps.
 
     # Incoming channel
-    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(0)), (TA(2000), FA(200))])
+    # Without fee capping
+    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(0)), (TA(2000), FA(200))], cap_fees=False)
     assert tn.estimate_fee(1, 3) == 10 + 1
     assert tn.estimate_fee(3, 1) == -10
+    # With fee capping
+    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(0)), (TA(2000), FA(200))], cap_fees=True)
+    assert tn.estimate_fee(1, 3) == 10 + 1
+    assert tn.estimate_fee(3, 1) == 0
 
     # The opposite fee schedule should give opposite results
-    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(200)), (TA(2000), FA(0))])
+    # Without fee capping
+    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(200)), (TA(2000), FA(0))], cap_fees=False)
     assert tn.estimate_fee(1, 3) == -10 + 1
+    assert tn.estimate_fee(3, 1) == 10
+    # With fee capping
+    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(200)), (TA(2000), FA(0))], cap_fees=True)
+    assert tn.estimate_fee(1, 3) == 0
     assert tn.estimate_fee(3, 1) == 10
 
     # Outgoing channel
     tn.set_fee(2, 1)
-    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(0)), (TA(2000), FA(200))])
+    # Without fee capping
+    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(0)), (TA(2000), FA(200))], cap_fees=False)
     assert tn.estimate_fee(1, 3) == -10
+    assert tn.estimate_fee(3, 1) == 10 + 1
+    # With fee capping
+    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(0)), (TA(2000), FA(200))], cap_fees=True)
+    assert tn.estimate_fee(1, 3) == 0
     assert tn.estimate_fee(3, 1) == 10 + 1
 
     # The opposite fee schedule should give opposite results
-    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(200)), (TA(2000), FA(0))])
+    # Without fee capping
+    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(200)), (TA(2000), FA(0))], cap_fees=False)
     assert tn.estimate_fee(1, 3) == 10
     assert tn.estimate_fee(3, 1) == -10 + 1
+    # With fee capping
+    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(200)), (TA(2000), FA(0))], cap_fees=True)
+    assert tn.estimate_fee(1, 3) == 10
+    assert tn.estimate_fee(3, 1) == 0
 
     # Combined fees cancel out
-    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(0)), (TA(2000), FA(20))])
-    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(0)), (TA(2000), FA(20))])
+    # Only works without fee capping
+    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(0)), (TA(2000), FA(20))], cap_fees=False)
+    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(0)), (TA(2000), FA(20))], cap_fees=False)
     assert tn.estimate_fee(1, 3) == 0
     assert tn.estimate_fee(3, 1) == 0
+    # With fee capping there is a fee
+    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(0)), (TA(2000), FA(20))], cap_fees=True)
+    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(0)), (TA(2000), FA(20))], cap_fees=True)
+    assert tn.estimate_fee(1, 3) == 1
+    assert tn.estimate_fee(3, 1) == 1
 
-    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(20)), (TA(2000), FA(0))])
-    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(20)), (TA(2000), FA(0))])
+    # Only works without fee capping
+    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(20)), (TA(2000), FA(0))], cap_fees=False)
+    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(20)), (TA(2000), FA(0))], cap_fees=False)
     assert tn.estimate_fee(1, 3) == 0
     assert tn.estimate_fee(3, 1) == 0
+    # With fee capping there is a fee
+    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(20)), (TA(2000), FA(0))], cap_fees=True)
+    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(20)), (TA(2000), FA(0))], cap_fees=True)
+    assert tn.estimate_fee(1, 3) == 1
+    assert tn.estimate_fee(3, 1) == 1
 
     # When the range covered by the imbalance_penalty does include the
     # necessary balance values, the route should be considered invalid.
@@ -202,15 +234,24 @@ def test_fees_in_unbalanced_routing():
     assert tn.estimate_fee(1, 3) == 10 + 1
     assert tn.estimate_fee(3, 1) is None  # no balance in channel
 
-    # The opposite fee schedule should give opposite results
-    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(100)), (TA(1000), FA(0))])
+    # The opposite fee schedule should give opposite results, without fee capping
+    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(100)), (TA(1000), FA(0))], cap_fees=False)
     assert tn.estimate_fee(1, 3) == -10 + 1
+    assert tn.estimate_fee(3, 1) is None  # no balance in channel
+    # Or zero with fee capping
+    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(100)), (TA(1000), FA(0))], cap_fees=True)
+    assert tn.estimate_fee(1, 3) == 0
     assert tn.estimate_fee(3, 1) is None  # no balance in channel
 
     # Outgoing channel
     tn.set_fee(2, 1)
-    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(0)), (TA(1000), FA(100))])
+    # Without fee capping
+    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(0)), (TA(1000), FA(100))], cap_fees=False)
     assert tn.estimate_fee(1, 3) == -10
+    assert tn.estimate_fee(3, 1) is None  # no balance in channel
+    # With fee capping
+    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(0)), (TA(1000), FA(100))], cap_fees=True)
+    assert tn.estimate_fee(1, 3) == 0
     assert tn.estimate_fee(3, 1) is None  # no balance in channel
 
     # The opposite fee schedule should give opposite results
@@ -219,14 +260,26 @@ def test_fees_in_unbalanced_routing():
     assert tn.estimate_fee(3, 1) is None  # no balance in channel
 
     # Combined fees cancel out
-    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(0)), (TA(1000), FA(20))])
-    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(0)), (TA(1000), FA(20))])
+    # Only works without fee capping
+    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(0)), (TA(1000), FA(20))], cap_fees=False)
+    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(0)), (TA(1000), FA(20))], cap_fees=False)
     assert tn.estimate_fee(1, 3) == 0
     assert tn.estimate_fee(3, 1) is None  # no balance in channel
+    # With fee capping there is a fee
+    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(0)), (TA(1000), FA(20))], cap_fees=True)
+    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(0)), (TA(1000), FA(20))], cap_fees=True)
+    assert tn.estimate_fee(1, 3) == 2
+    assert tn.estimate_fee(3, 1) is None  # no balance in channel
 
-    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(20)), (TA(1000), FA(0))])
-    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(20)), (TA(1000), FA(0))])
+    # Only works without fee capping
+    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(20)), (TA(1000), FA(0))], cap_fees=False)
+    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(20)), (TA(1000), FA(0))], cap_fees=False)
     assert tn.estimate_fee(1, 3) == 0
+    assert tn.estimate_fee(3, 1) is None  # no balance in channel
+    # With fee capping there is a fee
+    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(20)), (TA(1000), FA(0))], cap_fees=True)
+    tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(20)), (TA(1000), FA(0))], cap_fees=True)
+    assert tn.estimate_fee(1, 3) == 2
     assert tn.estimate_fee(3, 1) is None  # no balance in channel
 
     # When the range covered by the imbalance_penalty does include the

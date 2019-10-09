@@ -59,7 +59,7 @@ class Channel:
 
     @property
     def views(self) -> Tuple["ChannelView", "ChannelView"]:
-        return (ChannelView(channel=self), ChannelView(channel=self, reverse=True))
+        return ChannelView(channel=self), ChannelView(channel=self, reverse=True)
 
 
 @dataclass
