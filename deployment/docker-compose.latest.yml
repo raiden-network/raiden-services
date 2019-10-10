@@ -83,3 +83,7 @@ services:
 
   msrc-goerli:
     <<: *defaults
+
+  builder:
+    labels:
+      - "traefik.frontend.rule=Host: services-dev.raiden.network"
