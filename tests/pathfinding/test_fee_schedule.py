@@ -92,7 +92,7 @@ class TokenNetworkForTests(TokenNetwork):
         return result[0]["estimated_fee"]
 
 
-def test_fees_in_balanced_routing():
+def test_fees_in_balanced_routing():  # pylint: disable=too-many-statements
     """ Tests fee estimation in a network where both participants have funds in a channel. """
     tn = TokenNetworkForTests(
         channels=[dict(participant1=1, participant2=2), dict(participant1=2, participant2=3)]
@@ -126,67 +126,74 @@ def test_fees_in_balanced_routing():
 
     # Incoming channel
     # Without fee capping
+    tn.set_fee(2, 3, cap_fees=False)
     tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(0)), (TA(2000), FA(200))], cap_fees=False)
     assert tn.estimate_fee(1, 3) == 10 + 1
     assert tn.estimate_fee(3, 1) == -10
     # With fee capping
+    tn.set_fee(2, 3, cap_fees=True)
     tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(0)), (TA(2000), FA(200))], cap_fees=True)
     assert tn.estimate_fee(1, 3) == 10 + 1
     assert tn.estimate_fee(3, 1) == 0
 
     # The opposite fee schedule should give opposite results
     # Without fee capping
+    tn.set_fee(2, 3, cap_fees=False)
     tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(200)), (TA(2000), FA(0))], cap_fees=False)
     assert tn.estimate_fee(1, 3) == -10 + 1
     assert tn.estimate_fee(3, 1) == 10
     # With fee capping
+    tn.set_fee(2, 3, cap_fees=True)
     tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(200)), (TA(2000), FA(0))], cap_fees=True)
     assert tn.estimate_fee(1, 3) == 0
     assert tn.estimate_fee(3, 1) == 10
 
     # Outgoing channel
-    tn.set_fee(2, 1)
     # Without fee capping
+    tn.set_fee(2, 1, cap_fees=False)
     tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(0)), (TA(2000), FA(200))], cap_fees=False)
     assert tn.estimate_fee(1, 3) == -10
     assert tn.estimate_fee(3, 1) == 10 + 1
     # With fee capping
+    tn.set_fee(2, 1, cap_fees=True)
     tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(0)), (TA(2000), FA(200))], cap_fees=True)
     assert tn.estimate_fee(1, 3) == 0
     assert tn.estimate_fee(3, 1) == 10 + 1
 
     # The opposite fee schedule should give opposite results
     # Without fee capping
+    tn.set_fee(2, 1, cap_fees=False)
     tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(200)), (TA(2000), FA(0))], cap_fees=False)
     assert tn.estimate_fee(1, 3) == 10
     assert tn.estimate_fee(3, 1) == -10 + 1
     # With fee capping
+    tn.set_fee(2, 1, cap_fees=True)
     tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(200)), (TA(2000), FA(0))], cap_fees=True)
     assert tn.estimate_fee(1, 3) == 10
     assert tn.estimate_fee(3, 1) == 0
 
     # Combined fees cancel out
-    # Only works without fee capping
+    # Works without fee capping
     tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(0)), (TA(2000), FA(20))], cap_fees=False)
     tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(0)), (TA(2000), FA(20))], cap_fees=False)
     assert tn.estimate_fee(1, 3) == 0
     assert tn.estimate_fee(3, 1) == 0
-    # With fee capping there is a fee
+    # And with fee capping, as the amounts even out
     tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(0)), (TA(2000), FA(20))], cap_fees=True)
     tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(0)), (TA(2000), FA(20))], cap_fees=True)
-    assert tn.estimate_fee(1, 3) == 1
-    assert tn.estimate_fee(3, 1) == 1
+    assert tn.estimate_fee(1, 3) == 0
+    assert tn.estimate_fee(3, 1) == 0
 
-    # Only works without fee capping
+    # Works without fee capping
     tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(20)), (TA(2000), FA(0))], cap_fees=False)
     tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(20)), (TA(2000), FA(0))], cap_fees=False)
     assert tn.estimate_fee(1, 3) == 0
     assert tn.estimate_fee(3, 1) == 0
-    # With fee capping there is a fee
+    # And with fee capping, as the amounts even out
     tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(20)), (TA(2000), FA(0))], cap_fees=True)
     tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(20)), (TA(2000), FA(0))], cap_fees=True)
-    assert tn.estimate_fee(1, 3) == 1
-    assert tn.estimate_fee(3, 1) == 1
+    assert tn.estimate_fee(1, 3) == 0
+    assert tn.estimate_fee(3, 1) == 0
 
     # When the range covered by the imbalance_penalty does include the
     # necessary balance values, the route should be considered invalid.
@@ -356,7 +363,7 @@ def test_compounding_fees(flat_fee_cli, prop_fee_cli, estimated_fee):
     "flat_fee, prop_fee_cli, max_lin_imbalance_fee, target_amount, expected_fee",
     [
         # proportional fees
-        (0, 1_000_000, 0, 1000, 999),  # 100% per hop mediation fee
+        (0, 1_000_000, 0, 1000, 1000),  # 100% per hop mediation fee
         (0, 100_000, 0, 1000, 100),  # 10% per hop mediation fee
         (0, 50_000, 0, 1000, 50),  # 5% per hop mediation fee
         (0, 10_000, 0, 1000, 10),  # 1% per hop mediation fee

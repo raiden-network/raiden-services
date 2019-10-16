@@ -8,18 +8,8 @@ from marshmallow_dataclass import add_schema
 
 from pathfinding_service.constants import DEFAULT_REVEAL_TIMEOUT
 from pathfinding_service.exceptions import InvalidPFSFeeUpdate
-from raiden.tests.utils.mediation_fees import fee_receiver, fee_sender
 from raiden.transfer.mediated_transfer.mediation_fee import FeeScheduleState as FeeScheduleRaiden
-from raiden.utils.typing import (
-    Address,
-    Balance,
-    ChannelID,
-    FeeAmount,
-    Nonce,
-    PaymentWithFeeAmount,
-    TokenAmount,
-    TokenNetworkAddress,
-)
+from raiden.utils.typing import Address, ChannelID, Nonce, TokenAmount, TokenNetworkAddress
 from raiden_libs.marshmallow import ChecksumAddress
 
 
@@ -141,15 +131,6 @@ class ChannelView:
         self.capacity = capacity
         if reveal_timeout is not None:
             self.reveal_timeout = reveal_timeout
-
-    def backwards_fee_sender(self, balance: Balance, amount: PaymentWithFeeAmount) -> FeeAmount:
-        """Returns the mediation fee for this channel when transferring the given amount"""
-        return fee_sender(self.fee_schedule_sender, balance, amount)
-
-    def backwards_fee_receiver(self, balance: Balance, amount: PaymentWithFeeAmount) -> FeeAmount:
-        """Returns the mediation fee for this channel when receiving the given amount"""
-
-        return fee_receiver(self.fee_schedule_receiver, balance, amount)
 
     def set_fee_schedule(self, fee_schedule: FeeSchedule) -> None:
         if self.fee_schedule_sender.timestamp >= fee_schedule.timestamp:

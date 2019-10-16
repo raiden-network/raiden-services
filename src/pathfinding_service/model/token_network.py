@@ -19,6 +19,7 @@ from pathfinding_service.model.channel import Channel, ChannelView, FeeSchedule
 from raiden.exceptions import UndefinedMediationFee
 from raiden.messages.path_finding_service import PFSCapacityUpdate, PFSFeeUpdate
 from raiden.network.transport.matrix import AddressReachability
+from raiden.tests.utils.mediation_fees import get_amount_before_fees
 from raiden.utils.typing import (
     Address,
     Balance,
@@ -84,24 +85,20 @@ class Path:
     def _calculate_fees(self) -> None:
         total = PaymentWithFeeAmount(self.value)
         for prev_node, mediator, next_node in reversed(list(window(self.nodes, 3))):
-            try:
-                view_in: ChannelView = self.G[prev_node][mediator]["view"]
-                view_out: ChannelView = self.G[mediator][next_node]["view"]
+            view_in: ChannelView = self.G[prev_node][mediator]["view"]
+            view_out: ChannelView = self.G[mediator][next_node]["view"]
 
-                fee_out = view_out.backwards_fee_sender(
-                    balance=Balance(view_out.capacity), amount=total
-                )
+            amount_with_fees = get_amount_before_fees(
+                final_amount=total,
+                payer_balance=Balance(view_in.capacity),
+                payee_balance=Balance(view_out.capacity),
+                payer_fee_schedule=view_in.fee_schedule_receiver,
+                payee_fee_schedule=view_out.fee_schedule_sender,
+                payer_capacity=view_in.capacity,
+                payee_capacity=view_out.capacity,
+            )
 
-                total += fee_out  # type: ignore
-
-                fee_in = view_in.backwards_fee_receiver(
-                    balance=Balance(view_in.capacity), amount=total
-                )
-
-                total += fee_in  # type: ignore
-
-                self.fees.append(FeeAmount(fee_in + fee_out))
-            except UndefinedMediationFee:
+            if amount_with_fees is None:
                 log.warning(
                     "Invalid fee calculation",
                     amount=total,
@@ -111,6 +108,12 @@ class Path:
                     fee_schedule_receiver=view_in.fee_schedule_receiver,
                 )
                 self._is_valid = False
+                break
+
+            fee = PaymentWithFeeAmount(amount_with_fees - total)
+            total += fee  # type: ignore
+
+            self.fees.append(FeeAmount(fee))
 
     @property
     def edge_attrs(self) -> Iterable[dict]:
@@ -317,15 +320,25 @@ class TokenNetwork:
         # that are nice to the initiator's and target's capacities, but it's
         # inconsistent with the estimated total fee.
         try:
-            fee_out = view.backwards_fee_sender(
-                balance=Balance(view.capacity), amount=PaymentWithFeeAmount(amount)
-            )
+            # fee_out = view.backwards_fee_sender(
+            #     balance=Balance(view.capacity), amount=PaymentWithFeeAmount(amount)
+            # )
+            #
+            # fee_in = view.backwards_fee_receiver(
+            #     balance=Balance(view.capacity), amount=PaymentWithFeeAmount(amount)
+            # )
+            # amount_with_fees = get_amount_before_fees(
+            #     final_amount=total,
+            #     payer_balance=Balance(view_in.capacity),
+            #     payee_balance=Balance(view_out.capacity),
+            #     payer_fee_schedule=view_in.fee_schedule_sender,
+            #     payee_fee_schedule=view_out.fee_schedule_sender,
+            #     payer_capacity=view_in.capacity,
+            #     payee_capacity=view_out.capacity,
+            # )
 
-            fee_in = view.backwards_fee_receiver(
-                balance=Balance(view.capacity), amount=PaymentWithFeeAmount(amount)
-            )
-
-            fee_weight = (fee_in + fee_out) / 1e18 * fee_penalty
+            # FIXME
+            fee_weight = (1) / 1e18 * fee_penalty
         except UndefinedMediationFee:
             return float("inf")
         no_refund_weight = 0
