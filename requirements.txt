@@ -1,5 +1,5 @@
-raiden==0.200.0rc1
-raiden-contracts==0.32.0
+git+https://github.com/raiden-network/raiden.git@ca74c8fccd3d7bbcf1970fab03650a62d94c14ce
+raiden-contracts==0.33.1
 
 structlog==19.1.0
 colorama==0.4.1
