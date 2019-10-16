@@ -1,4 +1,4 @@
-git+https://github.com/raiden-network/raiden.git@af1050b5bd1872517d4c70e06d9d532cbe69d42f
+git+https://github.com/karlb/raiden.git@new-mediation-fee-capping
 raiden-contracts==0.32.0
 
 structlog==19.1.0
