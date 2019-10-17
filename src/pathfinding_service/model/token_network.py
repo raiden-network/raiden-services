@@ -19,7 +19,7 @@ from pathfinding_service.model.channel import Channel, ChannelView, FeeSchedule
 from raiden.exceptions import UndefinedMediationFee
 from raiden.messages.path_finding_service import PFSCapacityUpdate, PFSFeeUpdate
 from raiden.network.transport.matrix import AddressReachability
-from raiden.tests.utils.mediation_fees import get_amount_before_fees
+from raiden.tests.utils.mediation_fees import get_amount_with_fees
 from raiden.utils.typing import (
     Address,
     Balance,
@@ -88,13 +88,13 @@ class Path:
             view_in: ChannelView = self.G[prev_node][mediator]["view"]
             view_out: ChannelView = self.G[mediator][next_node]["view"]
 
-            amount_with_fees = get_amount_before_fees(
-                final_amount=total,
-                payer_balance=Balance(view_in.capacity_partner),
-                payee_balance=Balance(view_out.capacity),
-                payer_fee_schedule=view_in.fee_schedule_receiver,
-                payee_fee_schedule=view_out.fee_schedule_sender,
-                payer_capacity=view_in.capacity,
+            amount_with_fees = get_amount_with_fees(
+                amount_without_fees=total,
+                balance_in=Balance(view_in.capacity_partner),
+                balance_out=Balance(view_out.capacity),
+                schedule_in=view_in.fee_schedule_receiver,
+                schedule_out=view_out.fee_schedule_sender,
+                receivable_amount=view_in.capacity,
             )
 
             if amount_with_fees is None:
@@ -103,8 +103,12 @@ class Path:
                     amount=total,
                     view_out=view_out,
                     view_in=view_in,
-                    fee_schedule_sender=view_out.fee_schedule_sender,
-                    fee_schedule_receiver=view_in.fee_schedule_receiver,
+                    amount_without_fees=total,
+                    balance_in=view_in.capacity_partner,
+                    balance_out=view_out.capacity,
+                    schedule_in=view_in.fee_schedule_receiver,
+                    schedule_out=view_out.fee_schedule_sender,
+                    receivable_amount=view_in.capacity,
                 )
                 self._is_valid = False
                 break
@@ -337,7 +341,7 @@ class TokenNetwork:
             # )
 
             # FIXME
-            fee_weight = (1) / 1e18 * fee_penalty
+            fee_weight = 1 / 1e18 * fee_penalty
         except UndefinedMediationFee:
             return float("inf")
         no_refund_weight = 0
