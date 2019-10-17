@@ -328,10 +328,9 @@ def test_regression_issue_554():
         (100, 0, 100 + 100),
         (10, 0, 10 + 10),
         # proportional fees
-        # TODO: There are some rounding problems with the 100% case
-        (0, 1_000_000, 999 + 1998),  # 100% per hop mediation fee
+        (0, 1_000_000, 1000 + 2000),  # 100% per hop mediation fee
         (0, 100_000, 100 + 110),  # 10% per hop mediation fee
-        (0, 50_000, 50 + 53),  # 5% per hop mediation fee
+        (0, 50_000, 50 + 52),  # 5% per hop mediation fee
         (0, 10_000, 10 + 10),  # 1% per hop mediation fee
     ],
 )
