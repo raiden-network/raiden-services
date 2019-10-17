@@ -16,7 +16,6 @@ from pathfinding_service.constants import (
 )
 from pathfinding_service.exceptions import InvalidPFSFeeUpdate
 from pathfinding_service.model.channel import Channel, ChannelView, FeeSchedule
-from raiden.exceptions import UndefinedMediationFee
 from raiden.messages.path_finding_service import PFSCapacityUpdate, PFSFeeUpdate
 from raiden.network.transport.matrix import AddressReachability
 from raiden.tests.utils.mediation_fees import get_amount_with_fees
@@ -322,28 +321,21 @@ class TokenNetwork:
         # Fees for initiator and target are included here. This promotes routes
         # that are nice to the initiator's and target's capacities, but it's
         # inconsistent with the estimated total fee.
-        try:
-            # fee_out = view.backwards_fee_sender(
-            #     balance=Balance(view.capacity), amount=PaymentWithFeeAmount(amount)
-            # )
-            #
-            # fee_in = view.backwards_fee_receiver(
-            #     balance=Balance(view.capacity), amount=PaymentWithFeeAmount(amount)
-            # )
-            # amount_with_fees = get_amount_before_fees(
-            #     final_amount=total,
-            #     payer_balance=Balance(view_in.capacity),
-            #     payee_balance=Balance(view_out.capacity),
-            #     payer_fee_schedule=view_in.fee_schedule_sender,
-            #     payee_fee_schedule=view_out.fee_schedule_sender,
-            #     payer_capacity=view_in.capacity,
-            #     payee_capacity=view_out.capacity,
-            # )
+        amount_with_fees = get_amount_with_fees(
+            amount_without_fees=PaymentWithFeeAmount(amount),
+            balance_in=Balance(view.capacity),
+            balance_out=Balance(view.capacity),
+            schedule_in=view.fee_schedule_receiver,
+            schedule_out=view.fee_schedule_sender,
+            receivable_amount=view.capacity,
+        )
 
-            # FIXME
-            fee_weight = 1 / 1e18 * fee_penalty
-        except UndefinedMediationFee:
+        if amount_with_fees is None:
             return float("inf")
+
+        fee = FeeAmount(amount_with_fees - amount)
+        fee_weight = fee / 1e18 * fee_penalty
+
         no_refund_weight = 0
         if view_from_partner.capacity < int(float(amount) * 1.1):
             no_refund_weight = 1
