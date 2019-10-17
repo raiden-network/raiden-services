@@ -366,8 +366,10 @@ def test_compounding_fees(flat_fee_cli, prop_fee_cli, estimated_fee):
         (0, 100_000, 0, 1000, 100),  # 10% per hop mediation fee
         (0, 50_000, 0, 1000, 50),  # 5% per hop mediation fee
         (0, 10_000, 0, 1000, 10),  # 1% per hop mediation fee
-        (0, 10_000, 0, 100, 0),  # 1% per hop mediation fee
-        (0, 5_000, 0, 101, 0),  # 0,5% per hop mediation fee gets rounded away
+        (0, 10_000, 0, 100, 1),  # 1% per hop mediation fee
+        (0, 5_000, 0, 100, 1),  # 0,5% per hop mediation
+        (0, 4_999, 0, 100, 0),
+        (0, 5_000, 0, 99, 0),
         # pure flat fee
         (50, 0, 0, 1000, 100),
         # mixed tests
@@ -376,7 +378,7 @@ def test_compounding_fees(flat_fee_cli, prop_fee_cli, estimated_fee):
         (100, 500_000, 0, 967, 733),
         # imbalance fee
         (0, 0, 100, 1_000, 10),
-        (0, 0, 1_000, 1_000, 110),
+        (0, 0, 1_000, 1_000, 111),  # FIXME: is this expected?
     ],
 )
 def test_fee_estimate(flat_fee, prop_fee_cli, max_lin_imbalance_fee, target_amount, expected_fee):
