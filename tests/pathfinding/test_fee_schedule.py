@@ -201,7 +201,7 @@ def test_fees_in_balanced_routing():  # pylint: disable=too-many-statements
     assert tn.estimate_fee(1, 3) is None
 
 
-def test_fees_in_unbalanced_routing():
+def test_fees_in_unbalanced_routing():  # pylint: disable=too-many-statements
     """ Tests fee estimation in a network where only one participant has funds in a channel. """
     tn = TokenNetworkForTests(
         channels=[
@@ -237,26 +237,36 @@ def test_fees_in_unbalanced_routing():
     # When approximation iterations matter, those are given as sums of the steps.
 
     # Incoming channel
-    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(0)), (TA(1000), FA(100))])
+    # Without fee capping
+    tn.set_fee(2, 3, cap_fees=False)
+    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(0)), (TA(1000), FA(100))], cap_fees=False)
+    assert tn.estimate_fee(1, 3) == 10 + 1
+    assert tn.estimate_fee(3, 1) is None  # no balance in channel
+    # With fee capping
+    tn.set_fee(2, 3, cap_fees=True)
+    tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(0)), (TA(1000), FA(100))], cap_fees=True)
     assert tn.estimate_fee(1, 3) == 10 + 1
     assert tn.estimate_fee(3, 1) is None  # no balance in channel
 
     # The opposite fee schedule should give opposite results, without fee capping
+    tn.set_fee(2, 3, cap_fees=False)
     tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(100)), (TA(1000), FA(0))], cap_fees=False)
     assert tn.estimate_fee(1, 3) == -10 + 1
     assert tn.estimate_fee(3, 1) is None  # no balance in channel
     # Or zero with fee capping
+    tn.set_fee(2, 3, cap_fees=True)
     tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(100)), (TA(1000), FA(0))], cap_fees=True)
     assert tn.estimate_fee(1, 3) == 0
     assert tn.estimate_fee(3, 1) is None  # no balance in channel
 
     # Outgoing channel
-    tn.set_fee(2, 1)
     # Without fee capping
+    tn.set_fee(2, 1, cap_fees=False)
     tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(0)), (TA(1000), FA(100))], cap_fees=False)
     assert tn.estimate_fee(1, 3) == -10
     assert tn.estimate_fee(3, 1) is None  # no balance in channel
     # With fee capping
+    tn.set_fee(2, 1, cap_fees=True)
     tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(0)), (TA(1000), FA(100))], cap_fees=True)
     assert tn.estimate_fee(1, 3) == 0
     assert tn.estimate_fee(3, 1) is None  # no balance in channel
@@ -267,26 +277,26 @@ def test_fees_in_unbalanced_routing():
     assert tn.estimate_fee(3, 1) is None  # no balance in channel
 
     # Combined fees cancel out
-    # Only works without fee capping
+    # Works without fee capping
     tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(0)), (TA(1000), FA(20))], cap_fees=False)
     tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(0)), (TA(1000), FA(20))], cap_fees=False)
     assert tn.estimate_fee(1, 3) == 0
     assert tn.estimate_fee(3, 1) is None  # no balance in channel
-    # With fee capping there is a fee
+    # With fee capping fees cancel out as well
     tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(0)), (TA(1000), FA(20))], cap_fees=True)
     tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(0)), (TA(1000), FA(20))], cap_fees=True)
-    assert tn.estimate_fee(1, 3) == 2
+    assert tn.estimate_fee(1, 3) == 0
     assert tn.estimate_fee(3, 1) is None  # no balance in channel
 
-    # Only works without fee capping
+    # Works without fee capping
     tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(20)), (TA(1000), FA(0))], cap_fees=False)
     tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(20)), (TA(1000), FA(0))], cap_fees=False)
     assert tn.estimate_fee(1, 3) == 0
     assert tn.estimate_fee(3, 1) is None  # no balance in channel
-    # With fee capping there is a fee
+    # With fee capping fees cancel out as well
     tn.set_fee(2, 1, imbalance_penalty=[(TA(0), FA(20)), (TA(1000), FA(0))], cap_fees=True)
     tn.set_fee(2, 3, imbalance_penalty=[(TA(0), FA(20)), (TA(1000), FA(0))], cap_fees=True)
-    assert tn.estimate_fee(1, 3) == 2
+    assert tn.estimate_fee(1, 3) == 0
     assert tn.estimate_fee(3, 1) is None  # no balance in channel
 
     # When the range covered by the imbalance_penalty does include the
