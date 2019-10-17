@@ -1,5 +1,5 @@
 git+https://github.com/karlb/raiden.git@new-mediation-fee-capping
-raiden-contracts==0.32.0
+raiden-contracts==0.33.1
 
 structlog==19.1.0
 colorama==0.4.1
