@@ -95,6 +95,10 @@ class ChannelView:
             self.channel.capacity1 = value
 
     @property
+    def capacity_partner(self) -> TokenAmount:
+        return self.channel.capacity1 if self.reverse else self.channel.capacity2
+
+    @property
     def reveal_timeout(self) -> int:
         return self.channel.reveal_timeout2 if self.reverse else self.channel.reveal_timeout1
 

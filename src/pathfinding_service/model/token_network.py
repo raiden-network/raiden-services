@@ -90,12 +90,11 @@ class Path:
 
             amount_with_fees = get_amount_before_fees(
                 final_amount=total,
-                payer_balance=Balance(view_in.capacity),
+                payer_balance=Balance(view_in.capacity_partner),
                 payee_balance=Balance(view_out.capacity),
                 payer_fee_schedule=view_in.fee_schedule_receiver,
                 payee_fee_schedule=view_out.fee_schedule_sender,
                 payer_capacity=view_in.capacity,
-                payee_capacity=view_out.capacity,
             )
 
             if amount_with_fees is None:
