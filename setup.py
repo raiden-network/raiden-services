@@ -7,7 +7,7 @@ from typing import List
 
 from setuptools import find_packages, setup
 
-REQ_REPLACE = {re.compile(r"git\+https://github.com/\w+/raiden.git@.*"): "raiden"}
+REQ_REPLACE = {re.compile(r"git\+https://github.com/(\w|-)+/raiden.git@.*"): "raiden"}
 
 DESCRIPTION = "Raiden Services contain additional tools for the Raiden Network."
 
