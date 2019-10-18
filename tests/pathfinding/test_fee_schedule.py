@@ -122,7 +122,8 @@ def test_fees_in_balanced_routing():  # pylint: disable=too-many-statements
     tn.set_fee(2, 3)
 
     # Let's try imbalance fees
-    # When approximation iterations matter, those are given as sums of the steps.
+    # When the fees influence the amount strong that fee(amount) != fee(amount + fee)
+    # the difference is given as an additional summand.
 
     # Incoming channel
     # Without fee capping
@@ -388,7 +389,7 @@ def test_compounding_fees(flat_fee_cli, prop_fee_cli, estimated_fee):
         (100, 500_000, 0, 967, 733),
         # imbalance fee
         (0, 0, 100, 1_000, 10),
-        (0, 0, 1_000, 1_000, 111),  # FIXME: is this expected?
+        (0, 0, 1_000, 1_000, 111),
     ],
 )
 def test_fee_estimate(flat_fee, prop_fee_cli, max_lin_imbalance_fee, target_amount, expected_fee):
@@ -398,7 +399,7 @@ def test_fee_estimate(flat_fee, prop_fee_cli, max_lin_imbalance_fee, target_amou
     prop_fee = ppm_fee_per_channel(ProportionalFeeAmount(prop_fee_cli))
     imbalance_fee = None
     if max_lin_imbalance_fee > 0:
-        # This created a simple unsymmetric imbalance fee
+        # This created a simple asymmetric imbalance fee
         imbalance_fee = [(0, 0), (capacity, 0), (2 * capacity, max_lin_imbalance_fee)]
 
     tn = TokenNetworkForTests(
