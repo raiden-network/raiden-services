@@ -70,27 +70,6 @@ services:
       - "traefik.enable=true"
       - "traefik.frontend.rule=Host: pfs-rinkeby-with-fee.services-test.raiden.network"
 
-  pfs-kovan:
-    << : *defaults
-    command: ["python3", "-m", "pathfinding_service.cli", "--enable-debug"]
-    environment:
-      - PFS_ETH_RPC=http://parity.kovan.ethnodes.brainbot.com:8545
-      - PFS_STATE_DB=/state/pfs-kovan.db
-    labels:
-      - "traefik.enable=true"
-      - "traefik.frontend.rule=Host: pfs-kovan.services-test.raiden.network"
-
-  pfs-kovan-with-fee:
-    << : *defaults
-    command: ["python3", "-m", "pathfinding_service.cli", "--enable-debug"]
-    environment:
-      - PFS_ETH_RPC=http://parity.kovan.ethnodes.brainbot.com:8545
-      - PFS_STATE_DB=/state/pfs-kovan-with-fee.db
-      - PFS_SERVICE_FEE=100
-    labels:
-      - "traefik.enable=true"
-      - "traefik.frontend.rule=Host: pfs-kovan-with-fee.services-test.raiden.network"
-
   pfs-goerli:
     <<: *defaults
     command: ["python3", "-m", "pathfinding_service.cli", "--enable-debug"]
@@ -126,13 +105,6 @@ services:
       - MS_ETH_RPC=http://geth.rinkeby.ethnodes.brainbot.com:8545
       - MS_STATE_DB=/state/ms-rinkeby.db
 
-  ms-kovan:
-    <<: *defaults
-    command: ["python3", "-m", "monitoring_service.cli"]
-    environment:
-      - MS_ETH_RPC=http://parity.kovan.ethnodes.brainbot.com:8545
-      - MS_STATE_DB=/state/ms-kovan.db
-
   ms-goerli:
     <<: *defaults
     command: ["python3", "-m", "monitoring_service.cli"]
@@ -166,15 +138,6 @@ services:
       - MSRC_STATE_DB=/state/ms-rinkeby.db
     depends_on:
       - ms-rinkeby
-
-  msrc-kovan:
-    <<: *defaults
-    command: ["python3", "-m", "request_collector.cli"]
-    environment:
-      - MSRC_CHAIN_ID=kovan
-      - MSRC_STATE_DB=/state/ms-kovan.db
-    depends_on:
-      - ms-kovan
 
   msrc-goerli:
     <<: *defaults
@@ -221,20 +184,16 @@ services:
     depends_on:
       - pfs-ropsten
       - pfs-rinkeby
-      - pfs-kovan
       - pfs-goerli
       - pfs-ropsten-with-fee
       - pfs-rinkeby-with-fee
-      - pfs-kovan-with-fee
       - pfs-goerli-with-fee
       - ms-ropsten
       - ms-rinkeby
-      - ms-kovan
       - ms-goerli
       - ms-goerli-backup
       - msrc-ropsten
       - msrc-rinkeby
-      - msrc-kovan
       - msrc-goerli
       - msrc-goerli-backup
       - builder

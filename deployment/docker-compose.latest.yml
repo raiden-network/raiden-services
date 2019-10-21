@@ -30,11 +30,6 @@ services:
     labels:
       - "traefik.frontend.rule=Host: pfs-rinkeby.services-dev.raiden.network"
 
-  pfs-kovan:
-    << : *defaults
-    labels:
-      - "traefik.frontend.rule=Host: pfs-kovan.services-dev.raiden.network"
-
   pfs-goerli:
     <<: *defaults
     labels:
@@ -50,11 +45,6 @@ services:
     labels:
       - "traefik.frontend.rule=Host: pfs-rinkeby-with-fee.services-dev.raiden.network"
 
-  pfs-kovan-with-fee:
-    << : *defaults
-    labels:
-      - "traefik.frontend.rule=Host: pfs-kovan-with-fee.services-dev.raiden.network"
-
   pfs-goerli-with-fee:
     <<: *defaults
     labels:
@@ -66,9 +56,6 @@ services:
   ms-rinkeby:
     << : *defaults
 
-  ms-kovan:
-    << : *defaults
-
   ms-goerli:
     <<: *defaults
 
@@ -76,9 +63,6 @@ services:
     << : *defaults
 
   msrc-rinkeby:
-    << : *defaults
-
-  msrc-kovan:
     << : *defaults
 
   msrc-goerli:
