@@ -27,11 +27,6 @@ services:
     ports:
       - 6002:6000
 
-  pfs-kovan:
-    << : *defaults
-    ports:
-      - 6003:6000
-
   pfs-goerli:
     <<: *defaults
     ports:
@@ -47,11 +42,6 @@ services:
     ports:
       - 6006:6000
 
-  pfs-kovan-with-fee:
-    << : *defaults
-    ports:
-      - 6007:6000
-
   pfs-goerli-with-fee:
     <<: *defaults
     ports:
@@ -63,9 +53,6 @@ services:
   ms-rinkeby:
     << : *defaults
 
-  ms-kovan:
-    << : *defaults
-
   ms-goerli:
     <<: *defaults
 
@@ -73,9 +60,6 @@ services:
     << : *defaults
 
   msrc-rinkeby:
-    << : *defaults
-
-  msrc-kovan:
     << : *defaults
 
   msrc-goerli:
