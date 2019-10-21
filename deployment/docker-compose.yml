@@ -242,6 +242,7 @@ services:
   # This registers the service and stops afterwards
   registration-goerli:
     <<: *defaults
+    restart: "no"
     command: ["python3", "-m", "raiden_libs.register_service"]
     environment:
       - RDN_REGISTRY_LOG_LEVEL=DEBUG
@@ -255,6 +256,7 @@ services:
   # This registers the service and stops afterwards
   registration-goerli-backup:
     <<: *defaults
+    restart: "no"
     command: ["python3", "-m", "raiden_libs.register_service"]
     environment:
       - RDN_REGISTRY_LOG_LEVEL=DEBUG
