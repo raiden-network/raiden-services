@@ -74,7 +74,8 @@ def test_eth_rpc(default_cli_args, provider_mock):
     """ The `eth-rpc` parameter must reach the `HTTPProvider` """
     runner = CliRunner()
     eth_rpc = "example.com:1234"
-    runner.invoke(main, default_cli_args + ["--eth-rpc", eth_rpc])
+    with patch.multiple(**PATCH_ARGS), patch.multiple(**PATCH_INFO_ARGS):
+        runner.invoke(main, default_cli_args + ["--eth-rpc", eth_rpc])
     provider_mock.assert_called_with(eth_rpc)
 
 
