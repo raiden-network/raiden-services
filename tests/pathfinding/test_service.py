@@ -256,7 +256,7 @@ def test_handle_reachability_change(pathfinding_service_mock, token_network_mode
     )
 
 
-@pytest.mark.parametrize("order", ["normal", "fee_update_befor_channel_open"])
+@pytest.mark.parametrize("order", ["normal", "fee_update_before_channel_open"])
 def test_update_fee(order, pathfinding_service_mock, token_network_model):
     pathfinding_service_mock.database.insert(
         "token_network", dict(address=token_network_model.address)
@@ -283,7 +283,7 @@ def test_update_fee(order, pathfinding_service_mock, token_network_model):
     fee_update.sign(LocalSigner(PARTICIPANT1_PRIVKEY))
     pathfinding_service_mock.handle_message(fee_update)
 
-    if order == "fee_update_befor_channel_open":
+    if order == "fee_update_before_channel_open":
         setup_channel(pathfinding_service_mock, token_network_model)
 
     cv = token_network_model.G[PARTICIPANT1][PARTICIPANT2]["view"]
@@ -321,7 +321,7 @@ def test_unhandled_message(pathfinding_service_mock, log):
 
 def test_logging_processor():
     # test if our logging processor changes bytes to checksum addresses
-    # even if bytes-addresses are entangeled into events
+    # even if bytes-addresses are entangled into events
     logger = Mock()
     log_method = Mock()
 
