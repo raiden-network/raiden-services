@@ -278,36 +278,28 @@ def test_get_info(api_url: str, api_sut, pathfinding_service_mock):
 
     token_network_registry = to_checksum_address(pathfinding_service_mock.registry_address)
 
-    response = requests.get(url)
-    assert response.status_code == 200
-    assert response.json() == {
+    expected_response = {
         "price_info": 123,
         "network_info": {
             "chain_id": pathfinding_service_mock.chain_id,
             "registry_address": token_network_registry,
         },
         "version": pkg_resources.require("raiden-services")[0].version,
+        "contracts_version": pkg_resources.require("raiden-contracts")[0].version,
         "operator": "John Doe",
         "message": "This is your favorite pfs for token network registry "
         + token_network_registry,
         "payment_address": to_checksum_address(pathfinding_service_mock.address),
     }
-
-    # Test with a custom info message
-    api_sut.info_message = "Other message"
     response = requests.get(url)
     assert response.status_code == 200
-    assert response.json() == {
-        "price_info": 123,
-        "network_info": {
-            "chain_id": pathfinding_service_mock.chain_id,
-            "registry_address": token_network_registry,
-        },
-        "version": pkg_resources.require("raiden-services")[0].version,
-        "operator": "John Doe",
-        "message": "Other message",
-        "payment_address": to_checksum_address(pathfinding_service_mock.address),
-    }
+    assert response.json() == expected_response
+
+    # Test with a custom info message
+    api_sut.info_message = expected_response["message"] = "Other message"
+    response = requests.get(url)
+    assert response.status_code == 200
+    assert response.json() == expected_response
 
 
 #

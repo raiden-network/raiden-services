@@ -353,6 +353,7 @@ class FeedbackResource(PathfinderResource):
 
 class InfoResource(PathfinderResource):
     version = pkg_resources.get_distribution("raiden-services").version
+    contracts_version = pkg_resources.get_distribution("raiden-contracts").version
 
     def get(self) -> Tuple[dict, int]:
 
@@ -363,6 +364,7 @@ class InfoResource(PathfinderResource):
                 "registry_address": to_checksum_address(self.pathfinding_service.registry_address),
             },
             "version": self.version,
+            "contracts_version": self.contracts_version,
             "operator": self.service_api.operator,
             "message": self.service_api.info_message,
             "payment_address": to_checksum_address(self.pathfinding_service.address),
