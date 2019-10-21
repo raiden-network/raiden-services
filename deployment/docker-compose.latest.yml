@@ -86,6 +86,7 @@ services:
 
   registration-goerli:
     <<: *defaults
+    environment:
       - RDN_REGISTRY_SERVICE_URL=https://pfs-goerli-with-fee.services-dev.raiden.network
 
   builder:
