@@ -2,25 +2,23 @@
 -r requirements-docs.txt
 
 pip<19.0.0
-bumpversion>=0.5.3
 wheel>=0.30.0
 watchdog>=0.8.3
-twine
 
 flake8==3.7.8
-flake8-bugbear==19.3.0
+flake8-bugbear==19.8.0
 flake8-tuple==0.4.0
 isort==4.3.21
 mypy==0.740
 black==19.3b0
 pylint==2.3.1
 
-pytest==5.0.1
+pytest==5.2.1
 pytest-runner
 pytest-cov
 pytest-structlog==0.1
 pytest-xdist
-coverage>=4.5.2
+coverage>=4.5.4
 
 ipython==4.2.1
 pdbpp
@@ -28,4 +26,5 @@ pdbpp
 eth-tester[py-evm]==0.1.0b33
 
 # Release
-bump2version==0.5.10
+bump2version
+twine
