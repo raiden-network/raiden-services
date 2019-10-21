@@ -34,7 +34,7 @@ def test_crash(
 ):  # pylint: disable=too-many-locals
     """ Process blocks and compare results with/without crash
 
-    A somewhat meaninful crash handling is simulated by not including the
+    A somewhat meaningful crash handling is simulated by not including the
     UpdatedHeadBlockEvent in every block.
     """
     channel_identifier = ChannelID(3)
@@ -104,6 +104,9 @@ def test_crash(
     stable_ms = new_ms("stable.db")
     crashy_ms = new_ms("crashy.db")
     for ms in [stable_ms, crashy_ms]:
+        # mock database time to make results reproducible
+        ms.database.conn.create_function("CURRENT_TIMESTAMP", 1, lambda: "2000-01-01")
+
         ms.database.conn.execute(
             "INSERT INTO token_network(address) VALUES (?)",
             [to_checksum_address(token_network_address)],
