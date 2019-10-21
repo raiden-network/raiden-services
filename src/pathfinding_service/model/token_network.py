@@ -184,7 +184,7 @@ class TokenNetwork:
 
     def __repr__(self) -> str:
         return (
-            f"<TokenNetwork address = {self.address} "
+            f"<TokenNetwork address = {to_checksum_address(self.address)} "
             f"num_channels = {len(self.channel_id_to_addresses)}>"
         )
 
