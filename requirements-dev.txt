@@ -16,7 +16,7 @@ pylint==2.3.1
 pytest==5.2.1
 pytest-runner
 pytest-cov
-pytest-structlog==0.1
+pytest-structlog==0.2
 pytest-xdist
 coverage>=4.5.4
 
