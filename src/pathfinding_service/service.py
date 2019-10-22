@@ -4,10 +4,12 @@ from typing import Dict, Optional
 
 import gevent
 import structlog
+from gevent import Timeout
 from web3 import Web3
 from web3.contract import Contract
 
 from monitoring_service.constants import MAX_FILTER_INTERVAL
+from pathfinding_service.constants import MATRIX_START_TIMEOUT
 from pathfinding_service.database import PFSDatabase
 from pathfinding_service.exceptions import (
     InvalidCapacityUpdate,
@@ -118,7 +120,8 @@ class PathfindingService(gevent.Greenlet):
         register_error_handler()
         try:
             self.matrix_listener.start()
-        except ConnectionError as exc:
+            self.matrix_listener.startup_finished.wait(timeout=MATRIX_START_TIMEOUT)
+        except (Timeout, ConnectionError) as exc:
             log.critical("Could not connect to broadcasting system.", exc=exc)
             sys.exit(1)
 
