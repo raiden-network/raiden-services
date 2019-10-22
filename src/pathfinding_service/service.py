@@ -9,7 +9,6 @@ from web3 import Web3
 from web3.contract import Contract
 
 from monitoring_service.constants import MAX_FILTER_INTERVAL
-from pathfinding_service.constants import MATRIX_START_TIMEOUT
 from pathfinding_service.database import PFSDatabase
 from pathfinding_service.exceptions import (
     InvalidCapacityUpdate,
@@ -26,6 +25,7 @@ from raiden.network.transport.matrix import AddressReachability
 from raiden.utils.typing import Address, BlockNumber, ChainID, TokenNetworkAddress
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
 from raiden_libs.blockchain import get_blockchain_events
+from raiden_libs.constants import MATRIX_START_TIMEOUT
 from raiden_libs.contract_info import CONTRACT_MANAGER
 from raiden_libs.events import (
     Event,
