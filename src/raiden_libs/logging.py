@@ -10,7 +10,7 @@ from raiden.messages.abstract import Message
 from raiden_libs.events import Event
 
 
-def setup_logging(log_level: str) -> None:
+def setup_logging(log_level: str, log_json: bool) -> None:
     """ Basic structlog setup """
 
     logging.basicConfig(level=log_level, stream=sys.stdout, format="%(message)s")
@@ -18,7 +18,7 @@ def setup_logging(log_level: str) -> None:
     logging.getLogger("web3").setLevel("INFO")
     logging.getLogger("urllib3").setLevel("INFO")
 
-    processors = [
+    shared_processors = [
         format_to_hex,
         structlog.stdlib.add_log_level,
         structlog.stdlib.add_logger_name,
@@ -28,8 +28,13 @@ def setup_logging(log_level: str) -> None:
         structlog.processors.format_exc_info,
     ]
 
+    if log_json:
+        processors = shared_processors + [structlog.processors.JSONRenderer()]
+    else:
+        processors = shared_processors + [structlog.dev.ConsoleRenderer()]
+
     structlog.configure(
-        processors=processors + [structlog.dev.ConsoleRenderer()],
+        processors=processors,
         context_class=dict,
         logger_factory=structlog.stdlib.LoggerFactory(),
         wrapper_class=structlog.stdlib.BoundLogger,

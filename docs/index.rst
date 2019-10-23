@@ -58,6 +58,11 @@ The services share a number of options. These are:
 
     Defaults to ``INFO``.
 
+``--log-json/--no-log-json``
+    Enables or disables the logging to be JSON formatted.
+
+    Defaults to ``False``.
+
 ``--eth-rpc``
     Defines the URI of the Ethereum node to be used.
 
