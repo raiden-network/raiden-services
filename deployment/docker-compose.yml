@@ -25,6 +25,8 @@ x-defaults: &defaults
   volumes:
     - /data/state:/state
     - /data/keystore:/keystore
+  logging:
+    driver: journald
 
 services:
   pfs-ropsten:
