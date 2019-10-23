@@ -2,6 +2,7 @@ from typing import Dict
 
 import click
 import structlog
+from eth_utils import to_checksum_address
 from web3 import Web3
 from web3.contract import Contract
 
@@ -59,6 +60,11 @@ def main(  # pylint: disable=too-many-arguments
 ) -> int:
     """ The Monitoring service for the Raiden Network. """
     log.info("Starting Raiden Monitoring Service")
+    log.info("Web3 client", node_address=web3.providers[0].endpoint_uri)
+    hex_addresses = {
+        name: to_checksum_address(contract.address) for name, contract in contracts.items()
+    }
+    log.info("Contract information", addresses=hex_addresses, start_block=start_block)
 
     ms = MonitoringService(
         web3=web3,

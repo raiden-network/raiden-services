@@ -5,7 +5,7 @@ BLACK_PARAMS = --line-length 99
 all: lint
 
 lint: mypy
-	black --check $(BLACK_PARAMS) $(CODE_DIRS)
+	black --check --diff $(BLACK_PARAMS) $(CODE_DIRS)
 	flake8 $(CODE_DIRS)
 	isort $(ISORT_PARAMS) --diff --check-only
 	pylint $(CODE_DIRS)

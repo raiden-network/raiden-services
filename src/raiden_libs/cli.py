@@ -11,7 +11,7 @@ import requests.exceptions
 import sentry_sdk
 import structlog
 from eth_account import Account
-from eth_utils import is_checksum_address, to_canonical_address, to_checksum_address
+from eth_utils import is_checksum_address, to_canonical_address
 from sentry_sdk.integrations.flask import FlaskIntegration
 from sentry_sdk.integrations.logging import LoggingIntegration
 from web3 import HTTPProvider, Web3
@@ -67,6 +67,7 @@ def common_options(app_name: str) -> Callable:
     * private_key (as a result of `--keystore-file` and `--password`)
     * state_db
     * log_level
+    * log_json
 
     The `app_name` will be used to determine the state_db location.
     """
@@ -96,6 +97,11 @@ def common_options(app_name: str) -> Callable:
                     type=click.Choice(["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"]),
                     help="Print log messages of this level and more important ones",
                 ),
+                click.option(
+                    "--log-json/--no-log-json",
+                    default=False,
+                    help="Enable or disable logging in JSON format",
+                ),
             ]
         ):
             func = option(func)
@@ -106,7 +112,7 @@ def common_options(app_name: str) -> Callable:
                 params.pop("keystore_file"), params.pop("password")
             )
             try:
-                setup_logging(params.pop("log_level"))
+                setup_logging(log_level=params.pop("log_level"), log_json=params.pop("log_json"))
                 if not params["state_db"]:
                     # only RC has `chain_id`, MS and PFS have `web3` object
                     chain_id = str(params.get("chain_id") or params["web3"].net.version)
@@ -186,7 +192,6 @@ def connect_to_blockchain(
     eth_rpc: str, used_contracts: List[str], address_overwrites: Dict[str, Address]
 ) -> Tuple[Web3, Dict[str, Contract], BlockNumber]:
     try:
-        log.info("Starting Web3 client", node_address=eth_rpc)
         provider = HTTPProvider(eth_rpc)
         web3 = Web3(provider)
         # Will throw ConnectionError on bad Ethereum client
@@ -213,8 +218,6 @@ def connect_to_blockchain(
         for c, address in addresses.items()
     }
 
-    hex_addresses = {key: to_checksum_address(value) for key, value in addresses.items()}
-    log.info("Contract information", addresses=hex_addresses, start_block=start_block)
     return web3, contracts, start_block
 
 
