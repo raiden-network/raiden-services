@@ -208,7 +208,7 @@ class MatrixListener(gevent.Greenlet):
             self.user_manager.add_address(address)
 
             if refresh:
-                self.user_manager.populate_userids_for_address(address)
+                self.user_manager.populate_userids_for_address(address, force=True)
                 self.user_manager.refresh_address_presence(address)
 
             log.debug(
