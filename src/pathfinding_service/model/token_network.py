@@ -1,7 +1,8 @@
 from collections import defaultdict
 from copy import copy
 from datetime import datetime, timedelta, timezone
-from typing import Dict, Iterable, List, Optional, Tuple
+from itertools import islice
+from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
 import networkx as nx
 import structlog
@@ -18,7 +19,7 @@ from pathfinding_service.exceptions import InvalidPFSFeeUpdate
 from pathfinding_service.model.channel import Channel, ChannelView, FeeSchedule
 from raiden.messages.path_finding_service import PFSCapacityUpdate, PFSFeeUpdate
 from raiden.network.transport.matrix import AddressReachability
-from raiden.tests.utils.mediation_fees import get_amount_with_fees, window
+from raiden.tests.utils.mediation_fees import get_amount_with_fees
 from raiden.utils.typing import (
     Address,
     Balance,
@@ -31,6 +32,20 @@ from raiden.utils.typing import (
 )
 
 log = structlog.get_logger(__name__)
+
+
+def window(seq: Sequence, n: int = 2) -> Iterable[tuple]:
+    """Returns a sliding window (of width n) over data from the iterable
+    s -> (s0,s1,...s[n-1]), (s1,s2,...,sn), ...
+    See https://stackoverflow.com/a/6822773/114926
+    """
+    remaining_elements = iter(seq)
+    result = tuple(islice(remaining_elements, n))
+    if len(result) == n:
+        yield result
+    for elem in remaining_elements:
+        result = result[1:] + (elem,)
+        yield result
 
 
 def prune_graph(
