@@ -141,9 +141,7 @@ def test_matrix_lister_smoke_test(get_accounts, get_private_key):
     client_mock = Mock()
     client_mock.api.base_url = url
     client_mock.user_id = "1"
-    with patch.multiple(
-        "raiden_libs.matrix", make_client=Mock(return_value=client_mock), join_global_room=Mock()
-    ):
+    with patch.multiple("raiden_libs.matrix", make_client=Mock(return_value=client_mock)):
         listener = MatrixListener(
             private_key=get_private_key(c1),
             chain_id=ChainID(1),
