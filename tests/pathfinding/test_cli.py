@@ -41,6 +41,7 @@ def provider_mock(monkeypatch):
     monkeypatch.setattr("raiden_libs.cli.HTTPProvider", provider_mock)
     web3_mock = Mock()
     web3_mock.return_value.net.version = 1
+    web3_mock.return_value.providers = [provider_mock]
     monkeypatch.setattr("raiden_libs.cli.Web3", web3_mock)
     return provider_mock
 
