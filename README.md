@@ -37,6 +37,5 @@ git clone git@github.com:raiden-network/raiden-services.git
 cd raiden-services
 virtualenv -p python3.7 venv
 source venv/bin/activate
-pip install -r requirements-dev.txt
-pip install -e .
+make install-dev
 ```
