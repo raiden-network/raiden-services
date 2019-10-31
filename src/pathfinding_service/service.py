@@ -120,7 +120,9 @@ class PathfindingService(gevent.Greenlet):
         register_error_handler()
         try:
             self.matrix_listener.start()
-            self.matrix_listener.startup_finished.wait(timeout=MATRIX_START_TIMEOUT)
+            assert self.matrix_listener.startup_finished.wait(
+                timeout=MATRIX_START_TIMEOUT
+            ), "MatrixListener did not start in time."
         except (Timeout, ConnectionError) as exc:
             log.critical("Could not connect to broadcasting system.", exc=exc)
             sys.exit(1)
