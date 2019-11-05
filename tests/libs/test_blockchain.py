@@ -105,7 +105,7 @@ def test_limit_inclusivity_in_query_blockchain_events(
 
 
 def test_get_pessimistic_udc_balance(user_deposit_contract, web3, deposit_to_udc, get_accounts):
-    address, = get_accounts(1)
+    (address,) = get_accounts(1)
     deposit_to_udc(address, 10)
     deposit_block = web3.eth.blockNumber
     web3.testing.mine(5)

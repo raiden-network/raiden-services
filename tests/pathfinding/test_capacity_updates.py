@@ -90,7 +90,7 @@ def get_capacity_update_message(  # pylint: disable=too-many-arguments
 
 
 def test_pfs_rejects_capacity_update_with_wrong_chain_id(
-    pathfinding_service_web3_mock: PathfindingService
+    pathfinding_service_web3_mock: PathfindingService,
 ):
     setup_channel(pathfinding_service_web3_mock)
 
@@ -124,7 +124,7 @@ def test_pfs_rejects_capacity_update_with_wrong_token_network_address(
 
 
 def test_pfs_rejects_capacity_update_with_wrong_channel_identifier(
-    pathfinding_service_web3_mock: PathfindingService
+    pathfinding_service_web3_mock: PathfindingService,
 ):
     setup_channel(pathfinding_service_web3_mock)
 
@@ -192,7 +192,7 @@ def test_pfs_rejects_capacity_update_with_wrong_updating_participant(
 
 
 def test_pfs_rejects_capacity_update_with_wrong_other_participant(
-    pathfinding_service_web3_mock: PathfindingService
+    pathfinding_service_web3_mock: PathfindingService,
 ):
     setup_channel(pathfinding_service_web3_mock)
 
@@ -208,7 +208,7 @@ def test_pfs_rejects_capacity_update_with_wrong_other_participant(
 
 
 def test_pfs_rejects_capacity_update_with_incorrect_signature(
-    pathfinding_service_web3_mock: PathfindingService
+    pathfinding_service_web3_mock: PathfindingService,
 ):
     setup_channel(pathfinding_service_web3_mock)
 
@@ -224,7 +224,7 @@ def test_pfs_rejects_capacity_update_with_incorrect_signature(
 
 
 def test_pfs_min_calculation_with_capacity_updates(
-    pathfinding_service_web3_mock: PathfindingService
+    pathfinding_service_web3_mock: PathfindingService,
 ):
     token_network = setup_channel(pathfinding_service_web3_mock)
     view_to_partner, view_from_partner = token_network.get_channel_views_for_partner(

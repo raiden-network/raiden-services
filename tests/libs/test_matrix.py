@@ -136,7 +136,7 @@ def test_rate_limiter():
 
 
 def test_matrix_lister_smoke_test(get_accounts, get_private_key):
-    c1, = get_accounts(1)
+    (c1,) = get_accounts(1)
     url = "http://example.com"
     client_mock = Mock()
     client_mock.api.base_url = url
