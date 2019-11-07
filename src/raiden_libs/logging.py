@@ -16,7 +16,7 @@ def setup_logging(log_level: str, log_json: bool) -> None:
     logging.basicConfig(level=log_level, stream=sys.stdout, format="%(message)s")
 
     logging.getLogger("web3").setLevel("INFO")
-    logging.getLogger("urllib3").setLevel("INFO")
+    logging.getLogger("urllib3").setLevel("DEBUG")
 
     shared_processors = [
         format_to_hex,
