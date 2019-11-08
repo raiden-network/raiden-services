@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta, timezone
-from typing import List
+from typing import Callable, List
 from uuid import uuid4
 
 import pkg_resources
@@ -152,7 +152,7 @@ def test_get_paths_validation(
     api_url: str,
     addresses: List[Address],
     token_network_model: TokenNetwork,
-    make_iou,
+    make_iou: Callable,
 ):
     initiator_address = to_checksum_address(addresses[0])
     target_address = to_checksum_address(addresses[1])
@@ -238,8 +238,13 @@ def test_get_paths_path_validation(api_url: str):
     assert response.json()["error_code"] == exceptions.UnsupportedTokenNetwork.error_code
 
 
-@pytest.mark.usefixtures("api_sut")
-def test_get_paths(api_url: str, addresses: List[Address], token_network_model: TokenNetwork):
+def test_get_paths(
+    api_sut,
+    api_url: str,
+    addresses: List[Address],
+    token_network_model: TokenNetwork,
+    make_iou: Callable,
+):
     hex_addrs = [to_checksum_address(addr) for addr in addresses]
     url = api_url + "/" + to_checksum_address(token_network_model.address) + "/paths"
 
@@ -265,6 +270,44 @@ def test_get_paths(api_url: str, addresses: List[Address], token_network_model: 
         response = requests.post(url, json=data)
         assert response.status_code == 404
         assert response.json()["error_code"] == exceptions.NoRouteFound.error_code
+
+    initiator_address = to_checksum_address(addresses[0])
+    target_address = to_checksum_address(addresses[1])
+    url = api_url + "/" + to_checksum_address(token_network_model.address) + "/paths"
+    default_params = {"from": initiator_address, "to": target_address, "value": 5, "max_paths": 3}
+
+    def request_path_with(status_code=400, **kwargs):
+        params = default_params.copy()
+        params.update(kwargs)
+        response = requests.post(url, json=params)
+        assert response.status_code == status_code, response.json()
+        return response
+
+    # test with payment
+    api_sut.service_fee = 100
+    sender = get_random_privkey()
+    iou = make_iou(
+        sender,
+        api_sut.pathfinding_service.address,
+        one_to_n_address=api_sut.one_to_n_address,
+        amount=100,
+        expiration_block=1_234_567,
+    )
+    good_iou_dict = iou.Schema().dump(iou)
+    iou2 = make_iou(
+        sender,
+        api_sut.pathfinding_service.address,
+        one_to_n_address=api_sut.one_to_n_address,
+        amount=200,
+        expiration_block=1_234_568,
+    )
+    good_iou_dict2 = iou2.Schema().dump(iou2)
+
+    response = request_path_with(status_code=200, iou=good_iou_dict)
+    assert response.status_code == 200
+
+    response = request_path_with(iou=good_iou_dict2)
+    assert response.json()["error_code"] == exceptions.UseThisIOU.error_code
 
 
 #
