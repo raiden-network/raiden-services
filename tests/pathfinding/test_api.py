@@ -211,6 +211,22 @@ def test_get_paths_validation(
     response = request_path_with(iou=bad_iou_dict)
     assert response.json()["error_code"] == exceptions.InvalidRequest.error_code
 
+    # malformed iou
+    bad_iou_dict = {
+        "amount": {"_hex": "0x64"},
+        "chain_id": {"_hex": "0x05"},
+        "expiration_block": {"_hex": "0x188cba"},
+        "one_to_n_address": "0x0000000000000000000000000000000000000000",
+        "receiver": "0x94DEe8e391410A9ebbA791B187df2d993212c849",
+        "sender": "0x2046F7341f15D0211ca1EBeFb19d029c4Bc4c4e7",
+        "signature": (
+            "0x0c3066e6a954d660028695f96dfe88cabaf0bc8a385e51781ac4d21003d0b6cd7a8b2"
+            "a1134115845655d1a509061f48459cd401565b5df7845c913ed329cd2351b"
+        ),
+    }
+    response = request_path_with(iou=bad_iou_dict)
+    assert response.json()["error_code"] == exceptions.InvalidRequest.error_code
+
     # bad signature
     bad_iou_dict = good_iou_dict.copy()
     bad_iou_dict["signature"] = "0x" + "1" * 130
