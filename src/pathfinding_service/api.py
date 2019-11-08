@@ -268,7 +268,7 @@ class IOURequest:
 
     sender: Address = field(metadata={"marshmallow_field": ChecksumAddress(required=True)})
     receiver: Address = field(metadata={"marshmallow_field": ChecksumAddress(required=True)})
-    timestamp: datetime
+    timestamp: datetime = field(metadata={"marshmallow_field": fields.NaiveDateTime()})
     timestamp_str: str = field(metadata=dict(data_key="timestamp", load_only=True))
     signature: Signature = field(metadata={"marshmallow_field": HexedBytes()})
     Schema: ClassVar[Type[marshmallow.Schema]]

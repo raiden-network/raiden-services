@@ -1,6 +1,6 @@
 from collections import defaultdict
 from copy import copy
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from itertools import islice
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
@@ -295,7 +295,7 @@ class TokenNetwork:
         return channel_view_to_partner.channel
 
     def handle_channel_fee_update(self, message: PFSFeeUpdate) -> Channel:
-        if message.timestamp > datetime.now(timezone.utc) + timedelta(hours=1):
+        if message.timestamp > datetime.utcnow() + timedelta(hours=1):
             # We don't really care about the time, but if we accept a time far
             # in the future, the client will have problems sending fee updates
             # with increasing time after fixing his clock.

@@ -1,5 +1,5 @@
 import json
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import List
 from uuid import uuid4
 
@@ -159,7 +159,7 @@ def test_waiting_messages(pathfinding_service_mock):
         ),
         updating_participant=participant1,
         fee_schedule=FeeScheduleState(),
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.utcnow(),
         signature=EMPTY_SIGNATURE,
     )
     fee_update.sign(LocalSigner(participant1_privkey))

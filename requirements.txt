@@ -1,4 +1,4 @@
-git+https://github.com/palango/raiden.git@fix0fee-update-datetime-type
+git+https://github.com/raiden-network/raiden.git@e7b75bc95e6c3d3b25e455bb4a84f6babff3fa8d
 raiden-contracts==0.33.3
 
 structlog==19.1.0
