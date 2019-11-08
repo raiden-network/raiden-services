@@ -225,9 +225,7 @@ def setup_sentry(enable_flask_integration: bool = False) -> None:
     sentry_dsn = os.environ.get("SENTRY_DSN")
     if sentry_dsn is not None:
         log.info("Initializing sentry", dsn=sentry_dsn)
-        integrations: List[Any] = [
-            LoggingIntegration(level=logging.INFO, event_level=None)  # type: ignore
-        ]
+        integrations: List[Any] = [LoggingIntegration(level=logging.INFO, event_level=None)]
         if enable_flask_integration:
             integrations.append(FlaskIntegration())
         sentry_sdk.init(
