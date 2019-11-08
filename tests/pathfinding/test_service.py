@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import List
 from unittest.mock import Mock, call, patch
 
@@ -277,7 +277,7 @@ def test_update_fee(order, pathfinding_service_mock, token_network_model):
         ),
         updating_participant=PARTICIPANT1,
         fee_schedule=fee_schedule,
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.utcnow(),
         signature=EMPTY_SIGNATURE,
     )
     fee_update.sign(LocalSigner(PARTICIPANT1_PRIVKEY))
@@ -302,7 +302,7 @@ def test_invalid_fee_update(pathfinding_service_mock, token_network_model):
         ),
         updating_participant=PARTICIPANT1,
         fee_schedule=FeeScheduleState(),
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.utcnow(),
         signature=EMPTY_SIGNATURE,
     )
 
@@ -356,7 +356,7 @@ def test_logging_processor():
         ),
         updating_participant=PARTICIPANT1,
         fee_schedule=FeeScheduleState(),
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.utcnow(),
         signature=EMPTY_SIGNATURE,
     )
     message_log = format_to_hex(

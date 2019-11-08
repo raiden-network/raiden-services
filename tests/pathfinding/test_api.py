@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List
 from uuid import uuid4
 
@@ -310,11 +310,11 @@ def test_get_iou(api_sut: ServiceApi, api_url: str, token_network_model: TokenNe
     sender = private_key_to_address(privkey)
     url = api_url + f"/{to_checksum_address(token_network_model.address)}/payment/iou"
 
-    def make_params(timestamp: datetime):
+    def make_params(timestamp: str):
         params = {
             "sender": to_checksum_address(sender),
             "receiver": to_checksum_address(api_sut.pathfinding_service.address),
-            "timestamp": timestamp.isoformat(),
+            "timestamp": timestamp,
         }
         local_signer = LocalSigner(private_key=decode_hex(privkey))
         params["signature"] = encode_hex(
@@ -329,7 +329,7 @@ def test_get_iou(api_sut: ServiceApi, api_url: str, token_network_model: TokenNe
         return params
 
     # Request without IOU in database
-    params = make_params(datetime.utcnow())
+    params = make_params(datetime.utcnow().isoformat())
     response = requests.get(url, params=params)
     assert response.status_code == 404, response.json()
     assert response.json() == {"last_iou": None}
@@ -354,10 +354,18 @@ def test_get_iou(api_sut: ServiceApi, api_url: str, token_network_model: TokenNe
     assert response.json()["error_code"] == exceptions.InvalidSignature.error_code
 
     # Timestamp must no be too old to prevent replay attacks
-    params = make_params(datetime.utcnow() - timedelta(days=1))
+    old_timestamp = datetime.utcnow() - timedelta(days=1)
+    params = make_params(old_timestamp.isoformat())
     response = requests.get(url, params=params)
     assert response.status_code == 400, response.json()
     assert response.json()["error_code"] == exceptions.RequestOutdated.error_code
+
+    # Timestamp with timezone info is invalid
+    for timestamp in (datetime.now(tz=timezone.utc).isoformat(), "2019-11-07T12:52:25.079Z"):
+        params = make_params(timestamp)
+        response = requests.get(url, params=params)
+        assert response.status_code == 400, response.json()
+        assert response.json()["error_code"] == exceptions.InvalidRequest.error_code
 
 
 #

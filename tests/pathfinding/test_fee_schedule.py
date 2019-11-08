@@ -1,5 +1,5 @@
 import itertools
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Dict, List
 
 import pytest
@@ -75,7 +75,7 @@ class TokenNetworkForTests(TokenNetwork):
                 updating_participant=a(node1),
                 fee_schedule=RaidenFeeSchedule(**fee_params),
                 signature=EMPTY_SIGNATURE,
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.utcnow(),
             )
         )
 
