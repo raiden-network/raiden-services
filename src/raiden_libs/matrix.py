@@ -21,6 +21,7 @@ from raiden.messages.abstract import Message, SignedMessage
 from raiden.network.transport.matrix.client import GMatrixClient, Room
 from raiden.network.transport.matrix.utils import (
     AddressReachability,
+    DisplayNameCache,
     UserAddressManager,
     login_or_register,
     make_client,
@@ -148,12 +149,13 @@ class MatrixListener(gevent.Greenlet):
             http_retry_delay=matrix_http_retry_delay,
         )
         self.broadcast_rooms: List[Room] = []
-        self.user_manager: Optional[UserAddressManager] = None
+        self._displayname_cache = DisplayNameCache()
+        self._user_manager: Optional[UserAddressManager] = None
 
         if address_reachability_changed_callback is not None:
-            self.user_manager = UserAddressManager(
+            self._user_manager = UserAddressManager(
                 client=self.client,
-                get_user_callable=self._get_user_from_user_id,
+                displayname_cache=self._displayname_cache,
                 address_reachability_changed_callback=address_reachability_changed_callback,
             )
 
@@ -175,14 +177,14 @@ class MatrixListener(gevent.Greenlet):
         self.client.sync_thread.get()
 
     def stop(self) -> None:
-        if self.user_manager:
-            self.user_manager.stop()
+        if self._user_manager:
+            self._user_manager.stop()
         self.client.stop_listener_thread()
 
     def _start_client(self) -> None:
         try:
-            if self.user_manager:
-                self.user_manager.start()
+            if self._user_manager:
+                self._user_manager.start()
 
             login_or_register(
                 self.client, signer=LocalSigner(private_key=decode_hex(self.private_key))
@@ -203,17 +205,17 @@ class MatrixListener(gevent.Greenlet):
         self.startup_finished.set()
 
     def follow_address_presence(self, address: Address, refresh: bool = False) -> None:
-        if self.user_manager:
-            self.user_manager.add_address(address)
+        if self._user_manager:
+            self._user_manager.add_address(address)
 
             if refresh:
-                self.user_manager.populate_userids_for_address(address)
-                self.user_manager.refresh_address_presence(address)
+                self._user_manager.populate_userids_for_address(address)
+                self._user_manager.refresh_address_presence(address)
 
             log.debug(
                 "Tracking address",
                 address=to_checksum_address(address),
-                current_presence=self.user_manager.get_address_reachability(address),
+                current_presence=self._user_manager.get_address_reachability(address),
                 refresh=refresh,
             )
 
@@ -236,6 +238,7 @@ class MatrixListener(gevent.Greenlet):
 
         sender_id = event["sender"]
         user = self._get_user_from_user_id(sender_id)
+        self._displayname_cache.warm_users([user])
         peer_address = validate_userid_signature(user)
 
         if not peer_address:

@@ -88,7 +88,7 @@ class PathfinderResource(Resource):
         try:
             return req_class.Schema().load(json)  # type: ignore
         except marshmallow.ValidationError as ex:
-            raise exceptions.InvalidRequest(**ex.messages)
+            raise exceptions.InvalidRequest(**ex.normalized_messages())
 
 
 @add_schema
@@ -289,7 +289,7 @@ class IOUResource(PathfinderResource):
         try:
             iou_request = IOURequest.Schema().load(request.args)
         except marshmallow.ValidationError as ex:
-            raise exceptions.InvalidRequest(**ex.messages)
+            raise exceptions.InvalidRequest(**ex.normalized_messages())
         if not iou_request.is_signature_valid():
             raise exceptions.InvalidSignature
         if iou_request.timestamp < datetime.utcnow() - MAX_AGE_OF_IOU_REQUESTS:
