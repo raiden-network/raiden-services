@@ -1,4 +1,4 @@
-git+https://github.com/raiden-network/raiden.git@1cf335529e1b1edf790fe4e88bffad0460bcc56b
+git+https://github.com/palango/raiden.git@fix0fee-update-datetime-type
 raiden-contracts==0.33.3
 
 structlog==19.1.0
@@ -19,7 +19,7 @@ gevent==1.3.7
 networkx==2.3
 requests==2.22.0
 
-marshmallow==3.0.0rc8
-marshmallow-dataclass==6.0.0rc4
+marshmallow==3.2.2
+marshmallow-dataclass==6.0.0
 
 sentry-sdk[flask]==0.13.1
