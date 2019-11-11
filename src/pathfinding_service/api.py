@@ -218,7 +218,7 @@ def process_payment(  # pylint: disable=too-many-branches
     active_iou = pathfinding_service.database.get_iou(sender=iou.sender, claimed=False)
     if active_iou:
         if active_iou.expiration_block != iou.expiration_block:
-            raise exceptions.UseThisIOU(iou=active_iou)
+            raise exceptions.UseThisIOU(iou=active_iou.Schema().dump(active_iou))
 
         expected_amount = active_iou.amount + service_fee
     else:
