@@ -238,12 +238,9 @@ def test_get_paths_path_validation(api_url: str):
     assert response.json()["error_code"] == exceptions.UnsupportedTokenNetwork.error_code
 
 
+@pytest.mark.usefixtures("api_sut")
 def test_get_paths(
-    api_sut,
-    api_url: str,
-    addresses: List[Address],
-    token_network_model: TokenNetwork,
-    make_iou: Callable,
+    api_url: str, addresses: List[Address], token_network_model: TokenNetwork,
 ):
     hex_addrs = [to_checksum_address(addr) for addr in addresses]
     url = api_url + "/" + to_checksum_address(token_network_model.address) + "/paths"
@@ -271,6 +268,16 @@ def test_get_paths(
         assert response.status_code == 404
         assert response.json()["error_code"] == exceptions.NoRouteFound.error_code
 
+
+def test_payment_with_new_iou_rejected(  # pylint: disable=too-many-locals
+    api_sut,
+    api_url: str,
+    addresses: List[Address],
+    token_network_model: TokenNetwork,
+    make_iou: Callable,
+):
+    """ Regression test for https://github.com/raiden-network/raiden-services/issues/624 """
+
     initiator_address = to_checksum_address(addresses[0])
     target_address = to_checksum_address(addresses[1])
     url = api_url + "/" + to_checksum_address(token_network_model.address) + "/paths"
@@ -293,20 +300,20 @@ def test_get_paths(
         amount=100,
         expiration_block=1_234_567,
     )
-    good_iou_dict = iou.Schema().dump(iou)
-    iou2 = make_iou(
+    first_iou_dict = iou.Schema().dump(iou)
+    second_iou = make_iou(
         sender,
         api_sut.pathfinding_service.address,
         one_to_n_address=api_sut.one_to_n_address,
         amount=200,
         expiration_block=1_234_568,
     )
-    good_iou_dict2 = iou2.Schema().dump(iou2)
+    second_iou_dict = second_iou.Schema().dump(second_iou)
 
-    response = request_path_with(status_code=200, iou=good_iou_dict)
+    response = request_path_with(status_code=200, iou=first_iou_dict)
     assert response.status_code == 200
 
-    response = request_path_with(iou=good_iou_dict2)
+    response = request_path_with(iou=second_iou_dict)
     assert response.json()["error_code"] == exceptions.UseThisIOU.error_code
 
 
