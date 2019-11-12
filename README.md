@@ -25,7 +25,8 @@ For more technical details see:
 
 ## Service Providers
 
-To become a service provider follow the instructions in the [service provider README](https://github.com/raiden-network/raiden-services/blob/master/package/README.md).
+To become a service provider, follow the instructions in the [Raiden Service Bundle repository](https://github.com/raiden-network/raiden-service-bundle).
+
 ## Developers
 
 The Raiden Services require Python 3.7+.
