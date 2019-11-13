@@ -62,6 +62,10 @@ def main(
     The address that is registered is derived from the supplied private key.
     It also sets or updates the URL of the services deployment.
     """
+    result = input("Do you want to continue? (y/n)")
+    if not result.lower() in ("y", "yes"):
+        return
+
     # Add middleware to sign transactions by default
     web3.middleware_stack.add(construct_sign_and_send_raw_middleware(private_key))
 
