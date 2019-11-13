@@ -23,7 +23,7 @@ from raiden.network.transport.matrix.utils import (
     AddressReachability,
     DisplayNameCache,
     UserAddressManager,
-    login_or_register,
+    login,
     make_client,
     make_room_alias,
     validate_userid_signature,
@@ -186,9 +186,7 @@ class MatrixListener(gevent.Greenlet):
             if self._user_manager:
                 self._user_manager.start()
 
-            login_or_register(
-                self.client, signer=LocalSigner(private_key=decode_hex(self.private_key))
-            )
+            login(self.client, signer=LocalSigner(private_key=decode_hex(self.private_key)))
         except (MatrixRequestError, ValueError):
             raise ConnectionError("Could not login/register to matrix.")
 
