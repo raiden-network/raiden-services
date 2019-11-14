@@ -22,33 +22,21 @@ x-defaults: &defaults
 services:
   pfs-ropsten:
     << : *defaults
-    labels:
-      - "traefik.frontend.rule=Host: pfs-ropsten.services-dev.raiden.network"
 
   pfs-rinkeby:
     << : *defaults
-    labels:
-      - "traefik.frontend.rule=Host: pfs-rinkeby.services-dev.raiden.network"
 
   pfs-goerli:
     <<: *defaults
-    labels:
-      - "traefik.frontend.rule=Host: pfs-goerli.services-dev.raiden.network"
 
   pfs-ropsten-with-fee:
     << : *defaults
-    labels:
-      - "traefik.frontend.rule=Host: pfs-ropsten-with-fee.services-dev.raiden.network"
 
   pfs-rinkeby-with-fee:
     << : *defaults
-    labels:
-      - "traefik.frontend.rule=Host: pfs-rinkeby-with-fee.services-dev.raiden.network"
 
   pfs-goerli-with-fee:
     <<: *defaults
-    labels:
-      - "traefik.frontend.rule=Host: pfs-goerli-with-fee.services-dev.raiden.network"
 
   ms-ropsten:
     << : *defaults
@@ -70,11 +58,7 @@ services:
 
   registration-goerli:
     <<: *defaults
-    environment:
-      - RDN_REGISTRY_SERVICE_URL=https://pfs-goerli-with-fee.services-dev.raiden.network
 
   builder:
     environment:
       - HOSTNAME=services-dev
-    labels:
-      - "traefik.frontend.rule=Host: services-dev.raiden.network"
