@@ -26,7 +26,10 @@ x-defaults: &defaults
     - /data/state:/state
     - /data/keystore:/keystore
   logging:
-    driver: journald
+    driver: "fluentd"
+    options:
+      fluentd-address: logs.raiden.network:24224
+      tag: raiden.{{.Name}}
 
 services:
   pfs-ropsten:
