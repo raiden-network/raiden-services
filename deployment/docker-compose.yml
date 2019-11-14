@@ -31,14 +31,13 @@ x-defaults: &defaults
 services:
   pfs-ropsten:
     << : *defaults
-    build: ../
     command: ["python3", "-m", "pathfinding_service.cli", "--enable-debug"]
     environment:
       - PFS_ETH_RPC=http://geth.ropsten.ethnodes.brainbot.com:8545
       - PFS_STATE_DB=/state/pfs-ropsten.db
     labels:
       - "traefik.enable=true"
-      - "traefik.frontend.rule=Host: pfs-ropsten.services-test.raiden.network"
+      - "traefik.frontend.rule=Host: pfs-ropsten.services-${DEPLOY_ENV}.raiden.network"
 
   pfs-ropsten-with-fee:
     << : *defaults
@@ -49,7 +48,7 @@ services:
       - PFS_SERVICE_FEE=100
     labels:
       - "traefik.enable=true"
-      - "traefik.frontend.rule=Host: pfs-ropsten-with-fee.services-test.raiden.network"
+      - "traefik.frontend.rule=Host: pfs-ropsten-with-fee.services-${DEPLOY_ENV}.raiden.network"
     depends_on:
       - pfs-ropsten
 
@@ -61,7 +60,7 @@ services:
       - PFS_STATE_DB=/state/pfs-rinkeby.db
     labels:
       - "traefik.enable=true"
-      - "traefik.frontend.rule=Host: pfs-rinkeby.services-test.raiden.network"
+      - "traefik.frontend.rule=Host: pfs-rinkeby.services-${DEPLOY_ENV}.raiden.network"
     depends_on:
       - pfs-ropsten-with-fee
 
@@ -74,7 +73,7 @@ services:
       - PFS_SERVICE_FEE=100
     labels:
       - "traefik.enable=true"
-      - "traefik.frontend.rule=Host: pfs-rinkeby-with-fee.services-test.raiden.network"
+      - "traefik.frontend.rule=Host: pfs-rinkeby-with-fee.services-${DEPLOY_ENV}.raiden.network"
     depends_on:
       - pfs-rinkeby
 
@@ -86,7 +85,7 @@ services:
       - PFS_STATE_DB=/state/pfs-goerli.db
     labels:
       - "traefik.enable=true"
-      - "traefik.frontend.rule=Host: pfs-goerli.services-test.raiden.network"
+      - "traefik.frontend.rule=Host: pfs-goerli.services-${DEPLOY_ENV}.raiden.network"
     depends_on:
       - pfs-rinkeby-with-fee
 
@@ -99,7 +98,7 @@ services:
       - PFS_SERVICE_FEE=100
     labels:
       - "traefik.enable=true"
-      - "traefik.frontend.rule=Host: pfs-goerli-with-fee.services-test.raiden.network"
+      - "traefik.frontend.rule=Host: pfs-goerli-with-fee.services-${DEPLOY_ENV}.raiden.network"
     depends_on:
       - pfs-goerli
 
@@ -181,7 +180,7 @@ services:
       - HOSTNAME=services-stable
     labels:
       - "traefik.enable=true"
-      - "traefik.frontend.rule=Host: services-test.raiden.network"
+      - "traefik.frontend.rule=Host: services-${DEPLOY_ENV}.raiden.network"
 
   traefik:
     image: traefik:1.7
@@ -219,7 +218,7 @@ services:
       - RDN_REGISTRY_LOG_LEVEL=DEBUG
       - RDN_REGISTRY_KEYSTORE_FILE=${MS_KEYSTORE_FILE}
       - RDN_REGISTRY_PASSWORD=${MS_PASSWORD}
-      - RDN_REGISTRY_SERVICE_URL=https://pfs-goerli-with-fee.services-test.raiden.network
+      - RDN_REGISTRY_SERVICE_URL=https://pfs-goerli-with-fee.services-${DEPLOY_ENV}.raiden.network
       - RDN_REGISTRY_ETH_RPC=http://parity.goerli.ethnodes.brainbot.com:8545
     depends_on:
       - traefik
