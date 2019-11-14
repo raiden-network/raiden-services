@@ -47,6 +47,9 @@ services:
   ms-goerli:
     <<: *defaults
 
+  ms-goerli-backup:
+    <<: *defaults
+
   msrc-ropsten:
     << : *defaults
 
@@ -54,6 +57,9 @@ services:
     << : *defaults
 
   msrc-goerli:
+    <<: *defaults
+
+  msrc-goerli-backup:
     <<: *defaults
 
   registration-goerli:
