@@ -5,7 +5,7 @@ from gevent import monkey, config  # isort:skip # noqa
 config.resolver = ["dnspython", "ares", "block"]  # noqa
 monkey.patch_all(subprocess=False, thread=False)  # isort:skip # noqa
 
-from typing import Dict
+from typing import Dict, List
 
 import click
 import structlog
@@ -59,6 +59,12 @@ log = structlog.get_logger(__name__)
     type=str,
     help="Place for a personal message to the customers",
 )
+@click.option(
+    "--matrix-server",
+    type=str,
+    multiple=True,
+    help="Use this matrix server instead of the default ones. Include protocol in argument.",
+)
 @common_options("raiden-pathfinding-service")
 def main(  # pylint: disable-msg=too-many-arguments
     private_key: str,
@@ -72,6 +78,7 @@ def main(  # pylint: disable-msg=too-many-arguments
     operator: str,
     info_message: str,
     enable_debug: bool,
+    matrix_server: List[str],
 ) -> int:
     """ The Pathfinding service for the Raiden Network. """
     log.info("Starting Raiden Pathfinding Service")
@@ -92,6 +99,7 @@ def main(  # pylint: disable-msg=too-many-arguments
             private_key=private_key,
             poll_interval=DEFAULT_POLL_INTERVALL,
             db_filename=state_db,
+            matrix_servers=matrix_server,
         )
 
         api = ServiceApi(

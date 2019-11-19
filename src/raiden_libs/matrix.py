@@ -128,6 +128,7 @@ class MatrixListener(gevent.Greenlet):
         address_reachability_changed_callback: Callable[
             [Address, AddressReachability], None
         ] = None,
+        servers: List[str] = None,
     ) -> None:
         super().__init__()
 
@@ -136,11 +137,14 @@ class MatrixListener(gevent.Greenlet):
         self.service_room_suffix = service_room_suffix
         self.message_received_callback = message_received_callback
 
-        self.available_servers = get_matrix_servers(
-            DEFAULT_MATRIX_KNOWN_SERVERS[Environment.PRODUCTION]
-            if chain_id == 1
-            else DEFAULT_MATRIX_KNOWN_SERVERS[Environment.DEVELOPMENT]
-        )
+        if servers:
+            self.available_servers = servers
+        else:
+            self.available_servers = get_matrix_servers(
+                DEFAULT_MATRIX_KNOWN_SERVERS[Environment.PRODUCTION]
+                if chain_id == 1
+                else DEFAULT_MATRIX_KNOWN_SERVERS[Environment.DEVELOPMENT]
+            )
 
         self.client = make_client(
             servers=self.available_servers,

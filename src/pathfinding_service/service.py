@@ -1,6 +1,6 @@
 import sys
 from dataclasses import asdict
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 import gevent
 import structlog
@@ -63,6 +63,7 @@ class PathfindingService(gevent.Greenlet):
         sync_start_block: BlockNumber = BlockNumber(0),
         required_confirmations: int = 8,
         poll_interval: float = 10,
+        matrix_servers: List[str] = None,
     ):
         super().__init__()
 
@@ -99,6 +100,7 @@ class PathfindingService(gevent.Greenlet):
             service_room_suffix=PATH_FINDING_BROADCASTING_ROOM,
             message_received_callback=self.handle_message,
             address_reachability_changed_callback=self.handle_reachability_change,
+            servers=matrix_servers,
         )
 
         self.address_to_reachability: Dict[Address, AddressReachability] = dict()
