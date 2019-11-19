@@ -4,6 +4,7 @@ monkey.patch_all(subprocess=False, thread=False)  # isort:skip # noqa
 
 import os.path
 import sys
+from typing import List
 
 import click
 import structlog
@@ -33,8 +34,14 @@ log = structlog.get_logger(__name__)
         '"<CHAIN_ID>": use the given chain id directly\n'
     ),
 )
+@click.option(
+    "--matrix-server",
+    type=str,
+    multiple=True,
+    help="Use this matrix server instead of the default ones. Include protocol in argument.",
+)
 @common_options("raiden-monitoring-service")
-def main(private_key: str, state_db: str) -> int:
+def main(private_key: str, state_db: str, matrix_server: List[str]) -> int:
     """ The request collector for the monitoring service. """
     log.info("Starting Raiden Monitoring Request Collector")
 
@@ -47,7 +54,9 @@ def main(private_key: str, state_db: str) -> int:
 
     database = SharedDatabase(state_db)
 
-    service = RequestCollector(private_key=private_key, state_db=database)
+    service = RequestCollector(
+        private_key=private_key, state_db=database, matrix_servers=matrix_server
+    )
 
     service.start()
     service.listen_forever()

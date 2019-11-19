@@ -1,4 +1,5 @@
 import sys
+from typing import List
 
 import gevent
 import structlog
@@ -21,7 +22,9 @@ log = structlog.get_logger(__name__)
 
 
 class RequestCollector(gevent.Greenlet):
-    def __init__(self, private_key: str, state_db: SharedDatabase):
+    def __init__(
+        self, private_key: str, state_db: SharedDatabase, matrix_servers: List[str] = None
+    ):
         super().__init__()
 
         self.private_key = private_key
@@ -34,6 +37,7 @@ class RequestCollector(gevent.Greenlet):
             chain_id=self.chain_id,
             service_room_suffix=MONITORING_BROADCASTING_ROOM,
             message_received_callback=self.handle_message,
+            servers=matrix_servers,
         )
 
     def listen_forever(self) -> None:
