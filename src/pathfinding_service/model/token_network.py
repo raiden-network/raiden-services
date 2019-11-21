@@ -88,6 +88,19 @@ class Path:
             view_in: ChannelView = self.G[prev_node][mediator]["view"]
             view_out: ChannelView = self.G[mediator][next_node]["view"]
 
+            log.warning(
+                "Fee calculation",
+                amount=total,
+                view_out=view_out,
+                view_in=view_in,
+                amount_without_fees=total,
+                balance_in=view_in.capacity_partner,
+                balance_out=view_out.capacity,
+                schedule_in=view_in.fee_schedule_receiver,
+                schedule_out=view_out.fee_schedule_sender,
+                receivable_amount=view_in.capacity,
+            )
+
             amount_with_fees = get_amount_with_fees(
                 amount_without_fees=total,
                 balance_in=Balance(view_in.capacity_partner),
@@ -124,7 +137,7 @@ class Path:
 
     def to_dict(self) -> dict:
         return dict(
-            path=[to_checksum_address(node) for node in self.nodes], estimated_fee=sum(self.fees)
+            path=[to_checksum_address(node) for node in self.nodes], estimated_fee=sum(self.fees),
         )
 
     @property
@@ -279,7 +292,7 @@ class TokenNetwork:
         other_capacity_partner: TokenAmount,
     ) -> Channel:
         """ Sends Capacity Update to PFS including the reveal timeout """
-        channel_view_to_partner, channel_view_from_partner = self.get_channel_views_for_partner(
+        (channel_view_to_partner, channel_view_from_partner,) = self.get_channel_views_for_partner(
             updating_participant=message.updating_participant,
             other_participant=message.other_participant,
         )
@@ -303,8 +316,8 @@ class TokenNetwork:
         channel_id = message.canonical_identifier.channel_identifier
         participants = self.channel_id_to_addresses[channel_id]
         other_participant = (set(participants) - {message.updating_participant}).pop()
-        channel_view_to_partner, channel_view_from_partner = self.get_channel_views_for_partner(
-            updating_participant=message.updating_participant, other_participant=other_participant
+        (channel_view_to_partner, channel_view_from_partner,) = self.get_channel_views_for_partner(
+            updating_participant=message.updating_participant, other_participant=other_participant,
         )
         fee_schedule = FeeSchedule.from_raiden(message.fee_schedule, timestamp=message.timestamp)
         channel_view_to_partner.set_fee_schedule(fee_schedule)
