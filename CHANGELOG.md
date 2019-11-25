@@ -1,7 +1,9 @@
 # Changelog
 
-### 0.5.0 (TBD)
+### 0.5.0 (2019-11-25)
 
+* Properly handle 'ValueError: x_list must be in strictly ascending order!' (https://github.com/raiden-network/raiden-services/issues/636)
+* Don't force presence update when receiving capacity update (https://github.com/raiden-network/raiden-services/pull/647)
 * Allow passing Matrix servers as CLI arguments (https://github.com/raiden-network/raiden-services/issues/633)
 * Properly validate integer fields in API (https://github.com/raiden-network/raiden-services/issues/620)
 * Properly validate `DateTime`s in messages and API (https://github.com/raiden-network/raiden-services/issues/619)
