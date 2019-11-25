@@ -1,5 +1,22 @@
 # Changelog
 
+### 0.5.0 (TBD)
+
+* Allow passing Matrix servers as CLI arguments (https://github.com/raiden-network/raiden-services/issues/633)
+* Properly validate integer fields in API (https://github.com/raiden-network/raiden-services/issues/620)
+* Properly validate `DateTime`s in messages and API (https://github.com/raiden-network/raiden-services/issues/619)
+* Fix unhandled exception when receiving unexpected IOU (https://github.com/raiden-network/raiden-services/issues/624)
+* Increase precision in fee calculation (https://github.com/raiden-network/raiden-services/pull/611)
+* Add JSON logging mode (https://github.com/raiden-network/raiden-services/pull/599)
+* Wait for Matrix to start properly (https://github.com/raiden-network/raiden-services/pull/595)
+* Show contracts version in info endpoint (https://github.com/raiden-network/raiden-services/issues/590)
+* Add capped mediation fees (https://github.com/raiden-network/raiden-services/pull/574)
+* Use production Matrix servers on mainnet (https://github.com/raiden-network/raiden-services/issues/575)
+
+### 0.4.1 (2019-10-08)
+
+* Improve Dockerfile (https://github.com/raiden-network/raiden-services/pull/570)
+
 ### 0.4.0 (2019-10-04)
 
 * Improve accuracy of imbalance fee calculation (https://github.com/raiden-network/raiden-services/pull/565)
