@@ -1,12 +1,13 @@
 from typing import List
 
+import pytest
 from networkx import DiGraph
 
 from pathfinding_service.model import TokenNetwork
-from pathfinding_service.model.token_network import prune_graph
+from pathfinding_service.model.token_network import Path, prune_graph
 from raiden.network.transport.matrix import AddressReachability
 from raiden.tests.utils.factories import make_address
-from raiden.utils.typing import Address, ChannelID
+from raiden.utils.typing import Address, ChannelID, PaymentAmount
 
 
 def test_tn_idempotency_of_channel_openings(
@@ -92,3 +93,31 @@ def test_graph_pruning():
     assert (
         len(pruned_p1_not_in_reachable_map.edges) == 2
     )  # just the two edges between 2 and 3 left
+
+
+@pytest.mark.xfail(strict=True)
+def test_path_without_capacity(token_network_model: TokenNetwork, addresses: List[Address]):
+    """ Channels without capacity must not cause unexpected exceptions.
+
+    Regression test for https://github.com/raiden-network/raiden-services/issues/636
+    """
+    token_network_model.handle_channel_opened_event(
+        channel_identifier=ChannelID(1),
+        participant1=addresses[0],
+        participant2=addresses[1],
+        settle_timeout=15,
+    )
+    token_network_model.handle_channel_opened_event(
+        channel_identifier=ChannelID(2),
+        participant1=addresses[1],
+        participant2=addresses[2],
+        settle_timeout=15,
+    )
+
+    token_network_model.G[addresses[1]][addresses[2]]["view"].channel.capacity1 = 100
+    Path(
+        G=token_network_model.G,
+        nodes=[addresses[0], addresses[1], addresses[2]],
+        value=PaymentAmount(10),
+        address_to_reachability=dict(),
+    )
