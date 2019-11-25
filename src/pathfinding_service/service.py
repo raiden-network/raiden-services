@@ -332,10 +332,6 @@ class PathfindingService(gevent.Greenlet):
         log.debug("Received Capacity Update", message=message)
         self.database.upsert_capacity_update(message)
 
-        # Follow presence for the channel participants
-        self.matrix_listener.follow_address_presence(message.updating_participant, refresh=True)
-        self.matrix_listener.follow_address_presence(message.other_participant, refresh=True)
-
         updating_capacity_partner, other_capacity_partner = self.database.get_capacity_updates(
             updating_participant=message.other_participant,
             token_network_address=TokenNetworkAddress(
