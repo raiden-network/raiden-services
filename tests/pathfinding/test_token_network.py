@@ -1,6 +1,5 @@
 from typing import List
 
-import pytest
 from networkx import DiGraph
 
 from pathfinding_service.model import TokenNetwork
@@ -95,7 +94,6 @@ def test_graph_pruning():
     )  # just the two edges between 2 and 3 left
 
 
-@pytest.mark.xfail(strict=True)
 def test_path_without_capacity(token_network_model: TokenNetwork, addresses: List[Address]):
     """ Channels without capacity must not cause unexpected exceptions.
 
