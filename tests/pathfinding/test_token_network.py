@@ -113,9 +113,10 @@ def test_path_without_capacity(token_network_model: TokenNetwork, addresses: Lis
     )
 
     token_network_model.G[addresses[1]][addresses[2]]["view"].channel.capacity1 = 100
-    Path(
+    path = Path(
         G=token_network_model.G,
         nodes=[addresses[0], addresses[1], addresses[2]],
         value=PaymentAmount(10),
         address_to_reachability=dict(),
     )
+    assert not path.is_valid
