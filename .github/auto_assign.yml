@@ -7,12 +7,11 @@ addAssignees: false
 # A list of reviewers to be added to pull requests (GitHub user name)
 reviewers:
   - hackaugusto
-  - LefterisJP
   - rakanalh
   - palango
-  - jomuel
   - karlb
-  - lullis
+#  - LefterisJP
+#  - jomuel
 #  - konradkonrad
 
 # A number of reviewers added to the pull request
