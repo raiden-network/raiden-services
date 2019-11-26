@@ -1,4 +1,6 @@
+import collections
 import sys
+import time
 from dataclasses import asdict
 from typing import Dict, List, Optional
 
@@ -148,17 +150,31 @@ class PathfindingService(gevent.Greenlet):
             gevent.joinall(set([self.matrix_listener]), timeout=0, raise_error=True)
 
     def _process_new_blocks(self, last_block: BlockNumber) -> None:
+        start = time.time()
         self.blockchain_state.latest_commited_block = self.database.get_latest_commited_block()
         self.blockchain_state.token_network_addresses = list(self.token_networks.keys())
 
+        before_get = time.time()
         _, events = get_blockchain_events(
             web3=self.web3,
             contract_manager=CONTRACT_MANAGER,
             chain_state=self.blockchain_state,
             to_block=last_block,
         )
+        before_process = time.time()
         for event in events:
             self.handle_event(event)
+
+        if events:
+            log.info(
+                "Processed blocks",
+                from_block=self.blockchain_state.latest_commited_block + 1,
+                to_block=last_block,
+                getting=round(before_process - before_get, 2),
+                processing=round(time.time() - before_process, 2),
+                total_duration=round(time.time() - start, 2),
+                event_counts=collections.Counter(e.__class__.__name__ for e in events),
+            )
 
     def stop(self) -> None:
         self.matrix_listener.stop()
