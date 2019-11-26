@@ -1,7 +1,6 @@
 import sys
 from datetime import datetime, timedelta
-from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence
-from urllib.parse import urlparse
+from typing import Any, Callable, Dict, Iterable, List, Optional, Union
 
 import gevent
 import structlog
@@ -18,11 +17,12 @@ from monitoring_service.constants import (
 from raiden.constants import Environment
 from raiden.exceptions import SerializationError, TransportError
 from raiden.messages.abstract import Message, SignedMessage
-from raiden.network.transport.matrix.client import GMatrixClient, Room
+from raiden.network.transport.matrix.client import Room
 from raiden.network.transport.matrix.utils import (
     AddressReachability,
     DisplayNameCache,
     UserAddressManager,
+    join_broadcast_room,
     login,
     make_client,
     make_room_alias,
@@ -146,62 +146,63 @@ class MatrixListener(gevent.Greenlet):
                 else DEFAULT_MATRIX_KNOWN_SERVERS[Environment.DEVELOPMENT]
             )
 
-        self.client = make_client(
+        self._client = make_client(
             servers=self.available_servers,
             http_pool_maxsize=4,
             http_retry_timeout=40,
             http_retry_delay=matrix_http_retry_delay,
         )
-        self.broadcast_rooms: List[Room] = []
+        self._broadcast_room: Optional[Room] = None
         self._displayname_cache = DisplayNameCache()
         self._user_manager: Optional[UserAddressManager] = None
 
         if address_reachability_changed_callback is not None:
             self._user_manager = UserAddressManager(
-                client=self.client,
+                client=self._client,
                 displayname_cache=self._displayname_cache,
                 address_reachability_changed_callback=address_reachability_changed_callback,
             )
 
         self.startup_finished = Event()
-        self.rate_limiter = RateLimiter(
+        self._rate_limiter = RateLimiter(
             allowed_bytes=MATRIX_RATE_LIMIT_ALLOWED_BYTES,
             reset_interval=MATRIX_RATE_LIMIT_RESET_INTERVAL,
         )
 
     def listen_forever(self) -> None:
         self.startup_finished.wait()
-        self.client.listen_forever()
+        self._client.listen_forever()
 
     def _run(self) -> None:  # pylint: disable=method-hidden
         self._start_client()
 
-        self.client.start_listener_thread()
-        assert self.client.sync_thread
-        self.client.sync_thread.get()
+        self._client.start_listener_thread()
+        assert self._client.sync_thread
+        self._client.sync_thread.get()
 
     def stop(self) -> None:
         if self._user_manager:
             self._user_manager.stop()
-        self.client.stop_listener_thread()
+        self._client.stop_listener_thread()
 
     def _start_client(self) -> None:
         try:
             if self._user_manager:
                 self._user_manager.start()
 
-            login(self.client, signer=LocalSigner(private_key=decode_hex(self.private_key)))
+            login(self._client, signer=LocalSigner(private_key=decode_hex(self.private_key)))
         except (MatrixRequestError, ValueError):
             raise ConnectionError("Could not login/register to matrix.")
 
         try:
-            self.join_global_rooms(client=self.client, available_servers=self.available_servers)
+            room_name = make_room_alias(self.chain_id, self.service_room_suffix)
+            self._broadcast_room = join_broadcast_room(
+                client=self._client, name=room_name, servers=self.available_servers
+            )
         except (MatrixRequestError, TransportError):
             raise ConnectionError("Could not join monitoring broadcasting room.")
 
-        # Add listener for global rooms
-        for broadcast_room in self.broadcast_rooms:
-            broadcast_room.add_listener(self._handle_message, "m.room.message")
+        self._broadcast_room.add_listener(self._handle_message, "m.room.message")
 
         # Signal that startup is finished
         self.startup_finished.set()
@@ -225,12 +226,10 @@ class MatrixListener(gevent.Greenlet):
 
     def _get_user_from_user_id(self, user_id: str) -> User:
         """Creates an User from an user_id, if none, or fetch a cached User """
-        for broadcast_room in self.broadcast_rooms:
-            if user_id in broadcast_room._members:  # pylint: disable=protected-access
-                user: User = broadcast_room._members[user_id]  # pylint: disable=protected-access
-                break
+        if user_id in self._broadcast_room._members:  # pylint: disable=protected-access
+            user: User = self._broadcast_room._members[user_id]  # pylint: disable=protected-access
         else:
-            user = self.client.get_user(user_id)
+            user = self._client.get_user(user_id)
 
         return user
 
@@ -263,7 +262,9 @@ class MatrixListener(gevent.Greenlet):
             )
             return False
 
-        messages = deserialize_messages(data, peer_address, self.rate_limiter)
+        messages = deserialize_messages(
+            data=data, peer_address=peer_address, rate_limiter=self._rate_limiter
+        )
         if not messages:
             return False
 
@@ -272,52 +273,3 @@ class MatrixListener(gevent.Greenlet):
             self.message_received_callback(message)
 
         return True
-
-    def join_global_rooms(
-        self, client: GMatrixClient, available_servers: Sequence[str] = ()
-    ) -> None:
-        """Join or create a global public room with given name on all available servers.
-        If global rooms are not found, create a public room with the name on each server.
-
-        Params:
-            client: matrix-python-sdk client instance
-            servers: optional: sequence of known/available servers to try to find the room in
-        """
-        suffix = self.service_room_suffix
-        room_alias_prefix = make_room_alias(self.chain_id, suffix)
-
-        parsed_servers = [
-            urlparse(s).netloc for s in available_servers if urlparse(s).netloc not in {None, ""}
-        ]
-
-        for server in parsed_servers:
-            room_alias_full = f"#{room_alias_prefix}:{server}"
-            log.debug(f"Trying to join {suffix} room", room_alias_full=room_alias_full)
-            try:
-                broadcast_room = client.join_room(room_alias_full)
-                log.debug(f"Joined {suffix} room", room=broadcast_room)
-                self.broadcast_rooms.append(broadcast_room)
-            except MatrixRequestError as ex:
-                if ex.code != 404:
-                    log.debug(
-                        f"Could not join {suffix} room, trying to create one",
-                        room_alias_full=room_alias_full,
-                    )
-                    try:
-                        broadcast_room = client.create_room(room_alias_full, is_public=True)
-                        log.debug(f"Created {suffix} room", room=broadcast_room)
-                        self.broadcast_rooms.append(broadcast_room)
-                    except MatrixRequestError:
-                        log.debug(
-                            f"Could neither join nor create a {suffix} room",
-                            room_alias_full=room_alias_full,
-                        )
-                        raise TransportError(f"Could neither join nor create a {suffix} room")
-
-                else:
-                    log.debug(
-                        f"Could not join {suffix} room",
-                        room_alias_full=room_alias_full,
-                        _exception=ex,
-                    )
-                    raise
