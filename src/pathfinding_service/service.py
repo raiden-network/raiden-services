@@ -106,6 +106,7 @@ class PathfindingService(gevent.Greenlet):
 
         self.address_to_reachability: Dict[Address, AddressReachability] = dict()
         self.token_networks = self._load_token_networks()
+        self.updated = gevent.event.Event()  # set whenever blocks are processed
 
     def _load_token_networks(self) -> Dict[TokenNetworkAddress, TokenNetwork]:
         network_for_address = {n.address: n for n in self.database.get_token_networks()}
@@ -144,6 +145,10 @@ class PathfindingService(gevent.Greenlet):
             last_block = min(last_confirmed_block, max_query_interval_end_block)
 
             self._process_new_blocks(last_block)
+
+            # Let tests waiting for this event know that we're done with processing
+            self.updated.set()
+            self.updated.clear()
 
             # Sleep, then collect errors from greenlets
             gevent.sleep(self._poll_interval)

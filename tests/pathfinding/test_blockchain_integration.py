@@ -7,7 +7,6 @@ Therefore, usually mocked_integration should be used.
 from typing import List
 from unittest.mock import Mock, patch
 
-import gevent
 from eth_utils import encode_hex, to_canonical_address
 
 from monitoring_service.states import HashedBalanceProof
@@ -28,7 +27,6 @@ def test_pfs_with_mocked_client(  # pylint: disable=too-many-arguments
     token_network_registry_contract,
     channel_descriptions_case_1: List,
     get_accounts,
-    wait_for_blocks,
     user_deposit_contract,
     token_network,
     custom_token,
@@ -59,8 +57,7 @@ def test_pfs_with_mocked_client(  # pylint: disable=too-many-arguments
 
     # greenlet needs to be started and context switched to
     pfs.start()
-    wait_for_blocks(1)
-    gevent.sleep(0.1)
+    pfs.updated.wait(timeout=5)
 
     # there should be one token network registered
     assert len(pfs.token_networks) == 1
@@ -96,9 +93,9 @@ def test_pfs_with_mocked_client(  # pylint: disable=too-many-arguments
             token_network.functions.setTotalDeposit(
                 channel_id, address, amount, partner_address
             ).transact({"from": address})
-        gevent.sleep()
-    wait_for_blocks(1)
-    gevent.sleep(0.1)
+
+    web3.testing.mine(1)  # 1 confirmation block
+    pfs.updated.wait(timeout=5)
 
     # there should be as many open channels as described
     assert len(token_network_model.channel_id_to_addresses.keys()) == len(
@@ -156,8 +153,8 @@ def test_pfs_with_mocked_client(  # pylint: disable=too-many-arguments
             balance_proof.get_counter_signature(get_private_key(clients[p1_index])),
         ).call_and_transact({"from": clients[p1_index], "gas": 200_000})
 
-    wait_for_blocks(1)
-    gevent.sleep(0.1)
+    web3.testing.mine(1)  # 1 confirmation block
+    pfs.updated.wait(timeout=5)
 
     # there should be no channels
     assert len(token_network_model.channel_id_to_addresses.keys()) == 0
