@@ -1,6 +1,7 @@
 import sys
 from datetime import datetime, timedelta
-from typing import Any, Callable, Dict, Iterable, List, Optional, Union
+from typing import Any, Callable, Dict, Iterable, List, Optional
+from urllib.parse import urlparse
 
 import gevent
 import structlog
@@ -195,9 +196,11 @@ class MatrixListener(gevent.Greenlet):
             raise ConnectionError("Could not login/register to matrix.")
 
         try:
-            room_name = make_room_alias(self.chain_id, self.service_room_suffix)
+            room_alias_prefix = make_room_alias(self.chain_id, self.service_room_suffix)
+            server = urlparse(self._client.api.base_url).netloc
+            room_alias = f"#{room_alias_prefix}:{server}"
             self._broadcast_room = join_broadcast_room(
-                client=self._client, name=room_name, servers=self.available_servers
+                client=self._client, broadcast_room_alias=room_alias,
             )
         except (MatrixRequestError, TransportError):
             raise ConnectionError("Could not join monitoring broadcasting room.")
@@ -226,6 +229,7 @@ class MatrixListener(gevent.Greenlet):
 
     def _get_user_from_user_id(self, user_id: str) -> User:
         """Creates an User from an user_id, if none, or fetch a cached User """
+        assert self._broadcast_room
         if user_id in self._broadcast_room._members:  # pylint: disable=protected-access
             user: User = self._broadcast_room._members[user_id]  # pylint: disable=protected-access
         else:
