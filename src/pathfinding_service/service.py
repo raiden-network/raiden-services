@@ -143,10 +143,9 @@ class PathfindingService(gevent.Greenlet):
 
             self._process_new_blocks(last_block)
 
-            # Use joinall instead of sleep to collect errors from greenlets
-            gevent.joinall(
-                set([self.matrix_listener]), timeout=self._poll_interval, raise_error=True
-            )
+            # Sleep, then collect errors from greenlets
+            gevent.sleep(self._poll_interval)
+            gevent.joinall(set([self.matrix_listener]), timeout=0, raise_error=True)
 
     def _process_new_blocks(self, last_block: BlockNumber) -> None:
         self.blockchain_state.latest_commited_block = self.database.get_latest_commited_block()
