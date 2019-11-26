@@ -169,6 +169,7 @@ class PathfindingService(gevent.Greenlet):
         before_process = time.time()
         for event in events:
             self.handle_event(event)
+            gevent.idle()  # Allow answering requests in between events
 
         if events:
             log.info(
