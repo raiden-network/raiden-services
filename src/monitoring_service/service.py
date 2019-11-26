@@ -1,4 +1,3 @@
-import sys
 import time
 from datetime import datetime
 from typing import Callable, Dict
@@ -147,11 +146,7 @@ class MonitoringService:  # pylint: disable=too-few-public-methods,too-many-inst
             self._check_pending_transactions()
             self._purge_old_monitor_requests()
 
-            try:
-                wait_function(self.poll_interval)
-            except KeyboardInterrupt:
-                log.info("Shutting down")
-                sys.exit(0)
+            wait_function(self.poll_interval)
 
     def _process_new_blocks(self, last_block: BlockNumber) -> None:
         # BCL return a new state and events related to channel lifecycle

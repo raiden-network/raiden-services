@@ -34,7 +34,6 @@ from raiden_libs.events import (
     ReceiveTokenNetworkCreatedEvent,
     UpdatedHeadBlockEvent,
 )
-from raiden_libs.gevent_error_handler import register_error_handler
 from raiden_libs.matrix import MatrixListener
 from raiden_libs.states import BlockchainState
 from raiden_libs.utils import private_key_to_address
@@ -119,7 +118,6 @@ class PathfindingService(gevent.Greenlet):
         return network_for_address
 
     def _run(self) -> None:  # pylint: disable=method-hidden
-        register_error_handler()
         try:
             self.matrix_listener.start()
             assert self.matrix_listener.startup_finished.wait(
@@ -145,11 +143,10 @@ class PathfindingService(gevent.Greenlet):
 
             self._process_new_blocks(last_block)
 
-            try:
-                gevent.sleep(self._poll_interval)
-            except KeyboardInterrupt:
-                log.info("Shutting down")
-                sys.exit(0)
+            # Use joinall instead of sleep to collect errors from greenlets
+            gevent.joinall(
+                set([self.matrix_listener]), timeout=self._poll_interval, raise_error=True
+            )
 
     def _process_new_blocks(self, last_block: BlockNumber) -> None:
         self.blockchain_state.latest_commited_block = self.database.get_latest_commited_block()

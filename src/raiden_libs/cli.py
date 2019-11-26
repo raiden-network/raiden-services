@@ -6,6 +6,7 @@ from functools import wraps
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import click
+import gevent
 import pkg_resources
 import requests.exceptions
 import sentry_sdk
@@ -111,6 +112,10 @@ def common_options(app_name: str) -> Callable:
             params["private_key"] = _open_keystore(
                 params.pop("keystore_file"), params.pop("password")
             )
+
+            # Don't print traceback on KeyboardInterrupt
+            gevent.get_hub().NOT_ERROR += (KeyboardInterrupt,)
+
             try:
                 setup_logging(log_level=params.pop("log_level"), log_json=params.pop("log_json"))
                 if not params["state_db"]:

@@ -15,7 +15,6 @@ from raiden.messages.abstract import Message
 from raiden.messages.monitoring_service import RequestMonitoring
 from raiden.utils.typing import TokenNetworkAddress
 from raiden_libs.constants import MATRIX_START_TIMEOUT
-from raiden_libs.gevent_error_handler import register_error_handler
 from raiden_libs.matrix import MatrixListener
 
 log = structlog.get_logger(__name__)
@@ -44,8 +43,6 @@ class RequestCollector(gevent.Greenlet):
         self.matrix_listener.listen_forever()
 
     def _run(self) -> None:  # pylint: disable=method-hidden
-        register_error_handler()
-
         try:
             self.matrix_listener.start()
             self.matrix_listener.startup_finished.wait(timeout=MATRIX_START_TIMEOUT)
@@ -55,7 +52,7 @@ class RequestCollector(gevent.Greenlet):
 
     def stop(self) -> None:
         self.matrix_listener.stop()
-        self.matrix_listener.join()
+        self.matrix_listener.get()
 
     def handle_message(self, message: Message) -> None:
         try:
