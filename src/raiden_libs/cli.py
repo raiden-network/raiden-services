@@ -1,3 +1,4 @@
+import datetime
 import json
 import logging
 import os
@@ -61,6 +62,21 @@ def validate_address(
     return to_canonical_address(value)
 
 
+def start_profiler(output_dir: Optional[str]) -> Optional[Any]:
+    """ Start and return a profiler is `output_dir` is not None """
+    if not output_dir:
+        return None
+
+    from raiden.utils.profiling.sampler import SignalSampler, FlameGraphCollector
+
+    os.makedirs(output_dir, exist_ok=True)
+    now = datetime.datetime.now()
+    stack_path = os.path.join(output_dir, f"{now:%Y%m%d_%H%M}_stack.data")
+    stack_stream = open(stack_path, "w")
+    flame = FlameGraphCollector(stack_stream)
+    return SignalSampler(flame)
+
+
 def common_options(app_name: str) -> Callable:
     """A decorator to be used with all service commands
 
@@ -103,12 +119,27 @@ def common_options(app_name: str) -> Callable:
                     default=False,
                     help="Enable or disable logging in JSON format",
                 ),
+                click.option(
+                    "--flamegraph",
+                    help="Directory in which to save a stack profile to produce flame graphs.",
+                    type=click.Path(
+                        exists=False,
+                        dir_okay=True,
+                        file_okay=False,
+                        writable=True,
+                        resolve_path=True,
+                        allow_dash=False,
+                    ),
+                    default=None,
+                ),
             ]
         ):
             func = option(func)
 
         @wraps(func)
         def call_with_common_options_initialized(**params: Any) -> Callable:
+            profiler = start_profiler(params.pop("flamegraph"))
+
             params["private_key"] = _open_keystore(
                 params.pop("keystore_file"), params.pop("password")
             )
@@ -132,6 +163,8 @@ def common_options(app_name: str) -> Callable:
 
                 return func(**params)
             finally:
+                if profiler:
+                    profiler.stop()
                 structlog.reset_defaults()
 
         return call_with_common_options_initialized
