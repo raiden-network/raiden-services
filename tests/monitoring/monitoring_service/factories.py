@@ -12,6 +12,7 @@ from raiden.constants import UINT256_MAX
 from raiden.tests.utils.factories import make_transaction_hash
 from raiden.utils.typing import (
     BlockNumber,
+    BlockTimeout,
     ChainID,
     ChannelID,
     Nonce,
@@ -28,7 +29,7 @@ DEFAULT_PRIVATE_KEY2 = "0x" + "2" * 64
 DEFAULT_PARTICIPANT1 = private_key_to_address(DEFAULT_PRIVATE_KEY1)
 DEFAULT_PARTICIPANT2 = private_key_to_address(DEFAULT_PRIVATE_KEY2)
 DEFAULT_REWARD_AMOUNT = TokenAmount(1)
-DEFAULT_SETTLE_TIMEOUT = 100
+DEFAULT_SETTLE_TIMEOUT = BlockTimeout(100)
 
 
 def create_signed_monitor_request(

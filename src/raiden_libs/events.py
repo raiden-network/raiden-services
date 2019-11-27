@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from raiden.utils.typing import (
     Address,
     BlockNumber,
+    BlockTimeout,
     ChannelID,
     Nonce,
     TokenAmount,
@@ -28,7 +29,7 @@ class ReceiveChannelOpenedEvent(Event):
     channel_identifier: ChannelID
     participant1: Address
     participant2: Address
-    settle_timeout: int
+    settle_timeout: BlockTimeout
     block_number: BlockNumber
 
 

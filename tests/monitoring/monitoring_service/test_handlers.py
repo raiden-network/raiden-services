@@ -31,7 +31,7 @@ from monitoring_service.handlers import (
     updated_head_block_event_handler,
 )
 from monitoring_service.states import OnChainUpdateStatus
-from raiden.utils.typing import Address, BlockNumber, ChannelID, Nonce, TokenAmount
+from raiden.utils.typing import Address, BlockNumber, BlockTimeout, ChannelID, Nonce, TokenAmount
 from raiden_contracts.constants import ChannelState
 from raiden_contracts.tests.utils import get_random_privkey
 from raiden_libs.constants import UDC_SECURITY_MARGIN_FACTOR_MS
@@ -140,7 +140,7 @@ def test_channel_opened_event_handler_adds_channel(context: Context):
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
         participant1=DEFAULT_PARTICIPANT1,
         participant2=DEFAULT_PARTICIPANT2,
-        settle_timeout=100,
+        settle_timeout=BlockTimeout(100),
         block_number=BlockNumber(42),
     )
 

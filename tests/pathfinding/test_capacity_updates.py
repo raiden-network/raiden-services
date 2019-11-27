@@ -44,7 +44,7 @@ def setup_channel(service: PathfindingService) -> TokenNetwork:
         channel_identifier=DEFAULT_CHANNEL_ID,
         participant1=PRIVATE_KEY_1_ADDRESS,
         participant2=PRIVATE_KEY_2_ADDRESS,
-        settle_timeout=15,
+        settle_timeout=BlockTimeout(15),
     )
 
     # Check that the new channel has id == 0

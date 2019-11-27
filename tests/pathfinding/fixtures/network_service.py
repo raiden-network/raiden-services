@@ -351,9 +351,12 @@ def populate_token_network_random(
         private_key1, private_key2 = random.sample(private_keys, 2)
         address1 = private_key_to_address(private_key1)
         address2 = private_key_to_address(private_key2)
-        settle_timeout = 15
+        settle_timeout = BlockTimeout(15)
         token_network_model.handle_channel_opened_event(
-            channel_id, address1, address2, settle_timeout
+            channel_identifier=channel_id,
+            participant1=address1,
+            participant2=address2,
+            settle_timeout=settle_timeout,
         )
 
         # deposit to channels
