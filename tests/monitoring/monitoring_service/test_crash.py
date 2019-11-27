@@ -10,6 +10,7 @@ from monitoring_service.service import MonitoringService
 from monitoring_service.states import HashedBalanceProof
 from raiden.utils.typing import (
     BlockNumber,
+    BlockTimeout,
     ChainID,
     ChannelID,
     Nonce,
@@ -62,7 +63,7 @@ def test_crash(
                 channel_identifier=channel_identifier,
                 participant1=c1,
                 participant2=c2,
-                settle_timeout=20,
+                settle_timeout=BlockTimeout(20),
                 block_number=BlockNumber(0),
             )
         ],

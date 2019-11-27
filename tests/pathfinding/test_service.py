@@ -19,6 +19,7 @@ from raiden.utils.signer import LocalSigner
 from raiden.utils.typing import (
     Address,
     BlockNumber,
+    BlockTimeout,
     ChainID,
     ChannelID,
     FeeAmount,
@@ -62,7 +63,7 @@ def test_save_and_load_token_networks(pathfinding_service_mock_empty):
             channel_identifier=channel_id,
             participant1=p1,
             participant2=p2,
-            settle_timeout=2 ** 65,  # larger than max_uint64 to check hex storage
+            settle_timeout=BlockTimeout(2 ** 65),  # larger than max_uint64 to check hex storage
             block_number=BlockNumber(2),
         ),
     ]
@@ -107,7 +108,7 @@ def test_crash(tmpdir, mockchain):  # pylint: disable=too-many-locals
                 channel_identifier=channel_id,
                 participant1=p1,
                 participant2=p2,
-                settle_timeout=1000,
+                settle_timeout=BlockTimeout(1000),
                 block_number=BlockNumber(3),
             )
         ],
@@ -175,7 +176,7 @@ def setup_channel(pathfinding_service_mock, token_network_model):
         channel_identifier=ChannelID(1),
         participant1=PARTICIPANT1,
         participant2=PARTICIPANT2,
-        settle_timeout=20,
+        settle_timeout=BlockTimeout(20),
         block_number=BlockNumber(1),
     )
     assert len(pathfinding_service_mock.token_networks) == 1
@@ -194,7 +195,7 @@ def test_token_channel_opened(pathfinding_service_mock, token_network_model):
         channel_identifier=ChannelID(1),
         participant1=PARTICIPANT1,
         participant2=PARTICIPANT2,
-        settle_timeout=20,
+        settle_timeout=BlockTimeout(20),
         block_number=BlockNumber(1),
     )
 

@@ -23,6 +23,7 @@ from raiden.tests.utils.mediation_fees import get_amount_with_fees
 from raiden.utils.typing import (
     Address,
     Balance,
+    BlockTimeout,
     ChannelID,
     FeeAmount,
     PaymentAmount,
@@ -225,7 +226,7 @@ class TokenNetwork:
         channel_identifier: ChannelID,
         participant1: Address,
         participant2: Address,
-        settle_timeout: int,
+        settle_timeout: BlockTimeout,
     ) -> Channel:
         """ Register the channel in the graph, add participants to graph if necessary.
 

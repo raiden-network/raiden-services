@@ -14,6 +14,7 @@ from raiden.transfer.mediated_transfer.mediation_fee import FeeScheduleState as 
 from raiden.utils.mediation_fees import ppm_fee_per_channel
 from raiden.utils.typing import (
     Address,
+    BlockTimeout,
     ChainID,
     ChannelID,
     FeeAmount as FA,
@@ -50,7 +51,7 @@ class TokenNetworkForTests(TokenNetwork):
                 channel_identifier=ChannelID(next(channel_ids)),
                 participant1=a(chan["participant1"]),
                 participant2=a(chan["participant2"]),
-                settle_timeout=100,
+                settle_timeout=BlockTimeout(100),
             )
 
             cv1: ChannelView = self.G[a(chan["participant1"])][a(chan["participant2"])]["view"]

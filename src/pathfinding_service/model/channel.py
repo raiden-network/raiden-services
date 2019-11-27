@@ -40,7 +40,7 @@ class Channel:
     channel_id: ChannelID
     participant1: Address = field(metadata={"marshmallow_field": ChecksumAddress(required=True)})
     participant2: Address = field(metadata={"marshmallow_field": ChecksumAddress(required=True)})
-    settle_timeout: int
+    settle_timeout: BlockTimeout
     fee_schedule1: FeeSchedule = field(default_factory=FeeSchedule)
     fee_schedule2: FeeSchedule = field(default_factory=FeeSchedule)
 
