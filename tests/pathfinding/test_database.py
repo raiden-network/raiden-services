@@ -15,6 +15,7 @@ from raiden.transfer.mediated_transfer.mediation_fee import FeeScheduleState
 from raiden.utils.signer import LocalSigner
 from raiden.utils.typing import (
     Address,
+    BlockTimeout,
     ChainID,
     ChannelID,
     Nonce,
@@ -176,7 +177,7 @@ def test_waiting_messages(pathfinding_service_mock):
         other_nonce=Nonce(1),
         updating_capacity=TokenAmount(100),
         other_capacity=TokenAmount(111),
-        reveal_timeout=50,
+        reveal_timeout=BlockTimeout(50),
         signature=EMPTY_SIGNATURE,
     )
     capacity_update.sign(LocalSigner(participant1_privkey))

@@ -16,6 +16,7 @@ from raiden.network.transport.matrix import AddressReachability
 from raiden.transfer.identifiers import CanonicalIdentifier
 from raiden.utils.typing import (
     Address,
+    BlockTimeout,
     ChainID,
     ChannelID,
     Nonce,
@@ -372,7 +373,7 @@ def populate_token_network_random(
                 other_nonce=Nonce(1),
                 updating_capacity=deposit1,
                 other_capacity=deposit2,
-                reveal_timeout=2,
+                reveal_timeout=BlockTimeout(2),
                 signature=EMPTY_SIGNATURE,
             ),
             updating_capacity_partner=TokenAmount(0),
@@ -391,7 +392,7 @@ def populate_token_network_random(
                 other_nonce=Nonce(1),
                 updating_capacity=deposit2,
                 other_capacity=deposit1,
-                reveal_timeout=2,
+                reveal_timeout=BlockTimeout(2),
                 signature=EMPTY_SIGNATURE,
             ),
             updating_capacity_partner=TokenAmount(deposit1),
