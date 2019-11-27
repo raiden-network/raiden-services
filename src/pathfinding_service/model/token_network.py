@@ -15,7 +15,7 @@ from pathfinding_service.constants import (
     DIVERSITY_PEN_DEFAULT,
     FEE_PEN_DEFAULT,
 )
-from pathfinding_service.exceptions import InvalidPFSFeeUpdate
+from pathfinding_service.exceptions import InvalidFeeUpdate
 from pathfinding_service.model.channel import Channel, ChannelView, FeeSchedule
 from raiden.messages.path_finding_service import PFSCapacityUpdate, PFSFeeUpdate
 from raiden.network.transport.matrix import AddressReachability
@@ -313,7 +313,7 @@ class TokenNetwork:
             # We don't really care about the time, but if we accept a time far
             # in the future, the client will have problems sending fee updates
             # with increasing time after fixing his clock.
-            raise InvalidPFSFeeUpdate("Timestamp is in the future")
+            raise InvalidFeeUpdate("Timestamp is in the future")
         channel_id = message.canonical_identifier.channel_identifier
         participants = self.channel_id_to_addresses[channel_id]
         other_participant = (set(participants) - {message.updating_participant}).pop()

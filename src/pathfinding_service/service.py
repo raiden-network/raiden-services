@@ -14,8 +14,8 @@ from monitoring_service.constants import MAX_FILTER_INTERVAL
 from pathfinding_service.database import PFSDatabase
 from pathfinding_service.exceptions import (
     InvalidCapacityUpdate,
+    InvalidFeeUpdate,
     InvalidGlobalMessage,
-    InvalidPFSFeeUpdate,
 )
 from pathfinding_service.model import TokenNetwork
 from pathfinding_service.model.channel import Channel
@@ -283,21 +283,43 @@ class PathfindingService(gevent.Greenlet):
         )
         self.database.insert_waiting_message(message)
 
-    def on_fee_update(self, message: PFSFeeUpdate) -> Optional[Channel]:
+    def _validate_pfs_fee_update(self, message: PFSFeeUpdate) -> TokenNetwork:
+        token_network_address = TokenNetworkAddress(
+            message.canonical_identifier.token_network_address
+        )
+
+        # check if chain_id matches
+        if message.canonical_identifier.chain_identifier != self.chain_id:
+            raise InvalidFeeUpdate("Received Fee Update with unknown chain identifier")
+
+        # check if token network exists
+        token_network = self.get_token_network(token_network_address)
+        if token_network is None:
+            raise InvalidFeeUpdate("Received Fee Update with unknown token network")
+
+        # check signature of Capacity Update
         if message.sender != message.updating_participant:
-            raise InvalidPFSFeeUpdate("Invalid sender recovered from signature in PFSFeeUpdate")
+            raise InvalidFeeUpdate("Fee Update not signed correctly")
 
-        token_network = self.get_token_network(message.canonical_identifier.token_network_address)
-        if not token_network:
-            return None
-
-        log.debug("Received Fee Update", message=message)
-
-        if (
-            message.canonical_identifier.channel_identifier
-            not in token_network.channel_id_to_addresses
-        ):
+        # check if channel exists
+        channel_identifier = message.canonical_identifier.channel_identifier
+        if channel_identifier not in token_network.channel_id_to_addresses:
             raise DeferMessage(message)
+
+        # check if participants fit to channel id
+        participants = token_network.channel_id_to_addresses[channel_identifier]
+        if message.updating_participant not in participants:
+            raise InvalidFeeUpdate("Sender of Fee Update does not match the internal channel")
+
+        # check that timestamp has no timezone
+        if message.timestamp.tzinfo is not None:
+            raise InvalidFeeUpdate("Timestamp of Fee Update should not contain timezone")
+
+        return token_network
+
+    def on_fee_update(self, message: PFSFeeUpdate) -> Optional[Channel]:
+        token_network = self._validate_pfs_fee_update(message)
+        log.debug("Received Fee Update", message=message)
 
         return token_network.handle_channel_fee_update(message)
 
