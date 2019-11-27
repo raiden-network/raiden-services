@@ -9,7 +9,14 @@ from marshmallow_dataclass import add_schema
 from pathfinding_service.constants import DEFAULT_REVEAL_TIMEOUT
 from pathfinding_service.exceptions import InvalidPFSFeeUpdate
 from raiden.transfer.mediated_transfer.mediation_fee import FeeScheduleState as FeeScheduleRaiden
-from raiden.utils.typing import Address, ChannelID, Nonce, TokenAmount, TokenNetworkAddress
+from raiden.utils.typing import (
+    Address,
+    BlockTimeout,
+    ChannelID,
+    Nonce,
+    TokenAmount,
+    TokenNetworkAddress,
+)
 from raiden_libs.marshmallow import ChecksumAddress
 
 
@@ -42,8 +49,8 @@ class Channel:
     capacity2: TokenAmount = TokenAmount(0)
     update_nonce1: Nonce = Nonce(0)
     update_nonce2: Nonce = Nonce(0)
-    reveal_timeout1: int = DEFAULT_REVEAL_TIMEOUT
-    reveal_timeout2: int = DEFAULT_REVEAL_TIMEOUT
+    reveal_timeout1: BlockTimeout = DEFAULT_REVEAL_TIMEOUT
+    reveal_timeout2: BlockTimeout = DEFAULT_REVEAL_TIMEOUT
 
     Schema: ClassVar[Type[marshmallow.Schema]]
 
@@ -103,7 +110,7 @@ class ChannelView:
         return self.channel.reveal_timeout2 if self.reverse else self.channel.reveal_timeout1
 
     @reveal_timeout.setter
-    def reveal_timeout(self, value: int) -> None:
+    def reveal_timeout(self, value: BlockTimeout) -> None:
         if self.reverse:
             self.channel.reveal_timeout2 = value
         else:
@@ -129,7 +136,7 @@ class ChannelView:
         return self.channel.fee_schedule1 if self.reverse else self.channel.fee_schedule2
 
     def update_capacity(
-        self, capacity: TokenAmount, nonce: Nonce = Nonce(0), reveal_timeout: int = None
+        self, capacity: TokenAmount, nonce: Nonce = Nonce(0), reveal_timeout: BlockTimeout = None
     ) -> None:
         self.update_nonce = nonce
         self.capacity = capacity

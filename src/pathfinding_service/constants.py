@@ -1,5 +1,7 @@
 from datetime import timedelta
 
+from raiden.utils.typing import BlockTimeout
+
 API_PATH: str = "/api/v1"
 DEFAULT_API_HOST: str = "localhost"
 DEFAULT_API_PORT: int = 6000
@@ -11,7 +13,7 @@ FEE_PEN_DEFAULT: int = 100
 MAX_PATHS_PER_REQUEST: int = 25
 DEFAULT_MAX_PATHS: int = 5  # number of paths return when no `max_path` argument is given
 
-DEFAULT_REVEAL_TIMEOUT: int = 50
+DEFAULT_REVEAL_TIMEOUT: BlockTimeout = BlockTimeout(50)
 
 DEFAULT_SETTLE_TO_REVEAL_TIMEOUT_RATIO = 2
 

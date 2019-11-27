@@ -15,6 +15,7 @@ from raiden.transfer.identifiers import CanonicalIdentifier
 from raiden.utils.signer import LocalSigner
 from raiden.utils.typing import (
     Address,
+    BlockTimeout,
     ChainID,
     ChannelID,
     Nonce,
@@ -65,7 +66,7 @@ def get_capacity_update_message(  # pylint: disable=too-many-arguments
     other_nonce=Nonce(0),
     updating_capacity=TA(90),
     other_capacity=TA(110),
-    reveal_timeout: int = 2,
+    reveal_timeout: BlockTimeout = BlockTimeout(2),
     privkey_signer: bytes = PRIVATE_KEY_1,
 ) -> PFSCapacityUpdate:
     updatepfs_message = PFSCapacityUpdate(
