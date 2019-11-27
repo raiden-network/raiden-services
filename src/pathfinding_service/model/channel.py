@@ -4,10 +4,11 @@ from typing import ClassVar, Tuple, Type
 
 import marshmallow
 from eth_utils import to_checksum_address
+from marshmallow.fields import NaiveDateTime
 from marshmallow_dataclass import add_schema
 
 from pathfinding_service.constants import DEFAULT_REVEAL_TIMEOUT
-from pathfinding_service.exceptions import InvalidPFSFeeUpdate
+from pathfinding_service.exceptions import InvalidFeeUpdate
 from raiden.transfer.mediated_transfer.mediation_fee import FeeScheduleState as FeeScheduleRaiden
 from raiden.utils.typing import (
     Address,
@@ -22,7 +23,9 @@ from raiden_libs.marshmallow import ChecksumAddress
 
 @dataclass
 class FeeSchedule(FeeScheduleRaiden):
-    timestamp: datetime = datetime(2000, 1, 1)
+    timestamp: datetime = field(
+        metadata={"marshmallow_field": NaiveDateTime()}, default=datetime(2000, 1, 1)
+    )
 
     @classmethod
     def from_raiden(cls, fee_schedule: FeeScheduleRaiden, timestamp: datetime) -> "FeeSchedule":
@@ -145,7 +148,7 @@ class ChannelView:
 
     def set_fee_schedule(self, fee_schedule: FeeSchedule) -> None:
         if self.fee_schedule_sender.timestamp >= fee_schedule.timestamp:
-            raise InvalidPFSFeeUpdate("Timestamp must increase between fee updates")
+            raise InvalidFeeUpdate("Timestamp must increase between fee updates")
         if self.reverse:
             self.channel.fee_schedule2 = fee_schedule
         else:

@@ -6,7 +6,6 @@ from unittest.mock import Mock, call, patch
 import pytest
 from eth_utils import to_checksum_address
 
-from pathfinding_service import exceptions
 from pathfinding_service.model.token_network import PFSFeeUpdate
 from pathfinding_service.service import PathfindingService
 from raiden.constants import EMPTY_SIGNATURE
@@ -290,26 +289,6 @@ def test_update_fee(order, pathfinding_service_mock, token_network_model):
     cv = token_network_model.G[PARTICIPANT1][PARTICIPANT2]["view"]
     for key in ("flat", "proportional", "imbalance_penalty"):
         assert getattr(cv.fee_schedule_sender, key) == getattr(fee_schedule, key)
-
-
-def test_invalid_fee_update(pathfinding_service_mock, token_network_model):
-    setup_channel(pathfinding_service_mock, token_network_model)
-
-    fee_update = PFSFeeUpdate(
-        canonical_identifier=CanonicalIdentifier(
-            chain_identifier=ChainID(1),
-            token_network_address=token_network_model.address,
-            channel_identifier=ChannelID(1),
-        ),
-        updating_participant=PARTICIPANT1,
-        fee_schedule=FeeScheduleState(),
-        timestamp=datetime.utcnow(),
-        signature=EMPTY_SIGNATURE,
-    )
-
-    # bad/missing signature
-    with pytest.raises(exceptions.InvalidPFSFeeUpdate):
-        pathfinding_service_mock.on_fee_update(fee_update)
 
 
 def test_unhandled_message(pathfinding_service_mock, log):
