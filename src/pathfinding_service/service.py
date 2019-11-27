@@ -284,16 +284,12 @@ class PathfindingService(gevent.Greenlet):
         self.database.insert_waiting_message(message)
 
     def _validate_pfs_fee_update(self, message: PFSFeeUpdate) -> TokenNetwork:
-        token_network_address = TokenNetworkAddress(
-            message.canonical_identifier.token_network_address
-        )
-
         # check if chain_id matches
         if message.canonical_identifier.chain_identifier != self.chain_id:
             raise InvalidFeeUpdate("Received Fee Update with unknown chain identifier")
 
         # check if token network exists
-        token_network = self.get_token_network(token_network_address)
+        token_network = self.get_token_network(message.canonical_identifier.token_network_address)
         if token_network is None:
             raise InvalidFeeUpdate("Received Fee Update with unknown token network")
 
@@ -324,16 +320,12 @@ class PathfindingService(gevent.Greenlet):
         return token_network.handle_channel_fee_update(message)
 
     def _validate_pfs_capacity_update(self, message: PFSCapacityUpdate) -> TokenNetwork:
-        token_network_address = TokenNetworkAddress(
-            message.canonical_identifier.token_network_address
-        )
-
         # check if chain_id matches
         if message.canonical_identifier.chain_identifier != self.chain_id:
             raise InvalidCapacityUpdate("Received Capacity Update with unknown chain identifier")
 
         # check if token network exists
-        token_network = self.get_token_network(token_network_address)
+        token_network = self.get_token_network(message.canonical_identifier.token_network_address)
         if token_network is None:
             raise InvalidCapacityUpdate("Received Capacity Update with unknown token network")
 
