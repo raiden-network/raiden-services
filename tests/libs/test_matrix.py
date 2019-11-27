@@ -3,11 +3,16 @@ import itertools
 import json
 import sys
 import time
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import Mock, patch
 
 import pytest
 from eth_utils import encode_hex, to_canonical_address
+from tests.pathfinding.test_fee_updates import (
+    PRIVATE_KEY_1,
+    PRIVATE_KEY_1_ADDRESS,
+    get_fee_update_message,
+)
 
 from monitoring_service.states import HashedBalanceProof
 from raiden.messages.monitoring_service import RequestMonitoring
@@ -65,6 +70,28 @@ def test_deserialize_messages_invalid_sender(request_monitoring_message):
 
     messages = deserialize_messages(data=message, peer_address=INVALID_PEER_ADDRESS)
     assert len(messages) == 0
+
+
+def test_deserialize_checks_datetimes_in_messages():
+    invalid_fee_update = get_fee_update_message(
+        updating_participant=PRIVATE_KEY_1_ADDRESS,
+        privkey_signer=PRIVATE_KEY_1,
+        timestamp=datetime.now(timezone.utc),
+    )
+    message = MessageSerializer.serialize(invalid_fee_update)
+
+    messages = deserialize_messages(data=message, peer_address=PRIVATE_KEY_1_ADDRESS)
+    assert len(messages) == 0
+
+    valid_fee_update = get_fee_update_message(
+        updating_participant=PRIVATE_KEY_1_ADDRESS,
+        privkey_signer=PRIVATE_KEY_1,
+        timestamp=datetime.utcnow(),
+    )
+    message = MessageSerializer.serialize(valid_fee_update)
+
+    messages = deserialize_messages(data=message, peer_address=PRIVATE_KEY_1_ADDRESS)
+    assert len(messages) == 1
 
 
 def test_deserialize_messages_valid_message(request_monitoring_message):
