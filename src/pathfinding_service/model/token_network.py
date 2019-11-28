@@ -118,7 +118,7 @@ class Path:
 
             if amount_with_fees is None:
                 log.warning(
-                    "Invalid fee calculation",
+                    "Invalid path because of invalid fee calculation",
                     amount=total,
                     view_out=view_out,
                     view_in=view_in,
@@ -194,12 +194,7 @@ class Path:
 
         # Calculate fees
         # This implicitely checks that the channels have sufficient capacity
-        fees = self._calculate_fees()
-        if not fees:
-            log.debug("Path invalid because of invalid fee calculation",)
-            return None
-
-        return fees
+        return self._calculate_fees()
 
     @property
     def edge_attrs(self) -> Iterable[dict]:
