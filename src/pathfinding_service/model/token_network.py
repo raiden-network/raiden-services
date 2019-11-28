@@ -79,9 +79,9 @@ class Path:
         self.value = value
         self.address_to_reachability = address_to_reachability
         self.fees: List[FeeAmount] = []
-        self._is_valid = self._check_validity()
+        self.is_valid = self._check_validity()
 
-        log.debug("Creating Path object", nodes=nodes, is_valid=self._is_valid, fees=self.fees)
+        log.debug("Creating Path object", nodes=nodes, is_valid=self.is_valid, fees=self.fees)
 
     def _calculate_fees(self) -> bool:
         """ Calcluates fees backwards for this path.
@@ -142,6 +142,15 @@ class Path:
     def _check_validity(self) -> bool:
         """ Checks validity of this path.
 
+        Capacity: The capacity for the last channel must be at least
+        the payment value. The previous channel's capacity has to be larger
+        than value + last channel's capacity, etc.
+
+        Settle timeout: The raiden client will not forward payments if the
+        channel over which they receive has a too low settle_timeout. So we
+        should not use such routes. See
+        https://github.com/raiden-network/raiden-services/issues/5.
+
         Note: Stateful, should only be called once!
         """
         log.debug("Checking path validity", nodes=self.nodes, value=self.value)
@@ -149,7 +158,7 @@ class Path:
         required_capacity = self.value
         edges = reversed(list(self.edge_attrs))
         for edge in edges:
-            # check basic capacity without fees
+            # Check basic capacity without fees
             if edge["view"].capacity < required_capacity:
                 log.debug(
                     "Path invalid because of missing capacity (without fees)",
@@ -159,7 +168,7 @@ class Path:
                 )
                 return False
 
-            # check if settle_timeout / reveal_timeout >= default ratio
+            # Check if settle_timeout / reveal_timeout >= default ratio
             ratio = edge["view"].settle_timeout / edge["view"].reveal_timeout
             if ratio < DEFAULT_SETTLE_TO_REVEAL_TIMEOUT_RATIO:
                 log.debug(
@@ -172,7 +181,7 @@ class Path:
                 )
                 return False
 
-        # check node reachabilities
+        # Check node reachabilities
         for node in self.nodes:
             node_reachability = self.address_to_reachability.get(node, AddressReachability.UNKNOWN)
             if node_reachability != AddressReachability.REACHABLE:
@@ -183,24 +192,12 @@ class Path:
                 )
                 return False
 
-        # check capacity with fees
+        # Calculate fees
+        # This implicitely checks that the channels have sufficient capacity
         valid_fees = self._calculate_fees()
         if not valid_fees:
+            log.debug("Path invalid because of invalid fee calculation",)
             return False
-
-        fees = self.fees + [FeeAmount(0)]  # The hop to the target does not incur mediation fees
-        for edge, fee in zip(edges, fees):
-            # check capacity
-            if edge["view"].capacity < required_capacity:
-                log.debug(
-                    "Path invalid because of missing capacity (with fees)",
-                    edge=edge,
-                    fee=fees,
-                    available_capacity=edge["view"].capacity,
-                    required_capacity=required_capacity,
-                )
-                return False
-            required_capacity = PaymentAmount(required_capacity + fee)
 
         return True
 
@@ -212,21 +209,6 @@ class Path:
         return dict(
             path=[to_checksum_address(node) for node in self.nodes], estimated_fee=sum(self.fees),
         )
-
-    @property
-    def is_valid(self) -> bool:
-        """ Check capacity and settle timeout
-
-        Capacity: The capacity for the last channel must be at least
-        the payment value. The previous channel's capacity has to be larger
-        than value + last channel's capacity, etc.
-
-        Settle timeout: The raiden client will not forward payments if the
-        channel over which they receive has a too low settle_timeout. So we
-        should not use such routes. See
-        https://github.com/raiden-network/raiden-services/issues/5.
-        """
-        return self._is_valid
 
 
 class TokenNetwork:
