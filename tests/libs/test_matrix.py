@@ -178,6 +178,6 @@ def test_matrix_lister_smoke_test(get_accounts, get_private_key):
             message_received_callback=lambda _: None,
             address_reachability_changed_callback=lambda _addr, _reachability: None,
         )
-        listener._start_client()  # pylint: disable=protected-access
+        listener._run()  # pylint: disable=protected-access
 
     assert listener.startup_finished.is_set()

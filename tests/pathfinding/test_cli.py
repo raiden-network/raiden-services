@@ -120,7 +120,7 @@ def test_shutdown(default_cli_args):
     """ Clean shutdown after KeyboardInterrupt """
     runner = CliRunner()
     with patch.multiple(**PATCH_ARGS) as mocks, patch.multiple(**PATCH_INFO_ARGS):
-        mocks["PathfindingService"].return_value.run.side_effect = KeyboardInterrupt
+        mocks["PathfindingService"].return_value.get.side_effect = KeyboardInterrupt
         result = runner.invoke(main, default_cli_args, catch_exceptions=False)
         assert result.exit_code == 0
         assert "Exiting" in result.output
