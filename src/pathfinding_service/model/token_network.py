@@ -78,19 +78,18 @@ class Path:
         self.nodes = nodes
         self.value = value
         self.address_to_reachability = address_to_reachability
-        self.fees: List[FeeAmount] = []
-        self.is_valid = self._check_validity()
+        self.fees = self._check_validity_and_calculate_fees()
+        self.is_valid = self.fees is not None
 
-        log.debug("Creating Path object", nodes=nodes, is_valid=self.is_valid, fees=self.fees)
+        log.debug("Created Path object", nodes=nodes, is_valid=self.is_valid, fees=self.fees)
 
-    def _calculate_fees(self) -> bool:
+    def _calculate_fees(self) -> Optional[List[FeeAmount]]:
         """ Calcluates fees backwards for this path.
 
-        Note: Stateful, should only be called once!
-
-        Returns ``False``, if the fee calculation cannot be done.
+        Returns ``None``, if the fee calculation cannot be done.
         """
         total = PaymentWithFeeAmount(self.value)
+        fees: List[FeeAmount] = []
         for prev_node, mediator, next_node in reversed(list(window(self.nodes, 3))):
             view_in: ChannelView = self.G[prev_node][mediator]["view"]
             view_out: ChannelView = self.G[mediator][next_node]["view"]
@@ -130,17 +129,20 @@ class Path:
                     schedule_out=view_out.fee_schedule_sender,
                     receivable_amount=view_in.capacity,
                 )
-                return False
+                return None
 
             fee = PaymentWithFeeAmount(amount_with_fees - total)
             total += fee  # type: ignore
 
-            self.fees.append(FeeAmount(fee))
+            fees.append(FeeAmount(fee))
 
-        return True
+        # The hop to the target does not incur mediation fees
+        fees.append(FeeAmount(0))
 
-    def _check_validity(self) -> bool:
-        """ Checks validity of this path.
+        return fees
+
+    def _check_validity_and_calculate_fees(self) -> Optional[List[FeeAmount]]:
+        """ Checks validity of this path and calculates fees if valid.
 
         Capacity: The capacity for the last channel must be at least
         the payment value. The previous channel's capacity has to be larger
@@ -150,8 +152,6 @@ class Path:
         channel over which they receive has a too low settle_timeout. So we
         should not use such routes. See
         https://github.com/raiden-network/raiden-services/issues/5.
-
-        Note: Stateful, should only be called once!
         """
         log.debug("Checking path validity", nodes=self.nodes, value=self.value)
 
@@ -166,7 +166,7 @@ class Path:
                     available_capacity=edge["view"].capacity,
                     required_capacity=required_capacity,
                 )
-                return False
+                return None
 
             # Check if settle_timeout / reveal_timeout >= default ratio
             ratio = edge["view"].settle_timeout / edge["view"].reveal_timeout
@@ -179,7 +179,7 @@ class Path:
                     ratio=ratio,
                     required_ratio=DEFAULT_SETTLE_TO_REVEAL_TIMEOUT_RATIO,
                 )
-                return False
+                return None
 
         # Check node reachabilities
         for node in self.nodes:
@@ -190,22 +190,23 @@ class Path:
                     node=node,
                     node_reachability=node_reachability,
                 )
-                return False
+                return None
 
         # Calculate fees
         # This implicitely checks that the channels have sufficient capacity
-        valid_fees = self._calculate_fees()
-        if not valid_fees:
+        fees = self._calculate_fees()
+        if not fees:
             log.debug("Path invalid because of invalid fee calculation",)
-            return False
+            return None
 
-        return True
+        return fees
 
     @property
     def edge_attrs(self) -> Iterable[dict]:
         return (self.G[node1][node2] for node1, node2 in zip(self.nodes[:-1], self.nodes[1:]))
 
     def to_dict(self) -> dict:
+        assert self.fees is not None
         return dict(
             path=[to_checksum_address(node) for node in self.nodes], estimated_fee=sum(self.fees),
         )
