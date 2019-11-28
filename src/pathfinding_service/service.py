@@ -107,6 +107,7 @@ class PathfindingService(gevent.Greenlet):
         self.address_to_reachability: Dict[Address, AddressReachability] = dict()
         self.token_networks = self._load_token_networks()
         self.updated = gevent.event.Event()  # set whenever blocks are processed
+        self.startup_finished = gevent.event.Event()
 
     def _load_token_networks(self) -> Dict[TokenNetworkAddress, TokenNetwork]:
         network_for_address = {n.address: n for n in self.database.get_token_networks()}
@@ -129,6 +130,7 @@ class PathfindingService(gevent.Greenlet):
         except (Timeout, ConnectionError) as exc:
             log.critical("Could not connect to broadcasting system.", exc=exc)
             sys.exit(1)
+        self.startup_finished.set()
 
         log.info(
             "Listening to token network registry",

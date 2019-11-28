@@ -101,7 +101,11 @@ def main(  # pylint: disable-msg=too-many-arguments
             db_filename=state_db,
             matrix_servers=matrix_server,
         )
+        service.start()
+        log.debug("Waiting for service to start before accepting API requests")
+        assert service.startup_finished.wait(timeout=60), "PFS did not start within time."
 
+        log.debug("Starting API")
         api = ServiceApi(
             pathfinding_service=service,
             service_fee=service_fee,
@@ -112,7 +116,7 @@ def main(  # pylint: disable-msg=too-many-arguments
         )
         api.run(host=host)
 
-        service.run()
+        service.get()
     except (KeyboardInterrupt, SystemExit):
         print("Exiting...")
     finally:

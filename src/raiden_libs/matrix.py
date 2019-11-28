@@ -179,6 +179,11 @@ class MatrixListener(gevent.Greenlet):
 
         self._client.start_listener_thread()
         assert self._client.sync_thread
+        self._client.synced.wait()
+
+        # Signal that startup has finished
+        self.startup_finished.set()
+
         self._client.sync_thread.get()
 
     def stop(self) -> None:
@@ -206,9 +211,6 @@ class MatrixListener(gevent.Greenlet):
             raise ConnectionError("Could not join monitoring broadcasting room.")
 
         self._broadcast_room.add_listener(self._handle_message, "m.room.message")
-
-        # Signal that startup is finished
-        self.startup_finished.set()
 
     def follow_address_presence(self, address: Address, refresh: bool = False) -> None:
         if self._user_manager:
