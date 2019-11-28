@@ -79,11 +79,17 @@ class Path:
         self.value = value
         self.address_to_reachability = address_to_reachability
         self.fees: List[FeeAmount] = []
-        self._calculate_fees()
+        self._is_valid = self._check_validity()
 
-        log.debug("Creating Path object", nodes=nodes, is_valid=self.is_valid, fees=self.fees)
+        log.debug("Creating Path object", nodes=nodes, is_valid=self._is_valid, fees=self.fees)
 
-    def _calculate_fees(self) -> None:
+    def _calculate_fees(self) -> bool:
+        """ Calcluates fees backwards for this path.
+
+        Note: Stateful, should only be called once!
+
+        Returns ``False``, if the fee calculation cannot be done.
+        """
         total = PaymentWithFeeAmount(self.value)
         for prev_node, mediator, next_node in reversed(list(window(self.nodes, 3))):
             view_in: ChannelView = self.G[prev_node][mediator]["view"]
@@ -124,13 +130,79 @@ class Path:
                     schedule_out=view_out.fee_schedule_sender,
                     receivable_amount=view_in.capacity,
                 )
-                self._is_valid = False
-                break
+                return False
 
             fee = PaymentWithFeeAmount(amount_with_fees - total)
             total += fee  # type: ignore
 
             self.fees.append(FeeAmount(fee))
+
+        return True
+
+    def _check_validity(self) -> bool:
+        """ Checks validity of this path.
+
+        Note: Stateful, should only be called once!
+        """
+        log.debug("Checking path validity", nodes=self.nodes, value=self.value)
+
+        required_capacity = self.value
+        edges = reversed(list(self.edge_attrs))
+        for edge in edges:
+            # check basic capacity without fees
+            if edge["view"].capacity < required_capacity:
+                log.debug(
+                    "Path invalid because of missing capacity (without fees)",
+                    edge=edge,
+                    available_capacity=edge["view"].capacity,
+                    required_capacity=required_capacity,
+                )
+                return False
+
+            # check if settle_timeout / reveal_timeout >= default ratio
+            ratio = edge["view"].settle_timeout / edge["view"].reveal_timeout
+            if ratio < DEFAULT_SETTLE_TO_REVEAL_TIMEOUT_RATIO:
+                log.debug(
+                    "Path invalid because of too low reveal timeout ratio",
+                    edge=edge,
+                    settle_timeout=edge["view"].settle_timeout,
+                    reveal_timeout=edge["view"].reveal_timeout,
+                    ratio=ratio,
+                    required_ratio=DEFAULT_SETTLE_TO_REVEAL_TIMEOUT_RATIO,
+                )
+                return False
+
+        # check node reachabilities
+        for node in self.nodes:
+            node_reachability = self.address_to_reachability.get(node, AddressReachability.UNKNOWN)
+            if node_reachability != AddressReachability.REACHABLE:
+                log.debug(
+                    "Path invalid because of unavailable node",
+                    node=node,
+                    node_reachability=node_reachability,
+                )
+                return False
+
+        # check capacity with fees
+        valid_fees = self._calculate_fees()
+        if not valid_fees:
+            return False
+
+        fees = self.fees + [FeeAmount(0)]  # The hop to the target does not incur mediation fees
+        for edge, fee in zip(edges, fees):
+            # check capacity
+            if edge["view"].capacity < required_capacity:
+                log.debug(
+                    "Path invalid because of missing capacity (with fees)",
+                    edge=edge,
+                    fee=fees,
+                    available_capacity=edge["view"].capacity,
+                    required_capacity=required_capacity,
+                )
+                return False
+            required_capacity = PaymentAmount(required_capacity + fee)
+
+        return True
 
     @property
     def edge_attrs(self) -> Iterable[dict]:
@@ -154,51 +226,7 @@ class Path:
         should not use such routes. See
         https://github.com/raiden-network/raiden-services/issues/5.
         """
-        log.debug("Checking path validity", nodes=self.nodes, value=self.value)
-        if hasattr(self, "_is_valid"):
-            return self._is_valid
-        required_capacity = self.value
-        edges = reversed(list(self.edge_attrs))
-        fees = self.fees + [FeeAmount(0)]  # The hop to the target does not incur mediation fees
-        for edge, fee in zip(edges, fees):
-            # check capacity
-            if edge["view"].capacity < required_capacity:
-                log.debug(
-                    "Path invalid because of missing capacity",
-                    edge=edge,
-                    fee=fees,
-                    available_capacity=edge["view"].capacity,
-                    required_capacity=required_capacity,
-                )
-                return False
-            required_capacity = PaymentAmount(required_capacity + fee)
-
-            # check if settle_timeout / reveal_timeout >= default ratio
-            ratio = edge["view"].settle_timeout / edge["view"].reveal_timeout
-            if ratio < DEFAULT_SETTLE_TO_REVEAL_TIMEOUT_RATIO:
-                log.debug(
-                    "Path invalid because of too low reveal timeout ratio",
-                    edge=edge,
-                    fee=fees,
-                    settle_timeout=edge["view"].settle_timeout,
-                    reveal_timeout=edge["view"].reveal_timeout,
-                    ratio=ratio,
-                    required_ratio=DEFAULT_SETTLE_TO_REVEAL_TIMEOUT_RATIO,
-                )
-                return False
-
-        # check node reachabilities
-        for node in self.nodes:
-            node_reachability = self.address_to_reachability.get(node, AddressReachability.UNKNOWN)
-            if node_reachability != AddressReachability.REACHABLE:
-                log.debug(
-                    "Path invalid because of unavailable node",
-                    node=node,
-                    node_reachability=node_reachability,
-                )
-                return False
-
-        return True
+        return self._is_valid
 
 
 class TokenNetwork:
@@ -216,10 +244,6 @@ class TokenNetwork:
             f"<TokenNetwork address = {to_checksum_address(self.address)} "
             f"num_channels = {len(self.channel_id_to_addresses)}>"
         )
-
-    #
-    # Contract event listener functions
-    #
 
     def handle_channel_opened_event(
         self,
