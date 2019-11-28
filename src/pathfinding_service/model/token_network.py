@@ -94,7 +94,7 @@ class Path:
             view_in: ChannelView = self.G[prev_node][mediator]["view"]
             view_out: ChannelView = self.G[mediator][next_node]["view"]
 
-            log.warning(
+            log.debug(
                 "Fee calculation",
                 amount=total,
                 view_out=view_out,
