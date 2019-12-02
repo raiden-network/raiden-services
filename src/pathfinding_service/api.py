@@ -126,6 +126,21 @@ class PathsResource(PathfinderResource):
             one_to_n_address=self.service_api.one_to_n_address,
         )
 
+        # check for common error cases to provide clear error messages
+        error = token_network.check_path_request_errors(
+            source=path_req.from_,
+            target=path_req.to,
+            value=path_req.value,
+            address_to_reachability=self.pathfinding_service.address_to_reachability,
+        )
+        if error:
+            raise exceptions.NoRouteFound(
+                from_=to_checksum_address(path_req.from_),
+                to=to_checksum_address(path_req.to),
+                value=path_req.value,
+                msg=error,
+            )
+
         # only add optional args if not None, so we can use defaults
         optional_args = {}
         for arg in ["diversity_penalty", "fee_penalty"]:
