@@ -405,6 +405,40 @@ class TokenNetwork:
         except StopIteration:
             return None
 
+    def check_path_request_errors(
+        self,
+        source: Address,
+        target: Address,
+        value: PaymentAmount,
+        address_to_reachability: Dict[Address, AddressReachability],
+    ) -> Optional[str]:
+        """ Checks for basic problems with the path requests. Returns error message or `None` """
+
+        if (
+            address_to_reachability.get(source, AddressReachability.UNREACHABLE)
+            != AddressReachability.REACHABLE
+        ):
+            return "Source not online"
+        if (
+            address_to_reachability.get(target, AddressReachability.UNREACHABLE)
+            != AddressReachability.REACHABLE
+        ):
+            return "Target not online"
+
+        if not any(self.G.edges(source)):
+            return "No channel from source"
+        if not any(self.G.edges(target)):
+            return "No channel to target"
+
+        source_capacities = [view.capacity for _, _, view in self.G.out_edges(source, data="view")]
+        if max(source_capacities) < value:
+            return "Source does not have a channel with sufficient capacity"
+        target_capacities = [view.capacity for _, _, view in self.G.in_edges(target, data="view")]
+        if max(target_capacities) < value:
+            return "Target does not have a channel with sufficient capacity"
+
+        return None
+
     def get_paths(  # pylint: disable=too-many-arguments, too-many-locals
         self,
         source: Address,

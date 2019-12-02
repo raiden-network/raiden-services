@@ -67,6 +67,7 @@ disable=
         fixme,
         unused-wildcard-import,
         len-as-condition,
+        too-many-return-statements,
 
         # checks that are done with higher accuracy by mypy
         no-member,

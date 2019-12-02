@@ -120,3 +120,59 @@ def test_path_without_capacity(token_network_model: TokenNetwork, addresses: Lis
         address_to_reachability=dict(),
     )
     assert not path.is_valid
+
+
+def test_check_path_request_errors(token_network_model, addresses):
+    a = addresses  # pylint: disable=invalid-name
+
+    # Not online checks
+    assert (
+        token_network_model.check_path_request_errors(a[0], a[2], 100, {}) == "Source not online"
+    )
+    assert (
+        token_network_model.check_path_request_errors(
+            a[0], a[2], 100, {a[0]: AddressReachability.REACHABLE}
+        )
+        == "Target not online"
+    )
+
+    # No channel checks
+    reachability = {
+        a[0]: AddressReachability.REACHABLE,
+        a[2]: AddressReachability.REACHABLE,
+    }
+    assert (
+        token_network_model.check_path_request_errors(a[0], a[2], 100, reachability)
+        == "No channel from source"
+    )
+    token_network_model.handle_channel_opened_event(
+        channel_identifier=ChannelID(1),
+        participant1=a[0],
+        participant2=a[1],
+        settle_timeout=BlockTimeout(15),
+    )
+    assert (
+        token_network_model.check_path_request_errors(a[0], a[2], 100, reachability)
+        == "No channel to target"
+    )
+    token_network_model.handle_channel_opened_event(
+        channel_identifier=ChannelID(1),
+        participant1=a[1],
+        participant2=a[2],
+        settle_timeout=BlockTimeout(15),
+    )
+
+    # Check capacities
+    assert (
+        token_network_model.check_path_request_errors(a[0], a[2], 100, reachability)
+        == "Source does not have a channel with sufficient capacity"
+    )
+    token_network_model.G.edges[a[0], a[1]]["view"].capacity = 100
+    assert (
+        token_network_model.check_path_request_errors(a[0], a[2], 100, reachability)
+        == "Target does not have a channel with sufficient capacity"
+    )
+    token_network_model.G.edges[a[1], a[2]]["view"].capacity = 100
+
+    # Must return `None` when no errors could be found
+    assert token_network_model.check_path_request_errors(a[0], a[2], 100, reachability) is None
