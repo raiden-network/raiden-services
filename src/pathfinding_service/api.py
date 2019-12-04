@@ -134,6 +134,16 @@ class PathsResource(PathfinderResource):
             address_to_reachability=self.pathfinding_service.address_to_reachability,
         )
         if error:
+            # this is for assertion via the scenario player
+            if self.debug_mode:
+                last_requests.append(
+                    dict(
+                        token_network_address=to_checksum_address(token_network_address),
+                        source=to_checksum_address(path_req.from_),
+                        target=to_checksum_address(path_req.to),
+                        routes=[],
+                    )
+                )
             raise exceptions.NoRouteFound(
                 from_=to_checksum_address(path_req.from_),
                 to=to_checksum_address(path_req.to),

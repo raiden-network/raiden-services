@@ -45,7 +45,7 @@ def test_get_paths_via_debug_endpoint_with_debug_disabled(
 
 
 @pytest.mark.usefixtures("api_sut_with_debug")
-def test_get_paths_via_debug_endpoint(  # pylint: disable=too-many-arguments
+def test_get_paths_via_debug_endpoint(
     api_url: str, addresses: List[Address], token_network_model: TokenNetwork
 ):
     # `last_requests` is a module variable, so it might have entries from tests that ran earlier.
@@ -110,6 +110,16 @@ def test_get_paths_via_debug_endpoint(  # pylint: disable=too-many-arguments
     responses = response_debug_incl_unrequested_target.json()["responses"]
     assert responses == []
 
+
+@pytest.mark.usefixtures("api_sut_with_debug")
+def test_get_paths_via_debug_endpoint_empty_routes(
+    api_url: str, addresses: List[Address], token_network_model: TokenNetwork
+):
+    # `last_requests` is a module variable, so it might have entries from tests that ran earlier.
+    last_requests.clear()
+    hex_addrs = [to_checksum_address(addr) for addr in addresses]
+    token_network_address = to_checksum_address(token_network_model.address)
+
     response = requests.post(
         api_url + f"/{token_network_address}/paths",
         json={
@@ -124,6 +134,27 @@ def test_get_paths_via_debug_endpoint(  # pylint: disable=too-many-arguments
     # test that requests with no routes found are returned as well
     url_debug_incl_impossible_route = (
         api_url + f"/_debug/routes/{token_network_address}/{hex_addrs[0]}/{hex_addrs[5]}"
+    )
+    response_debug_incl_impossible_route = requests.get(url_debug_incl_impossible_route)
+    assert response_debug_incl_impossible_route.status_code == 200
+    request_count = response_debug_incl_impossible_route.json()["request_count"]
+    assert request_count == 1
+
+    response = requests.post(
+        api_url + f"/{token_network_address}/paths",
+        json={
+            "from": hex_addrs[0],
+            "to": hex_addrs[6],
+            "value": 1e10,
+            "max_paths": DEFAULT_MAX_PATHS,
+        },
+    )
+    assert response.status_code == 404
+
+    # test that requests with no routes found are returned as well
+    # regression test for https://github.com/raiden-network/raiden/issues/5421
+    url_debug_incl_impossible_route = (
+        api_url + f"/_debug/routes/{token_network_address}/{hex_addrs[0]}/{hex_addrs[6]}"
     )
     response_debug_incl_impossible_route = requests.get(url_debug_incl_impossible_route)
     assert response_debug_incl_impossible_route.status_code == 200
