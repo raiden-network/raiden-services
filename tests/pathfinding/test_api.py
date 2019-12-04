@@ -45,20 +45,13 @@ def test_get_paths_via_debug_endpoint_with_debug_disabled(
 
 
 @pytest.mark.usefixtures("api_sut_with_debug")
-def test_get_paths_via_debug_endpoint(
+def test_get_paths_via_debug_endpoint(  # pylint: disable=too-many-arguments
     api_url: str, addresses: List[Address], token_network_model: TokenNetwork
 ):
     # `last_requests` is a module variable, so it might have entries from tests that ran earlier.
     last_requests.clear()
     hex_addrs = [to_checksum_address(addr) for addr in addresses]
     token_network_address = to_checksum_address(token_network_model.address)
-    url_debug = api_url + f"/_debug/routes/{token_network_address}/{hex_addrs[0]}"
-    url_debug_incl_requested_target = (
-        api_url + f"/_debug/routes/{token_network_address}/{hex_addrs[0]}/{hex_addrs[2]}"
-    )
-    url_debug_incl_unrequested_target = (
-        api_url + f"/_debug/routes/{token_network_address}/{hex_addrs[0]}/{hex_addrs[3]}"
-    )
 
     response = requests.post(
         api_url + f"/{token_network_address}/paths",
@@ -75,6 +68,7 @@ def test_get_paths_via_debug_endpoint(
     assert paths == [{"path": [hex_addrs[0], hex_addrs[1], hex_addrs[2]], "estimated_fee": 0}]
 
     # now there must be a debug endpoint for that specific route
+    url_debug = api_url + f"/_debug/routes/{token_network_address}/{hex_addrs[0]}"
     response_debug = requests.get(url_debug)
     assert response_debug.status_code == 200
     request_count = response_debug.json()["request_count"]
@@ -89,6 +83,9 @@ def test_get_paths_via_debug_endpoint(
     ]
 
     # now there must be a debug endpoint for that specific route and that specific target
+    url_debug_incl_requested_target = (
+        api_url + f"/_debug/routes/{token_network_address}/{hex_addrs[0]}/{hex_addrs[2]}"
+    )
     response_debug_incl_target = requests.get(url_debug_incl_requested_target)
     assert response_debug_incl_target.status_code == 200
     request_count = response_debug_incl_target.json()["request_count"]
@@ -103,12 +100,35 @@ def test_get_paths_via_debug_endpoint(
     ]
 
     # when requesting info for a target that was no path requested for
+    url_debug_incl_unrequested_target = (
+        api_url + f"/_debug/routes/{token_network_address}/{hex_addrs[0]}/{hex_addrs[3]}"
+    )
     response_debug_incl_unrequested_target = requests.get(url_debug_incl_unrequested_target)
     assert response_debug_incl_unrequested_target.status_code == 200
     request_count = response_debug_incl_unrequested_target.json()["request_count"]
     assert request_count == 0
     responses = response_debug_incl_unrequested_target.json()["responses"]
     assert responses == []
+
+    response = requests.post(
+        api_url + f"/{token_network_address}/paths",
+        json={
+            "from": hex_addrs[0],
+            "to": hex_addrs[5],
+            "value": 10,
+            "max_paths": DEFAULT_MAX_PATHS,
+        },
+    )
+    assert response.status_code == 404
+
+    # test that requests with no routes found are returned as well
+    url_debug_incl_impossible_route = (
+        api_url + f"/_debug/routes/{token_network_address}/{hex_addrs[0]}/{hex_addrs[5]}"
+    )
+    response_debug_incl_impossible_route = requests.get(url_debug_incl_impossible_route)
+    assert response_debug_incl_impossible_route.status_code == 200
+    request_count = response_debug_incl_impossible_route.json()["request_count"]
+    assert request_count == 1
 
 
 def test_get_ious_via_debug_endpoint(
