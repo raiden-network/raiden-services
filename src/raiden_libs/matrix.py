@@ -179,7 +179,6 @@ class MatrixListener(gevent.Greenlet):
 
         self._client.start_listener_thread()
         assert self._client.sync_thread
-        self._client.synced.wait()
 
         # Signal that startup has finished
         self.startup_finished.set()
