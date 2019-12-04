@@ -466,7 +466,6 @@ class TokenNetwork:
             max_paths=max_paths,
             diversity_penalty=diversity_penalty,
             fee_penalty=fee_penalty,
-            reachabilities=address_to_reachability,
         )
 
         # TODO: improve the pruning
