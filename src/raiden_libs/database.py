@@ -92,12 +92,12 @@ class BaseDatabase:
             update_stmt = "UPDATE blockchain SET {}".format(
                 ",".join(
                     f"{key} = :{key}"
-                    for key in ["chain_id", "receiver", "latest_commited_block"]
+                    for key in ["chain_id", "receiver", "latest_committed_block"]
                     + list(hex_addresses)
                 )
             )
             self.conn.execute(
-                update_stmt, dict(latest_commited_block=sync_start_block, **settings)
+                update_stmt, dict(latest_committed_block=sync_start_block, **settings)
             )
 
     def _check_settings(
@@ -140,19 +140,19 @@ class BaseDatabase:
             TokenNetworkAddress(to_canonical_address(row[0]))
             for row in self.conn.execute("SELECT address FROM token_network")
         ]
-        latest_commited_block = blockchain["latest_commited_block"]
+        latest_committed_block = blockchain["latest_committed_block"]
 
         return BlockchainState(
             chain_id=blockchain["chain_id"],
             token_network_registry_address=blockchain["token_network_registry_address"],
             monitor_contract_address=blockchain["monitor_contract_address"],
-            latest_commited_block=latest_commited_block,
+            latest_committed_block=latest_committed_block,
             token_network_addresses=token_network_addresses,
         )
 
     def update_blockchain_state(self, state: BlockchainState) -> None:
         self.conn.execute(
-            "UPDATE blockchain SET latest_commited_block = ?", [state.latest_commited_block]
+            "UPDATE blockchain SET latest_committed_block = ?", [state.latest_committed_block]
         )
         # assumes that token_networks are not removed
         self.conn.executemany(

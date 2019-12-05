@@ -80,7 +80,7 @@ class PathfindingService(gevent.Greenlet):
         log.info("PFS payment address", address=self.address)
 
         self.blockchain_state = BlockchainState(
-            latest_commited_block=BlockNumber(0),
+            latest_committed_block=BlockNumber(0),
             token_network_registry_address=self.registry_address,
             chain_id=self.chain_id,
         )
@@ -135,18 +135,17 @@ class PathfindingService(gevent.Greenlet):
         log.info(
             "Listening to token network registry",
             registry_address=self.registry_address,
-            start_block=self.database.get_latest_commited_block(),
+            start_block=self.database.get_latest_committed_block(),
         )
         while not self._is_running.is_set():
-            last_confirmed_block = self.web3.eth.blockNumber - self.required_confirmations
+            latest_confirmed_block = self.web3.eth.blockNumber - self.required_confirmations
 
             max_query_interval_end_block = (
-                self.database.get_latest_commited_block() + MAX_FILTER_INTERVAL
+                self.database.get_latest_committed_block() + MAX_FILTER_INTERVAL
             )
             # Limit the max number of blocks that is processed per iteration
-            last_block = min(last_confirmed_block, max_query_interval_end_block)
-
-            self._process_new_blocks(last_block)
+            to_block = min(latest_confirmed_block, max_query_interval_end_block)
+            self._process_new_blocks(to_block)
 
             # Let tests waiting for this event know that we're done with processing
             self.updated.set()
@@ -156,9 +155,9 @@ class PathfindingService(gevent.Greenlet):
             gevent.sleep(self._poll_interval)
             gevent.joinall(set([self.matrix_listener]), timeout=0, raise_error=True)
 
-    def _process_new_blocks(self, last_block: BlockNumber) -> None:
+    def _process_new_blocks(self, to_block: BlockNumber) -> None:
         start = time.time()
-        self.blockchain_state.latest_commited_block = self.database.get_latest_commited_block()
+        self.blockchain_state.latest_committed_block = self.database.get_latest_committed_block()
         self.blockchain_state.token_network_addresses = list(self.token_networks.keys())
 
         before_get = time.time()
@@ -166,7 +165,7 @@ class PathfindingService(gevent.Greenlet):
             web3=self.web3,
             contract_manager=CONTRACT_MANAGER,
             chain_state=self.blockchain_state,
-            to_block=last_block,
+            to_block=to_block,
         )
         before_process = time.time()
         for event in events:
@@ -176,8 +175,8 @@ class PathfindingService(gevent.Greenlet):
         if events:
             log.info(
                 "Processed blocks",
-                from_block=self.blockchain_state.latest_commited_block + 1,
-                to_block=last_block,
+                from_block=self.blockchain_state.latest_committed_block + 1,
+                to_block=to_block,
                 getting=round(before_process - before_get, 2),
                 processing=round(time.time() - before_process, 2),
                 total_duration=round(time.time() - start, 2),
@@ -212,6 +211,7 @@ class PathfindingService(gevent.Greenlet):
         elif isinstance(event, ReceiveChannelClosedEvent):
             self.handle_channel_closed(event)
         elif isinstance(event, UpdatedHeadBlockEvent):
+            # TODO: Store blockhash here as well
             self.database.update_lastest_committed_block(event.head_block_number)
         else:
             log.debug("Unhandled event", evt=event)
