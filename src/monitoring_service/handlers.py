@@ -48,10 +48,10 @@ class Context:
     required_confirmations: int
 
     @property
-    def latest_commited_block(self) -> BlockNumber:
+    def latest_committed_block(self) -> BlockNumber:
         """ The latest block for which all events have been processed and which
         has been written to the DB. """
-        return self.ms_state.blockchain_state.latest_commited_block
+        return self.ms_state.blockchain_state.latest_committed_block
 
     @property
     def latest_confirmed_block(self) -> BlockNumber:
@@ -164,7 +164,7 @@ def channel_closed_event_handler(event: Event, context: Context) -> None:
             token_network_address=event.token_network_address,
             identifier=channel.identifier,
             settle_period_end_block=settle_period_end_block,
-            latest_commited_block=context.latest_commited_block,
+            latest_committed_block=context.latest_committed_block,
             latest_confirmed_block=context.latest_confirmed_block,
         )
 
@@ -365,7 +365,7 @@ def updated_head_block_event_handler(event: Event, context: Context) -> None:
     """ Triggers commit of the new block number. """
     assert isinstance(event, UpdatedHeadBlockEvent)
     blockchain_state = context.ms_state.blockchain_state
-    blockchain_state.latest_commited_block = event.head_block_number
+    blockchain_state.latest_committed_block = event.head_block_number
     context.db.update_blockchain_state(blockchain_state)
 
 

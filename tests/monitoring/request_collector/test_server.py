@@ -75,7 +75,7 @@ def test_ignore_mr_for_closed_channel(
 ):
     """ MRs that come in >=10 blocks after the channel has been closed must be ignored."""
     request_monitoring = build_request_monitoring()
-    ms_database.conn.execute("UPDATE blockchain SET latest_commited_block = ?", [100])
+    ms_database.conn.execute("UPDATE blockchain SET latest_committed_block = ?", [100])
     ms_database.conn.execute(
         "INSERT INTO token_network(address) VALUES (?)",
         [to_checksum_address(request_monitoring.balance_proof.token_network_address)],
