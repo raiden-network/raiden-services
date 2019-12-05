@@ -265,7 +265,7 @@ class MonitorRequest(UnsignedMonitorRequest):
     reward_proof_signer: Address = field(init=False)
 
     def __post_init__(self) -> None:
-        super(MonitorRequest, self).__post_init__()
+        super().__post_init__()
         self.non_closing_signer = recover(
             data=self.packed_non_closing_data(), signature=self.non_closing_signature
         )

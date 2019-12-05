@@ -41,7 +41,7 @@ class PFSDatabase(BaseDatabase):
         allow_create: bool = False,
         **contract_addresses: Address,
     ):
-        super(PFSDatabase, self).__init__(filename, allow_create=allow_create)
+        super().__init__(filename, allow_create=allow_create)
         self.pfs_address = pfs_address
         self._setup(
             chain_id=chain_id,

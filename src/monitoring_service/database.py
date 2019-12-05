@@ -274,7 +274,7 @@ class Database(SharedDatabase):
         receiver: Address,
         sync_start_block: BlockNumber = BlockNumber(0),
     ) -> None:
-        super(Database, self).__init__(filename, allow_create=True)
+        super().__init__(filename, allow_create=True)
         self._setup(
             chain_id=chain_id,
             monitor_contract_address=msc_address,
