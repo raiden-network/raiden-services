@@ -146,6 +146,8 @@ def test_crash(tmpdir, mockchain):  # pylint: disable=too-many-locals
             # do asserts for each key separately to get better error messages
             assert stable_state == crashy_state
 
+        crashy_service.database.conn.close()  # close the db connection so we can access it again
+
 
 def test_token_network_created(pathfinding_service_mock):
     token_address = Address(bytes([1] * 20))
