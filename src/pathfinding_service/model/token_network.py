@@ -308,6 +308,14 @@ class TokenNetwork:
             nonce=message.other_nonce,
             capacity=min(message.other_capacity, updating_capacity_partner),
         )
+        log.debug(
+            "Setting capacity",
+            updating_participant=message.updating_capacity,
+            other_capacity_partner=other_capacity_partner,
+            other_capacity=message.other_capacity,
+            updating_capacity_partner=updating_capacity_partner,
+            result=channel_view_to_partner.channel,
+        )
         return channel_view_to_partner.channel
 
     def handle_channel_fee_update(self, message: PFSFeeUpdate) -> Channel:
@@ -432,10 +440,21 @@ class TokenNetwork:
 
         source_capacities = [view.capacity for _, _, view in self.G.out_edges(source, data="view")]
         if max(source_capacities) < value:
-            return "Source does not have a channel with sufficient capacity"
+            debug_capacities = [
+                (to_checksum_address(a), to_checksum_address(b), view.capacity,)
+                for a, b, view in self.G.out_edges(source, data="view")
+            ]
+            log.debug("Insufficient capacities", capacities=debug_capacities)
+            return "Source does not have a channel with sufficient capacity (%s < %s)" % (
+                source_capacities,
+                value,
+            )
         target_capacities = [view.capacity for _, _, view in self.G.in_edges(target, data="view")]
         if max(target_capacities) < value:
-            return "Target does not have a channel with sufficient capacity"
+            return "Target does not have a channel with sufficient capacity (%s < %s)" % (
+                target_capacities,
+                value,
+            )
 
         return None
 
