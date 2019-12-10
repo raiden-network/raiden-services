@@ -163,14 +163,12 @@ def test_check_path_request_errors(token_network_model, addresses):
     )
 
     # Check capacities
-    assert (
-        token_network_model.check_path_request_errors(a[0], a[2], 100, reachability)
-        == "Source does not have a channel with sufficient capacity"
+    assert token_network_model.check_path_request_errors(a[0], a[2], 100, reachability).startswith(
+        "Source does not have a channel with sufficient capacity"
     )
     token_network_model.G.edges[a[0], a[1]]["view"].capacity = 100
-    assert (
-        token_network_model.check_path_request_errors(a[0], a[2], 100, reachability)
-        == "Target does not have a channel with sufficient capacity"
+    assert token_network_model.check_path_request_errors(a[0], a[2], 100, reachability).startswith(
+        "Target does not have a channel with sufficient capacity"
     )
     token_network_model.G.edges[a[1], a[2]]["view"].capacity = 100
 
