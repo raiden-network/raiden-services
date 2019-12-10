@@ -1,4 +1,5 @@
 import collections
+import os
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, ClassVar, Dict, List, Optional, Tuple, Type, TypeVar, cast
@@ -117,6 +118,13 @@ class PathsResource(PathfinderResource):
         self.debug_mode = debug_mode
 
     def post(self, token_network_address: str) -> Tuple[dict, int]:
+        graph_dir: Optional[str]
+        if self.debug_mode:
+            graph_dir = "/tmp/pfs_graphs"  # TODO: make this configurable
+            os.makedirs(graph_dir, exist_ok=True)
+        else:
+            graph_dir = None
+
         token_network = self._validate_token_network_argument(token_network_address)
         path_req = self._parse_post(PathRequest)
         process_payment(
@@ -144,6 +152,7 @@ class PathsResource(PathfinderResource):
                         routes=[],
                     )
                 )
+            token_network.save_graph(graph_dir, self.pathfinding_service.address_to_reachability)
             raise exceptions.NoRouteFound(
                 from_=to_checksum_address(path_req.from_),
                 to=to_checksum_address(path_req.to),
@@ -177,6 +186,7 @@ class PathsResource(PathfinderResource):
                         routes=[],
                     )
                 )
+            token_network.save_graph(graph_dir, self.pathfinding_service.address_to_reachability)
             raise exceptions.NoRouteFound(
                 from_=to_checksum_address(path_req.from_),
                 to=to_checksum_address(path_req.to),

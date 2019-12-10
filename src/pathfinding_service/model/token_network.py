@@ -1,3 +1,4 @@
+import os
 from collections import defaultdict
 from copy import copy
 from datetime import datetime, timedelta
@@ -457,6 +458,40 @@ class TokenNetwork:
             )
 
         return None
+
+    def save_graph(
+        self,
+        graph_dir: Optional[str],
+        address_to_reachability: Optional[Dict[Address, AddressReachability]],
+    ) -> None:
+        """ Save a graphviz dot format description of the graph into `graph_dir`.
+
+        The graph includes capacity and (if given) reachability information.
+        Unreachable nodes will be drawn with a gray background.
+        """
+        if not graph_dir:
+            return
+        with open(os.path.join(graph_dir, datetime.utcnow().isoformat() + ".dot"), "w") as f:
+            f.write("digraph {")
+            if address_to_reachability is not None:
+                for node in self.G.nodes():
+                    f.write(
+                        "{} [{}]\n".format(
+                            to_checksum_address(node),
+                            ""
+                            if address_to_reachability[node] == AddressReachability.REACHABLE
+                            else "style=filled",
+                        )
+                    )
+            for edge_attr in self.G.edges.values():
+                f.write(
+                    '"{}" -> "{}" [label={}]\n'.format(
+                        to_checksum_address(edge_attr["view"].participant1),
+                        to_checksum_address(edge_attr["view"].participant2),
+                        edge_attr["view"].capacity,
+                    )
+                )
+            f.write("}")
 
     def get_paths(  # pylint: disable=too-many-arguments, too-many-locals
         self,
