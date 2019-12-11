@@ -229,6 +229,7 @@ def process_payment(  # pylint: disable=too-many-branches
     if iou is None:
         raise exceptions.MissingIOU
 
+    log.debug("Checking IOU", iou=iou)
     # Basic IOU validity checks
     if not is_same_address(iou.receiver, pathfinding_service.address):
         raise exceptions.WrongIOURecipient(expected=pathfinding_service.address)
@@ -258,7 +259,9 @@ def process_payment(  # pylint: disable=too-many-branches
             raise exceptions.IOUExpiredTooEarly(min_expiry=min_expiry)
         expected_amount = service_fee
     if iou.amount < expected_amount:
-        raise exceptions.InsufficientServicePayment(expected_amount=expected_amount)
+        raise exceptions.InsufficientServicePayment(
+            expected_amount=expected_amount, actual_amount=iou.amount
+        )
 
     # Check client's deposit in UserDeposit contract
     udc = pathfinding_service.user_deposit_contract
