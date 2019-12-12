@@ -393,19 +393,23 @@ def test_get_info(api_url: str, api_sut, pathfinding_service_mock):
     api_sut.info_message = "This is your favorite pfs for token network registry "
     url = api_url + "/info"
 
-    token_network_registry = to_checksum_address(pathfinding_service_mock.registry_address)
+    token_network_registry_address = to_checksum_address(pathfinding_service_mock.registry_address)
+    user_deposit_address = to_checksum_address(
+        pathfinding_service_mock.user_deposit_contract.address
+    )
 
     expected_response = {
         "price_info": 123,
         "network_info": {
             "chain_id": pathfinding_service_mock.chain_id,
-            "registry_address": token_network_registry,
+            "registry_address": token_network_registry_address,
+            "user_deposit_address": user_deposit_address,
         },
         "version": pkg_resources.require("raiden-services")[0].version,
         "contracts_version": pkg_resources.require("raiden-contracts")[0].version,
         "operator": "John Doe",
         "message": "This is your favorite pfs for token network registry "
-        + token_network_registry,
+        + token_network_registry_address,
         "payment_address": to_checksum_address(pathfinding_service_mock.address),
     }
     response = requests.get(url)
