@@ -402,7 +402,7 @@ def test_get_info(api_url: str, api_sut, pathfinding_service_mock):
         "price_info": 123,
         "network_info": {
             "chain_id": pathfinding_service_mock.chain_id,
-            "registry_address": token_network_registry_address,
+            "token_network_registry_address": token_network_registry_address,
             "user_deposit_address": user_deposit_address,
         },
         "version": pkg_resources.require("raiden-services")[0].version,
