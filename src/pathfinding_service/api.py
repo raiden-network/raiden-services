@@ -389,7 +389,9 @@ class InfoResource(PathfinderResource):
             "price_info": self.service_api.service_fee,
             "network_info": {
                 "chain_id": self.pathfinding_service.chain_id,
-                "registry_address": to_checksum_address(self.pathfinding_service.registry_address),
+                "token_network_registry_address": to_checksum_address(
+                    self.pathfinding_service.registry_address
+                ),
                 "user_deposit_address": to_checksum_address(
                     self.pathfinding_service.user_deposit_contract.address
                 ),
