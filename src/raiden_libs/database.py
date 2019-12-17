@@ -4,8 +4,9 @@ import sys
 from typing import Any, Dict, Union
 
 import structlog
-from eth_utils import to_canonical_address, to_checksum_address
+from eth_utils import to_canonical_address
 
+from raiden.utils.formatting import to_checksum_address
 from raiden.utils.typing import Address, BlockNumber, ChainID, TokenNetworkAddress
 from raiden_libs.states import BlockchainState
 

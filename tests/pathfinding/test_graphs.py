@@ -4,12 +4,13 @@ from copy import deepcopy
 from typing import Dict, List
 
 import pytest
-from eth_utils import decode_hex, to_canonical_address, to_checksum_address
+from eth_utils import decode_hex, to_canonical_address
 
 from pathfinding_service.constants import DIVERSITY_PEN_DEFAULT
 from pathfinding_service.model import ChannelView, TokenNetwork
 from pathfinding_service.model.channel import Channel
 from raiden.network.transport.matrix import AddressReachability
+from raiden.utils.formatting import to_checksum_address
 from raiden.utils.typing import (
     Address,
     BlockTimeout,

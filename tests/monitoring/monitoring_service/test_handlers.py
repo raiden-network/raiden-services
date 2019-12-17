@@ -2,7 +2,6 @@
 from unittest.mock import Mock, patch
 
 import pytest
-from eth_utils import to_checksum_address
 from tests.libs.mocks.web3 import Web3Mock
 from tests.monitoring.monitoring_service.factories import (
     DEFAULT_CHANNEL_IDENTIFIER,
@@ -31,6 +30,7 @@ from monitoring_service.handlers import (
     updated_head_block_event_handler,
 )
 from monitoring_service.states import OnChainUpdateStatus
+from raiden.utils.formatting import to_checksum_address
 from raiden.utils.typing import Address, BlockNumber, BlockTimeout, ChannelID, Nonce, TokenAmount
 from raiden_contracts.constants import ChannelState
 from raiden_contracts.tests.utils import get_random_privkey

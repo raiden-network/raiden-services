@@ -2,12 +2,13 @@ import os
 from typing import List
 from unittest.mock import Mock
 
-from eth_utils import encode_hex, to_canonical_address, to_checksum_address
+from eth_utils import encode_hex, to_canonical_address
 from tests.constants import TEST_MSC_ADDRESS
 
 from monitoring_service.events import ActionMonitoringTriggeredEvent
 from monitoring_service.service import MonitoringService
 from monitoring_service.states import HashedBalanceProof
+from raiden.utils.formatting import to_checksum_address
 from raiden.utils.typing import (
     BlockNumber,
     BlockTimeout,

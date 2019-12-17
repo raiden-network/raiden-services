@@ -2,12 +2,13 @@ from copy import deepcopy
 from typing import Dict, List, Optional, Tuple
 
 import structlog
-from eth_utils import decode_hex, encode_hex, to_canonical_address, to_checksum_address
+from eth_utils import decode_hex, encode_hex, to_canonical_address
 from eth_utils.abi import event_abi_to_log_topic
 from web3 import Web3
 from web3.contract import Contract, get_event_data
 from web3.utils.abi import filter_by_type
 
+from raiden.utils.formatting import to_checksum_address
 from raiden.utils.typing import Address, BlockNumber, TokenAmount, TokenNetworkAddress
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
