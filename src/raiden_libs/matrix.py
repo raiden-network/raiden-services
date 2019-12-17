@@ -5,7 +5,7 @@ from urllib.parse import urlparse
 
 import gevent
 import structlog
-from eth_utils import decode_hex, to_checksum_address
+from eth_utils import decode_hex
 from gevent.event import Event
 from marshmallow import ValidationError
 from matrix_client.errors import MatrixRequestError
@@ -37,6 +37,7 @@ from raiden.settings import (
 )
 from raiden.storage.serialization.serializer import MessageSerializer
 from raiden.utils.cli import get_matrix_servers
+from raiden.utils.formatting import to_checksum_address
 from raiden.utils.signer import LocalSigner
 from raiden.utils.typing import Address, ChainID
 

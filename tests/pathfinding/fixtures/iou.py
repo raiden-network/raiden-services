@@ -1,8 +1,9 @@
 import pytest
-from eth_utils import encode_hex, to_checksum_address
+from eth_utils import encode_hex
 
 from pathfinding_service.constants import MIN_IOU_EXPIRY
 from pathfinding_service.model import IOU
+from raiden.utils.formatting import to_checksum_address
 from raiden.utils.typing import Address
 from raiden_contracts.utils.proofs import sign_one_to_n_iou
 from raiden_libs.utils import private_key_to_address

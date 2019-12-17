@@ -1,6 +1,5 @@
 import random
 
-from eth_utils import to_checksum_address
 from tests.monitoring.monitoring_service.factories import (
     DEFAULT_TOKEN_NETWORK_ADDRESS,
     create_channel,
@@ -11,6 +10,7 @@ from monitoring_service.database import Database
 from monitoring_service.events import ActionMonitoringTriggeredEvent, ScheduledEvent
 from monitoring_service.states import Channel, OnChainUpdateStatus
 from raiden.constants import UINT256_MAX
+from raiden.utils.formatting import to_checksum_address
 from raiden.utils.typing import (
     Address,
     BlockNumber,

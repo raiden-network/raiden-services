@@ -1,7 +1,9 @@
 from typing import Any
 
 import marshmallow
-from eth_utils import decode_hex, encode_hex, is_checksum_address, to_checksum_address
+from eth_utils import decode_hex, encode_hex, is_checksum_address
+
+from raiden.utils.formatting import to_checksum_address
 
 
 class HexedBytes(marshmallow.fields.Field):

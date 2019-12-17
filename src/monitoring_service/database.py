@@ -3,7 +3,7 @@ import sqlite3
 from typing import List, Optional, Union, cast
 
 import structlog
-from eth_utils import decode_hex, encode_hex, to_canonical_address, to_checksum_address, to_hex
+from eth_utils import decode_hex, encode_hex, to_canonical_address, to_hex
 
 from monitoring_service.events import (
     ActionClaimRewardTriggeredEvent,
@@ -16,6 +16,7 @@ from monitoring_service.states import (
     MonitorRequest,
     OnChainUpdateStatus,
 )
+from raiden.utils.formatting import to_checksum_address
 from raiden.utils.typing import (
     Address,
     BlockNumber,

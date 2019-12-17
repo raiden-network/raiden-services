@@ -3,13 +3,13 @@ from datetime import datetime
 from typing import ClassVar, Tuple, Type
 
 import marshmallow
-from eth_utils import to_checksum_address
 from marshmallow.fields import NaiveDateTime
 from marshmallow_dataclass import add_schema
 
 from pathfinding_service.constants import DEFAULT_REVEAL_TIMEOUT
 from pathfinding_service.exceptions import InvalidFeeUpdate
 from raiden.transfer.mediated_transfer.mediation_fee import FeeScheduleState as FeeScheduleRaiden
+from raiden.utils.formatting import to_checksum_address
 from raiden.utils.typing import (
     Address,
     BlockTimeout,

@@ -2,11 +2,12 @@ from dataclasses import dataclass, field
 from typing import Iterable, Optional
 
 from eth_typing.evm import HexAddress
-from eth_utils import decode_hex, encode_hex, to_checksum_address
+from eth_utils import decode_hex, encode_hex
 from web3 import Web3
 
 from raiden.constants import EMPTY_SIGNATURE
 from raiden.messages.monitoring_service import RequestMonitoring, SignedBlindedBalanceProof
+from raiden.utils.formatting import to_checksum_address
 from raiden.utils.keys import privatekey_to_address
 from raiden.utils.signer import LocalSigner, recover
 from raiden.utils.signing import pack_data
