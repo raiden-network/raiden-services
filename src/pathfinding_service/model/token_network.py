@@ -456,6 +456,11 @@ class TokenNetwork:
                 value,
             )
 
+        try:
+            next(nx.shortest_simple_paths(G=self.G, source=source, target=target))
+        except NetworkXNoPath:
+            return "No route from source to target"
+
         return None
 
     def get_paths(  # pylint: disable=too-many-arguments, too-many-locals
@@ -505,6 +510,16 @@ class TokenNetwork:
                     fee_penalty=fee_penalty,
                 )
             except (NetworkXNoPath, NodeNotFound):
+                log.info(
+                    "Found no path for payment in pruned graph",
+                    source=source,
+                    target=target,
+                    value=value,
+                    max_paths=max_paths,
+                    diversity_penalty=diversity_penalty,
+                    fee_penalty=fee_penalty,
+                    reachabilities=address_to_reachability,
+                )
                 return []
 
             if path is None:

@@ -167,6 +167,7 @@ def test_check_path_request_errors(token_network_model, addresses):
         "Source does not have a channel with sufficient capacity"
     )
     token_network_model.G.edges[a[0], a[1]]["view"].capacity = 100
+
     assert token_network_model.check_path_request_errors(a[0], a[2], 100, reachability).startswith(
         "Target does not have a channel with sufficient capacity"
     )
@@ -174,3 +175,17 @@ def test_check_path_request_errors(token_network_model, addresses):
 
     # Must return `None` when no errors could be found
     assert token_network_model.check_path_request_errors(a[0], a[2], 100, reachability) is None
+
+    # Check error when there is no route in the graph
+    token_network_model.handle_channel_opened_event(
+        channel_identifier=ChannelID(2),
+        participant1=a[3],
+        participant2=a[4],
+        settle_timeout=BlockTimeout(15),
+    )
+    token_network_model.G.edges[a[3], a[4]]["view"].capacity = 100
+    reachability[a[4]] = AddressReachability.REACHABLE
+    assert (
+        token_network_model.check_path_request_errors(a[0], a[4], 100, reachability)
+        == "No route from source to target"
+    )
