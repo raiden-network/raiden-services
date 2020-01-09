@@ -232,8 +232,9 @@ class TokenNetwork:
     ) -> Channel:
         """ Register the channel in the graph, add participants to graph if necessary.
 
-        Corresponds to the ChannelOpened event. Called by the contract event listener.
-        We swap participants unless participant1 < participant2."""
+        Corresponds to the ChannelOpened event.
+        We swap participants unless participant1 < participant2.
+        """
 
         if participant1 > participant2:
             (participant1, participant2) = (participant2, participant1)
@@ -264,19 +265,13 @@ class TokenNetwork:
         """ Close a channel. This doesn't mean that the channel is settled yet, but it cannot
         transfer any more.
 
-        Corresponds to the ChannelClosed event. Called by the contract event listener. """
+        Corresponds to the ChannelClosed event."""
 
-        try:
-            # we need to unregister the channel_id here
-            participant1, participant2 = self.channel_id_to_addresses.pop(channel_identifier)
+        # we need to unregister the channel_id here
+        participant1, participant2 = self.channel_id_to_addresses.pop(channel_identifier)
 
-            self.G.remove_edge(participant1, participant2)
-            self.G.remove_edge(participant2, participant1)
-        except KeyError:
-            log.error(
-                "Received ChannelClosed event for unknown channel",
-                channel_identifier=channel_identifier,
-            )
+        self.G.remove_edge(participant1, participant2)
+        self.G.remove_edge(participant2, participant1)
 
     def get_channel_views_for_partner(
         self, updating_participant: Address, other_participant: Address

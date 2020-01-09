@@ -247,6 +247,7 @@ class PathfindingService(gevent.Greenlet):
             for message in self.database.pop_waiting_messages(
                 token_network_address=token_network.address, channel_id=event.channel_identifier
             ):
+                log.debug("Processing deferred message", message=message)
                 self.handle_message(message)
 
     def handle_channel_closed(self, event: ReceiveChannelClosedEvent) -> None:
@@ -256,8 +257,16 @@ class PathfindingService(gevent.Greenlet):
 
         log.info("Received ChannelClosed event", event_=event)
 
-        token_network.handle_channel_closed_event(channel_identifier=event.channel_identifier)
-        self.database.delete_channel(event.token_network_address, event.channel_identifier)
+        channel = self.database.get_channel(event.token_network_address, event.channel_identifier)
+        if channel:
+            token_network.handle_channel_closed_event(event.channel_identifier)
+            self.database.delete_channel(event.token_network_address, event.channel_identifier)
+        else:
+            log.error(
+                "Received ChannelClosed event for unknown channel",
+                token_network_address=event.token_network_address,
+                channel_identifier=event.channel_identifier,
+            )
 
     def handle_message(self, message: Message) -> None:
         try:

@@ -187,6 +187,19 @@ class PFSDatabase(BaseDatabase):
             channel_dict["fee_schedule2"] = json.loads(channel_dict["fee_schedule2"])
             yield Channel.Schema().load(channel_dict)
 
+    def get_channel(
+        self, token_network_address: TokenNetworkAddress, channel_id: ChannelID
+    ) -> Optional[Channel]:
+        row = self.conn.execute(
+            "SELECT * FROM channel where token_network_address = ? and channel_id = ?",
+            [to_checksum_address(token_network_address), hex256(channel_id)],
+        ).fetchone()
+
+        channel_dict = dict(zip(row.keys(), row))
+        channel_dict["fee_schedule1"] = json.loads(channel_dict["fee_schedule1"])
+        channel_dict["fee_schedule2"] = json.loads(channel_dict["fee_schedule2"])
+        return Channel.Schema().load(channel_dict)
+
     def delete_channel(
         self, token_network_address: TokenNetworkAddress, channel_id: ChannelID
     ) -> None:
@@ -194,7 +207,7 @@ class PFSDatabase(BaseDatabase):
             "DELETE FROM channel WHERE token_network_address = ? AND channel_id = ?",
             [to_checksum_address(token_network_address), hex256(channel_id)],
         )
-        assert cursor.rowcount == 1, "Deleted more than one channel."
+        assert cursor.rowcount == 1, "Did not delete exactly one channel"
 
     def get_token_networks(self) -> Iterator[TokenNetwork]:
         for row in self.conn.execute("SELECT address FROM token_network"):
