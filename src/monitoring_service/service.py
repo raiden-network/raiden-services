@@ -64,7 +64,8 @@ def handle_event(event: Event, context: Context) -> None:
             try:
                 handler(event, context)
                 log.debug(
-                    "Processed event", num_scheduled_events=context.db.scheduled_event_count()
+                    "Processed event",
+                    num_scheduled_events=context.database.scheduled_event_count(),
                 )
             except Exception as ex:  # pylint: disable=broad-except
                 log.error("Error during event handler", event=event, exc_info=ex)
@@ -108,7 +109,7 @@ class MonitoringService:  # pylint: disable=too-few-public-methods,too-many-inst
 
         self.context = Context(
             ms_state=ms_state,
-            db=self.database,
+            database=self.database,
             web3=self.web3,
             monitoring_service_contract=monitoring_contract,
             user_deposit_contract=user_deposit_contract,
@@ -168,7 +169,7 @@ class MonitoringService:  # pylint: disable=too-few-public-methods,too-many-inst
             self.context.ms_state.blockchain_state.token_network_addresses = (
                 new_chain_state.token_network_addresses
             )
-            self.context.db.update_blockchain_state(self.context.ms_state.blockchain_state)
+            self.context.database.update_blockchain_state(self.context.ms_state.blockchain_state)
 
         # Now set the updated chain state to the context, will be stored later
         self.context.ms_state.blockchain_state = new_chain_state
@@ -176,12 +177,12 @@ class MonitoringService:  # pylint: disable=too-few-public-methods,too-many-inst
             handle_event(event, self.context)
 
         # check triggered events and trigger the correct ones
-        triggered_events = self.context.db.get_scheduled_events(max_trigger_block=last_block)
+        triggered_events = self.context.database.get_scheduled_events(max_trigger_block=last_block)
         for scheduled_event in triggered_events:
             event = scheduled_event.event
 
             handle_event(event, self.context)
-            self.context.db.remove_scheduled_event(scheduled_event)
+            self.context.database.remove_scheduled_event(scheduled_event)
 
     def _check_pending_transactions(self) -> None:
         """ Checks if pending transaction have been mined and confirmed.
@@ -192,7 +193,7 @@ class MonitoringService:  # pylint: disable=too-few-public-methods,too-many-inst
         smallest nonce, and continue from there when this one is mined and confirmed. However,
         as it is not expected that this list becomes to big this isn't optimized currently.
         """
-        for tx_hash in self.context.db.get_waiting_transactions():
+        for tx_hash in self.context.database.get_waiting_transactions():
             receipt = self.web3.eth.getTransactionReceipt(tx_hash)
             if receipt is None:
                 continue
@@ -205,7 +206,7 @@ class MonitoringService:  # pylint: disable=too-few-public-methods,too-many-inst
             if self.web3.eth.blockNumber < confirmation_block:
                 continue
 
-            self.context.db.remove_waiting_transaction(tx_hash)
+            self.context.database.remove_waiting_transaction(tx_hash)
             if receipt["status"] == 1:
                 log.info(
                     "Transaction was mined successfully", transaction_hash=tx_hash, receipt=receipt
@@ -223,8 +224,8 @@ class MonitoringService:  # pylint: disable=too-few-public-methods,too-many-inst
         Also marks all MRs which have a channel as not waiting_for_channel to
         avoid checking them again, every time.
         """
-        with self.context.db.conn:
-            self.context.db.conn.execute(
+        with self.context.database.conn:
+            self.context.database.conn.execute(
                 """
                 UPDATE monitor_request SET waiting_for_channel = 0
                 WHERE waiting_for_channel
@@ -237,7 +238,7 @@ class MonitoringService:  # pylint: disable=too-few-public-methods,too-many-inst
             """
             )
             before_this_is_old = datetime.utcnow() - KEEP_MRS_WITHOUT_CHANNEL
-            self.context.db.conn.execute(
+            self.context.database.conn.execute(
                 """
                 DELETE FROM monitor_request
                 WHERE waiting_for_channel

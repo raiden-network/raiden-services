@@ -96,6 +96,7 @@ class PathfinderResource(Resource):
 class PathRequest:
     """A HTTP request to PathsResource"""
 
+    # pylint: disable=too-many-instance-attributes
     from_: Address = field(
         metadata=dict(marshmallow_field=ChecksumAddress(required=True, data_key="from"))
     )

@@ -16,6 +16,7 @@ from raiden_libs.marshmallow import ChecksumAddress, HexedBytes
 @add_schema
 @dataclass
 class IOU:
+    # pylint: disable=too-many-instance-attributes
     sender: Address = field(metadata={"marshmallow_field": ChecksumAddress()})
     receiver: Address = field(metadata={"marshmallow_field": ChecksumAddress()})
     amount: TokenAmount
