@@ -245,9 +245,8 @@ class TokenNetwork:
             participant2=participant2,
             settle_timeout=settle_timeout,
         )
-        views = channel.views
 
-        for cv in views:
+        for cv in channel.views:
             self.add_channel_view(cv)
 
         return channel

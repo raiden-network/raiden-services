@@ -9,7 +9,7 @@ from raiden.utils.typing import TokenNetworkAddress
 @dataclass
 class FeedbackToken:
     token_network_address: TokenNetworkAddress
-    id: UUID = field(default_factory=uuid4)
+    uuid: UUID = field(default_factory=uuid4)
     creation_time: datetime = field(default_factory=datetime.utcnow)
 
     def is_valid(self) -> bool:

@@ -31,7 +31,11 @@ def db_has_feedback_for(database: PFSDatabase, token: FeedbackToken, route: List
             token_network_address = ? AND
             route = ?;
         """,
-        [token.id.hex, to_checksum_address(token.token_network_address), json.dumps(hexed_route)],
+        [
+            token.uuid.hex,
+            to_checksum_address(token.token_network_address),
+            json.dumps(hexed_route),
+        ],
     ).fetchone()
 
     if feedback:
@@ -50,7 +54,7 @@ def test_insert_feedback_token(pathfinding_service_mock):
 
     # Test round-trip
     stored = database.get_feedback_token(
-        token_id=token.id, token_network_address=token_network_address, route=route
+        token_id=token.uuid, token_network_address=token_network_address, route=route
     )
     assert stored == token
 

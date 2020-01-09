@@ -202,7 +202,7 @@ class PathsResource(PathfinderResource):
             routes=paths,
         )
 
-        return {"result": paths, "feedback_token": feedback_token.id.hex}, 200
+        return {"result": paths, "feedback_token": feedback_token.uuid.hex}, 200
 
 
 def create_and_store_feedback_tokens(
