@@ -518,7 +518,7 @@ def test_feedback(api_sut: ServiceApi, api_url: str, token_network_model: TokenN
     # Test valid token, which is not stored in PFS DB
     token = FeedbackToken(token_network_address=token_network_model.address)
 
-    response = make_request(token_id=token.id.hex)
+    response = make_request(token_id=token.uuid.hex)
     assert response.status_code == 400
     assert not db_has_feedback_for(database, token, default_path)
 
@@ -529,7 +529,7 @@ def test_feedback(api_sut: ServiceApi, api_url: str, token_network_model: TokenN
     )
     database.prepare_feedback(old_token, default_path)
 
-    response = make_request(token_id=old_token.id.hex)
+    response = make_request(token_id=old_token.uuid.hex)
     assert response.status_code == 400
     assert not db_has_feedback_for(database, token, default_path)
 
@@ -537,7 +537,7 @@ def test_feedback(api_sut: ServiceApi, api_url: str, token_network_model: TokenN
     token = FeedbackToken(token_network_address=token_network_model.address)
     database.prepare_feedback(token, default_path)
 
-    response = make_request(token_id=token.id.hex)
+    response = make_request(token_id=token.uuid.hex)
     assert response.status_code == 200
     assert db_has_feedback_for(database, token, default_path)
 

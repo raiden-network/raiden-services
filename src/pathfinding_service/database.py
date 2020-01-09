@@ -204,7 +204,7 @@ class PFSDatabase(BaseDatabase):
     def prepare_feedback(self, token: FeedbackToken, route: List[Address]) -> None:
         hexed_route = [to_checksum_address(e) for e in route]
         token_dict = dict(
-            token_id=token.id.hex,
+            token_id=token.uuid.hex,
             creation_time=token.creation_time,
             token_network_address=to_checksum_address(token.token_network_address),
             route=json.dumps(hexed_route),
@@ -214,7 +214,7 @@ class PFSDatabase(BaseDatabase):
     def update_feedback(self, token: FeedbackToken, route: List[Address], successful: bool) -> int:
         hexed_route = [to_checksum_address(e) for e in route]
         token_dict = dict(
-            token_id=token.id.hex,
+            token_id=token.uuid.hex,
             token_network_address=to_checksum_address(token.token_network_address),
             route=json.dumps(hexed_route),
             successful=successful,
@@ -255,7 +255,7 @@ class PFSDatabase(BaseDatabase):
                 token_network_address=TokenNetworkAddress(
                     to_canonical_address(token["token_network_address"])
                 ),
-                id=UUID(token["token_id"]),
+                uuid=UUID(token["token_id"]),
                 creation_time=token["creation_time"],
             )
 
