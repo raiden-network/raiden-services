@@ -37,8 +37,8 @@ def http_retry_with_backoff_middleware(
                         gevent.sleep(backoff)
                         backoff *= backoff_factor
                         continue
-                    else:
-                        raise
+
+                    raise
         else:
             return make_request(method, params)
 
