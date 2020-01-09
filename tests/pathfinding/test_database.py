@@ -231,6 +231,7 @@ def test_channels(pathfinding_service_mock):
         settle_timeout=BlockTimeout(100),
     )
 
+    # Test `upsert_channel` and `get_channels`
     database.upsert_channel(channel1)
     assert [chan.channel_id for chan in database.get_channels()] == [channel1.channel_id]
 
@@ -240,5 +241,10 @@ def test_channels(pathfinding_service_mock):
         channel2.channel_id,
     ]
 
+    # Test `get_channel`
+    assert database.get_channel(channel1.token_network_address, channel1.channel_id) == channel1
+    assert database.get_channel(channel2.token_network_address, channel2.channel_id) == channel2
+
+    # Test `delete_channel`
     database.delete_channel(channel1.token_network_address, channel1.channel_id)
     assert [chan.channel_id for chan in database.get_channels()] == [channel2.channel_id]
