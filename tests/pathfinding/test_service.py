@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 from typing import List
-from unittest.mock import Mock, call, patch
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -203,11 +203,6 @@ def test_token_channel_opened(pathfinding_service_mock, token_network_model):
     pathfinding_service_mock.handle_event(channel_event)
     assert len(pathfinding_service_mock.token_networks) == 1
     assert len(token_network_model.channel_id_to_addresses) == 1
-
-    # Check that presence of these addresses is followed
-    pathfinding_service_mock.matrix_listener.follow_address_presence.assert_has_calls(
-        [call(PARTICIPANT1, refresh=True), call(PARTICIPANT2, refresh=True)]
-    )
 
 
 def test_token_channel_closed(pathfinding_service_mock, token_network_model):

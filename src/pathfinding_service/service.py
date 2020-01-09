@@ -167,10 +167,16 @@ class PathfindingService(gevent.Greenlet):
             chain_state=self.blockchain_state,
             to_block=to_block,
         )
+
+        addresses_to_update = set()
         before_process = time.time()
         for event in events:
-            self.handle_event(event)
+            new_addresses = self.handle_event(event)
+            addresses_to_update.update(new_addresses)
             gevent.idle()  # Allow answering requests in between events
+
+        for address in addresses_to_update:
+            self.matrix_listener.follow_address_presence(address, refresh=True)
 
         if events:
             log.info(
@@ -203,11 +209,12 @@ class PathfindingService(gevent.Greenlet):
         """ Returns the `TokenNetwork` for the given address or `None` for unknown networks. """
         return self.token_networks.get(token_network_address)
 
-    def handle_event(self, event: Event) -> None:
+    def handle_event(self, event: Event) -> List[Address]:
         if isinstance(event, ReceiveTokenNetworkCreatedEvent):
             self.handle_token_network_created(event)
         elif isinstance(event, ReceiveChannelOpenedEvent):
             self.handle_channel_opened(event)
+            return [event.participant1, event.participant2]
         elif isinstance(event, ReceiveChannelClosedEvent):
             self.handle_channel_closed(event)
         elif isinstance(event, UpdatedHeadBlockEvent):
@@ -215,6 +222,8 @@ class PathfindingService(gevent.Greenlet):
             self.database.update_lastest_committed_block(event.head_block_number)
         else:
             log.debug("Unhandled event", evt=event)
+
+        return []
 
     def handle_token_network_created(self, event: ReceiveTokenNetworkCreatedEvent) -> None:
         network_address = TokenNetworkAddress(event.token_network_address)
@@ -230,9 +239,6 @@ class PathfindingService(gevent.Greenlet):
             return
 
         log.info("Received ChannelOpened event", event_=event)
-
-        self.matrix_listener.follow_address_presence(event.participant1, refresh=True)
-        self.matrix_listener.follow_address_presence(event.participant2, refresh=True)
 
         channel = token_network.handle_channel_opened_event(
             channel_identifier=event.channel_identifier,
