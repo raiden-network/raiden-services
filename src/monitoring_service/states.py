@@ -37,6 +37,7 @@ class OnChainUpdateStatus:
 
 @dataclass
 class Channel:
+    # pylint: disable=too-many-instance-attributes
     token_network_address: TokenNetworkAddress
     identifier: ChannelID
     participant1: Address
@@ -180,15 +181,17 @@ class MonitoringServiceState:
 
 @dataclass
 class UnsignedMonitorRequest:
-    # balance proof
-    channel_identifier: ChannelID
-    token_network_address: TokenNetworkAddress
-    chain_id: ChainID
+    # pylint: disable=too-many-instance-attributes
 
     balance_hash: str
     nonce: Nonce
     additional_hash: str
     closing_signature: Signature
+
+    # balance proof
+    channel_identifier: ChannelID
+    token_network_address: TokenNetworkAddress
+    chain_id: ChainID
 
     # reward info
     msc_address: Address

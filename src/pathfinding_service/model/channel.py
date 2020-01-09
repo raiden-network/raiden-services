@@ -37,6 +37,7 @@ class FeeSchedule(FeeScheduleRaiden):
 @add_schema
 @dataclass
 class Channel:
+    # pylint: disable=too-many-instance-attributes
     token_network_address: TokenNetworkAddress = field(
         metadata={"marshmallow_field": ChecksumAddress(required=True)}
     )

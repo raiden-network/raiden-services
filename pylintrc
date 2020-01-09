@@ -259,6 +259,9 @@ good-names=i,
            p2,
            G,   # graph (networkx uses G for graph as mathematicians do)
            T,   # generic TypeVar used by mypy
+           to,
+           Schema,
+           id,
 
 # Include a hint for the correct naming format with invalid-name.
 include-naming-hint=no

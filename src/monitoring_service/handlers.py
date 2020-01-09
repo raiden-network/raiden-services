@@ -40,7 +40,7 @@ log = structlog.get_logger(__name__)
 @dataclass
 class Context:
     ms_state: MonitoringServiceState
-    db: Database
+    database: Database
     web3: Web3
     monitoring_service_contract: Contract
     user_deposit_contract: Contract
@@ -67,7 +67,7 @@ def channel_opened_event_handler(event: Event, context: Context) -> None:
         identifier=event.channel_identifier,
         channel=event,
     )
-    context.db.upsert_channel(
+    context.database.upsert_channel(
         Channel(
             token_network_address=event.token_network_address,
             identifier=event.channel_identifier,
@@ -107,7 +107,7 @@ def _first_allowed_block_to_monitor(
 
 def channel_closed_event_handler(event: Event, context: Context) -> None:
     assert isinstance(event, ReceiveChannelClosedEvent)
-    channel = context.db.get_channel(event.token_network_address, event.channel_identifier)
+    channel = context.database.get_channel(event.token_network_address, event.channel_identifier)
 
     if channel is None:
         log.error(
@@ -155,7 +155,7 @@ def channel_closed_event_handler(event: Event, context: Context) -> None:
         # Add scheduled event if it not exists yet. If the event is already
         # scheduled (e.g. after a restart) the DB takes care that it is only
         # stored once.
-        context.db.upsert_scheduled_event(
+        context.database.upsert_scheduled_event(
             ScheduledEvent(trigger_block_number=trigger_block, event=cast(Event, triggered_event))
         )
     else:
@@ -171,12 +171,12 @@ def channel_closed_event_handler(event: Event, context: Context) -> None:
     channel.state = ChannelState.CLOSED
     channel.closing_block = event.block_number
     channel.closing_participant = event.closing_participant
-    context.db.upsert_channel(channel)
+    context.database.upsert_channel(channel)
 
 
 def non_closing_balance_proof_updated_event_handler(event: Event, context: Context) -> None:
     assert isinstance(event, ReceiveNonClosingBalanceProofUpdatedEvent)
-    channel = context.db.get_channel(event.token_network_address, event.channel_identifier)
+    channel = context.database.get_channel(event.token_network_address, event.channel_identifier)
 
     if channel is None:
         log.error(
@@ -218,7 +218,7 @@ def non_closing_balance_proof_updated_event_handler(event: Event, context: Conte
             update_sender_address=non_closing_participant, nonce=event.nonce
         )
 
-        context.db.upsert_channel(channel)
+        context.database.upsert_channel(channel)
     else:
         # nonce not bigger, should never happen as it is checked in the contract
         if event.nonce <= channel.update_status.nonce:
@@ -239,14 +239,14 @@ def non_closing_balance_proof_updated_event_handler(event: Event, context: Conte
         channel.update_status.nonce = event.nonce
         channel.update_status.update_sender_address = non_closing_participant
 
-        context.db.upsert_channel(channel)
+        context.database.upsert_channel(channel)
 
 
 def channel_settled_event_handler(event: Event, context: Context) -> None:
     # TODO: we might want to remove all related state here in the future
     #     for now we keep it to make debugging easier
     assert isinstance(event, ReceiveChannelSettledEvent)
-    channel = context.db.get_channel(event.token_network_address, event.channel_identifier)
+    channel = context.database.get_channel(event.token_network_address, event.channel_identifier)
 
     if channel is None:
         log.error(
@@ -263,12 +263,12 @@ def channel_settled_event_handler(event: Event, context: Context) -> None:
     )
 
     channel.state = ChannelState.SETTLED
-    context.db.upsert_channel(channel)
+    context.database.upsert_channel(channel)
 
 
 def monitor_new_balance_proof_event_handler(event: Event, context: Context) -> None:
     assert isinstance(event, ReceiveMonitoringNewBalanceProofEvent)
-    channel = context.db.get_channel(event.token_network_address, event.channel_identifier)
+    channel = context.database.get_channel(event.token_network_address, event.channel_identifier)
 
     if channel is None:
         log.error(
@@ -300,7 +300,7 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context) -> N
             update_sender_address=event.ms_address, nonce=event.nonce
         )
 
-        context.db.upsert_channel(channel)
+        context.database.upsert_channel(channel)
     else:
         # nonce not bigger, should never happen as it is checked in the contract
         if event.nonce < update_status.nonce:
@@ -322,7 +322,7 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context) -> N
         update_status.nonce = event.nonce
         update_status.update_sender_address = event.ms_address
 
-        context.db.upsert_channel(channel)
+        context.database.upsert_channel(channel)
 
     # check if this was our update, if so schedule the call
     # of `claimReward`
@@ -341,7 +341,7 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context) -> N
         # Add scheduled event if it not exists yet
         # If the event is already scheduled (e.g. after a restart) the DB takes care that
         # it is only stored once
-        context.db.upsert_scheduled_event(
+        context.database.upsert_scheduled_event(
             ScheduledEvent(trigger_block_number=trigger_block, event=cast(Event, event))
         )
 
@@ -366,7 +366,7 @@ def updated_head_block_event_handler(event: Event, context: Context) -> None:
     assert isinstance(event, UpdatedHeadBlockEvent)
     blockchain_state = context.ms_state.blockchain_state
     blockchain_state.latest_committed_block = event.head_block_number
-    context.db.update_blockchain_state(blockchain_state)
+    context.database.update_blockchain_state(blockchain_state)
 
 
 def _is_mr_valid(monitor_request: MonitorRequest, channel: Channel) -> bool:
@@ -388,7 +388,7 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
     assert isinstance(event, ActionMonitoringTriggeredEvent)
     log.info("Triggering channel monitoring")
 
-    monitor_request = context.db.get_monitor_request(
+    monitor_request = context.database.get_monitor_request(
         token_network_address=event.token_network_address,
         channel_id=event.channel_identifier,
         non_closing_signer=event.non_closing_participant,
@@ -401,7 +401,7 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
         )
         return
 
-    channel = context.db.get_channel(
+    channel = context.database.get_channel(
         token_network_address=monitor_request.token_network_address,
         channel_id=monitor_request.channel_identifier,
     )
@@ -448,7 +448,7 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
             monitor_request=monitor_request,
             min_reward=context.min_reward,
         )
-        context.db.upsert_scheduled_event(
+        context.database.upsert_scheduled_event(
             ScheduledEvent(trigger_block_number=BlockNumber(last_confirmed_block + 1), event=event)
         )
         return
@@ -488,12 +488,12 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
         )
         assert tx_hash is not None
 
-        with context.db.conn:
+        with context.database.conn:
             # Add tx hash to list of waiting transactions
-            context.db.add_waiting_transaction(tx_hash)
+            context.database.add_waiting_transaction(tx_hash)
 
             channel.monitor_tx_hash = tx_hash
-            context.db.upsert_channel(channel)
+            context.database.upsert_channel(channel)
     except Exception as exc:  # pylint: disable=broad-except
         log.error("Sending tx failed", exc_info=True, err=exc)
 
@@ -502,7 +502,7 @@ def action_claim_reward_triggered_event_handler(event: Event, context: Context) 
     assert isinstance(event, ActionClaimRewardTriggeredEvent)
     log.info("Triggering reward claim")
 
-    monitor_request = context.db.get_monitor_request(
+    monitor_request = context.database.get_monitor_request(
         token_network_address=event.token_network_address,
         channel_id=event.channel_identifier,
         non_closing_signer=event.non_closing_participant,
@@ -510,7 +510,7 @@ def action_claim_reward_triggered_event_handler(event: Event, context: Context) 
     if monitor_request is None:
         return
 
-    channel = context.db.get_channel(
+    channel = context.database.get_channel(
         token_network_address=monitor_request.token_network_address,
         channel_id=monitor_request.channel_identifier,
     )
@@ -561,12 +561,12 @@ def action_claim_reward_triggered_event_handler(event: Event, context: Context) 
             )
             assert tx_hash is not None
 
-            with context.db.conn:
+            with context.database.conn:
                 # Add tx hash to list of waiting transactions
-                context.db.add_waiting_transaction(tx_hash)
+                context.database.add_waiting_transaction(tx_hash)
 
                 channel.claim_tx_hash = tx_hash
-                context.db.upsert_channel(channel)
+                context.database.upsert_channel(channel)
         except Exception as exc:  # pylint: disable=broad-except
             log.error("Sending tx failed", exc_info=True, err=exc)
 
