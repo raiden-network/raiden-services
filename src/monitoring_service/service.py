@@ -1,3 +1,4 @@
+import sys
 import time
 from datetime import datetime
 from typing import Callable, Dict
@@ -122,7 +123,7 @@ class MonitoringService:  # pylint: disable=too-few-public-methods,too-many-inst
     ) -> None:
         if not self.service_registry.functions.hasValidRegistration(self.address).call():
             log.error("No valid registration in ServiceRegistry", address=self.address)
-            exit(1)
+            sys.exit(1)
 
         last_gas_check_block = 0
         while True:
