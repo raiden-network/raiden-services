@@ -4,6 +4,7 @@ from typing import List
 from uuid import uuid4
 
 from pathfinding_service.database import PFSDatabase
+from pathfinding_service.model.channel import Channel
 from pathfinding_service.model.feedback import FeedbackToken
 from raiden.constants import EMPTY_SIGNATURE
 from raiden.messages.path_finding_service import PFSCapacityUpdate, PFSFeeUpdate
@@ -202,3 +203,42 @@ def test_waiting_messages(pathfinding_service_mock):
             )
         )
         assert len(recovered_messages2) == 0
+
+
+def test_channels(pathfinding_service_mock):
+    # Participants need to be ordered
+    parts = [make_address(), make_address(), make_address()]
+    parts.sort()
+
+    token_network_address = TokenNetworkAddress(b"1" * 20)
+
+    # register token network internally
+    database = pathfinding_service_mock.database
+    database.upsert_token_network(token_network_address)
+
+    channel1 = Channel(
+        token_network_address=token_network_address,
+        channel_id=ChannelID(1),
+        participant1=parts[0],
+        participant2=parts[1],
+        settle_timeout=BlockTimeout(100),
+    )
+    channel2 = Channel(
+        token_network_address=token_network_address,
+        channel_id=ChannelID(2),
+        participant1=parts[1],
+        participant2=parts[2],
+        settle_timeout=BlockTimeout(100),
+    )
+
+    database.upsert_channel(channel1)
+    assert [chan.channel_id for chan in database.get_channels()] == [channel1.channel_id]
+
+    database.upsert_channel(channel2)
+    assert [chan.channel_id for chan in database.get_channels()] == [
+        channel1.channel_id,
+        channel2.channel_id,
+    ]
+
+    database.delete_channel(channel1.token_network_address, channel1.channel_id)
+    assert [chan.channel_id for chan in database.get_channels()] == [channel2.channel_id]
