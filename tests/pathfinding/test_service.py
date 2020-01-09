@@ -10,7 +10,7 @@ from pathfinding_service.service import PathfindingService
 from raiden.constants import EMPTY_SIGNATURE
 from raiden.messages.synchronization import Processed
 from raiden.network.transport.matrix import AddressReachability
-from raiden.tests.utils.factories import make_privkey_address
+from raiden.tests.utils.factories import make_privkey_address, make_token_network_address
 from raiden.transfer.identifiers import CanonicalIdentifier
 from raiden.transfer.mediated_transfer.mediation_fee import FeeScheduleState
 from raiden.utils.formatting import to_checksum_address
@@ -213,9 +213,11 @@ def test_token_channel_opened(pathfinding_service_mock, token_network_model):
 def test_token_channel_closed(pathfinding_service_mock, token_network_model):
     setup_channel(pathfinding_service_mock, token_network_model)
 
+    token_network_address = make_token_network_address()
+
     # Test invalid token network address
     close_event = ReceiveChannelClosedEvent(
-        token_network_address=TokenNetworkAddress(bytes([0] * 20)),
+        token_network_address=token_network_address,
         channel_identifier=ChannelID(1),
         closing_participant=PARTICIPANT1,
         block_number=BlockNumber(2),
@@ -227,6 +229,14 @@ def test_token_channel_closed(pathfinding_service_mock, token_network_model):
 
     # Test proper token network address
     close_event.token_network_address = token_network_model.address
+
+    pathfinding_service_mock.handle_event(close_event)
+    assert len(pathfinding_service_mock.token_networks) == 1
+    assert len(token_network_model.channel_id_to_addresses) == 0
+
+    # Test non-existent channel
+    close_event.channel_identifier = ChannelID(123)
+    print(close_event)
 
     pathfinding_service_mock.handle_event(close_event)
     assert len(pathfinding_service_mock.token_networks) == 1
