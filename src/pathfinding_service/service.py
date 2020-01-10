@@ -257,8 +257,17 @@ class PathfindingService(gevent.Greenlet):
 
         log.info("Received ChannelClosed event", event_=event)
 
-        token_network.handle_channel_closed_event(event.channel_identifier)
-        self.database.delete_channel(event.token_network_address, event.channel_identifier)
+        channel_deleted = self.database.delete_channel(
+            event.token_network_address, event.channel_identifier,
+        )
+        if channel_deleted:
+            token_network.handle_channel_closed_event(event.channel_identifier)
+        else:
+            log.error(
+                "Received ChannelClosed event for unknown channel",
+                token_network_address=event.token_network_address,
+                channel_identifier=event.channel_identifier,
+            )
 
     def handle_message(self, message: Message) -> None:
         try:

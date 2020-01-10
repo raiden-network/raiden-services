@@ -189,12 +189,22 @@ class PFSDatabase(BaseDatabase):
 
     def delete_channel(
         self, token_network_address: TokenNetworkAddress, channel_id: ChannelID
-    ) -> None:
+    ) -> bool:
+        """ Tries to delete a channel from the database
+
+        Args:
+            token_network_address: The address of the token network of the channel
+            channel_id: The id of the channel
+
+        Returns: `True` if the channel was deleted, `False` if it did not exist
+        """
         cursor = self.conn.execute(
             "DELETE FROM channel WHERE token_network_address = ? AND channel_id = ?",
             [to_checksum_address(token_network_address), hex256(channel_id)],
         )
         assert cursor.rowcount <= 1, "Did delete more than one channel"
+
+        return cursor.rowcount == 1
 
     def get_token_networks(self) -> Iterator[TokenNetwork]:
         for row in self.conn.execute("SELECT address FROM token_network"):
