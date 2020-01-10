@@ -360,3 +360,62 @@ def test_logging_processor():
     assert (  # pylint: disable=unsubscriptable-object
         message_log["message"]["type_name"] == "PFSFeeUpdate"
     )
+
+
+def test_regression_693(pathfinding_service_mock):
+    tn1 = TokenNetworkAddress(to_canonical_address("0x37f8847cd56357443A9FdD0BdfB86d61571742b1"))
+    tn2 = TokenNetworkAddress(to_canonical_address("0x0755CD04635AfC71B511bf5aDf517346511322F4"))
+
+    network_event = ReceiveTokenNetworkCreatedEvent(
+        token_address=to_canonical_address("0xE6523FcaB2705311aDe69E07a56db88b059F0AEf"),
+        token_network_address=tn1,
+        block_number=BlockNumber(1554673),
+    )
+    network_event2 = ReceiveTokenNetworkCreatedEvent(
+        token_address=to_canonical_address("0xf9BA8aDF7F7024D7de8eB37b4c981CFFe3C88Ea7"),
+        token_network_address=tn2,
+        block_number=BlockNumber(11688680),
+    )
+    pathfinding_service_mock.handle_event(network_event)
+    pathfinding_service_mock.handle_event(network_event2)
+
+    p1 = to_canonical_address("0xa9FA88442c404716623155d150c526D8F1ae82E5")
+    p2 = to_canonical_address("0x5c11cc525590d9Ff8C7E4Af1704A39Df6c3884b5")
+    id1 = ChannelID(1)
+
+    channel_event = ReceiveChannelOpenedEvent(
+        token_network_address=tn1,
+        channel_identifier=id1,
+        participant1=p1,
+        participant2=p2,
+        settle_timeout=BlockTimeout(500),
+        block_number=BlockNumber(1774707),
+    )
+
+    pathfinding_service_mock.handle_event(channel_event)
+    assert len(pathfinding_service_mock.token_networks) == 3
+    assert len(pathfinding_service_mock.token_networks[tn1].channel_id_to_addresses) == 1
+    assert len(pathfinding_service_mock.token_networks[tn2].channel_id_to_addresses) == 0
+
+    assert (
+        pathfinding_service_mock.database.get_channel(token_network_address=tn1, channel_id=id1)
+        is not None
+    )
+
+    channel_event2 = ReceiveChannelOpenedEvent(
+        token_network_address=tn2,
+        channel_identifier=ChannelID(1),
+        participant1=p1,
+        participant2=p2,
+        settle_timeout=BlockTimeout(500),
+        block_number=BlockNumber(1770589),
+    )
+    pathfinding_service_mock.handle_event(channel_event2)
+    assert len(pathfinding_service_mock.token_networks) == 3
+    assert len(pathfinding_service_mock.token_networks[tn1].channel_id_to_addresses) == 1
+    assert len(pathfinding_service_mock.token_networks[tn2].channel_id_to_addresses) == 1
+
+    assert (
+        pathfinding_service_mock.database.get_channel(token_network_address=tn1, channel_id=id1)
+        is not None
+    )
