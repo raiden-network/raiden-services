@@ -267,11 +267,17 @@ class TokenNetwork:
 
         Corresponds to the ChannelClosed event."""
 
-        # we need to unregister the channel_id here
-        participant1, participant2 = self.channel_id_to_addresses.pop(channel_identifier)
+        try:
+            # we need to unregister the channel_id here
+            participant1, participant2 = self.channel_id_to_addresses.pop(channel_identifier)
 
-        self.G.remove_edge(participant1, participant2)
-        self.G.remove_edge(participant2, participant1)
+            self.G.remove_edge(participant1, participant2)
+            self.G.remove_edge(participant2, participant1)
+        except KeyError:
+            log.error(
+                "Received ChannelClosed event for unknown channel",
+                channel_identifier=channel_identifier,
+            )
 
     def get_channel_views_for_partner(
         self, updating_participant: Address, other_participant: Address
