@@ -241,11 +241,6 @@ def test_channels(pathfinding_service_mock):
         channel2.channel_id,
     ]
 
-    # Test `get_channel`
-    assert database.get_channel(channel1.token_network_address, channel1.channel_id) == channel1
-    assert database.get_channel(channel2.token_network_address, channel2.channel_id) == channel2
-    assert database.get_channel(channel2.token_network_address, ChannelID(1234)) is None
-
     # Test `delete_channel`
     database.delete_channel(channel1.token_network_address, channel1.channel_id)
     assert [chan.channel_id for chan in database.get_channels()] == [channel2.channel_id]
