@@ -153,7 +153,7 @@ class PathfindingService(gevent.Greenlet):
 
             # Sleep, then collect errors from greenlets
             gevent.sleep(self._poll_interval)
-            gevent.joinall(set([self.matrix_listener]), timeout=0, raise_error=True)
+            gevent.joinall({self.matrix_listener}, timeout=0, raise_error=True)
 
     def _process_new_blocks(self, to_block: BlockNumber) -> None:
         start = time.time()
@@ -217,7 +217,7 @@ class PathfindingService(gevent.Greenlet):
             log.debug("Unhandled event", evt=event)
 
     def handle_token_network_created(self, event: ReceiveTokenNetworkCreatedEvent) -> None:
-        network_address = TokenNetworkAddress(event.token_network_address)
+        network_address = event.token_network_address
         if not self.follows_token_network(network_address):
             log.info("Found new token network", event_=event)
 
