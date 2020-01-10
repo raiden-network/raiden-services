@@ -10,6 +10,7 @@ from monitoring_service.database import Database
 from monitoring_service.events import ActionMonitoringTriggeredEvent, ScheduledEvent
 from monitoring_service.states import Channel, OnChainUpdateStatus
 from raiden.constants import UINT256_MAX
+from raiden.tests.utils.factories import make_token_network_address
 from raiden.utils.formatting import to_checksum_address
 from raiden.utils.typing import (
     Address,
@@ -114,6 +115,35 @@ def test_save_and_load_channel(ms_database: Database):
             token_network_address=channel.token_network_address, channel_id=channel.identifier
         )
         assert loaded_channel == channel
+
+
+def test_saveing_multiple_channel(ms_database: Database):
+    ms_database.conn.execute(
+        "INSERT INTO token_network (address) VALUES (?)",
+        [to_checksum_address(DEFAULT_TOKEN_NETWORK_ADDRESS)],
+    )
+    tn_address2 = make_token_network_address()
+    ms_database.conn.execute(
+        "INSERT INTO token_network (address) VALUES (?)", [to_checksum_address(tn_address2)],
+    )
+
+    channel1 = create_channel()
+    channel2 = create_channel()
+    channel2.token_network_address = tn_address2
+
+    ms_database.upsert_channel(channel1)
+    loaded_channel1 = ms_database.get_channel(
+        token_network_address=channel1.token_network_address, channel_id=channel1.identifier
+    )
+    assert loaded_channel1 == channel1
+    assert ms_database.channel_count() == 1
+
+    ms_database.upsert_channel(channel2)
+    loaded_channel2 = ms_database.get_channel(
+        token_network_address=channel2.token_network_address, channel_id=channel2.identifier
+    )
+    assert loaded_channel2 == channel2
+    assert ms_database.channel_count() == 2
 
 
 def test_purge_old_monitor_requests(
