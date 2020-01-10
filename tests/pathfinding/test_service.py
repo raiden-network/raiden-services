@@ -236,7 +236,6 @@ def test_token_channel_closed(pathfinding_service_mock, token_network_model):
 
     # Test non-existent channel
     close_event.channel_identifier = ChannelID(123)
-    print(close_event)
 
     pathfinding_service_mock.handle_event(close_event)
     assert len(pathfinding_service_mock.token_networks) == 1
