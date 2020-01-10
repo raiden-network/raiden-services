@@ -34,7 +34,7 @@ CREATE TABLE channel (
     -- Lexicographical sorting is the same as sorting by value once we remove
     -- the EIP-55 checksumming
     CHECK (lower(participant1) < lower(participant2)),
-    UNIQUE (participant1, participant2),
+    UNIQUE (token_network_address, participant1, participant2),
     FOREIGN KEY (token_network_address)
         REFERENCES token_network(address)
 );

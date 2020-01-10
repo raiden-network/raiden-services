@@ -8,7 +8,11 @@ from pathfinding_service.model.channel import Channel
 from pathfinding_service.model.feedback import FeedbackToken
 from raiden.constants import EMPTY_SIGNATURE
 from raiden.messages.path_finding_service import PFSCapacityUpdate, PFSFeeUpdate
-from raiden.tests.utils.factories import make_address, make_privkey_address
+from raiden.tests.utils.factories import (
+    make_address,
+    make_privkey_address,
+    make_token_network_address,
+)
 from raiden.transfer.identifiers import CanonicalIdentifier
 from raiden.transfer.mediated_transfer.mediation_fee import FeeScheduleState
 from raiden.utils.formatting import to_checksum_address
@@ -207,8 +211,7 @@ def test_waiting_messages(pathfinding_service_mock):
 
 def test_channels(pathfinding_service_mock):
     # Participants need to be ordered
-    parts = [make_address(), make_address(), make_address()]
-    parts.sort()
+    parts = sorted([make_address(), make_address(), make_address()])
 
     token_network_address = TokenNetworkAddress(b"1" * 20)
 
@@ -247,3 +250,43 @@ def test_channels(pathfinding_service_mock):
 
     assert not database.delete_channel(channel1.token_network_address, channel1.channel_id)
     assert [chan.channel_id for chan in database.get_channels()] == [channel2.channel_id]
+
+
+def test_channel_constraints(pathfinding_service_mock):
+    """ Regression test for https://github.com/raiden-network/raiden-services/issues/693"""
+
+    # Participants need to be ordered
+    parts = sorted([make_address(), make_address()])
+
+    token_network_address1 = make_token_network_address()
+    token_network_address2 = make_token_network_address()
+
+    # register token network internally
+    database = pathfinding_service_mock.database
+    database.upsert_token_network(token_network_address1)
+    database.upsert_token_network(token_network_address2)
+
+    channel1 = Channel(
+        token_network_address=token_network_address1,
+        channel_id=ChannelID(1),
+        participant1=parts[0],
+        participant2=parts[1],
+        settle_timeout=BlockTimeout(100),
+    )
+    channel2 = Channel(
+        token_network_address=token_network_address2,
+        channel_id=ChannelID(1),
+        participant1=parts[0],
+        participant2=parts[1],
+        settle_timeout=BlockTimeout(100),
+    )
+
+    # Test `upsert_channel` and `get_channels`
+    database.upsert_channel(channel1)
+    assert [chan.channel_id for chan in database.get_channels()] == [channel1.channel_id]
+
+    database.upsert_channel(channel2)
+    assert [chan.channel_id for chan in database.get_channels()] == [
+        channel1.channel_id,
+        channel2.channel_id,
+    ]
