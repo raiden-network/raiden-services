@@ -1,6 +1,6 @@
 import sys
 from datetime import datetime, timedelta
-from typing import Any, Callable, Dict, Iterable, List, Optional
+from typing import Callable, Dict, Iterable, List, Optional
 from urllib.parse import urlparse
 
 import gevent
@@ -18,7 +18,7 @@ from monitoring_service.constants import (
 from raiden.constants import Environment
 from raiden.exceptions import SerializationError, TransportError
 from raiden.messages.abstract import Message, SignedMessage
-from raiden.network.transport.matrix.client import Room
+from raiden.network.transport.matrix.client import MatrixMessage, MatrixSyncMessages, Room
 from raiden.network.transport.matrix.utils import (
     AddressReachability,
     DisplayNameCache,
@@ -149,6 +149,7 @@ class MatrixListener(gevent.Greenlet):
             )
 
         self._client = make_client(
+            handle_messages_callback=self._handle_matrix_sync,
             servers=self.available_servers,
             http_pool_maxsize=4,
             http_retry_timeout=40,
@@ -179,13 +180,13 @@ class MatrixListener(gevent.Greenlet):
         self._start_client()
 
         self._client.start_listener_thread()
-        assert self._client.sync_thread
+        assert self._client.sync_worker
         self._client.synced.wait()
 
         # Signal that startup has finished
         self.startup_finished.set()
 
-        self._client.sync_thread.get()
+        self._client.sync_worker.get()
 
     def stop(self) -> None:
         if self._user_manager:
@@ -210,8 +211,6 @@ class MatrixListener(gevent.Greenlet):
             )
         except (MatrixRequestError, TransportError):
             raise ConnectionError("Could not join monitoring broadcasting room.")
-
-        self._broadcast_room.add_listener(self._handle_message, "m.room.message")
 
     def follow_address_presence(self, address: Address, refresh: bool = False) -> None:
         if self._user_manager:
@@ -240,13 +239,32 @@ class MatrixListener(gevent.Greenlet):
 
         return user
 
-    def _handle_message(self, room: Any, event: dict) -> bool:
-        """ Handle text messages sent to listening rooms """
-        if event["type"] != "m.room.message" or event["content"]["msgtype"] != "m.text":
-            # Ignore non-messages and non-text messages
-            return False
+    def _handle_matrix_sync(self, messages: MatrixSyncMessages) -> bool:
+        all_messages: List[Message] = list()
+        for room, room_messages in messages:
+            for text in room_messages:
+                all_messages.extend(self._handle_message(room, text))
 
-        sender_id = event["sender"]
+        log.debug("Incoming messages", messages=all_messages)
+
+        for message in all_messages:
+            self.message_received_callback(message)
+
+        return True
+
+    def _handle_message(self, room: Room, message: MatrixMessage) -> List[SignedMessage]:
+        """ Handle a single Matrix message.
+
+        The matrix message is expected to be a NDJSON, and each entry should be
+        a valid JSON encoded Raiden message.
+        """
+        is_valid_type = (
+            message["type"] == "m.room.message" and message["content"]["msgtype"] == "m.text"
+        )
+        if not is_valid_type:
+            return []
+
+        sender_id = message["sender"]
         user = self._get_user_from_user_id(sender_id)
         self._displayname_cache.warm_users([user])
         peer_address = validate_userid_signature(user)
@@ -257,9 +275,9 @@ class MatrixListener(gevent.Greenlet):
                 peer_user=user.user_id,
                 room=room,
             )
-            return False
+            return []
 
-        data = event["content"]["body"]
+        data = message["content"]["body"]
         if not isinstance(data, str):
             log.warning(
                 "Received message body not a string",
@@ -267,16 +285,12 @@ class MatrixListener(gevent.Greenlet):
                 peer_address=to_checksum_address(peer_address),
                 room=room,
             )
-            return False
+            return []
 
         messages = deserialize_messages(
             data=data, peer_address=peer_address, rate_limiter=self._rate_limiter
         )
         if not messages:
-            return False
+            return []
 
-        for message in messages:
-            assert message.sender, "Message has no sender"
-            self.message_received_callback(message)
-
-        return True
+        return messages
