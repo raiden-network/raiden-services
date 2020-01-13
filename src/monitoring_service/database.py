@@ -22,6 +22,7 @@ from raiden.utils.typing import (
     BlockNumber,
     ChainID,
     ChannelID,
+    MonitoringServiceAddress,
     TokenNetworkAddress,
     TransactionHash,
 )
@@ -270,7 +271,7 @@ class Database(SharedDatabase):
         self,
         filename: str,
         chain_id: ChainID,
-        msc_address: Address,
+        msc_address: MonitoringServiceAddress,
         registry_address: Address,
         receiver: Address,
         sync_start_block: BlockNumber = BlockNumber(0),
@@ -278,7 +279,7 @@ class Database(SharedDatabase):
         super().__init__(filename, allow_create=True)
         self._setup(
             chain_id=chain_id,
-            monitor_contract_address=msc_address,
+            monitor_contract_address=Address(msc_address),
             token_network_registry_address=registry_address,
             receiver=receiver,
             sync_start_block=sync_start_block,

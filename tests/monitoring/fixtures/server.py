@@ -11,7 +11,7 @@ from web3 import Web3
 
 from monitoring_service.database import Database
 from monitoring_service.service import MonitoringService
-from raiden.utils.typing import Address, ChainID
+from raiden.utils.typing import Address, ChainID, MonitoringServiceAddress
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
     CONTRACT_SERVICE_REGISTRY,
@@ -83,7 +83,7 @@ def monitoring_service(  # pylint: disable=too-many-arguments
 
 
 @pytest.fixture
-def request_collector(ms_address, ms_database, get_private_key):
+def request_collector(ms_address: MonitoringServiceAddress, ms_database, get_private_key):
     with patch("request_collector.server.MatrixListener"):
         rc = RequestCollector(private_key=get_private_key(ms_address), state_db=ms_database)
         rc.start()
