@@ -1,5 +1,18 @@
 # Changelog
 
+### 0.6.0 (2020-01-14)
+
+* PFS: Fix DB schema to not override channels (https://github.com/raiden-network/raiden-services/issues/693)
+* PFS: Fix deletion of channels (https://github.com/raiden-network/raiden-services/pull/695)
+* PFS: Add UDC info to `/info` endpoint (https://github.com/raiden-network/raiden-services/pull/689)
+* PFS: Forbid concurrent database usage (https://github.com/raiden-network/raiden-services/pull/681)
+* PFS: Provide specific error message for common errors (https://github.com/raiden-network/raiden-services/pull/674)
+* PFS: Wait for first matrix sync before starting PFS API (https://github.com/raiden-network/raiden-services/pull/659)
+* PFS: Rework path validation (https://github.com/raiden-network/raiden-services/pull/666)
+* PFS: Improve handling of `PFSFeeUpdate` messages (https://github.com/raiden-network/raiden-services/pull/661)
+* MS/PFS: Add profiling options to services (https://github.com/raiden-network/raiden-services/pull/653)
+* MS/PFS: Don't replace gevent's error handler (https://github.com/raiden-network/raiden-services/pull/652)
+
 ### 0.5.0 (2019-11-25)
 
 * Properly handle 'ValueError: x_list must be in strictly ascending order!' (https://github.com/raiden-network/raiden-services/issues/636)
