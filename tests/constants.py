@@ -1,5 +1,5 @@
-from raiden.utils.typing import Address
+from raiden.utils.typing import MonitoringServiceAddress
 
 KEYSTORE_FILE_NAME = "keystore.txt"
 KEYSTORE_PASSWORD = "password"
-TEST_MSC_ADDRESS = Address(b"9" * 20)
+TEST_MSC_ADDRESS = MonitoringServiceAddress(b"9" * 20)

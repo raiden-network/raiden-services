@@ -21,6 +21,7 @@ from raiden.utils.typing import (
     Address,
     ChainID,
     ChannelID,
+    MonitoringServiceAddress,
     Nonce,
     TokenAmount,
     TokenNetworkAddress,
@@ -55,7 +56,7 @@ def request_monitoring_message(token_network, get_accounts, get_private_key) -> 
     return balance_proof_c2.get_request_monitoring(
         privkey=get_private_key(c1),
         reward_amount=TokenAmount(1),
-        monitoring_service_contract_address=Address(bytes([11] * 20)),
+        monitoring_service_contract_address=MonitoringServiceAddress(bytes([11] * 20)),
     )
 
 

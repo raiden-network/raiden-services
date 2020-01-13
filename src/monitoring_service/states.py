@@ -18,6 +18,7 @@ from raiden.utils.typing import (
     BlockNumber,
     ChainID,
     ChannelID,
+    MonitoringServiceAddress,
     Nonce,
     Signature,
     TokenAmount,
@@ -124,7 +125,7 @@ class HashedBalanceProof:
         self,
         privkey: str,
         reward_amount: TokenAmount,
-        monitoring_service_contract_address: Address,
+        monitoring_service_contract_address: MonitoringServiceAddress,
     ) -> RequestMonitoring:
         """Returns raiden client's RequestMonitoring object"""
         non_closing_signer = LocalSigner(decode_hex(privkey))
@@ -148,7 +149,7 @@ class HashedBalanceProof:
         return request_monitoring
 
     def get_monitor_request(
-        self, privkey: str, reward_amount: TokenAmount, msc_address: Address
+        self, privkey: str, reward_amount: TokenAmount, msc_address: MonitoringServiceAddress
     ) -> "MonitorRequest":
         """Get monitor request message for a given balance proof."""
         return UnsignedMonitorRequest(
@@ -194,7 +195,7 @@ class UnsignedMonitorRequest:
     chain_id: ChainID
 
     # reward info
-    msc_address: Address
+    msc_address: MonitoringServiceAddress
     reward_amount: TokenAmount
     non_closing_participant: Address
 
