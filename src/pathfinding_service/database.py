@@ -1,7 +1,7 @@
 import json
 import os
 from datetime import datetime
-from typing import Iterator, List, Optional, Tuple
+from typing import Dict, Iterator, List, Optional, Tuple
 from uuid import UUID
 
 import structlog
@@ -212,13 +212,18 @@ class PFSDatabase(BaseDatabase):
                 token_network_address=TokenNetworkAddress(to_canonical_address(row[0]))
             )
 
-    def prepare_feedback(self, token: FeedbackToken, route: List[Address]) -> None:
+    def prepare_feedback(
+        self, token: FeedbackToken, route: List[Address], estimated_fee: int
+    ) -> None:
         hexed_route = [to_checksum_address(e) for e in route]
         token_dict = dict(
             token_id=token.uuid.hex,
             creation_time=token.creation_time,
             token_network_address=to_checksum_address(token.token_network_address),
             route=json.dumps(hexed_route),
+            estimated_fee=estimated_fee,
+            source_address=route[0],
+            target_address=route[-1],
         )
         self.insert("feedback", token_dict)
 
@@ -247,6 +252,35 @@ class PFSDatabase(BaseDatabase):
         ).rowcount
 
         return updated_rows
+
+    def get_feedback_routes(
+        self, token_network_address: str, source_address: str, target_address: str = None
+    ) -> Iterator[Dict]:
+        filters = {
+            "token_network_address": to_checksum_address(token_network_address),
+            "source_address": to_checksum_address(source_address),
+        }
+
+        where_clause = ""
+        if target_address:
+            where_clause = " AND target_address = :target_address"
+            filters["target_address"] = to_checksum_address(target_address)
+
+        sql = f"""
+            SELECT
+                source_address, target_address, route, estimated_fee
+            FROM
+                feedback
+            WHERE
+                token_network_address = :token_network_address AND
+                source_address = :source_address
+                {where_clause}
+        """
+
+        for row in self.conn.execute(sql, filters):
+            route = dict(zip(row.keys(), row))
+            route["route"] = json.loads(route["route"])
+            yield route
 
     def get_feedback_token(
         self, token_id: UUID, token_network_address: TokenNetworkAddress, route: List[Address],
