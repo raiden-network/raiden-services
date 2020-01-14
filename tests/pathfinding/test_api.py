@@ -48,7 +48,8 @@ def test_get_paths_via_debug_endpoint_with_debug_disabled(
 def test_get_paths_via_debug_endpoint(
     api_url: str, addresses: List[Address], token_network_model: TokenNetwork
 ):
-    # `last_failed_requests` is a module variable, so it might have entries from tests that ran earlier.
+    # `last_failed_requests` is a module variable, so it might have entries
+    # from tests that ran earlier.
     last_failed_requests.clear()
     hex_addrs = [to_checksum_address(addr) for addr in addresses]
     token_network_address = to_checksum_address(token_network_model.address)
@@ -497,7 +498,7 @@ def test_feedback(api_sut: ServiceApi, api_url: str, token_network_model: TokenN
     database = api_sut.pathfinding_service.database
     default_path_hex = ["0x" + "1" * 40, "0x" + "2" * 40, "0x" + "3" * 40]
     default_path = [to_canonical_address(e) for e in default_path_hex]
-    estimated_fee = 0
+    estimated_fee = TokenAmount(0)
 
     def make_request(token_id: str = None, success: bool = True, path: List[str] = None):
         url = api_url + f"/{to_checksum_address(token_network_model.address)}/feedback"
@@ -550,7 +551,7 @@ def test_stats_endpoint(
     database = api_sut_with_debug.pathfinding_service.database
     default_path = [Address(b"1" * 20), Address(b"2" * 20), Address(b"3" * 20)]
     feedback_token = FeedbackToken(token_network_model.address)
-    estimated_fee = 0
+    estimated_fee = TokenAmount(0)
 
     def check_response(num_all: int, num_only_feedback: int, num_only_success: int) -> None:
         url = api_url + f"/_debug/stats"

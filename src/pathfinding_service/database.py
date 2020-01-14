@@ -213,7 +213,7 @@ class PFSDatabase(BaseDatabase):
             )
 
     def prepare_feedback(
-        self, token: FeedbackToken, route: List[Address], estimated_fee: int
+        self, token: FeedbackToken, route: List[Address], estimated_fee: TokenAmount
     ) -> None:
         hexed_route = [to_checksum_address(e) for e in route]
         token_dict = dict(
@@ -221,7 +221,7 @@ class PFSDatabase(BaseDatabase):
             creation_time=token.creation_time,
             token_network_address=to_checksum_address(token.token_network_address),
             route=json.dumps(hexed_route),
-            estimated_fee=estimated_fee,
+            estimated_fee=hex256(estimated_fee),
             source_address=route[0],
             target_address=route[-1],
         )
@@ -254,7 +254,10 @@ class PFSDatabase(BaseDatabase):
         return updated_rows
 
     def get_feedback_routes(
-        self, token_network_address: str, source_address: str, target_address: str = None
+        self,
+        token_network_address: TokenNetworkAddress,
+        source_address: Address,
+        target_address: Address = None,
     ) -> Iterator[Dict]:
         filters = {
             "token_network_address": to_checksum_address(token_network_address),
