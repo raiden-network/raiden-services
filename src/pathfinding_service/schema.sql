@@ -65,7 +65,10 @@ CREATE TABLE feedback (
     token_id CHAR(32) NOT NULL,
     creation_time TIMESTAMP NOT NULL,
     token_network_address CHAR(42) NOT NULL,
+    source_address CHAR(42) NOT NULL,
+    target_address CHAR(42) NOT NULL,
     route TEXT NOT NULL,
+    estimated_fee INTEGER NOT NULL,
     successful BOOLEAN CHECK (successful IN (0,1)),
     feedback_time TIMESTAMP,
     PRIMARY KEY (token_id, token_network_address, route)

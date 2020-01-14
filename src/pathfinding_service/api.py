@@ -45,7 +45,7 @@ from raiden_libs.marshmallow import ChecksumAddress, HexedBytes
 log = structlog.get_logger(__name__)
 T = TypeVar("T")
 # list stores max 200 last requests
-last_requests: collections.deque = collections.deque([], maxlen=200)
+last_failed_requests: collections.deque = collections.deque([], maxlen=200)
 
 
 class ApiWithErrorHandler(Api):
@@ -137,7 +137,7 @@ class PathsResource(PathfinderResource):
         if error:
             # this is for assertion via the scenario player
             if self.debug_mode:
-                last_requests.append(
+                last_failed_requests.append(
                     dict(
                         token_network_address=to_checksum_address(token_network_address),
                         source=to_checksum_address(path_req.from_),
@@ -170,7 +170,7 @@ class PathsResource(PathfinderResource):
         # this is for assertion via the scenario player
         if len(paths) == 0:
             if self.debug_mode:
-                last_requests.append(
+                last_failed_requests.append(
                     dict(
                         token_network_address=to_checksum_address(token_network_address),
                         source=to_checksum_address(path_req.from_),
@@ -182,17 +182,6 @@ class PathsResource(PathfinderResource):
                 from_=to_checksum_address(path_req.from_),
                 to=to_checksum_address(path_req.to),
                 value=path_req.value,
-            )
-
-        # this is for assertion via the scenario player
-        if self.debug_mode:
-            last_requests.append(
-                dict(
-                    token_network_address=to_checksum_address(token_network_address),
-                    source=to_checksum_address(path_req.from_),
-                    target=to_checksum_address(path_req.to),
-                    routes=paths,
-                )
             )
 
         # Create a feedback token and store it to the DB
@@ -214,7 +203,9 @@ def create_and_store_feedback_tokens(
 
     # TODO: use executemany here
     for route in routes:
-        pathfinding_service.database.prepare_feedback(token=feedback_token, route=route["path"])
+        pathfinding_service.database.prepare_feedback(
+            token=feedback_token, route=route["path"], estimated_fee=route["estimated_fee"]
+        )
 
     return feedback_token
 
@@ -416,7 +407,7 @@ class DebugPathResource(PathfinderResource):
     ) -> Tuple[dict, int]:
         request_count = 0
         responses = []
-        for req in last_requests:
+        for req in last_failed_requests:
             log.debug("Last Requests Values:", req=req)
             matches_params = is_same_address(
                 token_network_address, req["token_network_address"]
@@ -429,6 +420,22 @@ class DebugPathResource(PathfinderResource):
                 responses.append(
                     dict(source=req["source"], target=req["target"], routes=req["routes"])
                 )
+
+        feedback_routes = list(
+            self.pathfinding_service.database.get_feedback_routes(
+                token_network_address, source_address, target_address
+            )
+        )
+
+        grouped_routes: Dict[Tuple[str, str], List[Dict]] = collections.defaultdict(list)
+        for route in feedback_routes:
+            grouped_routes[(route["source_address"], route["target_address"])].append(
+                {"path": route["route"], "estimated_fee": route["estimated_fee"]}
+            )
+
+        for from_to, routes in grouped_routes.items():
+            responses.append({"source": from_to[0], "target": from_to[1], "routes": routes})
+        request_count += len(feedback_routes)
 
         return dict(request_count=request_count, responses=responses), 200
 

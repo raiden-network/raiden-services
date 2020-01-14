@@ -15,7 +15,7 @@ from eth_utils import (
 from tests.pathfinding.test_database import db_has_feedback_for
 
 import pathfinding_service.exceptions as exceptions
-from pathfinding_service.api import DEFAULT_MAX_PATHS, ServiceApi, last_requests
+from pathfinding_service.api import DEFAULT_MAX_PATHS, ServiceApi, last_failed_requests
 from pathfinding_service.model import IOU, TokenNetwork
 from pathfinding_service.model.feedback import FeedbackToken
 from raiden.utils.signer import LocalSigner
@@ -48,8 +48,8 @@ def test_get_paths_via_debug_endpoint_with_debug_disabled(
 def test_get_paths_via_debug_endpoint(
     api_url: str, addresses: List[Address], token_network_model: TokenNetwork
 ):
-    # `last_requests` is a module variable, so it might have entries from tests that ran earlier.
-    last_requests.clear()
+    # `last_failed_requests` is a module variable, so it might have entries from tests that ran earlier.
+    last_failed_requests.clear()
     hex_addrs = [to_checksum_address(addr) for addr in addresses]
     token_network_address = to_checksum_address(token_network_model.address)
 
@@ -115,8 +115,9 @@ def test_get_paths_via_debug_endpoint(
 def test_get_paths_via_debug_endpoint_empty_routes(
     api_url: str, addresses: List[Address], token_network_model: TokenNetwork
 ):
-    # `last_requests` is a module variable, so it might have entries from tests that ran earlier.
-    last_requests.clear()
+    # `last_failed_requests` is a module variable, so it might have entries
+    # from tests that ran earlier.
+    last_failed_requests.clear()
     hex_addrs = [to_checksum_address(addr) for addr in addresses]
     token_network_address = to_checksum_address(token_network_model.address)
 
@@ -496,6 +497,7 @@ def test_feedback(api_sut: ServiceApi, api_url: str, token_network_model: TokenN
     database = api_sut.pathfinding_service.database
     default_path_hex = ["0x" + "1" * 40, "0x" + "2" * 40, "0x" + "3" * 40]
     default_path = [to_canonical_address(e) for e in default_path_hex]
+    estimated_fee = 0
 
     def make_request(token_id: str = None, success: bool = True, path: List[str] = None):
         url = api_url + f"/{to_checksum_address(token_network_model.address)}/feedback"
@@ -527,7 +529,7 @@ def test_feedback(api_sut: ServiceApi, api_url: str, token_network_model: TokenN
         creation_time=datetime.utcnow() - timedelta(hours=1),
         token_network_address=token_network_model.address,
     )
-    database.prepare_feedback(old_token, default_path)
+    database.prepare_feedback(old_token, default_path, estimated_fee)
 
     response = make_request(token_id=old_token.uuid.hex)
     assert response.status_code == 400
@@ -535,7 +537,7 @@ def test_feedback(api_sut: ServiceApi, api_url: str, token_network_model: TokenN
 
     # Test valid token
     token = FeedbackToken(token_network_address=token_network_model.address)
-    database.prepare_feedback(token, default_path)
+    database.prepare_feedback(token, default_path, estimated_fee)
 
     response = make_request(token_id=token.uuid.hex)
     assert response.status_code == 200
@@ -548,6 +550,7 @@ def test_stats_endpoint(
     database = api_sut_with_debug.pathfinding_service.database
     default_path = [Address(b"1" * 20), Address(b"2" * 20), Address(b"3" * 20)]
     feedback_token = FeedbackToken(token_network_model.address)
+    estimated_fee = 0
 
     def check_response(num_all: int, num_only_feedback: int, num_only_success: int) -> None:
         url = api_url + f"/_debug/stats"
@@ -560,7 +563,7 @@ def test_stats_endpoint(
         assert data["total_feedback_received"] == num_only_feedback
         assert data["total_successful_routes"] == num_only_success
 
-    database.prepare_feedback(feedback_token, default_path)
+    database.prepare_feedback(feedback_token, default_path, estimated_fee)
     check_response(1, 0, 0)
 
     database.update_feedback(feedback_token, default_path, False)
@@ -569,7 +572,7 @@ def test_stats_endpoint(
     default_path2 = default_path[1:]
     feedback_token2 = FeedbackToken(token_network_model.address)
 
-    database.prepare_feedback(feedback_token2, default_path2)
+    database.prepare_feedback(feedback_token2, default_path2, estimated_fee)
     check_response(2, 1, 0)
 
     database.update_feedback(feedback_token2, default_path2, True)

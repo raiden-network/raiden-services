@@ -52,10 +52,11 @@ def db_has_feedback_for(database: PFSDatabase, token: FeedbackToken, route: List
 def test_insert_feedback_token(pathfinding_service_mock):
     token_network_address = TokenNetworkAddress(b"1" * 20)
     route = [Address(b"2" * 20), Address(b"3" * 20)]
+    estimated_fee = 0
 
     token = FeedbackToken(token_network_address=token_network_address)
     database = pathfinding_service_mock.database
-    database.prepare_feedback(token=token, route=route)
+    database.prepare_feedback(token=token, route=route, estimated_fee=estimated_fee)
 
     # Test round-trip
     stored = database.get_feedback_token(
@@ -94,6 +95,7 @@ def test_feedback(pathfinding_service_mock):
     token_network_address = TokenNetworkAddress(b"1" * 20)
     route = [Address(b"2" * 20), Address(b"3" * 20)]
     other_route = [Address(b"2" * 20), Address(b"4" * 20)]
+    estimated_fee = 0
 
     token = FeedbackToken(token_network_address=token_network_address)
     other_token = FeedbackToken(token_network_address=token_network_address)
@@ -103,7 +105,7 @@ def test_feedback(pathfinding_service_mock):
     assert not db_has_feedback_for(database=database, token=token, route=other_route)
     assert not db_has_feedback_for(database=database, token=other_token, route=route)
 
-    database.prepare_feedback(token=token, route=route)
+    database.prepare_feedback(token=token, route=route, estimated_fee=estimated_fee)
     assert not db_has_feedback_for(database=database, token=token, route=route)
     assert not db_has_feedback_for(database=database, token=other_token, route=route)
     assert not db_has_feedback_for(database=database, token=token, route=other_route)
@@ -123,8 +125,9 @@ def test_feedback_stats(pathfinding_service_mock):
     default_path = [b"1" * 20, b"2" * 20, b"3" * 20]
     feedback_token = FeedbackToken(token_network_address)
     database = pathfinding_service_mock.database
+    estimated_fee = 0
 
-    database.prepare_feedback(feedback_token, default_path)
+    database.prepare_feedback(feedback_token, default_path, estimated_fee)
     assert database.get_num_routes_feedback() == 1
     assert database.get_num_routes_feedback(only_with_feedback=True) == 0
     assert database.get_num_routes_feedback(only_successful=True) == 0
@@ -137,7 +140,7 @@ def test_feedback_stats(pathfinding_service_mock):
     default_path2 = default_path[1:]
     feedback_token2 = FeedbackToken(token_network_address)
 
-    database.prepare_feedback(feedback_token2, default_path2)
+    database.prepare_feedback(feedback_token2, default_path2, estimated_fee)
     assert database.get_num_routes_feedback() == 2
     assert database.get_num_routes_feedback(only_with_feedback=True) == 1
     assert database.get_num_routes_feedback(only_successful=True) == 0
