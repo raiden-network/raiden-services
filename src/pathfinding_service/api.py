@@ -421,9 +421,15 @@ class DebugPathResource(PathfinderResource):
                     dict(source=req["source"], target=req["target"], routes=req["routes"])
                 )
 
+        decoded_target_address: Optional[Address] = None
+        if target_address:
+            decoded_target_address = Address(to_canonical_address(target_address))
+
         feedback_routes = list(
             self.pathfinding_service.database.get_feedback_routes(
-                token_network_address, source_address, target_address
+                TokenNetworkAddress(to_canonical_address(token_network_address)),
+                Address(to_canonical_address(source_address)),
+                decoded_target_address,
             )
         )
 
