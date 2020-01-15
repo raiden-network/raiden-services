@@ -81,16 +81,16 @@ class TokenNetworkForTests(TokenNetwork):
         )
 
     def estimate_fee(self, initator: int, target: int, value=PA(100), max_paths=1):
-        result = self.get_paths(
+        paths = self.get_paths(
             source=a(initator),
             target=a(target),
             value=value,
             max_paths=max_paths,
             address_to_reachability=self.address_to_reachability,
         )
-        if not result:
+        if not paths:
             return None
-        return result[0]["estimated_fee"]
+        return paths[0].estimated_fee
 
 
 def test_fees_in_balanced_routing():  # pylint: disable=too-many-statements

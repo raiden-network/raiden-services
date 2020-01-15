@@ -20,6 +20,7 @@ from raiden.utils.typing import (
     BlockNumber,
     ChainID,
     ChannelID,
+    FeeAmount,
     TokenAmount,
     TokenNetworkAddress,
 )
@@ -213,7 +214,7 @@ class PFSDatabase(BaseDatabase):
             )
 
     def prepare_feedback(
-        self, token: FeedbackToken, route: List[Address], estimated_fee: TokenAmount
+        self, token: FeedbackToken, route: List[Address], estimated_fee: FeeAmount
     ) -> None:
         hexed_route = [to_checksum_address(e) for e in route]
         token_dict = dict(
@@ -222,8 +223,8 @@ class PFSDatabase(BaseDatabase):
             token_network_address=to_checksum_address(token.token_network_address),
             route=json.dumps(hexed_route),
             estimated_fee=hex256(estimated_fee),
-            source_address=route[0],
-            target_address=route[-1],
+            source_address=hexed_route[0],
+            target_address=hexed_route[-1],
         )
         self.insert("feedback", token_dict)
 

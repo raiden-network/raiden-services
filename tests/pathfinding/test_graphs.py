@@ -4,7 +4,7 @@ from copy import deepcopy
 from typing import Dict, List
 
 import pytest
-from eth_utils import decode_hex, to_canonical_address
+from eth_utils import to_canonical_address
 
 from pathfinding_service.constants import DIVERSITY_PEN_DEFAULT
 from pathfinding_service.model import ChannelView, TokenNetwork
@@ -127,7 +127,7 @@ def test_routing_simple(
         address_to_reachability=address_to_reachability,
     )
     assert len(paths) == 1
-    assert paths[0] == {
+    assert paths[0].to_dict() == {
         "path": [hex_addrs[0], hex_addrs[1], hex_addrs[4], hex_addrs[3]],
         "estimated_fee": 0,
     }
@@ -158,7 +158,7 @@ def test_capacity_check(
         max_paths=1,
         address_to_reachability=address_to_reachability,
     )
-    index_paths = [addresses_to_indexes(p["path"], addresses) for p in paths]
+    index_paths = [addresses_to_indexes(p.nodes, addresses) for p in paths]
     assert index_paths == [[4, 1, 0]]
 
     # New let's add mediation fees to the channel 0->1.
@@ -176,7 +176,7 @@ def test_capacity_check(
         address_to_reachability=address_to_reachability,
         fee_penalty=0,
     )
-    index_paths = [addresses_to_indexes(p["path"], addresses) for p in paths]
+    index_paths = [addresses_to_indexes(p.nodes, addresses) for p in paths]
     assert index_paths == [[4, 1, 2, 0]]
 
 
@@ -196,12 +196,15 @@ def test_routing_result_order(
     )
     # 5 paths requested, but only 1 is available
     assert len(paths) == 1
-    assert paths[0] == {"path": [hex_addrs[0], hex_addrs[1], hex_addrs[2]], "estimated_fee": 0}
+    assert paths[0].to_dict() == {
+        "path": [hex_addrs[0], hex_addrs[1], hex_addrs[2]],
+        "estimated_fee": 0,
+    }
 
 
 def addresses_to_indexes(path, addresses):
     index_of_address = {a: i for i, a in enumerate(addresses)}
-    return [index_of_address[decode_hex(a)] for a in path]
+    return [index_of_address[a] for a in path]
 
 
 def get_paths(  # pylint: disable=too-many-arguments
@@ -222,7 +225,7 @@ def get_paths(  # pylint: disable=too-many-arguments
         max_paths=max_paths,
         address_to_reachability=address_to_reachability,
     )
-    index_paths = [addresses_to_indexes(p["path"], addresses) for p in paths]
+    index_paths = [addresses_to_indexes(p.nodes, addresses) for p in paths]
     return index_paths
 
 
@@ -389,8 +392,8 @@ def test_routing_benchmark(token_network_model: TokenNetwork):  # pylint: disabl
     end = time.time()
 
     for path_object in paths:
-        path = path_object["path"]
-        fees = path_object["estimated_fee"]
+        path = path_object.nodes
+        fees = path_object.estimated_fee
         for node1, node2 in zip(path[:-1], path[1:]):
             view: ChannelView = G[to_canonical_address(node1)][to_canonical_address(node2)]["view"]
             print("capacity = ", view.capacity)
