@@ -1,6 +1,6 @@
 # pylint: disable=redefined-outer-name
 import random
-from typing import Callable, Dict, Generator, List
+from typing import Callable, Generator, List
 from unittest.mock import Mock, patch
 
 import pytest
@@ -25,6 +25,8 @@ from raiden.utils.typing import (
 )
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
 from raiden_libs.utils import private_key_to_address
+
+from ..utils import SimpleReachabilityContainer
 
 
 @pytest.fixture(scope="session")
@@ -164,7 +166,7 @@ def populate_token_network() -> Callable:
     # pylint: disable=too-many-locals
     def populate_token_network(
         token_network: TokenNetwork,
-        address_to_reachability: Dict[Address, AddressReachability],
+        reachability_state: SimpleReachabilityContainer,
         addresses: List[Address],
         channel_descriptions: List,
     ):
@@ -233,8 +235,8 @@ def populate_token_network() -> Callable:
             )
 
             # Update presence state according to scenario
-            address_to_reachability[participant1] = p1_reachability
-            address_to_reachability[participant2] = p2_reachability
+            reachability_state.reachabilities[participant1] = p1_reachability
+            reachability_state.reachabilities[participant2] = p2_reachability
 
     return populate_token_network
 
@@ -243,12 +245,12 @@ def populate_token_network() -> Callable:
 def populate_token_network_case_1(
     populate_token_network: Callable,
     token_network_model: TokenNetwork,
-    address_to_reachability: Dict[Address, AddressReachability],
+    reachability_state: SimpleReachabilityContainer,
     addresses: List[Address],
     channel_descriptions_case_1: List,
 ):
     populate_token_network(
-        token_network_model, address_to_reachability, addresses, channel_descriptions_case_1
+        token_network_model, reachability_state, addresses, channel_descriptions_case_1
     )
 
 
@@ -256,12 +258,12 @@ def populate_token_network_case_1(
 def populate_token_network_case_2(
     populate_token_network: Callable,
     token_network_model: TokenNetwork,
-    address_to_reachability: Dict[Address, AddressReachability],
+    reachability_state: SimpleReachabilityContainer,
     addresses: List[Address],
     channel_descriptions_case_2: List,
 ):
     populate_token_network(
-        token_network_model, address_to_reachability, addresses, channel_descriptions_case_2
+        token_network_model, reachability_state, addresses, channel_descriptions_case_2
     )
 
 
@@ -269,12 +271,12 @@ def populate_token_network_case_2(
 def populate_token_network_case_3(
     populate_token_network: Callable,
     token_network_model: TokenNetwork,
-    address_to_reachability: Dict[Address, AddressReachability],
+    reachability_state: SimpleReachabilityContainer,
     addresses: List[Address],
     channel_descriptions_case_3: List,
 ):
     populate_token_network(
-        token_network_model, address_to_reachability, addresses, channel_descriptions_case_3
+        token_network_model, reachability_state, addresses, channel_descriptions_case_3
     )
 
 

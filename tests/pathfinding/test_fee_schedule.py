@@ -1,8 +1,9 @@
 import itertools
 from datetime import datetime
-from typing import Dict, List
+from typing import List
 
 import pytest
+from tests.pathfinding.utils import SimpleReachabilityContainer
 
 from pathfinding_service.model import ChannelView
 from pathfinding_service.model.token_network import TokenNetwork
@@ -60,9 +61,9 @@ class TokenNetworkForTests(TokenNetwork):
             cv2.capacity = chan.get("capacity2", default_capacity)
 
         # create reachability mapping for testing
-        self.address_to_reachability: Dict[Address, AddressReachability] = {
-            node: AddressReachability.REACHABLE for node in self.G.nodes
-        }
+        self.reachability_state = SimpleReachabilityContainer(
+            {node: AddressReachability.REACHABLE for node in self.G.nodes}
+        )
 
     def set_fee(self, node1: int, node2: int, **fee_params):
         channel_id = self.G[a(node1)][a(node2)]["view"].channel_id
@@ -86,7 +87,7 @@ class TokenNetworkForTests(TokenNetwork):
             target=a(target),
             value=value,
             max_paths=max_paths,
-            address_to_reachability=self.address_to_reachability,
+            reachability_state=self.reachability_state,
         )
         if not paths:
             return None

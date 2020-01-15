@@ -1,10 +1,11 @@
 import random
 import time
 from copy import deepcopy
-from typing import Dict, List
+from typing import List
 
 import pytest
 from eth_utils import to_canonical_address
+from tests.pathfinding.utils import SimpleReachabilityContainer
 
 from pathfinding_service.constants import DIVERSITY_PEN_DEFAULT
 from pathfinding_service.model import ChannelView, TokenNetwork
@@ -107,7 +108,7 @@ def test_edge_weight(addresses):
 @pytest.mark.usefixtures("populate_token_network_case_1")
 def test_routing_simple(
     token_network_model: TokenNetwork,
-    address_to_reachability: Dict[Address, AddressReachability],
+    reachability_state: SimpleReachabilityContainer,
     addresses: List[Address],
 ):
     hex_addrs = [to_checksum_address(addr) for addr in addresses]
@@ -124,7 +125,7 @@ def test_routing_simple(
         target=addresses[3],
         value=PaymentAmount(10),
         max_paths=1,
-        address_to_reachability=address_to_reachability,
+        reachability_state=reachability_state,
     )
     assert len(paths) == 1
     assert paths[0].to_dict() == {
@@ -138,7 +139,7 @@ def test_routing_simple(
         target=addresses[5],
         value=PaymentAmount(10),
         max_paths=1,
-        address_to_reachability=address_to_reachability,
+        reachability_state=reachability_state,
     )
     assert [] == no_paths
 
@@ -146,7 +147,7 @@ def test_routing_simple(
 @pytest.mark.usefixtures("populate_token_network_case_1")
 def test_capacity_check(
     token_network_model: TokenNetwork,
-    address_to_reachability: Dict[Address, AddressReachability],
+    reachability_state: SimpleReachabilityContainer,
     addresses: List[Address],
 ):
     """ Test that the mediation fees are included in the capacity check """
@@ -156,7 +157,7 @@ def test_capacity_check(
         target=addresses[0],
         value=PaymentAmount(35),
         max_paths=1,
-        address_to_reachability=address_to_reachability,
+        reachability_state=reachability_state,
     )
     index_paths = [addresses_to_indexes(p.nodes, addresses) for p in paths]
     assert index_paths == [[4, 1, 0]]
@@ -173,7 +174,7 @@ def test_capacity_check(
         target=addresses[0],
         value=PaymentAmount(35),
         max_paths=1,
-        address_to_reachability=address_to_reachability,
+        reachability_state=reachability_state,
         fee_penalty=0,
     )
     index_paths = [addresses_to_indexes(p.nodes, addresses) for p in paths]
@@ -183,7 +184,7 @@ def test_capacity_check(
 @pytest.mark.usefixtures("populate_token_network_case_1")
 def test_routing_result_order(
     token_network_model: TokenNetwork,
-    address_to_reachability: Dict[Address, AddressReachability],
+    reachability_state: SimpleReachabilityContainer,
     addresses: List[Address],
 ):
     hex_addrs = [to_checksum_address(addr) for addr in addresses]
@@ -192,7 +193,7 @@ def test_routing_result_order(
         target=addresses[2],
         value=PaymentAmount(10),
         max_paths=5,
-        address_to_reachability=address_to_reachability,
+        reachability_state=reachability_state,
     )
     # 5 paths requested, but only 1 is available
     assert len(paths) == 1
@@ -209,7 +210,7 @@ def addresses_to_indexes(path, addresses):
 
 def get_paths(  # pylint: disable=too-many-arguments
     token_network_model: TokenNetwork,
-    address_to_reachability: Dict[Address, AddressReachability],
+    reachability_state: SimpleReachabilityContainer,
     addresses: List[Address],
     source_index: int = 0,
     target_index: int = 8,
@@ -223,7 +224,7 @@ def get_paths(  # pylint: disable=too-many-arguments
         target=addresses[target_index],
         value=value,
         max_paths=max_paths,
-        address_to_reachability=address_to_reachability,
+        reachability_state=reachability_state,
     )
     index_paths = [addresses_to_indexes(p.nodes, addresses) for p in paths]
     return index_paths
@@ -232,28 +233,28 @@ def get_paths(  # pylint: disable=too-many-arguments
 @pytest.mark.usefixtures("populate_token_network_case_3")
 def test_diversity_penalty(
     token_network_model: TokenNetwork,
-    address_to_reachability: Dict[Address, AddressReachability],
+    reachability_state: SimpleReachabilityContainer,
     addresses: List[Address],
 ):
     """ Check changes in routing when increasing diversity penalty """
 
     assert get_paths(
         token_network_model=token_network_model,
-        address_to_reachability=address_to_reachability,
+        reachability_state=reachability_state,
         addresses=addresses,
         diversity_penalty=0.1,
     ) == [[0, 7, 8], [0, 7, 6, 8], [0, 7, 9, 10, 8], [0, 7, 6, 5, 8], [0, 1, 2, 3, 4, 8]]
 
     assert get_paths(
         token_network_model=token_network_model,
-        address_to_reachability=address_to_reachability,
+        reachability_state=reachability_state,
         addresses=addresses,
         diversity_penalty=1.1,
     ) == [[0, 7, 8], [0, 7, 6, 8], [0, 1, 2, 3, 4, 8], [0, 7, 9, 10, 8], [0, 7, 6, 5, 8]]
 
     assert get_paths(
         token_network_model=token_network_model,
-        address_to_reachability=address_to_reachability,
+        reachability_state=reachability_state,
         addresses=addresses,
         diversity_penalty=10,
     ) == [[0, 7, 8], [0, 1, 2, 3, 4, 8], [0, 7, 6, 8], [0, 7, 9, 10, 8], [0, 7, 6, 5, 8]]
@@ -262,31 +263,31 @@ def test_diversity_penalty(
 @pytest.mark.usefixtures("populate_token_network_case_3")
 def test_reachability_initiator(
     token_network_model: TokenNetwork,
-    address_to_reachability: Dict[Address, AddressReachability],
+    reachability_state: SimpleReachabilityContainer,
     addresses: List[Address],
 ):
 
     assert get_paths(
         token_network_model=token_network_model,
-        address_to_reachability=address_to_reachability,
+        reachability_state=reachability_state,
         addresses=addresses,
     ) == [[0, 7, 8], [0, 1, 2, 3, 4, 8], [0, 7, 6, 8], [0, 7, 9, 10, 8], [0, 7, 6, 5, 8]]
 
-    address_to_reachability[addresses[0]] = AddressReachability.UNREACHABLE
+    reachability_state.reachabilities[addresses[0]] = AddressReachability.UNREACHABLE
     assert (
         get_paths(
             token_network_model=token_network_model,
-            address_to_reachability=address_to_reachability,
+            reachability_state=reachability_state,
             addresses=addresses,
         )
         == []
     )
 
-    address_to_reachability[addresses[0]] = AddressReachability.UNKNOWN
+    reachability_state.reachabilities[addresses[0]] = AddressReachability.UNKNOWN
     assert (
         get_paths(
             token_network_model=token_network_model,
-            address_to_reachability=address_to_reachability,
+            reachability_state=reachability_state,
             addresses=addresses,
         )
         == []
@@ -296,28 +297,28 @@ def test_reachability_initiator(
 @pytest.mark.usefixtures("populate_token_network_case_3")
 def test_reachability_mediator(
     token_network_model: TokenNetwork,
-    address_to_reachability: Dict[Address, AddressReachability],
+    reachability_state: SimpleReachabilityContainer,
     addresses: List[Address],
 ):
 
     assert get_paths(
         token_network_model=token_network_model,
-        address_to_reachability=address_to_reachability,
+        reachability_state=reachability_state,
         addresses=addresses,
     ) == [[0, 7, 8], [0, 1, 2, 3, 4, 8], [0, 7, 6, 8], [0, 7, 9, 10, 8], [0, 7, 6, 5, 8]]
 
-    address_to_reachability[addresses[7]] = AddressReachability.UNREACHABLE
+    reachability_state.reachabilities[addresses[7]] = AddressReachability.UNREACHABLE
     assert get_paths(
         token_network_model=token_network_model,
-        address_to_reachability=address_to_reachability,
+        reachability_state=reachability_state,
         addresses=addresses,
     ) == [[0, 1, 2, 3, 4, 8]]
 
-    address_to_reachability[addresses[1]] = AddressReachability.UNKNOWN
+    reachability_state.reachabilities[addresses[1]] = AddressReachability.UNKNOWN
     assert (
         get_paths(
             token_network_model=token_network_model,
-            address_to_reachability=address_to_reachability,
+            reachability_state=reachability_state,
             addresses=addresses,
         )
         == []
@@ -327,31 +328,31 @@ def test_reachability_mediator(
 @pytest.mark.usefixtures("populate_token_network_case_3")
 def test_reachability_target(
     token_network_model: TokenNetwork,
-    address_to_reachability: Dict[Address, AddressReachability],
+    reachability_state: SimpleReachabilityContainer,
     addresses: List[Address],
 ):
 
     assert get_paths(
         token_network_model=token_network_model,
-        address_to_reachability=address_to_reachability,
+        reachability_state=reachability_state,
         addresses=addresses,
     ) == [[0, 7, 8], [0, 1, 2, 3, 4, 8], [0, 7, 6, 8], [0, 7, 9, 10, 8], [0, 7, 6, 5, 8]]
 
-    address_to_reachability[addresses[8]] = AddressReachability.UNREACHABLE
+    reachability_state.reachabilities[addresses[8]] = AddressReachability.UNREACHABLE
     assert (
         get_paths(
             token_network_model=token_network_model,
-            address_to_reachability=address_to_reachability,
+            reachability_state=reachability_state,
             addresses=addresses,
         )
         == []
     )
 
-    address_to_reachability[addresses[8]] = AddressReachability.UNKNOWN
+    reachability_state.reachabilities[addresses[8]] = AddressReachability.UNKNOWN
     assert (
         get_paths(
             token_network_model=token_network_model,
-            address_to_reachability=address_to_reachability,
+            reachability_state=reachability_state,
             addresses=addresses,
         )
         == []
@@ -363,16 +364,18 @@ def test_reachability_target(
 def test_routing_benchmark(token_network_model: TokenNetwork):  # pylint: disable=too-many-locals
     value = PaymentAmount(100)
     G = token_network_model.G
-    addresses_to_reachabilities = {
-        node: random.choice(
-            (
-                AddressReachability.REACHABLE,
-                AddressReachability.UNKNOWN,
-                AddressReachability.UNREACHABLE,
+    addresses_to_reachabilities = SimpleReachabilityContainer(
+        {
+            node: random.choice(
+                (
+                    AddressReachability.REACHABLE,
+                    AddressReachability.UNKNOWN,
+                    AddressReachability.UNREACHABLE,
+                )
             )
-        )
-        for node in G.nodes
-    }
+            for node in G.nodes
+        }
+    )
 
     times = []
     start = time.time()
@@ -384,7 +387,7 @@ def test_routing_benchmark(token_network_model: TokenNetwork):  # pylint: disabl
             target=target,
             value=value,
             max_paths=5,
-            address_to_reachability=addresses_to_reachabilities,
+            reachability_state=addresses_to_reachabilities,
         )
 
         toc = time.time()

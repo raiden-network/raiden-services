@@ -8,6 +8,8 @@ from raiden.network.transport.matrix import AddressReachability
 from raiden.tests.utils.factories import make_address
 from raiden.utils.typing import Address, BlockTimeout, ChannelID, PaymentAmount
 
+from .utils import SimpleReachabilityContainer
+
 
 def test_tn_idempotency_of_channel_openings(
     token_network_model: TokenNetwork, addresses: List[Address]
@@ -67,27 +69,28 @@ def test_graph_pruning():
     graph.add_edge(participant2, participant3, view=23)
     graph.add_edge(participant3, participant2, view=32)
 
-    all_reachable = {
-        p: AddressReachability.REACHABLE for p in (participant1, participant2, participant3)
-    }
-    pruned_all_reachable = prune_graph(graph=graph, address_to_reachability=all_reachable)
+    all_reachable = SimpleReachabilityContainer(
+        {p: AddressReachability.REACHABLE for p in (participant1, participant2, participant3)}
+    )
+    pruned_all_reachable = prune_graph(graph=graph, reachability_state=all_reachable)
     assert len(pruned_all_reachable.edges) == len(graph.edges)
 
-    p1_not_reachable = all_reachable.copy()
-    p1_not_reachable[participant1] = AddressReachability.UNREACHABLE
-    pruned_p1_unreachbale = prune_graph(graph=graph, address_to_reachability=p1_not_reachable)
+    p1_not_reachable = SimpleReachabilityContainer(all_reachable.reachabilities.copy())
+    p1_not_reachable.reachabilities[participant1] = AddressReachability.UNREACHABLE
+    pruned_p1_unreachbale = prune_graph(graph=graph, reachability_state=p1_not_reachable)
     assert len(pruned_p1_unreachbale.edges) == 2  # just the two edges between 2 and 3 left
 
-    p2_not_reachable = all_reachable.copy()
-    p2_not_reachable[participant2] = AddressReachability.UNREACHABLE
-    pruned_p2_unreachbale = prune_graph(graph=graph, address_to_reachability=p2_not_reachable)
+    p2_not_reachable = SimpleReachabilityContainer(all_reachable.reachabilities.copy())
+    p2_not_reachable.reachabilities[participant1] = AddressReachability.UNREACHABLE
+    p2_not_reachable.reachabilities[participant2] = AddressReachability.UNREACHABLE
+    pruned_p2_unreachbale = prune_graph(graph=graph, reachability_state=p2_not_reachable)
     assert len(pruned_p2_unreachbale.edges) == 0  # 2 is part of all channels
 
     # test handling of unknown nodes
-    p1_not_in_reachble_map = all_reachable.copy()
-    del p1_not_in_reachble_map[participant1]
+    p1_not_in_reachble_map = SimpleReachabilityContainer(all_reachable.reachabilities.copy())
+    del p1_not_in_reachble_map.reachabilities[participant1]
     pruned_p1_not_in_reachable_map = prune_graph(
-        graph=graph, address_to_reachability=p1_not_in_reachble_map
+        graph=graph, reachability_state=p1_not_in_reachble_map
     )
     assert (
         len(pruned_p1_not_in_reachable_map.edges) == 2
@@ -117,7 +120,7 @@ def test_path_without_capacity(token_network_model: TokenNetwork, addresses: Lis
         G=token_network_model.G,
         nodes=[addresses[0], addresses[1], addresses[2]],
         value=PaymentAmount(10),
-        address_to_reachability=dict(),
+        reachability_state=SimpleReachabilityContainer(dict()),
     )
     assert not path.is_valid
 
@@ -127,20 +130,22 @@ def test_check_path_request_errors(token_network_model, addresses):
 
     # Not online checks
     assert (
-        token_network_model.check_path_request_errors(a[0], a[2], 100, {}) == "Source not online"
+        token_network_model.check_path_request_errors(
+            a[0], a[2], 100, SimpleReachabilityContainer({})
+        )
+        == "Source not online"
     )
     assert (
         token_network_model.check_path_request_errors(
-            a[0], a[2], 100, {a[0]: AddressReachability.REACHABLE}
+            a[0], a[2], 100, SimpleReachabilityContainer({a[0]: AddressReachability.REACHABLE})
         )
         == "Target not online"
     )
 
     # No channel checks
-    reachability = {
-        a[0]: AddressReachability.REACHABLE,
-        a[2]: AddressReachability.REACHABLE,
-    }
+    reachability = SimpleReachabilityContainer(
+        {a[0]: AddressReachability.REACHABLE, a[2]: AddressReachability.REACHABLE}
+    )
     assert (
         token_network_model.check_path_request_errors(a[0], a[2], 100, reachability)
         == "No channel from source"
@@ -184,7 +189,7 @@ def test_check_path_request_errors(token_network_model, addresses):
         settle_timeout=BlockTimeout(15),
     )
     token_network_model.G.edges[a[3], a[4]]["view"].capacity = 100
-    reachability[a[4]] = AddressReachability.REACHABLE
+    reachability.reachabilities[a[4]] = AddressReachability.REACHABLE
     assert (
         token_network_model.check_path_request_errors(a[0], a[4], 100, reachability)
         == "No route from source to target"
