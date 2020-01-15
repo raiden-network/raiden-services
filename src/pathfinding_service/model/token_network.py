@@ -200,10 +200,18 @@ class Path:
     def edge_attrs(self) -> Iterable[dict]:
         return (self.G[node1][node2] for node1, node2 in zip(self.nodes[:-1], self.nodes[1:]))
 
+    @property
+    def estimated_fee(self) -> FeeAmount:
+        if self.fees:
+            return FeeAmount(sum(self.fees))
+
+        return FeeAmount(0)
+
     def to_dict(self) -> dict:
         assert self.fees is not None
         return dict(
-            path=[to_checksum_address(node) for node in self.nodes], estimated_fee=sum(self.fees),
+            path=[to_checksum_address(node) for node in self.nodes],
+            estimated_fee=self.estimated_fee,
         )
 
 
@@ -466,7 +474,7 @@ class TokenNetwork:
         address_to_reachability: Dict[Address, AddressReachability],
         diversity_penalty: float = DIVERSITY_PEN_DEFAULT,
         fee_penalty: float = FEE_PEN_DEFAULT,
-    ) -> List[dict]:
+    ) -> List[Path]:
         """ Find best routes according to given preferences
 
         value: Amount of transferred tokens. Used for capacity checks
@@ -525,7 +533,6 @@ class TokenNetwork:
                 channel_id = edge["view"].channel_id
                 visited[channel_id] += diversity_penalty
 
-        found_paths = [p.to_dict() for p in paths]
         log.info(
             "Returning paths for payment",
             source=source,
@@ -534,6 +541,6 @@ class TokenNetwork:
             max_paths=max_paths,
             diversity_penalty=diversity_penalty,
             fee_penalty=fee_penalty,
-            paths=found_paths,
+            paths=paths,
         )
-        return found_paths
+        return paths

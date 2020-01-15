@@ -33,7 +33,7 @@ from pathfinding_service.constants import (
 )
 from pathfinding_service.model import IOU
 from pathfinding_service.model.feedback import FeedbackToken
-from pathfinding_service.model.token_network import TokenNetwork
+from pathfinding_service.model.token_network import Path, TokenNetwork
 from pathfinding_service.service import PathfindingService
 from raiden.exceptions import InvalidSignature
 from raiden.utils.signer import recover
@@ -191,20 +191,23 @@ class PathsResource(PathfinderResource):
             routes=paths,
         )
 
-        return {"result": paths, "feedback_token": feedback_token.uuid.hex}, 200
+        return (
+            {"result": [p.to_dict() for p in paths], "feedback_token": feedback_token.uuid.hex},
+            200,
+        )
 
 
 def create_and_store_feedback_tokens(
     pathfinding_service: PathfindingService,
     token_network_address: TokenNetworkAddress,
-    routes: List[Dict],
+    routes: List[Path],
 ) -> FeedbackToken:
     feedback_token = FeedbackToken(token_network_address=token_network_address)
 
     # TODO: use executemany here
     for route in routes:
         pathfinding_service.database.prepare_feedback(
-            token=feedback_token, route=route["path"], estimated_fee=route["estimated_fee"]
+            token=feedback_token, route=route.nodes, estimated_fee=route.estimated_fee
         )
 
     return feedback_token
@@ -423,14 +426,12 @@ class DebugPathResource(PathfinderResource):
 
         decoded_target_address: Optional[Address] = None
         if target_address:
-            decoded_target_address = Address(to_canonical_address(target_address))
+            decoded_target_address = to_canonical_address(target_address)
 
-        feedback_routes = list(
-            self.pathfinding_service.database.get_feedback_routes(
-                TokenNetworkAddress(to_canonical_address(token_network_address)),
-                Address(to_canonical_address(source_address)),
-                decoded_target_address,
-            )
+        feedback_routes = self.pathfinding_service.database.get_feedback_routes(
+            TokenNetworkAddress(to_canonical_address(token_network_address)),
+            to_canonical_address(source_address),
+            decoded_target_address,
         )
 
         grouped_routes: Dict[Tuple[str, str], List[Dict]] = collections.defaultdict(list)
@@ -438,10 +439,10 @@ class DebugPathResource(PathfinderResource):
             grouped_routes[(route["source_address"], route["target_address"])].append(
                 {"path": route["route"], "estimated_fee": route["estimated_fee"]}
             )
+            request_count += 1
 
         for from_to, routes in grouped_routes.items():
             responses.append({"source": from_to[0], "target": from_to[1], "routes": routes})
-        request_count += len(feedback_routes)
 
         return dict(request_count=request_count, responses=responses), 200
 
