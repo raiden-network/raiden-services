@@ -23,8 +23,7 @@ from pathfinding_service.typing import DeferableMessage
 from raiden.constants import PATH_FINDING_BROADCASTING_ROOM, UINT256_MAX
 from raiden.messages.abstract import Message
 from raiden.messages.path_finding_service import PFSCapacityUpdate, PFSFeeUpdate
-from raiden.network.transport.matrix import AddressReachability
-from raiden.utils.typing import Address, BlockNumber, ChainID, TokenNetworkAddress
+from raiden.utils.typing import BlockNumber, ChainID, TokenNetworkAddress
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
 from raiden_libs.blockchain import get_blockchain_events
 from raiden_libs.constants import MATRIX_START_TIMEOUT
@@ -100,11 +99,9 @@ class PathfindingService(gevent.Greenlet):
             chain_id=self.chain_id,
             service_room_suffix=PATH_FINDING_BROADCASTING_ROOM,
             message_received_callback=self.handle_message,
-            address_reachability_changed_callback=self.handle_reachability_change,
             servers=matrix_servers,
         )
 
-        self.address_to_reachability: Dict[Address, AddressReachability] = dict()
         self.token_networks = self._load_token_networks()
         self.updated = gevent.event.Event()  # set whenever blocks are processed
         self.startup_finished = gevent.event.Event()
@@ -191,11 +188,6 @@ class PathfindingService(gevent.Greenlet):
     def follows_token_network(self, token_network_address: TokenNetworkAddress) -> bool:
         """ Checks if a token network is followed by the pathfinding service. """
         return token_network_address in self.token_networks.keys()
-
-    def handle_reachability_change(
-        self, address: Address, reachability: AddressReachability
-    ) -> None:
-        self.address_to_reachability[address] = reachability
 
     def get_token_network(
         self, token_network_address: TokenNetworkAddress

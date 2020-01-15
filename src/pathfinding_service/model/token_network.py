@@ -16,8 +16,9 @@ from pathfinding_service.constants import (
 )
 from pathfinding_service.exceptions import InvalidFeeUpdate
 from pathfinding_service.model.channel import Channel, ChannelView, FeeSchedule
+from pathfinding_service.typing import AddressReachabilityProtocol
 from raiden.messages.path_finding_service import PFSCapacityUpdate, PFSFeeUpdate
-from raiden.network.transport.matrix import AddressReachability
+from raiden.network.transport.matrix.utils import AddressReachability
 from raiden.tests.utils.mediation_fees import get_amount_with_fees
 from raiden.utils.formatting import to_checksum_address
 from raiden.utils.typing import (
@@ -49,15 +50,13 @@ def window(seq: Sequence, n: int = 2) -> Iterable[tuple]:
         yield result
 
 
-def prune_graph(
-    graph: DiGraph, address_to_reachability: Dict[Address, AddressReachability]
-) -> DiGraph:
+def prune_graph(graph: DiGraph, reachability_state: AddressReachabilityProtocol) -> DiGraph:
     """ Prunes the given `graph` of all channels where the participants are not  reachable. """
     pruned_graph = DiGraph()
     for p1, p2 in graph.edges:
         nodes_online = (
-            address_to_reachability.get(p1) == AddressReachability.REACHABLE
-            and address_to_reachability.get(p2) == AddressReachability.REACHABLE
+            reachability_state.get_address_reachability(p1) == AddressReachability.REACHABLE
+            and reachability_state.get_address_reachability(p2) == AddressReachability.REACHABLE
         )
         if nodes_online:
             pruned_graph.add_edge(p1, p2, view=graph[p1][p2]["view"])
@@ -72,12 +71,12 @@ class Path:
         G: DiGraph,
         nodes: List[Address],
         value: PaymentAmount,
-        address_to_reachability: Dict[Address, AddressReachability],
+        reachability_state: AddressReachabilityProtocol,
     ):
         self.G = G
         self.nodes = nodes
         self.value = value
-        self.address_to_reachability = address_to_reachability
+        self.reachability_state = reachability_state
         self.fees = self._check_validity_and_calculate_fees()
         self.is_valid = self.fees is not None
 
@@ -183,7 +182,7 @@ class Path:
 
         # Check node reachabilities
         for node in self.nodes:
-            node_reachability = self.address_to_reachability.get(node, AddressReachability.UNKNOWN)
+            node_reachability = self.reachability_state.get_address_reachability(node)
             if node_reachability != AddressReachability.REACHABLE:
                 log.debug(
                     "Path invalid because of unavailable node",
@@ -381,7 +380,7 @@ class TokenNetwork:
         source: Address,
         target: Address,
         value: PaymentAmount,
-        address_to_reachability: Dict[Address, AddressReachability],
+        reachability_state: AddressReachabilityProtocol,
         visited: Dict[ChannelID, float],
         disallowed_paths: List[List[Address]],
         fee_penalty: float,
@@ -406,9 +405,7 @@ class TokenNetwork:
             # skip duplicates and invalid paths
             path = next(
                 p
-                for p in (
-                    Path(self.G, nodes, value, address_to_reachability) for nodes in all_paths
-                )
+                for p in (Path(self.G, nodes, value, reachability_state) for nodes in all_paths)
                 if p.is_valid and p.nodes not in disallowed_paths
             )
             return path
@@ -420,19 +417,14 @@ class TokenNetwork:
         source: Address,
         target: Address,
         value: PaymentAmount,
-        address_to_reachability: Dict[Address, AddressReachability],
+        reachability_state: AddressReachabilityProtocol,
     ) -> Optional[str]:
         """ Checks for basic problems with the path requests. Returns error message or `None` """
 
-        if (
-            address_to_reachability.get(source, AddressReachability.UNREACHABLE)
-            != AddressReachability.REACHABLE
-        ):
+        if reachability_state.get_address_reachability(source) != AddressReachability.REACHABLE:
             return "Source not online"
-        if (
-            address_to_reachability.get(target, AddressReachability.UNREACHABLE)
-            != AddressReachability.REACHABLE
-        ):
+
+        if reachability_state.get_address_reachability(target) != AddressReachability.REACHABLE:
             return "Target not online"
 
         if not any(self.G.edges(source)):
@@ -471,7 +463,7 @@ class TokenNetwork:
         target: Address,
         value: PaymentAmount,
         max_paths: int,
-        address_to_reachability: Dict[Address, AddressReachability],
+        reachability_state: AddressReachabilityProtocol,
         diversity_penalty: float = DIVERSITY_PEN_DEFAULT,
         fee_penalty: float = FEE_PEN_DEFAULT,
     ) -> List[Path]:
@@ -497,7 +489,7 @@ class TokenNetwork:
         # TODO: improve the pruning
         # Currently we make a snapshot of the currently reachable nodes, so the searched graph
         # becomes smaller
-        pruned_graph = prune_graph(graph=self.G, address_to_reachability=address_to_reachability)
+        pruned_graph = prune_graph(graph=self.G, reachability_state=reachability_state)
 
         while len(paths) < max_paths:
             try:
@@ -506,7 +498,7 @@ class TokenNetwork:
                     source=source,
                     target=target,
                     value=value,
-                    address_to_reachability=address_to_reachability,
+                    reachability_state=reachability_state,
                     visited=visited,
                     disallowed_paths=[p.nodes for p in paths],
                     fee_penalty=fee_penalty,
@@ -520,7 +512,7 @@ class TokenNetwork:
                     max_paths=max_paths,
                     diversity_penalty=diversity_penalty,
                     fee_penalty=fee_penalty,
-                    reachabilities=address_to_reachability,
+                    reachabilities=reachability_state,
                 )
                 return []
 

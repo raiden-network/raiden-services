@@ -9,7 +9,6 @@ from pathfinding_service.model.token_network import PFSFeeUpdate
 from pathfinding_service.service import PathfindingService
 from raiden.constants import EMPTY_SIGNATURE
 from raiden.messages.synchronization import Processed
-from raiden.network.transport.matrix import AddressReachability
 from raiden.tests.utils.factories import make_privkey_address, make_token_network_address
 from raiden.transfer.identifiers import CanonicalIdentifier
 from raiden.transfer.mediated_transfer.mediation_fee import FeeScheduleState
@@ -28,7 +27,7 @@ from raiden.utils.typing import (
     TokenNetworkAddress,
 )
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
-from raiden_contracts.tests.utils import get_random_privkey, to_canonical_address
+from raiden_contracts.tests.utils import get_random_privkey
 from raiden_libs.events import (
     ReceiveChannelClosedEvent,
     ReceiveChannelOpenedEvent,
@@ -240,31 +239,6 @@ def test_token_channel_closed(pathfinding_service_mock, token_network_model):
     pathfinding_service_mock.handle_event(close_event)
     assert len(pathfinding_service_mock.token_networks) == 1
     assert len(token_network_model.channel_id_to_addresses) == 0
-
-
-def test_handle_reachability_change(pathfinding_service_mock, token_network_model):
-    setup_channel(pathfinding_service_mock, token_network_model)
-
-    assert len(pathfinding_service_mock.address_to_reachability) == 0
-    pathfinding_service_mock.handle_reachability_change(
-        to_canonical_address(PARTICIPANT1), AddressReachability.REACHABLE
-    )
-    assert (
-        pathfinding_service_mock.address_to_reachability[PARTICIPANT1]
-        == AddressReachability.REACHABLE
-    )
-
-    pathfinding_service_mock.handle_reachability_change(
-        to_canonical_address(PARTICIPANT2), AddressReachability.REACHABLE
-    )
-    assert (
-        pathfinding_service_mock.address_to_reachability[PARTICIPANT1]
-        == AddressReachability.REACHABLE
-    )
-    assert (
-        pathfinding_service_mock.address_to_reachability[PARTICIPANT2]
-        == AddressReachability.REACHABLE
-    )
 
 
 @pytest.mark.parametrize("order", ["normal", "fee_update_before_channel_open"])

@@ -44,6 +44,12 @@ from raiden.utils.typing import Address, ChainID
 log = structlog.get_logger(__name__)
 
 
+def noop_reachability(  # pylint: disable=unused-argument
+    address: Address, reachability: AddressReachability
+) -> None:
+    """A reachability callback is required by the UserAddressManager."""
+
+
 class RateLimiter:
     """Primitive bucket based rate limiter
 
@@ -127,9 +133,6 @@ class MatrixListener(gevent.Greenlet):
         chain_id: ChainID,
         service_room_suffix: str,
         message_received_callback: Callable[[Message], None],
-        address_reachability_changed_callback: Callable[
-            [Address, AddressReachability], None
-        ] = None,
         servers: List[str] = None,
     ) -> None:
         super().__init__()
@@ -157,14 +160,12 @@ class MatrixListener(gevent.Greenlet):
         )
         self._broadcast_room: Optional[Room] = None
         self._displayname_cache = DisplayNameCache()
-        self._user_manager: Optional[UserAddressManager] = None
 
-        if address_reachability_changed_callback is not None:
-            self._user_manager = UserAddressManager(
-                client=self._client,
-                displayname_cache=self._displayname_cache,
-                address_reachability_changed_callback=address_reachability_changed_callback,
-            )
+        self.user_manager = UserAddressManager(
+            client=self._client,
+            displayname_cache=self._displayname_cache,
+            address_reachability_changed_callback=noop_reachability,
+        )
 
         self.startup_finished = Event()
         self._rate_limiter = RateLimiter(
@@ -189,14 +190,12 @@ class MatrixListener(gevent.Greenlet):
         self._client.sync_worker.get()
 
     def stop(self) -> None:
-        if self._user_manager:
-            self._user_manager.stop()
+        self.user_manager.stop()
         self._client.stop_listener_thread()
 
     def _start_client(self) -> None:
         try:
-            if self._user_manager:
-                self._user_manager.start()
+            self.user_manager.start()
 
             login(self._client, signer=LocalSigner(private_key=decode_hex(self.private_key)))
         except (MatrixRequestError, ValueError):
@@ -213,21 +212,20 @@ class MatrixListener(gevent.Greenlet):
             raise ConnectionError("Could not join monitoring broadcasting room.")
 
     def follow_address_presence(self, address: Address, refresh: bool = False) -> None:
-        if self._user_manager:
-            self._user_manager.add_address(address)
+        self.user_manager.add_address(address)
 
-            if refresh:
-                self._user_manager.populate_userids_for_address(address)
-                self._user_manager.track_address_presence(
-                    address=address, user_ids=self._user_manager.get_userids_for_address(address)
-                )
-
-            log.debug(
-                "Tracking address",
-                address=to_checksum_address(address),
-                current_presence=self._user_manager.get_address_reachability(address),
-                refresh=refresh,
+        if refresh:
+            self.user_manager.populate_userids_for_address(address)
+            self.user_manager.track_address_presence(
+                address=address, user_ids=self.user_manager.get_userids_for_address(address)
             )
+
+        log.debug(
+            "Tracking address",
+            address=to_checksum_address(address),
+            current_presence=self.user_manager.get_address_reachability(address),
+            refresh=refresh,
+        )
 
     def _get_user_from_user_id(self, user_id: str) -> User:
         """Creates an User from an user_id, if none, or fetch a cached User """

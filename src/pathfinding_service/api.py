@@ -132,7 +132,7 @@ class PathsResource(PathfinderResource):
             source=path_req.from_,
             target=path_req.to,
             value=path_req.value,
-            address_to_reachability=self.pathfinding_service.address_to_reachability,
+            reachability_state=self.pathfinding_service.matrix_listener.user_manager,
         )
         if error:
             # this is for assertion via the scenario player
@@ -163,7 +163,7 @@ class PathsResource(PathfinderResource):
             source=path_req.from_,
             target=path_req.to,
             value=path_req.value,
-            address_to_reachability=self.pathfinding_service.address_to_reachability,
+            reachability_state=self.pathfinding_service.matrix_listener.user_manager,
             max_paths=path_req.max_paths,
             **optional_args,
         )

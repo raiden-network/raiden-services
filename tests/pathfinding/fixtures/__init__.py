@@ -1,9 +1,9 @@
 import pytest
 
 from pathfinding_service.model.token_network import TokenNetwork
-from raiden.network.transport.matrix import AddressReachability
-from raiden.utils.typing import Address, Dict, TokenNetworkAddress
+from raiden.utils.typing import TokenNetworkAddress
 
+from ..utils import SimpleReachabilityContainer
 from .accounts import *  # noqa
 from .api import *  # noqa
 from .iou import *  # noqa
@@ -16,5 +16,5 @@ def token_network_model() -> TokenNetwork:
 
 
 @pytest.fixture
-def address_to_reachability() -> Dict[Address, AddressReachability]:
-    return {}
+def reachability_state() -> SimpleReachabilityContainer:
+    return SimpleReachabilityContainer({})
