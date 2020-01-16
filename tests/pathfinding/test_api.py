@@ -406,6 +406,7 @@ def test_get_info(api_url: str, api_sut, pathfinding_service_mock):
             "chain_id": pathfinding_service_mock.chain_id,
             "token_network_registry_address": token_network_registry_address,
             "user_deposit_address": user_deposit_address,
+            "confirmed_block": {"number": 0},
         },
         "version": pkg_resources.require("raiden-services")[0].version,
         "contracts_version": pkg_resources.require("raiden-contracts")[0].version,
@@ -416,13 +417,17 @@ def test_get_info(api_url: str, api_sut, pathfinding_service_mock):
     }
     response = requests.get(url)
     assert response.status_code == 200
-    assert response.json() == expected_response
+    response_json = response.json()
+    del response_json["UTC"]
+    assert response_json == expected_response
 
     # Test with a custom info message
     api_sut.info_message = expected_response["message"] = "Other message"
     response = requests.get(url)
     assert response.status_code == 200
-    assert response.json() == expected_response
+    response_json = response.json()
+    del response_json["UTC"]
+    assert response_json == expected_response
 
 
 #
