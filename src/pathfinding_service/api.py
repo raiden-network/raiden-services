@@ -390,12 +390,16 @@ class InfoResource(PathfinderResource):
                 "user_deposit_address": to_checksum_address(
                     self.pathfinding_service.user_deposit_contract.address
                 ),
+                "confirmed_block": {
+                    "number": self.pathfinding_service.blockchain_state.latest_committed_block
+                },
             },
             "version": self.version,
             "contracts_version": self.contracts_version,
             "operator": self.service_api.operator,
             "message": self.service_api.info_message,
             "payment_address": to_checksum_address(self.pathfinding_service.address),
+            "UTC": datetime.utcnow().isoformat(),
         }
         if info["message"] == DEFAULT_INFO_MESSAGE:
             info["message"] = str(info["message"]) + to_checksum_address(
