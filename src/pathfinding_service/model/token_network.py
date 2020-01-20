@@ -296,7 +296,7 @@ class TokenNetwork:
         other_capacity_partner: TokenAmount,
     ) -> Channel:
         """ Sends Capacity Update to PFS including the reveal timeout """
-        (channel_view_to_partner, channel_view_from_partner,) = self.get_channel_views_for_partner(
+        (channel_view_to_partner, channel_view_from_partner) = self.get_channel_views_for_partner(
             updating_participant=message.updating_participant,
             other_participant=message.other_participant,
         )
@@ -328,8 +328,8 @@ class TokenNetwork:
         channel_id = message.canonical_identifier.channel_identifier
         participants = self.channel_id_to_addresses[channel_id]
         other_participant = (set(participants) - {message.updating_participant}).pop()
-        (channel_view_to_partner, channel_view_from_partner,) = self.get_channel_views_for_partner(
-            updating_participant=message.updating_participant, other_participant=other_participant,
+        (channel_view_to_partner, channel_view_from_partner) = self.get_channel_views_for_partner(
+            updating_participant=message.updating_participant, other_participant=other_participant
         )
         fee_schedule = FeeSchedule.from_raiden(message.fee_schedule, timestamp=message.timestamp)
         channel_view_to_partner.set_fee_schedule(fee_schedule)
@@ -435,7 +435,7 @@ class TokenNetwork:
         source_capacities = [view.capacity for _, _, view in self.G.out_edges(source, data="view")]
         if max(source_capacities) < value:
             debug_capacities = [
-                (to_checksum_address(a), to_checksum_address(b), view.capacity,)
+                (to_checksum_address(a), to_checksum_address(b), view.capacity)
                 for a, b, view in self.G.out_edges(source, data="view")
             ]
             log.debug("Insufficient capacities", capacities=debug_capacities)

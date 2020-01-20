@@ -224,7 +224,8 @@ def process_payment(  # pylint: disable=too-many-branches
     if iou is None:
         raise exceptions.MissingIOU
 
-    log.debug("Checking IOU", iou=iou)
+    log.debug("Checking IOU", sender=iou.sender, total_amount=iou.amount)
+
     # Basic IOU validity checks
     if not is_same_address(iou.receiver, pathfinding_service.address):
         raise exceptions.WrongIOURecipient(expected=pathfinding_service.address)
@@ -379,7 +380,6 @@ class InfoResource(PathfinderResource):
     contracts_version = pkg_resources.get_distribution("raiden-contracts").version
 
     def get(self) -> Tuple[dict, int]:
-
         info = {
             "price_info": self.service_api.service_fee,
             "network_info": {

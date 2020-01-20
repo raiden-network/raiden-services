@@ -250,7 +250,7 @@ class PathfindingService(gevent.Greenlet):
         log.info("Received ChannelClosed event", event_=event)
 
         channel_deleted = self.database.delete_channel(
-            event.token_network_address, event.channel_identifier,
+            event.token_network_address, event.channel_identifier
         )
         if channel_deleted:
             token_network.handle_channel_closed_event(event.channel_identifier)

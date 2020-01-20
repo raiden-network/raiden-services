@@ -140,7 +140,7 @@ def test_pfs_rejects_fee_update_with_incorrect_signature(
     setup_channel(pathfinding_service_web3_mock)
 
     message = get_fee_update_message(
-        updating_participant=PRIVATE_KEY_1_ADDRESS, privkey_signer=PRIVATE_KEY_3,
+        updating_participant=PRIVATE_KEY_1_ADDRESS, privkey_signer=PRIVATE_KEY_3
     )
 
     with pytest.raises(InvalidFeeUpdate) as exinfo:

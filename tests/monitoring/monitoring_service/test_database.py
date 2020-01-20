@@ -124,7 +124,7 @@ def test_saveing_multiple_channel(ms_database: Database):
     )
     tn_address2 = make_token_network_address()
     ms_database.conn.execute(
-        "INSERT INTO token_network (address) VALUES (?)", [to_checksum_address(tn_address2)],
+        "INSERT INTO token_network (address) VALUES (?)", [to_checksum_address(tn_address2)]
     )
 
     channel1 = create_channel()
