@@ -224,7 +224,12 @@ def process_payment(  # pylint: disable=too-many-branches
     if iou is None:
         raise exceptions.MissingIOU
 
-    log.debug("Checking IOU", sender=iou.sender, total_amount=iou.amount)
+    log.debug(
+        "Checking IOU",
+        sender=iou.sender,
+        total_amount=iou.amount,
+        expiration_block=iou.expiration_block,
+    )
 
     # Basic IOU validity checks
     if not is_same_address(iou.receiver, pathfinding_service.address):
