@@ -206,7 +206,7 @@ class MatrixListener(gevent.Greenlet):
             server = urlparse(self._client.api.base_url).netloc
             room_alias = f"#{room_alias_prefix}:{server}"
             self._broadcast_room = join_broadcast_room(
-                client=self._client, broadcast_room_alias=room_alias,
+                client=self._client, broadcast_room_alias=room_alias
             )
         except (MatrixRequestError, TransportError):
             raise ConnectionError("Could not join monitoring broadcasting room.")

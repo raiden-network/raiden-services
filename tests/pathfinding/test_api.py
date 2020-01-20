@@ -308,9 +308,7 @@ def test_get_paths_path_validation(api_url: str):
 
 
 @pytest.mark.usefixtures("api_sut")
-def test_get_paths(
-    api_url: str, addresses: List[Address], token_network_model: TokenNetwork,
-):
+def test_get_paths(api_url: str, addresses: List[Address], token_network_model: TokenNetwork):
     hex_addrs = [to_checksum_address(addr) for addr in addresses]
     url = api_url + "/" + to_checksum_address(token_network_model.address) + "/paths"
 

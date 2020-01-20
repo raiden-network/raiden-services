@@ -157,7 +157,7 @@ class PFSDatabase(BaseDatabase):
             yield IOU.Schema().load(iou_dict)
 
     def get_iou(
-        self, sender: Address, expiration_block: BlockNumber = None, claimed: bool = None,
+        self, sender: Address, expiration_block: BlockNumber = None, claimed: bool = None
     ) -> Optional[IOU]:
         try:
             return next(self.get_ious(sender, expiration_block, claimed))
@@ -287,7 +287,7 @@ class PFSDatabase(BaseDatabase):
             yield route
 
     def get_feedback_token(
-        self, token_id: UUID, token_network_address: TokenNetworkAddress, route: List[Address],
+        self, token_id: UUID, token_network_address: TokenNetworkAddress, route: List[Address]
     ) -> Optional[FeedbackToken]:
         hexed_route = [to_checksum_address(e) for e in route]
         token = self.conn.execute(
