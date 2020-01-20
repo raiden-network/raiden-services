@@ -226,7 +226,7 @@ def process_payment(  # pylint: disable=too-many-branches
 
     log.debug(
         "Checking IOU",
-        sender=iou.sender,
+        sender=to_checksum_address(iou.sender),
         total_amount=iou.amount,
         expiration_block=iou.expiration_block,
     )
