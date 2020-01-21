@@ -32,7 +32,10 @@ from raiden.network.transport.matrix.utils import (
 from raiden.network.transport.utils import timeout_exponential_backoff
 from raiden.settings import (
     DEFAULT_MATRIX_KNOWN_SERVERS,
-    DEFAULT_TRANSPORT_MATRIX_RETRY_INTERVAL,
+    DEFAULT_TRANSPORT_MATRIX_RETRY_INTERVAL_INITIAL,
+    DEFAULT_TRANSPORT_MATRIX_RETRY_INTERVAL_MAX,
+    DEFAULT_TRANSPORT_MATRIX_SYNC_LATENCY,
+    DEFAULT_TRANSPORT_MATRIX_SYNC_TIMEOUT,
     DEFAULT_TRANSPORT_RETRIES_BEFORE_BACKOFF,
 )
 from raiden.storage.serialization.serializer import MessageSerializer
@@ -120,8 +123,8 @@ def deserialize_messages(
 def matrix_http_retry_delay() -> Iterable[float]:
     return timeout_exponential_backoff(
         DEFAULT_TRANSPORT_RETRIES_BEFORE_BACKOFF,
-        int(DEFAULT_TRANSPORT_MATRIX_RETRY_INTERVAL / 5),
-        int(DEFAULT_TRANSPORT_MATRIX_RETRY_INTERVAL),
+        DEFAULT_TRANSPORT_MATRIX_RETRY_INTERVAL_INITIAL,
+        DEFAULT_TRANSPORT_MATRIX_RETRY_INTERVAL_MAX,
     )
 
 
@@ -175,12 +178,18 @@ class MatrixListener(gevent.Greenlet):
 
     def listen_forever(self) -> None:
         self.startup_finished.wait()
-        self._client.listen_forever()
+        self._client.listen_forever(
+            timeout_ms=DEFAULT_TRANSPORT_MATRIX_SYNC_TIMEOUT,
+            latency_ms=DEFAULT_TRANSPORT_MATRIX_SYNC_LATENCY,
+        )
 
     def _run(self) -> None:  # pylint: disable=method-hidden
         self._start_client()
 
-        self._client.start_listener_thread()
+        self._client.start_listener_thread(
+            timeout_ms=DEFAULT_TRANSPORT_MATRIX_SYNC_TIMEOUT,
+            latency_ms=DEFAULT_TRANSPORT_MATRIX_SYNC_LATENCY,
+        )
         assert self._client.sync_worker
         self._client.synced.wait()
 
