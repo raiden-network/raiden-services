@@ -272,7 +272,7 @@ class PFSDatabase(BaseDatabase):
 
         sql = f"""
             SELECT
-                source_address, target_address, route, estimated_fee
+                source_address, target_address, route, estimated_fee, token_id
             FROM
                 feedback
             WHERE
