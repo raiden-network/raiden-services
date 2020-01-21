@@ -112,6 +112,12 @@ def test_deserialize_messages_valid_messages(request_monitoring_message):
     assert len(messages) == 2
 
 
+def test_matrix_http_retry_delay():
+    delays = list(itertools.islice(matrix_http_retry_delay(), 8))
+
+    assert delays == [5.0, 10.0, 20.0, 40.0, 60.0, 60.0, 60.0, 60.0]
+
+
 def test_deserialize_messages_with_missing_fields(request_monitoring_message):
     message_dict = DictSerializer.serialize(request_monitoring_message)
     list_of_key_words = list(message_dict.keys())
