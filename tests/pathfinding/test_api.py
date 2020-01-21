@@ -47,40 +47,47 @@ def test_get_paths_via_debug_endpoint_with_debug_disabled(
 @pytest.mark.usefixtures("api_sut_with_debug")
 def test_get_paths_via_debug_endpoint_a(
     api_url: str, addresses: List[Address], token_network_model: TokenNetwork
-):
+):  # pylint: disable=too-many-locals
     # `last_failed_requests` is a module variable, so it might have entries
     # from tests that ran earlier.
     last_failed_requests.clear()
     hex_addrs = [to_checksum_address(addr) for addr in addresses]
     token_network_address = to_checksum_address(token_network_model.address)
 
-    response = requests.post(
-        api_url + f"/{token_network_address}/paths",
-        json={
-            "from": hex_addrs[0],
-            "to": hex_addrs[2],
-            "value": 10,
-            "max_paths": DEFAULT_MAX_PATHS,
-        },
-    )
-    assert response.status_code == 200
-    paths = response.json()["result"]
-    assert len(paths) == 1
-    assert paths == [{"path": [hex_addrs[0], hex_addrs[1], hex_addrs[2]], "estimated_fee": 0}]
+    # Make two requests, so we can test the `request_count` as well
+    for _ in range(2):
+        response = requests.post(
+            api_url + f"/{token_network_address}/paths",
+            json={
+                "from": hex_addrs[0],
+                "to": hex_addrs[2],
+                "value": 10,
+                "max_paths": DEFAULT_MAX_PATHS,
+            },
+        )
+        assert response.status_code == 200
+        paths = response.json()["result"]
+        assert len(paths) == 1
+        assert paths == [{"path": [hex_addrs[0], hex_addrs[1], hex_addrs[2]], "estimated_fee": 0}]
 
     # now there must be a debug endpoint for that specific route
     url_debug = api_url + f"/_debug/routes/{token_network_address}/{hex_addrs[0]}"
     response_debug = requests.get(url_debug)
     assert response_debug.status_code == 200
     request_count = response_debug.json()["request_count"]
-    assert request_count == 1
+    assert request_count == 2
     responses = response_debug.json()["responses"]
     assert responses == [
         {
             "source": hex_addrs[0],
             "target": hex_addrs[2],
             "routes": [{"path": [hex_addrs[0], hex_addrs[1], hex_addrs[2]], "estimated_fee": 0}],
-        }
+        },
+        {
+            "source": hex_addrs[0],
+            "target": hex_addrs[2],
+            "routes": [{"path": [hex_addrs[0], hex_addrs[1], hex_addrs[2]], "estimated_fee": 0}],
+        },
     ]
 
     # now there must be a debug endpoint for that specific route and that specific target
@@ -90,14 +97,19 @@ def test_get_paths_via_debug_endpoint_a(
     response_debug_incl_target = requests.get(url_debug_incl_requested_target)
     assert response_debug_incl_target.status_code == 200
     request_count = response_debug_incl_target.json()["request_count"]
-    assert request_count == 1
+    assert request_count == 2
     responses = response_debug.json()["responses"]
     assert responses == [
         {
             "source": hex_addrs[0],
             "target": hex_addrs[2],
             "routes": [{"path": [hex_addrs[0], hex_addrs[1], hex_addrs[2]], "estimated_fee": 0}],
-        }
+        },
+        {
+            "source": hex_addrs[0],
+            "target": hex_addrs[2],
+            "routes": [{"path": [hex_addrs[0], hex_addrs[1], hex_addrs[2]], "estimated_fee": 0}],
+        },
     ]
 
     # when requesting info for a target that was no path requested for

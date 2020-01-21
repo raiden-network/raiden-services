@@ -443,15 +443,26 @@ class DebugPathResource(PathfinderResource):
             decoded_target_address,
         )
 
-        grouped_routes: Dict[Tuple[str, str], List[Dict]] = collections.defaultdict(list)
+        # Group routes after request (each request shares the `token_id`)
+        grouped_routes: Dict[str, List[Dict]] = collections.defaultdict(list)
         for route in feedback_routes:
-            grouped_routes[(route["source_address"], route["target_address"])].append(
-                {"path": route["route"], "estimated_fee": route["estimated_fee"]}
-            )
-            request_count += 1
+            grouped_routes[route["token_id"]].append(route)
 
-        for from_to, routes in grouped_routes.items():
-            responses.append({"source": from_to[0], "target": from_to[1], "routes": routes})
+        for requests in grouped_routes.values():
+            routes = [
+                {"path": route["route"], "estimated_fee": route["estimated_fee"]}
+                for route in requests
+            ]
+
+            responses.append(
+                {
+                    "source": requests[0]["source_address"],
+                    "target": requests[0]["target_address"],
+                    "routes": routes,
+                }
+            )
+
+            request_count += 1
 
         return dict(request_count=request_count, responses=responses), 200
 
