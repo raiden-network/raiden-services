@@ -1,4 +1,4 @@
-git+https://github.com/palango/raiden.git@4dca1d2f35aaa94505cf82e3a2b890bf2106b7df
+git+https://github.com/raiden-network/raiden.git@61a0b71462a71496d93d8c2ab7cd3415455a937f
 raiden-contracts==0.34
 
 structlog==19.1.0
