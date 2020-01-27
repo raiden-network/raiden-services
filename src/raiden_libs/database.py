@@ -1,7 +1,7 @@
 import os
 import sqlite3
 import sys
-from typing import Any, Dict, Union
+from typing import Any, Dict
 
 import structlog
 from eth_utils import to_canonical_address
@@ -14,7 +14,10 @@ log = structlog.get_logger(__name__)
 
 
 def convert_hex(raw: bytes) -> int:
-    return int(raw, 16)
+    try:
+        return int(raw, 16)
+    except ValueError:
+        raise Exception("Bad integer in db: ", repr(raw))
 
 
 def convert_bool(raw: bytes) -> bool:
@@ -29,16 +32,19 @@ sqlite3.register_converter("HEX_INT", convert_hex)
 sqlite3.register_converter("BOOLEAN", convert_bool)
 
 
-def hex256(x: Union[int, str]) -> str:
+def hex256(x: int) -> str:
     """Hex encodes values up to 256 bits into a fixed length
 
     By including this amount of leading zeros in the hex string, lexicographic
     and numeric ordering are identical. This facilitates working with these
     numbers in the database without native uint256 support.
     """
-    if isinstance(x, str):
-        x = int(x)
-    return "0x{:064x}".format(x)
+    # We want to pad to 64 digits
+    # We also force a sign and add '0x', which is another 3 chars
+    # '+' forces the sign
+    # '#' adds the '0x'
+    # '067' pads to 67 chars
+    return "{0:+#067x}".format(x)
 
 
 class BaseDatabase:
