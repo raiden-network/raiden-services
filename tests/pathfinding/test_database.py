@@ -52,7 +52,7 @@ def db_has_feedback_for(database: PFSDatabase, token: FeedbackToken, route: List
 def test_insert_feedback_token(pathfinding_service_mock):
     token_network_address = TokenNetworkAddress(b"1" * 20)
     route = [Address(b"2" * 20), Address(b"3" * 20)]
-    estimated_fee = 0
+    estimated_fee = -123
 
     token = FeedbackToken(token_network_address=token_network_address)
     database = pathfinding_service_mock.database
