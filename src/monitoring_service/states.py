@@ -10,7 +10,6 @@ from raiden.messages.monitoring_service import RequestMonitoring, SignedBlindedB
 from raiden.utils.formatting import to_checksum_address
 from raiden.utils.keys import privatekey_to_address
 from raiden.utils.signer import LocalSigner, recover
-from raiden.utils.signing import pack_data
 from raiden.utils.typing import (
     AdditionalHash,
     Address,
@@ -26,7 +25,7 @@ from raiden.utils.typing import (
     TransactionHash,
 )
 from raiden_contracts.constants import ChannelState, MessageTypeId
-from raiden_contracts.utils.proofs import pack_reward_proof
+from raiden_contracts.utils.proofs import pack_balance_proof, pack_reward_proof
 from raiden_libs.states import BlockchainState
 
 
@@ -111,14 +110,14 @@ class HashedBalanceProof:
             self.signature = signature
 
     def serialize_bin(self, msg_type: MessageTypeId = MessageTypeId.BALANCE_PROOF) -> bytes:
-        return pack_data(
-            (self.token_network_address, "address"),
-            (self.chain_id, "uint256"),
-            (msg_type.value, "uint256"),
-            (self.channel_identifier, "uint256"),
-            (decode_hex(self.balance_hash), "bytes32"),
-            (self.nonce, "uint256"),
-            (decode_hex(self.additional_hash), "bytes32"),
+        return pack_balance_proof(
+            to_checksum_address(self.token_network_address),
+            self.chain_id,
+            self.channel_identifier,
+            decode_hex(self.balance_hash),
+            self.nonce,
+            decode_hex(self.additional_hash),
+            msg_type,
         )
 
     def get_request_monitoring(
@@ -230,14 +229,14 @@ class UnsignedMonitorRequest:
     def packed_balance_proof_data(
         self, message_type: MessageTypeId = MessageTypeId.BALANCE_PROOF
     ) -> bytes:
-        return pack_data(
-            (self.token_network_address, "address"),
-            (self.chain_id, "uint256"),
-            (message_type.value, "uint256"),
-            (self.channel_identifier, "uint256"),
-            (decode_hex(self.balance_hash), "bytes32"),
-            (self.nonce, "uint256"),
-            (decode_hex(self.additional_hash), "bytes32"),
+        return pack_balance_proof(
+            to_checksum_address(self.token_network_address),
+            self.chain_id,
+            self.channel_identifier,
+            decode_hex(self.balance_hash),
+            self.nonce,
+            decode_hex(self.additional_hash),
+            message_type,
         )
 
     def packed_reward_proof_data(self, non_closing_signature: Signature) -> bytes:
