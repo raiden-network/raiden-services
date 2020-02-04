@@ -118,7 +118,7 @@ class PFSDatabase(BaseDatabase):
         iou_dict = IOU.Schema(exclude=["receiver", "chain_id"]).dump(iou)
         iou_dict["one_to_n_address"] = to_checksum_address(iou_dict["one_to_n_address"])
         for key in ("amount", "expiration_block"):
-            iou_dict[key] = hex256(iou_dict[key])
+            iou_dict[key] = hex256(int(iou_dict[key]))
         self.upsert("iou", iou_dict)
 
     def get_ious(
@@ -176,7 +176,7 @@ class PFSDatabase(BaseDatabase):
             "reveal_timeout2",
             "update_nonce2",
         ):
-            channel_dict[key] = hex256(channel_dict[key])
+            channel_dict[key] = hex256(int(channel_dict[key]))
         channel_dict["fee_schedule1"] = json.dumps(channel_dict["fee_schedule1"])
         channel_dict["fee_schedule2"] = json.dumps(channel_dict["fee_schedule2"])
         self.upsert("channel", channel_dict)

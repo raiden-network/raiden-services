@@ -19,7 +19,6 @@ from pathfinding_service.api import DEFAULT_MAX_PATHS, ServiceApi, last_failed_r
 from pathfinding_service.model import IOU, TokenNetwork
 from pathfinding_service.model.feedback import FeedbackToken
 from raiden.utils.signer import LocalSigner
-from raiden.utils.signing import pack_data
 from raiden.utils.typing import Address, BlockNumber, ChainID, FeeAmount, Signature, TokenAmount
 from raiden_contracts.tests.utils import get_random_privkey
 from raiden_libs.utils import private_key_to_address
@@ -457,11 +456,9 @@ def test_get_iou(api_sut: ServiceApi, api_url: str, token_network_model: TokenNe
         local_signer = LocalSigner(private_key=decode_hex(privkey))
         params["signature"] = encode_hex(
             local_signer.sign(
-                pack_data(
-                    (params["sender"], "address"),
-                    (params["receiver"], "address"),
-                    (params["timestamp"], "string"),
-                )
+                to_canonical_address(params["sender"])
+                + to_canonical_address(params["receiver"])
+                + params["timestamp"].encode("utf8")
             )
         )
         return params
