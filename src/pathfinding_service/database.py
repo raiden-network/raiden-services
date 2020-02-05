@@ -123,11 +123,11 @@ class PFSDatabase(BaseDatabase):
 
     def get_ious(
         self,
-        sender: Address = None,
-        expiration_block: BlockNumber = None,
-        claimed: bool = None,
-        expires_before: BlockNumber = None,
-        amount_at_least: TokenAmount = None,
+        sender: Optional[Address] = None,
+        expiration_block: Optional[BlockNumber] = None,
+        claimed: Optional[bool] = None,
+        expires_before: Optional[BlockNumber] = None,
+        amount_at_least: Optional[TokenAmount] = None,
     ) -> Iterator[IOU]:
         query = """
             SELECT *, (SELECT chain_id FROM blockchain) AS chain_id
@@ -157,7 +157,10 @@ class PFSDatabase(BaseDatabase):
             yield IOU.Schema().load(iou_dict)
 
     def get_iou(
-        self, sender: Address, expiration_block: BlockNumber = None, claimed: bool = None
+        self,
+        sender: Address,
+        expiration_block: Optional[BlockNumber] = None,
+        claimed: Optional[bool] = None,
     ) -> Optional[IOU]:
         try:
             return next(self.get_ious(sender, expiration_block, claimed))
@@ -258,7 +261,7 @@ class PFSDatabase(BaseDatabase):
         self,
         token_network_address: TokenNetworkAddress,
         source_address: Address,
-        target_address: Address = None,
+        target_address: Optional[Address] = None,
     ) -> Iterator[Dict]:
         filters = {
             "token_network_address": to_checksum_address(token_network_address),

@@ -136,7 +136,7 @@ class MatrixListener(gevent.Greenlet):
         chain_id: ChainID,
         service_room_suffix: str,
         message_received_callback: Callable[[Message], None],
-        servers: List[str] = None,
+        servers: Optional[List[str]] = None,
     ) -> None:
         super().__init__()
 

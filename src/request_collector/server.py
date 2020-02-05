@@ -1,5 +1,4 @@
 import sys
-from typing import List
 
 import gevent
 import structlog
@@ -13,7 +12,7 @@ from raiden.constants import MONITORING_BROADCASTING_ROOM
 from raiden.exceptions import InvalidSignature
 from raiden.messages.abstract import Message
 from raiden.messages.monitoring_service import RequestMonitoring
-from raiden.utils.typing import TokenNetworkAddress
+from raiden.utils.typing import List, Optional, TokenNetworkAddress
 from raiden_libs.constants import MATRIX_START_TIMEOUT
 from raiden_libs.matrix import MatrixListener
 
@@ -22,7 +21,10 @@ log = structlog.get_logger(__name__)
 
 class RequestCollector(gevent.Greenlet):
     def __init__(
-        self, private_key: str, state_db: SharedDatabase, matrix_servers: List[str] = None
+        self,
+        private_key: str,
+        state_db: SharedDatabase,
+        matrix_servers: Optional[List[str]] = None,
     ):
         super().__init__()
 

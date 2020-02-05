@@ -415,7 +415,7 @@ class InfoResource(PathfinderResource):
 
 class DebugPathResource(PathfinderResource):
     def get(  # pylint: disable=no-self-use
-        self, token_network_address: str, source_address: str, target_address: str = None
+        self, token_network_address: str, source_address: str, target_address: Optional[str] = None
     ) -> Tuple[dict, int]:
         request_count = 0
         responses = []

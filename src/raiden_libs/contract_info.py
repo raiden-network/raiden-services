@@ -4,7 +4,7 @@ from typing import Dict, List, Tuple
 import structlog
 from eth_utils import to_canonical_address
 
-from raiden.utils.typing import Address, BlockNumber, ChainID
+from raiden.utils.typing import Address, BlockNumber, ChainID, Optional
 from raiden_contracts.contract_manager import (
     ContractManager,
     contracts_precompiled_path,
@@ -19,7 +19,7 @@ def get_contract_addresses_and_start_block(
     chain_id: ChainID,
     contracts: List[str],
     address_overwrites: Dict[str, Address],
-    contracts_version: str = None,
+    contracts_version: Optional[str] = None,
 ) -> Tuple[Dict[str, Address], BlockNumber]:
     """ Returns contract addresses and start query block for a given chain and contracts version.
 

@@ -27,7 +27,7 @@ class ApiException(Exception):
     error_code: int = 0
     error_details: Optional[Dict[str, Any]] = None
 
-    def __init__(self, msg: str = None, **details: Any):
+    def __init__(self, msg: Optional[str] = None, **details: Any):
         super().__init__(msg)
         if msg:
             self.msg = msg

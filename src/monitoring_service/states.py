@@ -77,14 +77,14 @@ class HashedBalanceProof:
         chain_id: ChainID,
         nonce: Nonce,
         additional_hash: str,
-        balance_hash: str = None,
-        signature: Signature = None,
+        balance_hash: Optional[str] = None,
+        signature: Optional[Signature] = None,
         # these three parameters can be passed instead of `balance_hash`
-        transferred_amount: int = None,
-        locked_amount: int = None,
-        locksroot: str = None,
+        transferred_amount: Optional[int] = None,
+        locked_amount: Optional[int] = None,
+        locksroot: Optional[str] = None,
         # can be used instead of passing `signature`
-        priv_key: str = None,
+        priv_key: Optional[str] = None,
     ) -> None:
         self.channel_identifier = channel_identifier
         self.token_network_address = token_network_address
