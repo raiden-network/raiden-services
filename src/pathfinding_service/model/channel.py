@@ -15,6 +15,7 @@ from raiden.utils.typing import (
     BlockTimeout,
     ChannelID,
     Nonce,
+    Optional,
     TokenAmount,
     TokenNetworkAddress,
 )
@@ -140,7 +141,10 @@ class ChannelView:
         return self.channel.fee_schedule1 if self.reverse else self.channel.fee_schedule2
 
     def update_capacity(
-        self, capacity: TokenAmount, nonce: Nonce = Nonce(0), reveal_timeout: BlockTimeout = None
+        self,
+        capacity: TokenAmount,
+        nonce: Nonce = Nonce(0),
+        reveal_timeout: Optional[BlockTimeout] = None,
     ) -> None:
         self.update_nonce = nonce
         self.capacity = capacity

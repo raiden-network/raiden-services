@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta, timezone
-from typing import Callable, List
 from uuid import uuid4
 
 import pkg_resources
@@ -19,7 +18,17 @@ from pathfinding_service.api import DEFAULT_MAX_PATHS, ServiceApi, last_failed_r
 from pathfinding_service.model import IOU, TokenNetwork
 from pathfinding_service.model.feedback import FeedbackToken
 from raiden.utils.signer import LocalSigner
-from raiden.utils.typing import Address, BlockNumber, ChainID, FeeAmount, Signature, TokenAmount
+from raiden.utils.typing import (
+    Address,
+    BlockNumber,
+    Callable,
+    ChainID,
+    FeeAmount,
+    List,
+    Optional,
+    Signature,
+    TokenAmount,
+)
 from raiden_contracts.tests.utils import get_random_privkey
 from raiden_libs.utils import private_key_to_address
 
@@ -512,7 +521,9 @@ def test_feedback(api_sut: ServiceApi, api_url: str, token_network_model: TokenN
     default_path = [to_canonical_address(e) for e in default_path_hex]
     estimated_fee = FeeAmount(0)
 
-    def make_request(token_id: str = None, success: bool = True, path: List[str] = None):
+    def make_request(
+        token_id: Optional[str] = None, success: bool = True, path: Optional[List[str]] = None
+    ):
         url = api_url + f"/{to_checksum_address(token_network_model.address)}/feedback"
 
         token_id = token_id or uuid4().hex

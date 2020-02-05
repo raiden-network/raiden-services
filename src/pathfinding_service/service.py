@@ -63,7 +63,7 @@ class PathfindingService(gevent.Greenlet):
         sync_start_block: BlockNumber = BlockNumber(0),
         required_confirmations: int = 8,
         poll_interval: float = 10,
-        matrix_servers: List[str] = None,
+        matrix_servers: Optional[List[str]] = None,
     ):
         super().__init__()
 

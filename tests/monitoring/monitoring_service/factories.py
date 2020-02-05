@@ -16,6 +16,7 @@ from raiden.utils.typing import (
     ChainID,
     ChannelID,
     Nonce,
+    Optional,
     TokenAmount,
     TokenNetworkAddress,
 )
@@ -59,7 +60,7 @@ def create_signed_monitor_request(
     return monitor_request
 
 
-def create_channel(update_status: OnChainUpdateStatus = None) -> Channel:
+def create_channel(update_status: Optional[OnChainUpdateStatus] = None) -> Channel:
     return Channel(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
         identifier=DEFAULT_CHANNEL_IDENTIFIER,
