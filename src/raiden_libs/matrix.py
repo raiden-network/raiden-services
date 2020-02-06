@@ -217,6 +217,9 @@ class MatrixListener(gevent.Greenlet):
             self._broadcast_room = join_broadcast_room(
                 client=self._client, broadcast_room_alias=room_alias
             )
+
+            sync_filter_id = self._client.create_sync_filter(rooms=[self._broadcast_room])
+            self._client.set_sync_filter_id(sync_filter_id)
         except (MatrixRequestError, TransportError):
             raise ConnectionError("Could not join monitoring broadcasting room.")
 
