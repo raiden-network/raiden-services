@@ -261,6 +261,7 @@ def connect_to_blockchain(
 
 def setup_sentry(enable_flask_integration: bool = False) -> None:
     sentry_dsn = os.environ.get("SENTRY_DSN")
+    environment = os.environ.get("DEPLOY_ENV")
     if sentry_dsn is not None:
         log.info("Initializing sentry", dsn=sentry_dsn)
         integrations: List[Any] = [LoggingIntegration(level=logging.INFO, event_level=None)]
@@ -270,4 +271,5 @@ def setup_sentry(enable_flask_integration: bool = False) -> None:
             dsn=sentry_dsn,
             integrations=integrations,
             release=pkg_resources.get_distribution("raiden-services").version,
+            environment=environment,
         )
