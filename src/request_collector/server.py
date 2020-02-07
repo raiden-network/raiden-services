@@ -4,6 +4,7 @@ import gevent
 import structlog
 from eth_utils import encode_hex
 from gevent import Timeout
+from sentry_sdk import configure_scope
 
 from monitoring_service.constants import CHANNEL_CLOSE_MARGIN
 from monitoring_service.database import SharedDatabase
@@ -57,14 +58,16 @@ class RequestCollector(gevent.Greenlet):
         self.matrix_listener.get()
 
     def handle_message(self, message: Message) -> None:
-        try:
-            if isinstance(message, RequestMonitoring):
-                self.on_monitor_request(message)
-            else:
-                log.debug("Ignoring message", message=message)
-        # add more advanced exception catching
-        except AssertionError as ex:
-            log.error("Error while handling message", message=message, _exc=ex)
+        with configure_scope() as scope:
+            scope.set_extra("message", message)
+            try:
+                if isinstance(message, RequestMonitoring):
+                    self.on_monitor_request(message)
+                else:
+                    log.debug("Ignoring message", message=message)
+            # add more advanced exception catching
+            except AssertionError as ex:
+                log.error("Error while handling message", message=message, _exc=ex)
 
     def on_monitor_request(self, request_monitoring: RequestMonitoring) -> None:
         assert isinstance(request_monitoring, RequestMonitoring)
