@@ -8,6 +8,7 @@ monkey.patch_all(subprocess=False, thread=False)  # isort:skip # noqa
 from typing import Dict, List
 
 import click
+import gevent
 import structlog
 from web3 import Web3
 from web3.contract import Contract
@@ -103,7 +104,10 @@ def main(  # pylint: disable-msg=too-many-arguments
         )
         service.start()
         log.debug("Waiting for service to start before accepting API requests")
-        assert service.startup_finished.wait(timeout=60), "PFS did not start within time."
+        try:
+            service.startup_finished.get(timeout=60)
+        except gevent.Timeout:
+            raise Exception("PFS did not start within time.")
 
         log.debug("Starting API")
         api = ServiceApi(

@@ -178,4 +178,4 @@ def test_matrix_lister_smoke_test(get_accounts, get_private_key):
         )
         listener._run()  # pylint: disable=protected-access
 
-    assert listener.startup_finished.is_set()
+    assert listener.startup_finished.done()
