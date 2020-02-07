@@ -5,6 +5,7 @@ from dataclasses import asdict
 from typing import Dict, List, Optional
 
 import gevent
+import sentry_sdk
 import structlog
 from gevent import Timeout
 from web3 import Web3
@@ -196,17 +197,19 @@ class PathfindingService(gevent.Greenlet):
         return self.token_networks.get(token_network_address)
 
     def handle_event(self, event: Event) -> None:
-        if isinstance(event, ReceiveTokenNetworkCreatedEvent):
-            self.handle_token_network_created(event)
-        elif isinstance(event, ReceiveChannelOpenedEvent):
-            self.handle_channel_opened(event)
-        elif isinstance(event, ReceiveChannelClosedEvent):
-            self.handle_channel_closed(event)
-        elif isinstance(event, UpdatedHeadBlockEvent):
-            # TODO: Store blockhash here as well
-            self.database.update_lastest_committed_block(event.head_block_number)
-        else:
-            log.debug("Unhandled event", evt=event)
+        with sentry_sdk.configure_scope() as scope:
+            scope.set_extra("event", event)
+            if isinstance(event, ReceiveTokenNetworkCreatedEvent):
+                self.handle_token_network_created(event)
+            elif isinstance(event, ReceiveChannelOpenedEvent):
+                self.handle_channel_opened(event)
+            elif isinstance(event, ReceiveChannelClosedEvent):
+                self.handle_channel_closed(event)
+            elif isinstance(event, UpdatedHeadBlockEvent):
+                # TODO: Store blockhash here as well
+                self.database.update_lastest_committed_block(event.head_block_number)
+            else:
+                log.debug("Unhandled event", evt=event)
 
     def handle_token_network_created(self, event: ReceiveTokenNetworkCreatedEvent) -> None:
         network_address = event.token_network_address
@@ -262,22 +265,24 @@ class PathfindingService(gevent.Greenlet):
             )
 
     def handle_message(self, message: Message) -> None:
-        try:
-            if isinstance(message, PFSCapacityUpdate):
-                changed_channel: Optional[Channel] = self.on_capacity_update(message)
-            elif isinstance(message, PFSFeeUpdate):
-                changed_channel = self.on_fee_update(message)
-            else:
-                log.debug("Ignoring message", unknown_message=message)
-                return
+        with sentry_sdk.configure_scope() as scope:
+            scope.set_extra("message", message)
+            try:
+                if isinstance(message, PFSCapacityUpdate):
+                    changed_channel: Optional[Channel] = self.on_capacity_update(message)
+                elif isinstance(message, PFSFeeUpdate):
+                    changed_channel = self.on_fee_update(message)
+                else:
+                    log.debug("Ignoring message", unknown_message=message)
+                    return
 
-            if changed_channel:
-                self.database.upsert_channel(changed_channel)
+                if changed_channel:
+                    self.database.upsert_channel(changed_channel)
 
-        except DeferMessage as ex:
-            self.defer_message_until_channel_is_open(ex.deferred_message)
-        except InvalidGlobalMessage as ex:
-            log.info(str(ex), **asdict(message))
+            except DeferMessage as ex:
+                self.defer_message_until_channel_is_open(ex.deferred_message)
+            except InvalidGlobalMessage as ex:
+                log.info(str(ex), **asdict(message))
 
     def defer_message_until_channel_is_open(self, message: DeferableMessage) -> None:
         log.debug(
