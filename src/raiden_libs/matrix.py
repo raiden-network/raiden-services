@@ -6,7 +6,7 @@ from urllib.parse import urlparse
 import gevent
 import structlog
 from eth_utils import decode_hex
-from gevent.event import Event
+from gevent.event import AsyncResult
 from marshmallow import ValidationError
 from matrix_client.errors import MatrixRequestError
 from matrix_client.user import User
@@ -170,17 +170,10 @@ class MatrixListener(gevent.Greenlet):
             address_reachability_changed_callback=noop_reachability,
         )
 
-        self.startup_finished = Event()
+        self.startup_finished = AsyncResult()
         self._rate_limiter = RateLimiter(
             allowed_bytes=MATRIX_RATE_LIMIT_ALLOWED_BYTES,
             reset_interval=MATRIX_RATE_LIMIT_RESET_INTERVAL,
-        )
-
-    def listen_forever(self) -> None:
-        self.startup_finished.wait()
-        self._client.listen_forever(
-            timeout_ms=DEFAULT_TRANSPORT_MATRIX_SYNC_TIMEOUT,
-            latency_ms=DEFAULT_TRANSPORT_MATRIX_SYNC_LATENCY,
         )
 
     def _run(self) -> None:  # pylint: disable=method-hidden
@@ -191,16 +184,20 @@ class MatrixListener(gevent.Greenlet):
             latency_ms=DEFAULT_TRANSPORT_MATRIX_SYNC_LATENCY,
         )
         assert self._client.sync_worker
-        self._client.synced.wait()
+        # When the sync worker fails, waiting for startup_finished does not
+        # make any sense.
+        self._client.sync_worker.link(self.startup_finished)
 
-        # Signal that startup has finished
-        self.startup_finished.set()
+        def set_startup_finished() -> None:
+            self._client.synced.wait()
+            self.startup_finished.set()
 
-        self._client.sync_worker.get()
-
-    def stop(self) -> None:
-        self.user_manager.stop()
-        self._client.stop_listener_thread()
+        startup_finished_greenlet = gevent.spawn(set_startup_finished)
+        try:
+            self._client.sync_worker.get()
+        finally:
+            self._client.stop_listener_thread()
+            gevent.joinall({startup_finished_greenlet}, raise_error=True, timeout=0)
 
     def _start_client(self) -> None:
         try:

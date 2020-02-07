@@ -105,7 +105,7 @@ class PathfindingService(gevent.Greenlet):
 
         self.token_networks = self._load_token_networks()
         self.updated = gevent.event.Event()  # set whenever blocks are processed
-        self.startup_finished = gevent.event.Event()
+        self.startup_finished = gevent.event.AsyncResult()
 
     def _load_token_networks(self) -> Dict[TokenNetworkAddress, TokenNetwork]:
         network_for_address = {n.address: n for n in self.database.get_token_networks()}
@@ -122,12 +122,15 @@ class PathfindingService(gevent.Greenlet):
     def _run(self) -> None:  # pylint: disable=method-hidden
         try:
             self.matrix_listener.start()
-            assert self.matrix_listener.startup_finished.wait(
-                timeout=MATRIX_START_TIMEOUT
-            ), "MatrixListener did not start in time."
         except (Timeout, ConnectionError) as exc:
             log.critical("Could not connect to broadcasting system.", exc=exc)
             sys.exit(1)
+
+        self.matrix_listener.link(self.startup_finished)
+        try:
+            self.matrix_listener.startup_finished.get(timeout=MATRIX_START_TIMEOUT)
+        except Timeout:
+            raise Exception("MatrixListener did not start in time.")
         self.startup_finished.set()
 
         log.info(
@@ -182,7 +185,7 @@ class PathfindingService(gevent.Greenlet):
             )
 
     def stop(self) -> None:
-        self.matrix_listener.stop()
+        self.matrix_listener.kill()
         self._is_running.set()
         self.matrix_listener.join()
 
