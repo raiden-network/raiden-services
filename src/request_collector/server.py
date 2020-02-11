@@ -43,7 +43,7 @@ class RequestCollector(gevent.Greenlet):
         )
 
     def listen_forever(self) -> None:
-        self.matrix_listener.listen_forever()
+        self.matrix_listener.run()
 
     def _run(self) -> None:  # pylint: disable=method-hidden
         try:
