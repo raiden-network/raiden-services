@@ -144,6 +144,7 @@ class MonitoringService:  # pylint: disable=too-few-public-methods,too-many-inst
             last_block = BlockNumber(min(last_confirmed_block, max_query_interval_end_block))
 
             self._process_new_blocks(last_block)
+            self._trigger_scheduled_events()
             self._check_pending_transactions()
             self._purge_old_monitor_requests()
 
@@ -176,8 +177,16 @@ class MonitoringService:  # pylint: disable=too-few-public-methods,too-many-inst
         for event in events:
             handle_event(event, self.context)
 
-        # check triggered events and trigger the correct ones
-        triggered_events = self.context.database.get_scheduled_events(max_trigger_block=last_block)
+    def _trigger_scheduled_events(self) -> None:
+        """ Trigger scheduled events
+
+        Here `latest_block` is used instead of `latest_confirmed_block`, because triggered
+        events only rely on block number, and not on certain events that might change during
+        a chain reorg.
+        """
+        triggered_events = self.context.database.get_scheduled_events(
+            max_trigger_block=self.context.latest_block
+        )
         for scheduled_event in triggered_events:
             event = scheduled_event.event
 
