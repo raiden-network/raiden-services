@@ -29,7 +29,7 @@ jobs:
             fi
             . venv/bin/activate
             pip config set global.progress_bar off
-            pip install -r requirements-dev.txt
+            pip install -U -r requirements-dev.txt
             pip install -e .
             pip install codecov
 
