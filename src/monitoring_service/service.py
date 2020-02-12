@@ -88,7 +88,6 @@ class MonitoringService:  # pylint: disable=too-few-public-methods,too-many-inst
         self.web3 = web3
         self.private_key = private_key
         self.address = private_key_to_address(private_key)
-        self.required_confirmations = required_confirmations
         self.poll_interval = poll_interval
         self.service_registry = contracts[CONTRACT_SERVICE_REGISTRY]
 
