@@ -47,7 +47,7 @@ def test_first_allowed_monitoring(
     service_registry,
     monitoring_service: MonitoringService,
     request_collector: RequestCollector,
-    contracts_manager,
+    contracts_manager: ContractManager,
     deposit_to_udc,
     create_channel,
     token_network,
@@ -152,7 +152,7 @@ def test_e2e(  # pylint: disable=too-many-arguments,too-many-locals
     service_registry,
     monitoring_service: MonitoringService,
     request_collector: RequestCollector,
-    contracts_manager,
+    contracts_manager: ContractManager,
     deposit_to_udc,
     create_channel,
     token_network,
@@ -233,9 +233,9 @@ def test_e2e(  # pylint: disable=too-many-arguments,too-many-locals
     ).transact({"from": c2})
     # Wait until the MS reacts, which it does after giving the client some time
     # to update the channel itself.
-    wait_for_blocks(3)  # 1 block for close + 30% of 5 blocks = 2
+    wait_for_blocks(2)  # 1 block for close + 1 block for triggering the event
     # Now give the monitoring service a chance to submit the missing BP
-    gevent.sleep(0.1)
+    gevent.sleep(0.01)
 
     assert [e.event for e in query()] == [MonitoringServiceEvent.NEW_BALANCE_PROOF_RECEIVED]
 
@@ -256,7 +256,7 @@ def test_e2e(  # pylint: disable=too-many-arguments,too-many-locals
 
     # Wait until the ChannelSettled is confirmed
     # Let the MS claim its reward
-    gevent.sleep(0.1)
+    gevent.sleep(0.01)
     assert [e.event for e in query()] == [
         MonitoringServiceEvent.NEW_BALANCE_PROOF_RECEIVED,
         MonitoringServiceEvent.REWARD_CLAIMED,

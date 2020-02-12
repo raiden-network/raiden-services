@@ -54,9 +54,14 @@ class Context:
         return self.ms_state.blockchain_state.latest_committed_block
 
     @property
+    def latest_block(self) -> BlockNumber:
+        """ The latest block. """
+        return self.web3.eth.blockNumber
+
+    @property
     def latest_confirmed_block(self) -> BlockNumber:
         """ The latest confirmed block. """
-        return self.web3.eth.blockNumber - self.required_confirmations
+        return BlockNumber(self.latest_block - self.required_confirmations)
 
 
 def channel_opened_event_handler(event: Event, context: Context) -> None:
