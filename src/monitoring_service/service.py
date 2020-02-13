@@ -185,7 +185,7 @@ class MonitoringService:  # pylint: disable=too-few-public-methods,too-many-inst
         a chain reorg.
         """
         triggered_events = self.context.database.get_scheduled_events(
-            max_trigger_block=self.context.latest_block
+            max_trigger_block=self.context.get_latest_unconfirmed_block()
         )
         for scheduled_event in triggered_events:
             event = scheduled_event.event
