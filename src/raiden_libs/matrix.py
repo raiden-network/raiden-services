@@ -18,7 +18,11 @@ from monitoring_service.constants import (
 from raiden.constants import Environment
 from raiden.exceptions import SerializationError, TransportError
 from raiden.messages.abstract import Message, SignedMessage
-from raiden.network.transport.matrix.client import MatrixMessage, MatrixSyncMessages, Room
+from raiden.network.transport.matrix.client import (
+    MatrixMessage,
+    MatrixSyncMessages,
+    Room,
+)
 from raiden.network.transport.matrix.utils import (
     AddressReachability,
     DisplayNameCache,
@@ -104,7 +108,9 @@ def deserialize_messages(
         try:
             message = MessageSerializer.deserialize(line)
         except (SerializationError, ValidationError, KeyError, ValueError) as ex:
-            logger.warning("Message data JSON is not a valid message", message_data=line, _exc=ex)
+            logger.warning(
+                "Message data JSON is not a valid message", message_data=line, _exc=ex
+            )
             continue
 
         if not isinstance(message, SignedMessage):
@@ -112,7 +118,9 @@ def deserialize_messages(
             continue
 
         if message.sender != peer_address:
-            logger.warning("Message not signed by sender!", message=message, signer=message.sender)
+            logger.warning(
+                "Message not signed by sender!", message=message, signer=message.sender
+            )
             continue
 
         messages.append(message)
@@ -189,7 +197,7 @@ class MatrixListener(gevent.Greenlet):
         self._client.sync_worker.link(self.startup_finished)
 
         def set_startup_finished() -> None:
-            self._client.synced.wait()
+            self._client.processed.wait()
             self.startup_finished.set()
 
         startup_finished_greenlet = gevent.spawn(set_startup_finished)
@@ -203,7 +211,10 @@ class MatrixListener(gevent.Greenlet):
         try:
             self.user_manager.start()
 
-            login(self._client, signer=LocalSigner(private_key=decode_hex(self.private_key)))
+            login(
+                self._client,
+                signer=LocalSigner(private_key=decode_hex(self.private_key)),
+            )
         except (MatrixRequestError, ValueError):
             raise ConnectionError("Could not login/register to matrix.")
 
@@ -215,7 +226,9 @@ class MatrixListener(gevent.Greenlet):
                 client=self._client, broadcast_room_alias=room_alias
             )
 
-            sync_filter_id = self._client.create_sync_filter(rooms=[self._broadcast_room])
+            sync_filter_id = self._client.create_sync_filter(
+                rooms=[self._broadcast_room]
+            )
             self._client.set_sync_filter_id(sync_filter_id)
         except (MatrixRequestError, TransportError):
             raise ConnectionError("Could not join monitoring broadcasting room.")
@@ -226,7 +239,8 @@ class MatrixListener(gevent.Greenlet):
         if refresh:
             self.user_manager.populate_userids_for_address(address)
             self.user_manager.track_address_presence(
-                address=address, user_ids=self.user_manager.get_userids_for_address(address)
+                address=address,
+                user_ids=self.user_manager.get_userids_for_address(address),
             )
 
         log.debug(
@@ -240,7 +254,9 @@ class MatrixListener(gevent.Greenlet):
         """Creates an User from an user_id, if none, or fetch a cached User """
         assert self._broadcast_room
         if user_id in self._broadcast_room._members:  # pylint: disable=protected-access
-            user: User = self._broadcast_room._members[user_id]  # pylint: disable=protected-access
+            user: User = self._broadcast_room._members[
+                user_id
+            ]  # pylint: disable=protected-access
         else:
             user = self._client.get_user(user_id)
 
@@ -259,14 +275,17 @@ class MatrixListener(gevent.Greenlet):
 
         return True
 
-    def _handle_message(self, room: Room, message: MatrixMessage) -> List[SignedMessage]:
+    def _handle_message(
+        self, room: Room, message: MatrixMessage
+    ) -> List[SignedMessage]:
         """ Handle a single Matrix message.
 
         The matrix message is expected to be a NDJSON, and each entry should be
         a valid JSON encoded Raiden message.
         """
         is_valid_type = (
-            message["type"] == "m.room.message" and message["content"]["msgtype"] == "m.text"
+            message["type"] == "m.room.message"
+            and message["content"]["msgtype"] == "m.text"
         )
         if not is_valid_type:
             return []
