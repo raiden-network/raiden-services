@@ -290,15 +290,15 @@ def test_logging_processor():
     logger = Mock()
     log_method = Mock()
 
-    address = b"\x7f[\xf6\xc9To\xa8\x185w\xe4\x9f\x15\xbc\xef@mr\xd5\xd9"
+    address = Address(b"\x7f[\xf6\xc9To\xa8\x185w\xe4\x9f\x15\xbc\xef@mr\xd5\xd9")
     address_log = format_to_hex(
         _logger=logger, _log_method=log_method, event_dict=dict(address=address)
     )
     assert to_checksum_address(address) == address_log["address"]
 
-    address2 = b"\x7f[\xf6\xc9To\xa8\x185w\xe4\x9f\x15\xbc\xef@mr\xd5\xd1"
+    address2 = Address(b"\x7f[\xf6\xc9To\xa8\x185w\xe4\x9f\x15\xbc\xef@mr\xd5\xd1")
     event = ReceiveTokenNetworkCreatedEvent(
-        token_address=Address(address),
+        token_address=address,
         token_network_address=TokenNetworkAddress(address2),
         block_number=BlockNumber(1),
     )

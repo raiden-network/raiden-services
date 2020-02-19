@@ -8,6 +8,7 @@ from eth_utils import to_hex
 
 from raiden.messages.abstract import Message
 from raiden.utils.formatting import to_checksum_address
+from raiden.utils.typing import Address
 from raiden_libs.events import Event
 
 
@@ -46,7 +47,7 @@ def setup_logging(log_level: str, log_json: bool) -> None:
 def make_bytes_readable(value: Any) -> Any:
     if isinstance(value, bytes):
         if len(value) == 20:
-            return to_checksum_address(value)
+            return to_checksum_address(Address(value))
 
         return to_hex(value)
     return value

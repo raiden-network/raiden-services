@@ -156,6 +156,7 @@ class MatrixListener(gevent.Greenlet):
 
         self._client = make_client(
             handle_messages_callback=self._handle_matrix_sync,
+            handle_member_join_callback=lambda room: None,
             servers=self.available_servers,
             http_pool_maxsize=4,
             http_retry_timeout=40,
@@ -203,7 +204,9 @@ class MatrixListener(gevent.Greenlet):
         try:
             self.user_manager.start()
 
-            login(self._client, signer=LocalSigner(private_key=decode_hex(self.private_key)))
+            login(
+                self._client, signer=LocalSigner(private_key=decode_hex(self.private_key)),
+            )
         except (MatrixRequestError, ValueError):
             raise ConnectionError("Could not login/register to matrix.")
 
@@ -226,7 +229,7 @@ class MatrixListener(gevent.Greenlet):
         if refresh:
             self.user_manager.populate_userids_for_address(address)
             self.user_manager.track_address_presence(
-                address=address, user_ids=self.user_manager.get_userids_for_address(address)
+                address=address, user_ids=self.user_manager.get_userids_for_address(address),
             )
 
         log.debug(

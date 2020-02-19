@@ -4,6 +4,7 @@ import marshmallow
 from eth_utils import decode_hex, encode_hex, is_checksum_address
 
 from raiden.utils.formatting import to_checksum_address
+from raiden.utils.typing import AddressTypes
 
 
 class HexedBytes(marshmallow.fields.Field):
@@ -19,7 +20,7 @@ class HexedBytes(marshmallow.fields.Field):
 class ChecksumAddress(marshmallow.fields.Field):
     """ Use `bytes` in the dataclass, serialize to checksum address"""
 
-    def _serialize(self, value: bytes, attr: Any, obj: Any, **kwargs: Any) -> str:
+    def _serialize(self, value: AddressTypes, attr: Any, obj: Any, **kwargs: Any) -> str:
         return to_checksum_address(value)
 
     def _deserialize(self, value: str, attr: Any, data: Any, **kwargs: Any) -> bytes:
