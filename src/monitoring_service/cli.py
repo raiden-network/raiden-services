@@ -2,12 +2,12 @@ from typing import Dict
 
 import click
 import structlog
+from eth_utils import to_checksum_address
 from web3 import Web3
 from web3.contract import Contract
 
 from monitoring_service.service import MonitoringService
 from raiden.settings import DEFAULT_NUMBER_OF_BLOCK_CONFIRMATIONS
-from raiden.utils.formatting import to_checksum_address
 from raiden.utils.typing import BlockNumber
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,

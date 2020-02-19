@@ -3,12 +3,11 @@ from typing import Dict
 
 import click
 import structlog
-from eth_utils import to_hex
+from eth_utils import to_checksum_address, to_hex
 from web3 import Web3
 from web3.contract import Contract, ContractFunction
 from web3.middleware import construct_sign_and_send_raw_middleware
 
-from raiden.utils.formatting import to_checksum_address
 from raiden.utils.typing import Address, BlockNumber
 from raiden_contracts.constants import (
     CONTRACT_CUSTOM_TOKEN,
