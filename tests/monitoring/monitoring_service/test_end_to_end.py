@@ -1,15 +1,15 @@
 import gevent
-from eth_utils import decode_hex, encode_hex, to_canonical_address
+from eth_utils import decode_hex, encode_hex, to_canonical_address, to_checksum_address
 from request_collector.server import RequestCollector
 from web3 import Web3
 
 from monitoring_service.service import MonitoringService, handle_event
 from monitoring_service.states import HashedBalanceProof
-from raiden.utils.formatting import to_checksum_address
 from raiden.utils.typing import (
     Address,
     BlockNumber,
     ChainID,
+    MonitoringServiceAddress,
     Nonce,
     TokenAmount,
     TokenNetworkAddress,
@@ -98,7 +98,11 @@ def test_first_allowed_monitoring(
     # c1 asks MS to monitor the channel
     reward_amount = TokenAmount(1)
     request_monitoring = balance_proof_c2.get_request_monitoring(
-        get_private_key(c1), reward_amount, monitoring_service_contract.address
+        privkey=get_private_key(c1),
+        reward_amount=reward_amount,
+        monitoring_service_contract_address=MonitoringServiceAddress(
+            to_canonical_address(monitoring_service_contract.address)
+        ),
     )
     request_collector.on_monitor_request(request_monitoring)
 
@@ -216,7 +220,11 @@ def test_e2e(  # pylint: disable=too-many-arguments,too-many-locals
     # c1 asks MS to monitor the channel
     reward_amount = TokenAmount(1)
     request_monitoring = balance_proof_c2.get_request_monitoring(
-        get_private_key(c1), reward_amount, monitoring_service_contract.address
+        privkey=get_private_key(c1),
+        reward_amount=reward_amount,
+        monitoring_service_contract_address=MonitoringServiceAddress(
+            to_canonical_address(monitoring_service_contract.address)
+        ),
     )
     request_collector.on_monitor_request(request_monitoring)
 

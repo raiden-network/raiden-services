@@ -5,7 +5,7 @@ from typing import Dict, Iterator, List, Optional, Tuple
 from uuid import UUID
 
 import structlog
-from eth_utils import to_canonical_address
+from eth_utils import to_canonical_address, to_checksum_address
 
 from pathfinding_service.model import IOU
 from pathfinding_service.model.channel import Channel
@@ -14,7 +14,6 @@ from pathfinding_service.model.token_network import TokenNetwork
 from pathfinding_service.typing import DeferableMessage
 from raiden.messages.path_finding_service import PFSCapacityUpdate
 from raiden.storage.serialization.serializer import JSONSerializer
-from raiden.utils.formatting import to_checksum_address
 from raiden.utils.typing import (
     Address,
     BlockNumber,

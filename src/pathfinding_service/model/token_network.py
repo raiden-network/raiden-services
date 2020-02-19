@@ -6,6 +6,7 @@ from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
 import networkx as nx
 import structlog
+from eth_utils import to_checksum_address
 from networkx import DiGraph
 from networkx.exception import NetworkXNoPath, NodeNotFound
 
@@ -20,7 +21,6 @@ from pathfinding_service.typing import AddressReachabilityProtocol
 from raiden.messages.path_finding_service import PFSCapacityUpdate, PFSFeeUpdate
 from raiden.network.transport.matrix.utils import AddressReachability
 from raiden.tests.utils.mediation_fees import get_amount_with_fees
-from raiden.utils.formatting import to_checksum_address
 from raiden.utils.typing import (
     Address,
     Balance,
