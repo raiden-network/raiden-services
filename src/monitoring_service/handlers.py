@@ -481,23 +481,34 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
                 ).transact({"from": context.ms_state.address})
             )
         )
-
-        log.info(
-            "Sent transaction calling `monitor` for channel",
-            token_network_address=channel.token_network_address,
-            channel_identifier=channel.identifier,
-            transaction_hash=encode_hex(tx_hash),
-        )
-        assert tx_hash is not None
-
-        with context.database.conn:
-            # Add tx hash to list of waiting transactions
-            context.database.add_waiting_transaction(tx_hash)
-
-            channel.monitor_tx_hash = tx_hash
-            context.database.upsert_channel(channel)
     except Exception as exc:  # pylint: disable=broad-except
-        log.error("Sending tx failed", exc_info=True, err=exc)
+        first_allowed = BlockNumber(
+            _first_allowed_block_to_monitor(event.token_network_address, channel, context)
+        )
+        failed_at = context.web3.eth.blockNumber
+        log.error(
+            "Sending tx failed",
+            exc_info=True,
+            err=exc,
+            first_allowed=first_allowed,
+            failed_at=failed_at,
+        )
+        return
+
+    log.info(
+        "Sent transaction calling `monitor` for channel",
+        token_network_address=channel.token_network_address,
+        channel_identifier=channel.identifier,
+        transaction_hash=encode_hex(tx_hash),
+    )
+    assert tx_hash is not None
+
+    with context.database.conn:
+        # Add tx hash to list of waiting transactions
+        context.database.add_waiting_transaction(tx_hash)
+
+        channel.monitor_tx_hash = tx_hash
+        context.database.upsert_channel(channel)
 
 
 def action_claim_reward_triggered_event_handler(event: Event, context: Context) -> None:
