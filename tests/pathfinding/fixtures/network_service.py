@@ -26,6 +26,7 @@ from raiden.utils.typing import (
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
 from raiden_libs.utils import private_key_to_address
 
+from ...libs.mocks.web3 import Web3Mock
 from ..utils import SimpleReachabilityContainer
 
 
@@ -198,7 +199,7 @@ def populate_token_network() -> Callable:
             token_network.handle_channel_balance_update_message(
                 PFSCapacityUpdate(
                     canonical_identifier=CanonicalIdentifier(
-                        chain_identifier=ChainID(1),
+                        chain_identifier=ChainID(61),
                         channel_identifier=ChannelID(channel_id),
                         token_network_address=TokenNetworkAddress(token_network.address),
                     ),
@@ -217,7 +218,7 @@ def populate_token_network() -> Callable:
             token_network.handle_channel_balance_update_message(
                 PFSCapacityUpdate(
                     canonical_identifier=CanonicalIdentifier(
-                        chain_identifier=ChainID(1),
+                        chain_identifier=ChainID(61),
                         channel_identifier=ChannelID(channel_id),
                         token_network_address=TokenNetworkAddress(token_network.address),
                     ),
@@ -283,9 +284,7 @@ def populate_token_network_case_3(
 @pytest.fixture
 def pathfinding_service_mock_empty() -> Generator[PathfindingService, None, None]:
     with patch("pathfinding_service.service.MatrixListener", new=Mock):
-        web3_mock = Mock()
-        web3_mock.net.version = "1"
-        web3_mock.eth.blockNumber = 1
+        web3_mock = Web3Mock()
 
         mock_udc = Mock(address=bytes([8] * 20))
         mock_udc.functions.effectiveBalance.return_value.call.return_value = 10000
@@ -368,7 +367,7 @@ def populate_token_network_random(
         token_network_model.handle_channel_balance_update_message(
             PFSCapacityUpdate(
                 canonical_identifier=CanonicalIdentifier(
-                    chain_identifier=ChainID(1),
+                    chain_identifier=ChainID(61),
                     channel_identifier=channel_id,
                     token_network_address=TokenNetworkAddress(token_network_model.address),
                 ),
@@ -387,7 +386,7 @@ def populate_token_network_random(
         token_network_model.handle_channel_balance_update_message(
             PFSCapacityUpdate(
                 canonical_identifier=CanonicalIdentifier(
-                    chain_identifier=ChainID(1),
+                    chain_identifier=ChainID(61),
                     channel_identifier=channel_id,
                     token_network_address=TokenNetworkAddress(token_network_model.address),
                 ),

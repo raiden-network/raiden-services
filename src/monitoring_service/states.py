@@ -96,7 +96,7 @@ class HashedBalanceProof:
             balance_hash_data = (transferred_amount, locked_amount, locksroot)
             assert all(x is not None for x in balance_hash_data)
             self.balance_hash = encode_hex(
-                Web3.soliditySha3(["uint256", "uint256", "bytes32"], balance_hash_data)
+                Web3.solidityKeccak(["uint256", "uint256", "bytes32"], balance_hash_data)
             )
         else:
             self.balance_hash = balance_hash

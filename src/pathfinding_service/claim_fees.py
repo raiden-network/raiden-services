@@ -5,6 +5,7 @@ import click
 import structlog
 from web3 import Web3
 from web3.contract import Contract
+from web3.exceptions import TransactionNotFound
 from web3.gas_strategies.rpc import rpc_gas_price_strategy
 
 from pathfinding_service.database import PFSDatabase
@@ -45,7 +46,7 @@ def main(
     expires_within: BlockNumber,
 ) -> None:
     pfs_address = private_key_to_address(private_key)
-    chain_id = ChainID(int(web3.net.version))
+    chain_id = ChainID(web3.eth.chainId)
     database = PFSDatabase(
         filename=state_db, chain_id=chain_id, pfs_address=pfs_address, sync_start_block=start_block
     )
@@ -110,16 +111,19 @@ def claim_ious(
     failures = 0
     while unchecked_txs:
         for tx_hash, iou in unchecked_txs:
-            receipt = web3.eth.getTransactionReceipt(tx_hash)
-            if receipt is not None:
-                unchecked_txs.remove((tx_hash, iou))
-                if receipt["status"] == 1:
-                    print(f"Successfully claimed {iou}.")
-                    iou.claimed = True
-                    database.upsert_iou(iou)
-                else:
-                    print(f"Claiming {iou} failed!")
-                    failures += 1
+            try:
+                receipt = web3.eth.getTransactionReceipt(tx_hash)
+            except TransactionNotFound:
+                continue
+
+            unchecked_txs.remove((tx_hash, iou))
+            if receipt["status"] == 1:
+                print(f"Successfully claimed {iou}.")
+                iou.claimed = True
+                database.upsert_iou(iou)
+            else:
+                print(f"Claiming {iou} failed!")
+                failures += 1
 
     return skipped, failures
 

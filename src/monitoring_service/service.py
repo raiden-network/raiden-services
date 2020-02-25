@@ -5,8 +5,10 @@ from typing import Callable, Dict
 
 import sentry_sdk
 import structlog
+from eth_utils import to_canonical_address
 from web3 import Web3
 from web3.contract import Contract
+from web3.exceptions import TransactionNotFound
 from web3.middleware import construct_sign_and_send_raw_middleware
 
 from monitoring_service.constants import (
@@ -18,7 +20,7 @@ from monitoring_service.constants import (
 from monitoring_service.database import Database
 from monitoring_service.handlers import HANDLERS, Context
 from raiden.settings import DEFAULT_NUMBER_OF_BLOCK_CONFIRMATIONS
-from raiden.utils.typing import BlockNumber, ChainID
+from raiden.utils.typing import BlockNumber, ChainID, MonitoringServiceAddress
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
     CONTRACT_SERVICE_REGISTRY,
@@ -86,23 +88,26 @@ class MonitoringService:  # pylint: disable=too-few-public-methods,too-many-inst
         min_reward: int = 0,
     ):
         self.web3 = web3
+        self.chain_id = ChainID(web3.eth.chainId)
         self.private_key = private_key
         self.address = private_key_to_address(private_key)
         self.poll_interval = poll_interval
         self.service_registry = contracts[CONTRACT_SERVICE_REGISTRY]
 
-        web3.middleware_stack.add(construct_sign_and_send_raw_middleware(private_key))
+        web3.middleware_onion.add(construct_sign_and_send_raw_middleware(private_key))
 
         monitoring_contract = contracts[CONTRACT_MONITORING_SERVICE]
         user_deposit_contract = contracts[CONTRACT_USER_DEPOSIT]
+        token_network_registry_contract = contracts[CONTRACT_TOKEN_NETWORK_REGISTRY]
 
-        chain_id = ChainID(int(web3.net.version))
         self.database = Database(
             filename=db_filename,
-            chain_id=chain_id,
-            registry_address=contracts[CONTRACT_TOKEN_NETWORK_REGISTRY].address,
+            chain_id=self.chain_id,
+            registry_address=to_canonical_address(token_network_registry_contract.address),
             receiver=self.address,
-            msc_address=monitoring_contract.address,
+            msc_address=MonitoringServiceAddress(
+                to_canonical_address(monitoring_contract.address)
+            ),
             sync_start_block=sync_start_block,
         )
         ms_state = self.database.load_state()
@@ -203,8 +208,9 @@ class MonitoringService:  # pylint: disable=too-few-public-methods,too-many-inst
         as it is not expected that this list becomes to big this isn't optimized currently.
         """
         for tx_hash in self.context.database.get_waiting_transactions():
-            receipt = self.web3.eth.getTransactionReceipt(tx_hash)
-            if receipt is None:
+            try:
+                receipt = self.web3.eth.getTransactionReceipt(tx_hash)
+            except TransactionNotFound:
                 continue
 
             tx_block = receipt.get("blockNumber")

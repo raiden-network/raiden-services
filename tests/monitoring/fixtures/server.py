@@ -42,10 +42,10 @@ def default_cli_args_ms(default_cli_args) -> List[str]:
 
 
 @pytest.fixture
-def ms_database():
+def ms_database() -> Database:
     return Database(
         filename=":memory:",
-        chain_id=ChainID(1),
+        chain_id=ChainID(61),
         msc_address=TEST_MSC_ADDRESS,
         registry_address=Address(bytes([3] * 20)),
         receiver=Address(bytes([4] * 20)),
@@ -59,7 +59,7 @@ def monitoring_service(  # pylint: disable=too-many-arguments
     monitoring_service_contract,
     user_deposit_contract,
     token_network_registry_contract,
-    ms_database,
+    ms_database: Database,
     get_private_key,
     service_registry,
 ):
@@ -83,7 +83,9 @@ def monitoring_service(  # pylint: disable=too-many-arguments
 
 
 @pytest.fixture
-def request_collector(ms_address: MonitoringServiceAddress, ms_database, get_private_key):
+def request_collector(
+    ms_address: MonitoringServiceAddress, ms_database: Database, get_private_key
+):
     with patch("request_collector.server.MatrixListener"):
         rc = RequestCollector(private_key=get_private_key(ms_address), state_db=ms_database)
         rc.start()

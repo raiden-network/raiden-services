@@ -61,7 +61,7 @@ def setup_channel(service: PathfindingService) -> TokenNetwork:
 
 def get_fee_update_message(  # pylint: disable=too-many-arguments
     updating_participant: Address,
-    chain_identifier=ChainID(1),
+    chain_id=ChainID(61),
     channel_identifier=DEFAULT_CHANNEL_ID,
     token_network_address: TokenNetworkAddress = DEFAULT_TOKEN_NETWORK_ADDRESS,
     fee_schedule: FeeScheduleState = FeeScheduleState(
@@ -72,7 +72,7 @@ def get_fee_update_message(  # pylint: disable=too-many-arguments
 ) -> PFSFeeUpdate:
     fee_message = PFSFeeUpdate(
         canonical_identifier=CanonicalIdentifier(
-            chain_identifier=chain_identifier,
+            chain_identifier=chain_id,
             channel_identifier=channel_identifier,
             token_network_address=token_network_address,
         ),
@@ -93,7 +93,7 @@ def test_pfs_rejects_fee_update_with_wrong_chain_id(
     setup_channel(pathfinding_service_web3_mock)
 
     message = get_fee_update_message(
-        chain_identifier=ChainID(121212),
+        chain_id=ChainID(121212),
         updating_participant=PRIVATE_KEY_1_ADDRESS,
         privkey_signer=PRIVATE_KEY_1,
     )

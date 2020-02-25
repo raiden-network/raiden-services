@@ -233,7 +233,7 @@ def connect_to_blockchain(
         provider = HTTPProvider(eth_rpc)
         web3 = Web3(provider)
         # Will throw ConnectionError on bad Ethereum client
-        chain_id = ChainID(int(web3.net.version))
+        chain_id = ChainID(web3.eth.chainId)
     except requests.exceptions.ConnectionError:
         log.error(
             "Can not connect to the Ethereum client. Please check that it is running and that "
@@ -243,7 +243,7 @@ def connect_to_blockchain(
         sys.exit(1)
 
     # Add POA middleware for geth POA chains, no/op for other chains
-    web3.middleware_stack.inject(geth_poa_middleware, layer=0)
+    web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
     # give web3 some time between retries before failing
     provider.middlewares.replace("http_retry_request", http_retry_with_backoff_middleware)

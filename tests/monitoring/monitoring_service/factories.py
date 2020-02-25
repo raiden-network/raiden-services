@@ -34,6 +34,7 @@ DEFAULT_SETTLE_TIMEOUT = BlockTimeout(100)
 
 
 def create_signed_monitor_request(
+    chain_id: ChainID = ChainID(61),
     nonce: Nonce = Nonce(5),
     reward_amount: TokenAmount = DEFAULT_REWARD_AMOUNT,
     closing_privkey: str = DEFAULT_PRIVATE_KEY1,
@@ -42,7 +43,7 @@ def create_signed_monitor_request(
     bp = HashedBalanceProof(
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
-        chain_id=ChainID(1),
+        chain_id=chain_id,
         balance_hash="",
         nonce=nonce,
         additional_hash="",

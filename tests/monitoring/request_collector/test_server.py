@@ -5,6 +5,7 @@ import pytest
 from eth_utils import to_checksum_address
 
 from monitoring_service.constants import CHANNEL_CLOSE_MARGIN
+from monitoring_service.database import Database
 from monitoring_service.states import Channel
 from raiden.storage.serialization.serializer import DictSerializer
 from raiden.utils.typing import Address
@@ -35,14 +36,12 @@ def test_invalid_request(ms_database, build_request_monitoring, request_collecto
     assert store_successful()
 
 
-def test_ignore_old_nonce(ms_database, build_request_monitoring, request_collector):
+def test_ignore_old_nonce(ms_database: Database, build_request_monitoring, request_collector):
     def stored_mr_after_proccessing(amount, nonce):
         request_monitoring = build_request_monitoring(amount=amount, nonce=nonce)
         request_collector.on_monitor_request(request_monitoring)
         return ms_database.get_monitor_request(
-            token_network_address=to_checksum_address(
-                request_monitoring.balance_proof.token_network_address
-            ),
+            token_network_address=request_monitoring.balance_proof.token_network_address,
             channel_id=request_monitoring.balance_proof.channel_identifier,
             non_closing_signer=request_monitoring.non_closing_signer,
         )
