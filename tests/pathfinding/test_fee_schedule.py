@@ -70,7 +70,7 @@ class TokenNetworkForTests(TokenNetwork):
         self.handle_channel_fee_update(
             PFSFeeUpdate(
                 canonical_identifier=CanonicalIdentifier(
-                    chain_identifier=ChainID(1),
+                    chain_identifier=ChainID(61),
                     token_network_address=self.address,
                     channel_identifier=channel_id,
                 ),

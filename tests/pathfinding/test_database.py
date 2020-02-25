@@ -166,7 +166,7 @@ def test_waiting_messages(pathfinding_service_mock):
 
     fee_update = PFSFeeUpdate(
         canonical_identifier=CanonicalIdentifier(
-            chain_identifier=ChainID(1),
+            chain_identifier=ChainID(61),
             token_network_address=token_network_address,
             channel_identifier=channel_id,
         ),
@@ -179,7 +179,7 @@ def test_waiting_messages(pathfinding_service_mock):
 
     capacity_update = PFSCapacityUpdate(
         canonical_identifier=CanonicalIdentifier(
-            chain_identifier=ChainID(1),
+            chain_identifier=ChainID(61),
             token_network_address=token_network_address,
             channel_identifier=channel_id,
         ),

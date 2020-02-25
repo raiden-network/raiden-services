@@ -71,7 +71,7 @@ class PathfindingService(gevent.Greenlet):
         self.web3 = web3
         self.registry_address = contracts[CONTRACT_TOKEN_NETWORK_REGISTRY].address
         self.user_deposit_contract = contracts[CONTRACT_USER_DEPOSIT]
-        self.chain_id = ChainID(int(web3.net.version))
+        self.chain_id = ChainID(web3.eth.chainId)
         self.address = private_key_to_address(private_key)
         self.required_confirmations = required_confirmations
         self._poll_interval = poll_interval

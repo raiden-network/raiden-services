@@ -16,7 +16,7 @@ def build_request_monitoring():
     non_closing_address = private_key_to_address(non_closing_privkey)
 
     def f(
-        chain_id: ChainID = ChainID(1),
+        chain_id: ChainID = ChainID(61),
         amount: TokenAmount = TokenAmount(50),
         nonce: Nonce = Nonce(1),
         channel_id: ChannelID = ChannelID(1),

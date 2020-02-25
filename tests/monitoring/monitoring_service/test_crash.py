@@ -47,7 +47,7 @@ def test_crash(
         priv_key=get_private_key(c1),
         channel_identifier=channel_identifier,
         token_network_address=token_network_address,
-        chain_id=ChainID(1),
+        chain_id=ChainID(61),
         additional_hash="0x%064x" % 0,
         locked_amount=0,
         locksroot=encode_hex(LOCKSROOT_OF_NO_LOCKS),

@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, Mock
 import pytest
 from click.testing import CliRunner
 from eth_utils import decode_hex, to_canonical_address
+from tests.libs.mocks.web3 import Web3Mock
 
 from pathfinding_service.claim_fees import claim_ious, get_claimable_ious, main
 from pathfinding_service.model import IOU
@@ -44,7 +45,7 @@ def test_claim_fees(  # pylint: disable=too-many-locals
             amount=TokenAmount(iou_dict["amount"]),
             expiration_block=BlockNumber(iou_dict.get("expiration_block", 100)),
             signature=Signature(bytes([1] * 64)),  # dummy, replaced below
-            chain_id=ChainID(1),
+            chain_id=ChainID(61),
             one_to_n_address=to_canonical_address(one_to_n_contract.address),
             claimed=iou_dict.get("claimed", False),
         )
@@ -93,9 +94,7 @@ def test_claim_fees(  # pylint: disable=too-many-locals
 
 @pytest.fixture
 def mock_connect_to_blockchain(monkeypatch):
-    web3_mock = Mock()
-    web3_mock.net.version = 1
-    web3_mock.eth.blockNumber = 1
+    web3_mock = Web3Mock()
     web3_mock.eth.generateGasPrice.return_value = int(1e9)
     connect_mock = Mock(return_value=(web3_mock, MagicMock(), 0))
     monkeypatch.setattr("raiden_libs.cli.connect_to_blockchain", connect_mock)

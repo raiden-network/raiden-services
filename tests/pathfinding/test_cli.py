@@ -4,6 +4,7 @@ from unittest.mock import DEFAULT, MagicMock, Mock, patch
 
 import pytest
 from click.testing import CliRunner
+from tests.libs.mocks.web3 import Web3Mock
 
 from pathfinding_service.cli import main
 from raiden_contracts.constants import (
@@ -39,9 +40,8 @@ PATCH_INFO_ARGS = {
 def provider_mock(monkeypatch):
     provider_mock = Mock()
     monkeypatch.setattr("raiden_libs.cli.HTTPProvider", provider_mock)
-    web3_mock = Mock()
-    web3_mock.return_value.net.version = 1
-    web3_mock.return_value.providers = [provider_mock]
+    web3_mock = Web3Mock()
+    web3_mock.provider = provider_mock
     web3_mock.return_value.eth.contract = lambda address, **kwargs: Mock(address=address)
     monkeypatch.setattr("raiden_libs.cli.Web3", web3_mock)
     return provider_mock

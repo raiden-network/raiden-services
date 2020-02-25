@@ -2,11 +2,12 @@ from copy import deepcopy
 from typing import Dict, List, Optional, Tuple
 
 import structlog
+from eth_abi.codec import ABICodec
 from eth_utils import decode_hex, encode_hex, to_canonical_address, to_checksum_address
 from eth_utils.abi import event_abi_to_log_topic
 from web3 import Web3
+from web3._utils.abi import filter_by_type
 from web3.contract import Contract, get_event_data
-from web3.utils.abi import filter_by_type
 
 from raiden.utils.typing import Address, BlockNumber, TokenAmount, TokenNetworkAddress
 from raiden_contracts.constants import (
@@ -41,11 +42,13 @@ def create_registry_event_topics(contract_manager: ContractManager) -> List:
     return [encode_hex(event_abi_to_log_topic(new_network_abi))]
 
 
-def decode_event(topic_to_event_abi: Dict[bytes, Dict], log_entry: Dict) -> Dict:
+def decode_event(
+    abi_codec: ABICodec, topic_to_event_abi: Dict[bytes, Dict], log_entry: Dict
+) -> Dict:
     topic = log_entry["topics"][0]
     event_abi = topic_to_event_abi[topic]
 
-    return get_event_data(event_abi, log_entry)
+    return get_event_data(abi_codec=abi_codec, event_abi=event_abi, log_entry=log_entry)
 
 
 def query_blockchain_events(
@@ -83,7 +86,7 @@ def query_blockchain_events(
 
     events = web3.eth.getLogs(filter_params)
 
-    return [decode_event(topic_to_event_abi, log_entry) for log_entry in events]
+    return [decode_event(web3.codec, topic_to_event_abi, log_entry) for log_entry in events]
 
 
 def parse_token_network_event(event: dict) -> Optional[Event]:

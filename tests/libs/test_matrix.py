@@ -44,7 +44,7 @@ def request_monitoring_message(token_network, get_accounts, get_private_key) -> 
     balance_proof_c2 = HashedBalanceProof(
         channel_identifier=ChannelID(1),
         token_network_address=TokenNetworkAddress(to_canonical_address(token_network.address)),
-        chain_id=ChainID(1),
+        chain_id=ChainID(61),
         nonce=Nonce(2),
         additional_hash="0x%064x" % 0,
         transferred_amount=TokenAmount(1),
@@ -172,7 +172,7 @@ def test_matrix_lister_smoke_test(get_accounts, get_private_key):
     with patch.multiple("raiden_libs.matrix", make_client=Mock(return_value=client_mock)):
         listener = MatrixListener(
             private_key=get_private_key(c1),
-            chain_id=ChainID(1),
+            chain_id=ChainID(61),
             service_room_suffix="_service",
             message_received_callback=lambda _: None,
         )

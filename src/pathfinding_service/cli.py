@@ -83,7 +83,7 @@ def main(  # pylint: disable-msg=too-many-arguments
 ) -> int:
     """ The Pathfinding service for the Raiden Network. """
     log.info("Starting Raiden Pathfinding Service")
-    log.info("Web3 client", node_address=web3.providers[0].endpoint_uri)
+    log.info("Web3 client", node_address=web3.provider.endpoint_uri)
     hex_addresses = {
         name: to_checksum_address(contract.address) for name, contract in contracts.items()
     }

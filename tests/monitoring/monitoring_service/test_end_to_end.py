@@ -8,7 +8,6 @@ from monitoring_service.states import HashedBalanceProof
 from raiden.utils.typing import (
     Address,
     BlockNumber,
-    ChainID,
     MonitoringServiceAddress,
     Nonce,
     TokenAmount,
@@ -41,7 +40,7 @@ def create_ms_contract_events_query(
 
 
 def test_first_allowed_monitoring(
-    web3,
+    web3: Web3,
     monitoring_service_contract,
     wait_for_blocks,
     service_registry,
@@ -73,7 +72,7 @@ def test_first_allowed_monitoring(
     shared_bp_args = dict(
         channel_identifier=channel_id,
         token_network_address=decode_hex(token_network.address),
-        chain_id=ChainID(1),
+        chain_id=monitoring_service.chain_id,
         additional_hash="0x%064x" % 0,
         locked_amount=TokenAmount(0),
         locksroot=encode_hex(LOCKSROOT_OF_NO_LOCKS),
@@ -193,7 +192,7 @@ def test_e2e(  # pylint: disable=too-many-arguments,too-many-locals
     shared_bp_args = dict(
         channel_identifier=channel_id,
         token_network_address=decode_hex(token_network.address),
-        chain_id=ChainID(1),
+        chain_id=monitoring_service.chain_id,
         additional_hash="0x%064x" % 0,
         locked_amount=TokenAmount(0),
         locksroot=encode_hex(LOCKSROOT_OF_NO_LOCKS),
@@ -216,8 +215,7 @@ def test_e2e(  # pylint: disable=too-many-arguments,too-many-locals
     ms_greenlet = gevent.spawn(monitoring_service.start, gevent.sleep)
 
     # need to wait here till the MS has some time to react
-    gevent.sleep()
-
+    gevent.sleep(0.01)
     assert monitoring_service.context.ms_state.blockchain_state.token_network_addresses
 
     # c1 asks MS to monitor the channel

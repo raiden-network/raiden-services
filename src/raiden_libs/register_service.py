@@ -63,7 +63,7 @@ def main(
     It also sets or updates the URL of the services deployment.
     """
     # Add middleware to sign transactions by default
-    web3.middleware_stack.add(construct_sign_and_send_raw_middleware(private_key))
+    web3.middleware_onion.add(construct_sign_and_send_raw_middleware(private_key))
 
     service_address = private_key_to_address(private_key)
     log.info("Running service registration script", account_address=service_address)

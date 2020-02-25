@@ -13,7 +13,7 @@ class ContractMock(Mock):
 class Web3Mock(Mock):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.net.version = 1  # chain_id
+        self.eth.chainId = 61
         self.eth.blockNumber = 100
 
     def _get_child_mock(self, **kwargs):

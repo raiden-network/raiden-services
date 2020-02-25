@@ -256,7 +256,7 @@ def test_update_fee(order, pathfinding_service_mock, token_network_model):
     )
     fee_update = PFSFeeUpdate(
         canonical_identifier=CanonicalIdentifier(
-            chain_identifier=ChainID(1),
+            chain_identifier=ChainID(61),
             token_network_address=token_network_model.address,
             channel_identifier=ChannelID(1),
         ),
@@ -315,7 +315,7 @@ def test_logging_processor():
 
     message = PFSFeeUpdate(
         canonical_identifier=CanonicalIdentifier(
-            chain_identifier=ChainID(1),
+            chain_identifier=ChainID(61),
             token_network_address=TokenNetworkAddress(address),
             channel_identifier=ChannelID(1),
         ),

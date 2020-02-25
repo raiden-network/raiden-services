@@ -197,7 +197,7 @@ def test_get_ious_via_debug_endpoint(
             decode_hex("118a93e9fd0a3a1c3d6edbad194b5c9d95715c754881d80e23e985793b1e13de")
         ),
         claimed=False,
-        chain_id=ChainID(1),
+        chain_id=ChainID(61),
         one_to_n_address=api_sut_with_debug.one_to_n_address,
     )
     api_sut_with_debug.pathfinding_service.database.upsert_iou(iou)

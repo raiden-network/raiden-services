@@ -9,6 +9,7 @@ from tests.monitoring.monitoring_service.factories import (
 
 from monitoring_service.database import Database
 from monitoring_service.events import ActionMonitoringTriggeredEvent, ScheduledEvent
+from monitoring_service.service import MonitoringService
 from monitoring_service.states import Channel, OnChainUpdateStatus
 from raiden.constants import UINT256_MAX
 from raiden.tests.utils.factories import make_token_network_address
@@ -147,7 +148,10 @@ def test_saveing_multiple_channel(ms_database: Database):
 
 
 def test_purge_old_monitor_requests(
-    ms_database, build_request_monitoring, request_collector, monitoring_service
+    ms_database: Database,
+    build_request_monitoring,
+    request_collector,
+    monitoring_service: MonitoringService,
 ):
     # We'll test the purge on MRs for three different channels
     req_mons = [

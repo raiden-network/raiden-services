@@ -1,22 +1,24 @@
 import pytest
 from eth_utils import encode_hex, to_checksum_address
+from web3.contract import Contract
 
 from pathfinding_service.constants import MIN_IOU_EXPIRY
 from pathfinding_service.model import IOU
 from raiden.utils.typing import Address
 from raiden_contracts.utils.proofs import sign_one_to_n_iou
+from raiden_contracts.utils.type_aliases import ChainID
 from raiden_libs.utils import private_key_to_address
 
 
 @pytest.fixture
-def make_iou(one_to_n_contract):
+def make_iou(one_to_n_contract: Contract):
     def f(
         sender_priv_key,
         receiver: Address,
         amount=1,
         expiration_block=MIN_IOU_EXPIRY + 100,
-        one_to_n_address=one_to_n_contract.address,
-        chain_id=1,
+        one_to_n_address: Address = one_to_n_contract.address,
+        chain_id: ChainID = ChainID(61),
     ) -> IOU:
         receiver_hex: str = to_checksum_address(receiver)
         iou_dict = {
