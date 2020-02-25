@@ -131,9 +131,12 @@ def test_first_allowed_monitoring(
     )
     assert channel
 
-    # Calling monitor too early must fail. To test this, we call it one block
+    # Calling monitor too early must fail. To test this, we call it two block
     # before the trigger block.
-    wait_for_blocks(monitor_trigger.trigger_block_number - web3.eth.blockNumber - 1)
+    # This should be only one block before, but we trigger one block too late
+    # to work around parity's gas estimation. See
+    # https://github.com/raiden-network/raiden-services/pull/728
+    wait_for_blocks(monitor_trigger.trigger_block_number - web3.eth.blockNumber - 2)
     handle_event(monitor_trigger.event, monitoring_service.context)
     assert [e.event for e in query()] == []
 
