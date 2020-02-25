@@ -133,11 +133,14 @@ def channel_closed_event_handler(event: Event, context: Context) -> None:
         else:
             non_closing_participant = channel.participant1
 
-        # Transactions go into the next mined block, so trigger one block
+        # Transactions go into the next mined block, so we could trigger one block
         # before the `monitor` call is allowed to succeed to include it in the
         # first possible block.
+        # Unfortunately, parity does the gas estimation on the current block
+        # instead of the next one, so we have to wait for the first allowed
+        # block to be finished to send the transaction successfully on parity.
         trigger_block = BlockNumber(
-            _first_allowed_block_to_monitor(event.token_network_address, channel, context) - 1
+            _first_allowed_block_to_monitor(event.token_network_address, channel, context)
         )
 
         triggered_event = ActionMonitoringTriggeredEvent(
