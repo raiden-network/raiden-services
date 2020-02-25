@@ -22,7 +22,7 @@ black:
 format: isort black
 
 test:
-	py.test -v tests
+	pytest-gevent -v tests -n 4
 
 install:
 	pip install -r requirements.txt
