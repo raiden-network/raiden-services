@@ -53,7 +53,7 @@ jobs:
           name: run tests
           command: |
             . venv/bin/activate
-            pytest-gevent -v tests/ -n 4 --cov=src --cov-report=xml --junitxml=test-reports/junit.xml
+            pytest-gevent -v tests/ --cov=src --cov-report=xml --junitxml=test-reports/junit.xml
             codecov
 
       - store_test_results:
