@@ -71,7 +71,7 @@ def handle_event(event: Event, context: Context) -> None:
                     num_scheduled_events=context.database.scheduled_event_count(),
                 )
             except Exception as ex:  # pylint: disable=broad-except
-                log.error("Error during event handler", event=event, exc_info=ex)
+                log.error("Error during event handler", handled_event=event, exc_info=ex)
                 sentry_sdk.capture_exception(ex)
 
 
