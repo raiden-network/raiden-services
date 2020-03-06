@@ -334,20 +334,30 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context) -> N
     # it will be checked there that our update was the latest one
     if event.ms_address == context.ms_state.address:
         assert channel.closing_block is not None, "closing_block not set"
-        trigger_block = BlockNumber(channel.closing_block + channel.settle_timeout)
+        trigger_block = BlockNumber(channel.closing_block + channel.settle_timeout + 1)
 
         # trigger the claim reward action by an event
-        event = ActionClaimRewardTriggeredEvent(
+        triggered_event = ActionClaimRewardTriggeredEvent(
             token_network_address=channel.token_network_address,
             channel_identifier=channel.identifier,
             non_closing_participant=event.raiden_node_address,
+        )
+
+        log.info(
+            "Received event for own update, triggering reward claim",
+            token_network_address=event.token_network_address,
+            identifier=channel.identifier,
+            scheduled_event=triggered_event,
+            trigger_block=trigger_block,
+            closing_block=channel.closing_block,
+            settle_timeout=channel.settle_timeout,
         )
 
         # Add scheduled event if it not exists yet
         # If the event is already scheduled (e.g. after a restart) the DB takes care that
         # it is only stored once
         context.database.upsert_scheduled_event(
-            ScheduledEvent(trigger_block_number=trigger_block, event=cast(Event, event))
+            ScheduledEvent(trigger_block_number=trigger_block, event=cast(Event, triggered_event))
         )
 
 
