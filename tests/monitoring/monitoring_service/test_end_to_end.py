@@ -1,5 +1,7 @@
+from typing import Callable
+
 import gevent
-from eth_utils import decode_hex, encode_hex, to_canonical_address, to_checksum_address
+from eth_utils import decode_hex, encode_hex, to_canonical_address
 from request_collector.server import RequestCollector
 from web3 import Web3
 
@@ -24,7 +26,7 @@ from raiden_libs.blockchain import query_blockchain_events
 
 def create_ms_contract_events_query(
     web3: Web3, contract_manager: ContractManager, contract_address: Address
-):
+) -> Callable:
     def f():
         return query_blockchain_events(
             web3=web3,
@@ -57,14 +59,13 @@ def test_first_allowed_monitoring(
     query = create_ms_contract_events_query(
         web3, contracts_manager, monitoring_service_contract.address
     )
-    ms_address_hex = to_checksum_address(monitoring_service.address)
     c1, c2 = get_accounts(2)
 
     # add deposit for c1
     node_deposit = 10
     deposit_to_udc(c1, node_deposit)
 
-    assert service_registry.functions.hasValidRegistration(ms_address_hex).call()
+    assert service_registry.functions.hasValidRegistration(monitoring_service.address).call()
 
     # each client does a transfer
     channel_id = create_channel(c1, c2, settle_timeout=10)[0]
@@ -176,15 +177,14 @@ def test_e2e(  # pylint: disable=too-many-arguments,too-many-locals
     query = create_ms_contract_events_query(
         web3, contracts_manager, monitoring_service_contract.address
     )
-    ms_address_hex = to_checksum_address(monitoring_service.address)
-    initial_balance = user_deposit_contract.functions.balances(ms_address_hex).call()
+    initial_balance = user_deposit_contract.functions.balances(monitoring_service.address).call()
     c1, c2 = get_accounts(2)
 
     # add deposit for c1
     node_deposit = 10
     deposit_to_udc(c1, node_deposit)
 
-    assert service_registry.functions.hasValidRegistration(ms_address_hex).call()
+    assert service_registry.functions.hasValidRegistration(monitoring_service.address).call()
 
     # each client does a transfer
     channel_id = create_channel(c1, c2, settle_timeout=5)[0]
@@ -242,28 +242,17 @@ def test_e2e(  # pylint: disable=too-many-arguments,too-many-locals
     ).transact({"from": c2})
     # Wait until the MS reacts, which it does after giving the client some time
     # to update the channel itself.
+
     wait_for_blocks(2)  # 1 block for close + 1 block for triggering the event
     # Now give the monitoring service a chance to submit the missing BP
     gevent.sleep(0.01)
-
     assert [e.event for e in query()] == [MonitoringServiceEvent.NEW_BALANCE_PROOF_RECEIVED]
 
     # wait for settle timeout
-    wait_for_blocks(2)  # timeout is 5, but we've already waited 3 blocks before
+    # timeout is 5, but we've already waited 3 blocks before. Additionally one block is
+    # added to handle parity running gas estimation on current instead of next.
+    wait_for_blocks(3)
 
-    token_network.functions.settleChannel(
-        channel_id,
-        c1,  # participant_B
-        transferred_c1,  # participant_B_transferred_amount
-        0,  # participant_B_locked_amount
-        LOCKSROOT_OF_NO_LOCKS,  # participant_B_locksroot
-        c2,  # participant_A
-        transferred_c2,  # participant_A_transferred_amount
-        0,  # participant_A_locked_amount
-        LOCKSROOT_OF_NO_LOCKS,  # participant_A_locksroot
-    ).transact()
-
-    # Wait until the ChannelSettled is confirmed
     # Let the MS claim its reward
     gevent.sleep(0.01)
     assert [e.event for e in query()] == [
@@ -271,7 +260,7 @@ def test_e2e(  # pylint: disable=too-many-arguments,too-many-locals
         MonitoringServiceEvent.REWARD_CLAIMED,
     ]
 
-    final_balance = user_deposit_contract.functions.balances(ms_address_hex).call()
+    final_balance = user_deposit_contract.functions.balances(monitoring_service.address).call()
     assert final_balance == (initial_balance + reward_amount)
 
     ms_greenlet.kill()
