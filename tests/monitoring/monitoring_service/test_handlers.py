@@ -1,4 +1,5 @@
 # pylint: disable=redefined-outer-name
+from typing import Optional
 from unittest.mock import Mock, patch
 
 import pytest
@@ -17,6 +18,7 @@ from monitoring_service.database import Database
 from monitoring_service.events import (
     ActionClaimRewardTriggeredEvent,
     ActionMonitoringTriggeredEvent,
+    ScheduledEvent,
 )
 from monitoring_service.handlers import (
     Context,
@@ -100,6 +102,20 @@ def setup_state_with_closed_channel(context: Context) -> Context:
     assert_channel_state(context, ChannelState.CLOSED)
 
     return context
+
+
+def get_scheduled_claim_event(database: Database) -> Optional[ScheduledEvent]:
+    events = database.get_scheduled_events(max_trigger_block=BlockNumber(999_999))
+
+    filtered_events = [
+        event for event in events if isinstance(event.event, ActionClaimRewardTriggeredEvent)
+    ]
+    assert len(filtered_events) <= 1
+
+    if len(filtered_events) == 0:
+        return None
+
+    return filtered_events[0]
 
 
 @pytest.fixture
@@ -345,7 +361,7 @@ def test_monitor_new_balance_proof_event_handler_sets_update_status(context: Con
         nonce=Nonce(2),
         ms_address=Address(bytes([4] * 20)),
         raiden_node_address=DEFAULT_PARTICIPANT2,
-        block_number=BlockNumber(23),
+        block_number=BlockNumber(62),
     )
 
     channel = context.database.get_channel(
@@ -353,6 +369,7 @@ def test_monitor_new_balance_proof_event_handler_sets_update_status(context: Con
     )
     assert channel
     assert channel.update_status is None
+    assert get_scheduled_claim_event(context.database) is None
 
     monitor_new_balance_proof_event_handler(new_balance_event, context)
 
@@ -365,6 +382,10 @@ def test_monitor_new_balance_proof_event_handler_sets_update_status(context: Con
     assert channel.update_status.nonce == 2
     assert channel.update_status.update_sender_address == bytes([4] * 20)
 
+    scheduled_claim_event = get_scheduled_claim_event(context.database)
+    assert scheduled_claim_event is not None
+    assert scheduled_claim_event.trigger_block_number == 52 + 100 + 1
+
     new_balance_event2 = ReceiveMonitoringNewBalanceProofEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
@@ -372,7 +393,7 @@ def test_monitor_new_balance_proof_event_handler_sets_update_status(context: Con
         nonce=Nonce(5),
         ms_address=Address(bytes([4] * 20)),
         raiden_node_address=DEFAULT_PARTICIPANT2,
-        block_number=BlockNumber(23),
+        block_number=BlockNumber(63),
     )
 
     monitor_new_balance_proof_event_handler(new_balance_event2, context)
@@ -385,6 +406,10 @@ def test_monitor_new_balance_proof_event_handler_sets_update_status(context: Con
     assert channel.update_status is not None
     assert channel.update_status.nonce == 5
     assert channel.update_status.update_sender_address == bytes([4] * 20)
+
+    scheduled_claim_event = get_scheduled_claim_event(context.database)
+    assert scheduled_claim_event is not None
+    assert scheduled_claim_event.trigger_block_number == 52 + 100 + 1
 
 
 def test_monitor_new_balance_proof_event_handler_idempotency(context: Context):
