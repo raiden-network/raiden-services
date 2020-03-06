@@ -58,7 +58,12 @@ def handle_event(event: Event, context: Context) -> None:
     Exceptions are caught and generate both error logs and sentry issues.
     Events are not retried after an exception.
     """
-    log.debug("Processing event", event_=event)
+    log.debug(
+        "Processing event",
+        event_=event,
+        latest_confirmed_block=context.latest_confirmed_block,
+        latest_unconfirmed_block=context.get_latest_unconfirmed_block(),
+    )
     handler = HANDLERS.get(type(event))
 
     if handler:
