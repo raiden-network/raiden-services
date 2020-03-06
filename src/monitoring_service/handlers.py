@@ -329,11 +329,16 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context) -> N
 
         context.database.upsert_channel(channel)
 
-    # check if this was our update, if so schedule the call
-    # of `claimReward`
-    # it will be checked there that our update was the latest one
+    # check if this was our update, if so schedule the call of
+    # `claimReward` it will be checked there that our update was the latest one
     if event.ms_address == context.ms_state.address:
         assert channel.closing_block is not None, "closing_block not set"
+        # Transactions go into the next mined block, so we could trigger one block
+        # before the `claim` call is allowed to succeed to include it in the
+        # first possible block.
+        # Unfortunately, parity does the gas estimation on the current block
+        # instead of the next one, so we have to wait for the first allowed
+        # block to be finished to send the transaction successfully on parity.
         trigger_block = BlockNumber(channel.closing_block + channel.settle_timeout + 1)
 
         # trigger the claim reward action by an event
