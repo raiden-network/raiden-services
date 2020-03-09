@@ -62,6 +62,12 @@ def main(
     The address that is registered is derived from the supplied private key.
     It also sets or updates the URL of the services deployment.
     """
+    log.info("Web3 client", node_address=web3.provider.endpoint_uri)
+    hex_addresses = {
+        name: to_checksum_address(contract.address) for name, contract in contracts.items()
+    }
+    log.info("Contract information", addresses=hex_addresses, start_block=start_block)
+
     # Add middleware to sign transactions by default
     web3.middleware_onion.add(construct_sign_and_send_raw_middleware(private_key))
 
