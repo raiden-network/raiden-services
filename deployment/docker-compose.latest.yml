@@ -65,6 +65,9 @@ services:
   registration-goerli:
     <<: *defaults
 
+  registration-goerli-backup:
+    <<: *defaults
+
   builder:
     environment:
       - HOSTNAME=services-dev
