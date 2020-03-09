@@ -62,7 +62,7 @@ def main(
     The address that is registered is derived from the supplied private key.
     It also sets or updates the URL of the services deployment.
     """
-    log.info("Web3 client", node_address=web3.provider.endpoint_uri)
+    log.info("Using RPC endpoint", rpc_url=web3.provider.endpoint_uri)
     hex_addresses = {
         name: to_checksum_address(contract.address) for name, contract in contracts.items()
     }
