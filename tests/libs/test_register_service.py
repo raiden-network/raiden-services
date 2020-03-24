@@ -1,7 +1,7 @@
 from eth_utils import decode_hex
 
 from raiden.utils.typing import Address
-from raiden_libs.register_service import deposit_to_registry, update_service_url
+from raiden_libs.service_registry import deposit_to_registry, update_service_url
 
 
 def test_register_mints_tokens_and_deposits(

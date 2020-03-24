@@ -213,7 +213,7 @@ services:
   registration-goerli:
     <<: *defaults
     restart: "no"
-    command: ["python3", "-m", "raiden_libs.register_service"]
+    command: ["python3", "-m", "raiden_libs.service_registry"]
     environment:
       - RDN_REGISTRY_LOG_LEVEL=DEBUG
       - RDN_REGISTRY_KEYSTORE_FILE=${MS_KEYSTORE_FILE}
@@ -227,7 +227,7 @@ services:
   registration-goerli-backup:
     <<: *defaults
     restart: "no"
-    command: ["python3", "-m", "raiden_libs.register_service"]
+    command: ["python3", "-m", "raiden_libs.service_registry"]
     environment:
       - RDN_REGISTRY_LOG_LEVEL=DEBUG
       - RDN_REGISTRY_KEYSTORE_FILE=${MS_BACKUP_KEYSTORE_FILE}
