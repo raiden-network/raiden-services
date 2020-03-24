@@ -13,4 +13,5 @@ def default_cli_args(keystore_file) -> List[str]:
         KEYSTORE_PASSWORD,
         "--state-db",
         ":memory:",
+        "--accept-disclaimer",
     ]

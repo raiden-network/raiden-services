@@ -6,6 +6,7 @@ from eth_utils import to_checksum_address
 from web3 import Web3
 from web3.contract import Contract
 
+from monitoring_service.constants import MS_DISCLAIMER
 from monitoring_service.service import MonitoringService
 from raiden.settings import DEFAULT_NUMBER_OF_BLOCK_CONFIRMATIONS
 from raiden.utils.typing import BlockNumber
@@ -17,6 +18,7 @@ from raiden_contracts.constants import (
 )
 from raiden_libs.blockchain import get_web3_provider_info
 from raiden_libs.cli import blockchain_options, common_options, setup_sentry
+from raiden_libs.constants import CONFIRMATION_OF_UNDERSTANDING
 
 log = structlog.get_logger(__name__)
 
@@ -48,6 +50,13 @@ log = structlog.get_logger(__name__)
     type=bool,
     help="Open a python shell with an initialized MonitoringService instance",
 )
+@click.option(
+    "--accept-disclaimer",
+    type=bool,
+    default=False,
+    help="Bypass the experimental software disclaimer prompt",
+    is_flag=True,
+)
 @common_options("raiden-monitoring-service")
 def main(  # pylint: disable=too-many-arguments
     private_key: str,
@@ -58,9 +67,13 @@ def main(  # pylint: disable=too-many-arguments
     confirmations: BlockNumber,
     min_reward: int,
     debug_shell: bool,
+    accept_disclaimer: bool,
 ) -> int:
     """ The Monitoring service for the Raiden Network. """
     log.info("Starting Raiden Monitoring Service")
+    click.secho(MS_DISCLAIMER, fg="yellow")
+    if not accept_disclaimer:
+        click.confirm(CONFIRMATION_OF_UNDERSTANDING, abort=True)
     log.info("Using RPC endpoint", rpc_url=get_web3_provider_info(web3))
     hex_addresses = {
         name: to_checksum_address(contract.address) for name, contract in contracts.items()

@@ -38,6 +38,7 @@ def default_cli_args_ms(default_cli_args) -> List[str]:
         "0x" + "2" * 40,
         "--user-deposit-contract-address",
         "0x" + "3" * 40,
+        "--accept-disclaimer",
     ]
 
 

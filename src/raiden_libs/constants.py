@@ -4,3 +4,7 @@ UDC_SECURITY_MARGIN_FACTOR_MS: float = 1.1
 UDC_SECURITY_MARGIN_FACTOR_PFS: float = 2
 
 MATRIX_START_TIMEOUT = 30  # in seconds
+
+CONFIRMATION_OF_UNDERSTANDING = (
+    "Have you read, understood and hereby accept the above disclaimer and privacy warning?"
+)
