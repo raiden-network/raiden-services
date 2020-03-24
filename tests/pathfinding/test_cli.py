@@ -18,6 +18,7 @@ PATCH_ARGS = {
     "target": "pathfinding_service.cli",
     "PathfindingService": DEFAULT,
     "ServiceApi": DEFAULT,
+    "get_web3_provider_info": MagicMock(return_value=""),
 }
 
 PATCH_INFO_ARGS = {
