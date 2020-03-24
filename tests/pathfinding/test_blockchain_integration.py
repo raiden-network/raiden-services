@@ -151,7 +151,7 @@ def test_pfs_with_mocked_client(  # pylint: disable=too-many-arguments
             balance_proof.additional_hash,
             balance_proof.signature,
             balance_proof.get_counter_signature(get_private_key(clients[p1_index])),
-        ).call_and_transact({"from": clients[p1_index], "gas": 200_000})
+        ).transact({"from": clients[p1_index], "gas": 200_000})
 
     web3.testing.mine(1)  # 1 confirmation block
     pfs.updated.wait(timeout=5)
