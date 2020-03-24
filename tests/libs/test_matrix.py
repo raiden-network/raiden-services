@@ -165,11 +165,15 @@ def test_rate_limiter():
 
 def test_matrix_lister_smoke_test(get_accounts, get_private_key):
     (c1,) = get_accounts(1)
-    url = "http://example.com"
     client_mock = Mock()
-    client_mock.api.base_url = url
+    client_mock.api.base_url = "http://example.com"
     client_mock.user_id = "1"
-    with patch.multiple("raiden_libs.matrix", make_client=Mock(return_value=client_mock)):
+
+    with patch.multiple(
+        "raiden_libs.matrix",
+        make_client=Mock(return_value=client_mock),
+        join_broadcast_room=Mock(),
+    ):
         listener = MatrixListener(
             private_key=get_private_key(c1),
             chain_id=ChainID(61),
