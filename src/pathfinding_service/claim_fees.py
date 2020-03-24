@@ -55,7 +55,7 @@ def main(
     ious = list(
         get_claimable_ious(
             database,
-            expires_before=web3.eth.blockNumber + expires_within,
+            expires_before=BlockNumber(web3.eth.blockNumber + expires_within),
             claim_cost_rdn=claim_cost_rdn,
         )
     )
@@ -66,11 +66,16 @@ def main(
 
 
 def calc_claim_cost_rdn(web3: Web3, rdn_per_eth: float) -> TokenAmount:
-    web3.eth.setGasPriceStrategy(rpc_gas_price_strategy)
+    # Wrong annotation in web3
+    # See https://github.com/ethereum/web3.py/pull/1612
+    web3.eth.setGasPriceStrategy(rpc_gas_price_strategy)  # type: ignore
     claim_cost_gas = gas_measurements()["OneToN.claim"]
-    claim_cost_eth = claim_cost_gas * web3.eth.generateGasPrice() * GAS_COST_SAFETY_MARGIN
-    claim_cost_rdn = TokenAmount(int(claim_cost_eth / rdn_per_eth))
-    return claim_cost_rdn
+
+    gas_price = web3.eth.generateGasPrice()
+    assert gas_price is not None, "Could not generate gas price"
+
+    claim_cost_eth = claim_cost_gas * gas_price * GAS_COST_SAFETY_MARGIN
+    return TokenAmount(int(claim_cost_eth / rdn_per_eth))
 
 
 def get_claimable_ious(

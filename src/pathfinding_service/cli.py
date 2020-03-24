@@ -10,7 +10,7 @@ from typing import Dict, List
 import click
 import gevent
 import structlog
-from eth_utils import to_checksum_address
+from eth_utils import to_canonical_address, to_checksum_address
 from web3 import Web3
 from web3.contract import Contract
 
@@ -28,6 +28,7 @@ from raiden_contracts.constants import (
     CONTRACT_TOKEN_NETWORK_REGISTRY,
     CONTRACT_USER_DEPOSIT,
 )
+from raiden_libs.blockchain import get_web3_provider_info
 from raiden_libs.cli import blockchain_options, common_options, setup_sentry
 
 log = structlog.get_logger(__name__)
@@ -83,7 +84,7 @@ def main(  # pylint: disable-msg=too-many-arguments
 ) -> int:
     """ The Pathfinding service for the Raiden Network. """
     log.info("Starting Raiden Pathfinding Service")
-    log.info("Using RPC endpoint", rpc_url=web3.provider.endpoint_uri)
+    log.info("Using RPC endpoint", rpc_url=get_web3_provider_info(web3))
     hex_addresses = {
         name: to_checksum_address(contract.address) for name, contract in contracts.items()
     }
@@ -114,7 +115,7 @@ def main(  # pylint: disable-msg=too-many-arguments
             pathfinding_service=service,
             service_fee=service_fee,
             debug_mode=enable_debug,
-            one_to_n_address=contracts[CONTRACT_ONE_TO_N].address,
+            one_to_n_address=to_canonical_address(contracts[CONTRACT_ONE_TO_N].address),
             operator=operator,
             info_message=info_message,
         )

@@ -1,5 +1,5 @@
-git+https://github.com/raiden-network/raiden.git@3b9d1caac9be403af9b51915960954e373b46c69
-raiden-contracts==0.36.1
+git+https://github.com/raiden-network/raiden.git@dbe3f21f54fb36f66b03232d182b68d6c4960861
+raiden-contracts==0.36.2
 
 structlog==19.1.0
 colorama==0.4.1
@@ -7,7 +7,7 @@ colorama==0.4.1
 click==7.0
 coincurve==13.0.0
 
-web3==5.5.1
+web3==5.7.0
 eth-utils==1.8.4
 eth-abi==2.1.0
 eth-account==0.4.0

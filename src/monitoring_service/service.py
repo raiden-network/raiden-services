@@ -5,6 +5,7 @@ from typing import Callable, Dict
 
 import sentry_sdk
 import structlog
+from eth_typing import Hash32
 from eth_utils import to_canonical_address
 from web3 import Web3
 from web3.contract import Contract
@@ -214,7 +215,7 @@ class MonitoringService:  # pylint: disable=too-few-public-methods,too-many-inst
         """
         for tx_hash in self.context.database.get_waiting_transactions():
             try:
-                receipt = self.web3.eth.getTransactionReceipt(tx_hash)
+                receipt = self.web3.eth.getTransactionReceipt(Hash32(tx_hash))
             except TransactionNotFound:
                 continue
 

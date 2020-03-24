@@ -19,7 +19,7 @@ def test_retries(make_post_request_mock):
         )
 
     provider = HTTPProvider()
-    provider.middlewares.replace("http_retry_request", quick_retry_middleware)
+    provider.middlewares.replace("http_retry_request", quick_retry_middleware)  # type: ignore
     web3 = Web3(provider)
 
     # log the time since start each time the mock is called
@@ -34,7 +34,7 @@ def test_retries(make_post_request_mock):
 
     # the call must fail after the number of retries is exceeded
     with pytest.raises(requests.exceptions.ConnectionError):
-        web3.eth.blockNumber()
+        web3.eth.blockNumber  # pylint: disable=pointless-statement
 
     # check timings
     assert make_post_request_mock.call_count == 5
@@ -45,5 +45,6 @@ def test_retries(make_post_request_mock):
     start_time = time()
     retry_times = []
     with pytest.raises(requests.exceptions.ConnectionError):
-        web3.eth.blockNumber()
+        web3.eth.blockNumber  # pylint: disable=pointless-statement
+
     assert retry_times == pytest.approx(expected_times, abs=0.006, rel=0.3)

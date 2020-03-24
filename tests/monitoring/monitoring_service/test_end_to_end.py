@@ -120,7 +120,7 @@ def test_first_allowed_monitoring(
 
     monitoring_service._process_new_blocks(web3.eth.blockNumber)
     triggered_events = monitoring_service.database.get_scheduled_events(
-        max_trigger_block=web3.eth.blockNumber + 10
+        max_trigger_block=BlockNumber(web3.eth.blockNumber + 10)
     )
     assert len(triggered_events) == 1
 

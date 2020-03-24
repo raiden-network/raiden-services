@@ -15,6 +15,7 @@ from raiden_contracts.constants import (
     CONTRACT_TOKEN_NETWORK_REGISTRY,
     CONTRACT_USER_DEPOSIT,
 )
+from raiden_libs.blockchain import get_web3_provider_info
 from raiden_libs.cli import blockchain_options, common_options, setup_sentry
 
 log = structlog.get_logger(__name__)
@@ -60,7 +61,7 @@ def main(  # pylint: disable=too-many-arguments
 ) -> int:
     """ The Monitoring service for the Raiden Network. """
     log.info("Starting Raiden Monitoring Service")
-    log.info("Using RPC endpoint", rpc_url=web3.provider.endpoint_uri)
+    log.info("Using RPC endpoint", rpc_url=get_web3_provider_info(web3))
     hex_addresses = {
         name: to_checksum_address(contract.address) for name, contract in contracts.items()
     }

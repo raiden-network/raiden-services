@@ -37,7 +37,14 @@ from pathfinding_service.model.token_network import Path, TokenNetwork
 from pathfinding_service.service import PathfindingService
 from raiden.exceptions import InvalidSignature
 from raiden.utils.signer import recover
-from raiden.utils.typing import Address, PaymentAmount, Signature, TokenAmount, TokenNetworkAddress
+from raiden.utils.typing import (
+    Address,
+    BlockNumber,
+    PaymentAmount,
+    Signature,
+    TokenAmount,
+    TokenNetworkAddress,
+)
 from raiden_libs.blockchain import get_pessimistic_udc_balance
 from raiden_libs.constants import UDC_SECURITY_MARGIN_FACTOR_PFS
 from raiden_libs.marshmallow import ChecksumAddress, HexedBytes
@@ -270,7 +277,7 @@ def process_payment(  # pylint: disable=too-many-branches
     udc_balance = get_pessimistic_udc_balance(
         udc=udc,
         address=iou.sender,
-        from_block=latest_block - pathfinding_service.required_confirmations,
+        from_block=BlockNumber(latest_block - pathfinding_service.required_confirmations),
         to_block=latest_block,
     )
     required_deposit = round(expected_amount * UDC_SECURITY_MARGIN_FACTOR_PFS)
