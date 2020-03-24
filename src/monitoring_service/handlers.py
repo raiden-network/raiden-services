@@ -18,7 +18,7 @@ from monitoring_service.states import (
     MonitorRequest,
     OnChainUpdateStatus,
 )
-from raiden.utils.typing import BlockNumber, TokenNetworkAddress, TransactionHash
+from raiden.utils.typing import Address, BlockNumber, TokenNetworkAddress, TransactionHash
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK, ChannelState
 from raiden_libs.blockchain import get_pessimistic_udc_balance
 from raiden_libs.constants import UDC_SECURITY_MARGIN_FACTOR_MS
@@ -85,7 +85,9 @@ def _first_allowed_block_to_monitor(
 ) -> BlockNumber:
     # Get token_network_contract
     abi = CONTRACT_MANAGER.get_contract_abi(CONTRACT_TOKEN_NETWORK)
-    token_network_contract = context.web3.eth.contract(abi=abi, address=token_network_address)
+    token_network_contract = context.web3.eth.contract(
+        abi=abi, address=Address(token_network_address)
+    )
 
     # Use the same assumptions as the MS contract, which can't get the real
     # channel timeout and close block.

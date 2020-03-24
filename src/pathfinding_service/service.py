@@ -7,6 +7,7 @@ from typing import Dict, List, Optional
 import gevent
 import sentry_sdk
 import structlog
+from eth_utils import to_canonical_address
 from gevent import Timeout
 from web3 import Web3
 from web3.contract import Contract
@@ -81,7 +82,7 @@ class PathfindingService(gevent.Greenlet):
 
         self.blockchain_state = BlockchainState(
             latest_committed_block=BlockNumber(0),
-            token_network_registry_address=self.registry_address,
+            token_network_registry_address=to_canonical_address(self.registry_address),
             chain_id=self.chain_id,
         )
 
@@ -89,9 +90,9 @@ class PathfindingService(gevent.Greenlet):
             filename=db_filename,
             pfs_address=self.address,
             sync_start_block=sync_start_block,
-            token_network_registry_address=self.registry_address,
+            token_network_registry_address=to_canonical_address(self.registry_address),
             chain_id=self.chain_id,
-            user_deposit_contract_address=self.user_deposit_contract.address,
+            user_deposit_contract_address=to_canonical_address(self.user_deposit_contract.address),
             allow_create=True,
         )
 
@@ -145,7 +146,7 @@ class PathfindingService(gevent.Greenlet):
                 self.database.get_latest_committed_block() + MAX_FILTER_INTERVAL
             )
             # Limit the max number of blocks that is processed per iteration
-            to_block = min(latest_confirmed_block, max_query_interval_end_block)
+            to_block = BlockNumber(min(latest_confirmed_block, max_query_interval_end_block))
             self._process_new_blocks(to_block)
 
             # Let tests waiting for this event know that we're done with processing

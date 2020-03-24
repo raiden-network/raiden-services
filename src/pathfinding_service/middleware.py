@@ -1,9 +1,10 @@
-from typing import Any, Callable, Tuple
+from typing import Any, Callable, Dict, Tuple
 
 import gevent
 import requests.exceptions
 from web3 import Web3
 from web3.middleware.exception_retry_request import check_if_retry_on_failure
+from web3.types import RPCEndpoint
 
 
 def http_retry_with_backoff_middleware(
@@ -26,7 +27,7 @@ def http_retry_with_backoff_middleware(
     middleware `http_retry_request_middleware` for HTTPProvider.
     """
 
-    def middleware(method: str, params: dict) -> Any:
+    def middleware(method: RPCEndpoint, params: Dict) -> Any:
         backoff = first_backoff
         if check_if_retry_on_failure(method):
             for i in range(retries):

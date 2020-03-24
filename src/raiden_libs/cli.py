@@ -13,6 +13,7 @@ import requests.exceptions
 import sentry_sdk
 import structlog
 from eth_account import Account
+from eth_typing import URI
 from eth_utils import is_checksum_address, to_canonical_address
 from sentry_sdk.integrations.flask import FlaskIntegration
 from sentry_sdk.integrations.logging import LoggingIntegration
@@ -227,7 +228,7 @@ def blockchain_options(contracts: List[str]) -> Callable:
 
 
 def connect_to_blockchain(
-    eth_rpc: str, used_contracts: List[str], address_overwrites: Dict[str, Address]
+    eth_rpc: URI, used_contracts: List[str], address_overwrites: Dict[str, Address]
 ) -> Tuple[Web3, Dict[str, Contract], BlockNumber]:
     try:
         provider = HTTPProvider(eth_rpc)
@@ -246,7 +247,10 @@ def connect_to_blockchain(
     web3.middleware_onion.inject(geth_poa_middleware, layer=0)
 
     # give web3 some time between retries before failing
-    provider.middlewares.replace("http_retry_request", http_retry_with_backoff_middleware)
+    # TODO: find a way to to this type safe
+    provider.middlewares.replace(  # type: ignore
+        "http_retry_request", http_retry_with_backoff_middleware
+    )
 
     addresses, start_block = get_contract_addresses_and_start_block(
         chain_id=chain_id, contracts=used_contracts, address_overwrites=address_overwrites

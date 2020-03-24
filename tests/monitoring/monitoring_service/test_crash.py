@@ -92,7 +92,7 @@ def test_crash(
         ms = MonitoringService(
             web3=Web3Mock(),
             private_key=server_private_key,
-            contracts=contracts,
+            contracts=contracts,  # type: ignore
             db_filename=os.path.join(tmpdir, filename),
         )
         msc = Mock()

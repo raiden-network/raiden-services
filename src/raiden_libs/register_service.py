@@ -14,6 +14,7 @@ from raiden_contracts.constants import (
     CONTRACT_SERVICE_REGISTRY,
     CONTRACT_USER_DEPOSIT,
 )
+from raiden_libs.blockchain import get_web3_provider_info
 from raiden_libs.cli import blockchain_options, common_options
 from raiden_libs.contract_info import CONTRACT_MANAGER
 from raiden_libs.utils import private_key_to_address
@@ -62,7 +63,7 @@ def main(
     The address that is registered is derived from the supplied private key.
     It also sets or updates the URL of the services deployment.
     """
-    log.info("Using RPC endpoint", rpc_url=web3.provider.endpoint_uri)
+    log.info("Using RPC endpoint", rpc_url=get_web3_provider_info(web3))
     hex_addresses = {
         name: to_checksum_address(contract.address) for name, contract in contracts.items()
     }

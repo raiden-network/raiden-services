@@ -5,9 +5,10 @@ import structlog
 from eth_abi.codec import ABICodec
 from eth_utils import decode_hex, encode_hex, to_canonical_address, to_checksum_address
 from eth_utils.abi import event_abi_to_log_topic
-from web3 import Web3
+from web3 import HTTPProvider, Web3
 from web3._utils.abi import filter_by_type
 from web3.contract import Contract, get_event_data
+from web3.types import ABIEvent, FilterParams, LogReceipt
 
 from raiden.utils.typing import Address, BlockNumber, TokenAmount, TokenNetworkAddress
 from raiden_contracts.constants import (
@@ -35,15 +36,31 @@ from raiden_libs.states import BlockchainState
 log = structlog.get_logger(__name__)
 
 
+def get_web3_provider_info(web3: Web3) -> str:
+    """ Returns information about the provider
+
+    Currently works only with `HTTPProvider`. Needs to be adapted when new procviders
+    are added.
+    """
+    provider = web3.provider
+    if isinstance(provider, HTTPProvider):
+        endpoint = provider.endpoint_uri
+        if endpoint is not None:
+            return str(endpoint)
+
+    return ""
+
+
 def create_registry_event_topics(contract_manager: ContractManager) -> List:
     new_network_abi = contract_manager.get_event_abi(
         CONTRACT_TOKEN_NETWORK_REGISTRY, EVENT_TOKEN_NETWORK_CREATED
     )
-    return [encode_hex(event_abi_to_log_topic(new_network_abi))]
+    # eth-utils doesn't have strict ABI types yet
+    return [encode_hex(event_abi_to_log_topic(new_network_abi))]  # type: ignore
 
 
 def decode_event(
-    abi_codec: ABICodec, topic_to_event_abi: Dict[bytes, Dict], log_entry: Dict
+    abi_codec: ABICodec, topic_to_event_abi: Dict[bytes, ABIEvent], log_entry: LogReceipt
 ) -> Dict:
     topic = log_entry["topics"][0]
     event_abi = topic_to_event_abi[topic]
@@ -75,14 +92,20 @@ def query_blockchain_events(
         All matching events
     """
     events_abi = filter_by_type("event", contract_manager.get_contract_abi(contract_name))
-    topic_to_event_abi = {event_abi_to_log_topic(event_abi): event_abi for event_abi in events_abi}
 
-    filter_params = {
-        "fromBlock": from_block,
-        "toBlock": to_block,
-        "address": to_checksum_address(contract_address),
-        "topics": topics,
+    # eth-utils doesn't have strict ABI types yet
+    topic_to_event_abi: Dict[bytes, ABIEvent] = {
+        event_abi_to_log_topic(event_abi): event_abi for event_abi in events_abi  # type: ignore
     }
+
+    filter_params = FilterParams(
+        {
+            "fromBlock": from_block,
+            "toBlock": to_block,
+            "address": to_checksum_address(contract_address),
+            "topics": topics,
+        }
+    )
 
     events = web3.eth.getLogs(filter_params)
 
@@ -257,6 +280,6 @@ def get_pessimistic_udc_balance(
     Blocks between the latest confirmed block and the latest block are considered.
     """
     return min(
-        udc.functions.effectiveBalance(address).call(block_identifier=block)
+        udc.functions.effectiveBalance(address).call(block_identifier=BlockNumber(block))
         for block in range(from_block, to_block + 1)
     )

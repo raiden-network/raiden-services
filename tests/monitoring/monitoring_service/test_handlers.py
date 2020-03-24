@@ -169,7 +169,7 @@ def test_channel_opened_event_handler_adds_channel(context: Context):
 
 def test_channel_closed_event_handler_closes_existing_channel(context: Context):
     context = setup_state_with_open_channel(context)
-    context.web3.eth.blockNumber = BlockNumber(60)
+    context.web3.eth.blockNumber = BlockNumber(60)  # type: ignore
     event = ReceiveChannelClosedEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
@@ -187,7 +187,7 @@ def test_channel_closed_event_handler_closes_existing_channel(context: Context):
 
 def test_channel_closed_event_handler_idempotency(context: Context):
     context = setup_state_with_open_channel(context)
-    context.web3.eth.blockNumber = BlockNumber(60)
+    context.web3.eth.blockNumber = BlockNumber(60)  # type: ignore
 
     event = ReceiveChannelClosedEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
@@ -209,7 +209,7 @@ def test_channel_closed_event_handler_idempotency(context: Context):
 
 def test_channel_closed_event_handler_ignores_existing_channel_after_timeout(context: Context):
     context = setup_state_with_open_channel(context)
-    context.web3.eth.blockNumber = BlockNumber(200)
+    context.web3.eth.blockNumber = BlockNumber(200)  # type: ignore
 
     event = ReceiveChannelClosedEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
@@ -535,7 +535,7 @@ def test_action_monitoring_rescheduling_when_user_lacks_funds(context: Context):
     # Try to call monitor when the user has insufficient funds
     with patch("monitoring_service.handlers.get_pessimistic_udc_balance", Mock(return_value=0)):
         action_monitoring_triggered_event_handler(event, context)
-    assert not context.monitoring_service_contract.functions.monitor.called
+    assert not context.monitoring_service_contract.functions.monitor.called  # type: ignore
 
     # Now the event must have been rescheduled
     # TODO: check that the event is rescheduled to trigger at the right block
@@ -552,7 +552,7 @@ def test_action_monitoring_rescheduling_when_user_lacks_funds(context: Context):
         Mock(return_value=reward_amount * UDC_SECURITY_MARGIN_FACTOR_MS),
     ):
         action_monitoring_triggered_event_handler(event, context)
-    assert context.monitoring_service_contract.functions.monitor.called
+    assert context.monitoring_service_contract.functions.monitor.called  # type: ignore
 
 
 def test_action_monitoring_triggered_event_handler_with_sufficient_balance_does_trigger_monitor_call(  # noqa
@@ -582,13 +582,13 @@ def test_action_monitoring_triggered_event_handler_with_sufficient_balance_does_
     assert channel
     assert channel.monitor_tx_hash is None
 
-    context.user_deposit_contract.functions.effectiveBalance(
+    context.user_deposit_contract.functions.effectiveBalance(  # type: ignore
         DEFAULT_PARTICIPANT2
     ).call.return_value = 21
     action_monitoring_triggered_event_handler(trigger_event, context)
 
     # check that the monitor call has been done
-    assert context.monitoring_service_contract.functions.monitor.called is True
+    assert context.monitoring_service_contract.functions.monitor.called is True  # type: ignore
 
 
 def test_action_monitoring_triggered_event_handler_with_insufficient_reward_amount_does_not_trigger_monitor_call(  # noqa
@@ -615,13 +615,13 @@ def test_action_monitoring_triggered_event_handler_with_insufficient_reward_amou
     assert channel
     assert channel.monitor_tx_hash is None
 
-    context.user_deposit_contract.functions.effectiveBalance(
+    context.user_deposit_contract.functions.effectiveBalance(  # type: ignore
         DEFAULT_PARTICIPANT2
     ).call.return_value = 21
     action_monitoring_triggered_event_handler(trigger_event, context)
 
     # check that the monitor call has been done
-    assert context.monitoring_service_contract.functions.monitor.called is False
+    assert context.monitoring_service_contract.functions.monitor.called is False  # type: ignore
 
 
 def test_action_monitoring_triggered_event_handler_without_sufficient_balance_doesnt_trigger_monitor_call(  # noqa
@@ -650,13 +650,13 @@ def test_action_monitoring_triggered_event_handler_without_sufficient_balance_do
     assert channel
     assert channel.monitor_tx_hash is None
 
-    context.user_deposit_contract.functions.effectiveBalance(
+    context.user_deposit_contract.functions.effectiveBalance(  # type: ignore
         DEFAULT_PARTICIPANT2
     ).call.return_value = 0
     action_monitoring_triggered_event_handler(trigger_event, context)
 
     # check that the monitor call has been done
-    assert context.monitoring_service_contract.functions.monitor.called is False
+    assert context.monitoring_service_contract.functions.monitor.called is False  # type: ignore
 
 
 def test_mr_available_before_channel_triggers_monitor_call(context: Context):
@@ -676,13 +676,13 @@ def test_mr_available_before_channel_triggers_monitor_call(context: Context):
         non_closing_participant=DEFAULT_PARTICIPANT2,
     )
 
-    context.user_deposit_contract.functions.effectiveBalance(
+    context.user_deposit_contract.functions.effectiveBalance(  # type: ignore
         DEFAULT_PARTICIPANT2
     ).call.return_value = 100
     action_monitoring_triggered_event_handler(event, context)
 
     # check that the monitor call has been done
-    assert context.monitoring_service_contract.functions.monitor.called is True
+    assert context.monitoring_service_contract.functions.monitor.called is True  # type: ignore
 
 
 def test_mr_with_unknown_signatures(context: Context):
@@ -700,7 +700,7 @@ def test_mr_with_unknown_signatures(context: Context):
         )
 
         action_monitoring_triggered_event_handler(event, context)
-        assert not context.monitoring_service_contract.functions.monitor.called
+        assert not context.monitoring_service_contract.functions.monitor.called  # type: ignore
 
     assert_mr_is_ignored(create_signed_monitor_request(closing_privkey=get_random_privkey()))
     assert_mr_is_ignored(create_signed_monitor_request(nonclosing_privkey=get_random_privkey()))
@@ -739,7 +739,7 @@ def test_action_claim_reward_triggered_event_handler_does_trigger_claim_call(  #
     action_claim_reward_triggered_event_handler(trigger_event, context)
 
     # check that the monitor call has been done
-    assert context.monitoring_service_contract.functions.claimReward.called is True
+    assert context.monitoring_service_contract.functions.claimReward.called is True  # type: ignore
 
 
 def test_action_claim_reward_triggered_event_handler_without_reward_doesnt_trigger_claim_call(  # noqa
@@ -775,7 +775,7 @@ def test_action_claim_reward_triggered_event_handler_without_reward_doesnt_trigg
     action_claim_reward_triggered_event_handler(trigger_event, context)
 
     # check that the monitor call has been done
-    assert context.monitoring_service_contract.functions.claimReward.called is False
+    assert context.monitoring_service_contract.functions.claimReward.called is False  # type: ignore # noqa
 
 
 def test_action_claim_reward_triggered_event_handler_without_update_state_doesnt_trigger_claim_call(  # noqa
@@ -811,4 +811,4 @@ def test_action_claim_reward_triggered_event_handler_without_update_state_doesnt
     action_claim_reward_triggered_event_handler(trigger_event, context)
 
     # check that the monitor call has been done
-    assert context.monitoring_service_contract.functions.claimReward.called is False
+    assert context.monitoring_service_contract.functions.claimReward.called is False  # type: ignore # noqa
