@@ -15,7 +15,6 @@ from raiden_contracts.constants import (
     CONTRACT_CUSTOM_TOKEN,
     CONTRACT_DEPOSIT,
     CONTRACT_SERVICE_REGISTRY,
-    CONTRACT_USER_DEPOSIT,
 )
 from raiden_libs.blockchain import get_web3_provider_info
 from raiden_libs.cli import blockchain_options, common_options, validate_address
@@ -53,7 +52,7 @@ def cli() -> None:
     pass
 
 
-@blockchain_options(contracts=[CONTRACT_SERVICE_REGISTRY, CONTRACT_USER_DEPOSIT])
+@blockchain_options(contracts=[CONTRACT_SERVICE_REGISTRY])
 @cli.command()
 @click.option("--service-url", type=str, help="URL for the services to register")
 @common_options("service_registry")
@@ -102,7 +101,6 @@ def register(
         deposit_to_registry(
             web3=web3,
             service_registry_contract=service_registry_contract,
-            user_deposit_contract=contracts[CONTRACT_USER_DEPOSIT],
             service_address=service_address,
         )
 
@@ -120,13 +118,10 @@ def register(
 
 
 def deposit_to_registry(
-    web3: Web3,
-    service_registry_contract: Contract,
-    user_deposit_contract: Contract,
-    service_address: Address,
+    web3: Web3, service_registry_contract: Contract, service_address: Address,
 ) -> None:
     log.info("Address not registered in ServiceRegistry")
-    deposit_token_address = user_deposit_contract.functions.token().call()
+    deposit_token_address = service_registry_contract.functions.token().call()
     deposit_token_contract = web3.eth.contract(
         address=deposit_token_address, abi=CONTRACT_MANAGER.get_contract_abi(CONTRACT_CUSTOM_TOKEN)
     )
