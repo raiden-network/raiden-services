@@ -55,7 +55,7 @@ def cli() -> None:
 @blockchain_options(contracts=[CONTRACT_SERVICE_REGISTRY, CONTRACT_USER_DEPOSIT])
 @cli.command()
 @click.option("--service-url", type=str, help="URL for the services to register")
-@common_options("register_service")
+@common_options("service_registry")
 def register(
     private_key: str,
     state_db: str,  # pylint: disable=unused-argument
@@ -192,7 +192,7 @@ def update_service_url(
 @click.option(
     "--to", type=str, callback=validate_address, help="Target address for withdrawn tokens"
 )
-@common_options("register_service")
+@common_options("service_registry")
 def withdraw(
     private_key: str,
     state_db: str,  # pylint: disable=unused-argument

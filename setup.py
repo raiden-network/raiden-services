@@ -65,7 +65,7 @@ setup(
             "claim-pfs-fees=pathfinding_service.claim_fees:main",
             "monitoring-service=monitoring_service.cli:main",
             "request-collector=request_collector.cli:main",
-            "register-service=raiden_libs.register_service:main",
+            "service-registry=raiden_libs.service_registry:main",
         ]
     },
 )
