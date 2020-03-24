@@ -1,5 +1,6 @@
 import sys
 import time
+from datetime import datetime
 from typing import Dict
 
 import click
@@ -217,20 +218,25 @@ def withdraw(
         log.error(
             "You must used the key used to deposit when withdrawing",
             expected=withdrawer,
-            actual=caller_address,
+            actual=to_checksum_address(caller_address),
         )
         sys.exit(1)
 
     # Can we withdraw already?
     release_at = deposit_contract.functions.release_at().call()
     if time.time() < release_at:
-        log.error("Too early to withdraw")
+        log.error(
+            "Too early to withdraw",
+            released_at_utc=datetime.utcfromtimestamp(release_at).isoformat(),
+        )
         sys.exit(1)
 
-    # Withdraw now!
-    log.info("Withdrawing", to=to_checksum_address(to))
-    deposit_contract.functions.withdraw(to).transact({"from": caller_address})
-    log.info("Withdraw successful")
+    checked_transact(
+        web3=web3,
+        service_address=caller_address,
+        function_call=deposit_contract.functions.withdraw(to),
+        task_name="withdraw",
+    )
 
 
 def main() -> None:
