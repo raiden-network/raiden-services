@@ -24,6 +24,7 @@ from web3.middleware import geth_poa_middleware
 from pathfinding_service.middleware import http_retry_with_backoff_middleware
 from raiden.utils.typing import Address, BlockNumber, ChainID
 from raiden_contracts.constants import (
+    CONTRACT_DEPOSIT,
     CONTRACT_MONITORING_SERVICE,
     CONTRACT_ONE_TO_N,
     CONTRACT_SERVICE_REGISTRY,
@@ -187,7 +188,9 @@ def blockchain_options(contracts: List[str]) -> Callable:
         CONTRACT_MONITORING_SERVICE: "monitor-contract",
         CONTRACT_ONE_TO_N: "one-to-n-contract",
         CONTRACT_SERVICE_REGISTRY: "service-registry-contract",
+        CONTRACT_DEPOSIT: "service-deposit-contract",
     }
+    address_required = {CONTRACT_DEPOSIT}
 
     param_for_contract: Dict[str, str] = {}
     for con in contracts:
@@ -196,6 +199,7 @@ def blockchain_options(contracts: List[str]) -> Callable:
             type=str,
             help=f"Address of the {con} contract",
             callback=validate_address,
+            required=con in address_required,
         )
         options.append(option)
         param_for_contract[con] = option.human_readable_name

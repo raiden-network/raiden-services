@@ -1,9 +1,10 @@
 import sys
+import time
 from typing import Dict
 
 import click
 import structlog
-from eth_utils import to_checksum_address, to_hex
+from eth_utils import to_canonical_address, to_checksum_address, to_hex
 from web3 import Web3
 from web3.contract import Contract, ContractFunction
 from web3.middleware import construct_sign_and_send_raw_middleware
@@ -11,11 +12,12 @@ from web3.middleware import construct_sign_and_send_raw_middleware
 from raiden.utils.typing import Address, BlockNumber
 from raiden_contracts.constants import (
     CONTRACT_CUSTOM_TOKEN,
+    CONTRACT_DEPOSIT,
     CONTRACT_SERVICE_REGISTRY,
     CONTRACT_USER_DEPOSIT,
 )
 from raiden_libs.blockchain import get_web3_provider_info
-from raiden_libs.cli import blockchain_options, common_options
+from raiden_libs.cli import blockchain_options, common_options, validate_address
 from raiden_libs.contract_info import CONTRACT_MANAGER
 from raiden_libs.utils import private_key_to_address
 
@@ -45,11 +47,16 @@ def checked_transact(
     )
 
 
+@click.group()
+def cli() -> None:
+    pass
+
+
 @blockchain_options(contracts=[CONTRACT_SERVICE_REGISTRY, CONTRACT_USER_DEPOSIT])
-@click.command()
+@cli.command()
 @click.option("--service-url", type=str, help="URL for the services to register")
 @common_options("register_service")
-def main(
+def register(
     private_key: str,
     state_db: str,  # pylint: disable=unused-argument
     web3: Web3,
@@ -151,7 +158,7 @@ def deposit_to_registry(
         function_call=deposit_token_contract.functions.approve(
             service_registry_contract.address, required_deposit
         ),
-        task_name="Allowing token transfor for deposit",
+        task_name="Allowing token transfer for deposit",
     )
 
     # Deposit tokens
@@ -180,5 +187,55 @@ def update_service_url(
         )
 
 
+@blockchain_options(contracts=[CONTRACT_DEPOSIT])
+@cli.command("withdraw")
+@click.option(
+    "--to", type=str, callback=validate_address, help="Target address for withdrawn tokens"
+)
+@common_options("register_service")
+def withdraw(
+    private_key: str,
+    state_db: str,  # pylint: disable=unused-argument
+    web3: Web3,
+    contracts: Dict[str, Contract],
+    start_block: BlockNumber,  # pylint: disable=unused-argument
+    to: str,
+) -> None:
+    """
+    Withdraw tokens deposited to the ServiceRegistry.
+    """
+    # Add middleware to sign transactions by default
+    web3.middleware_onion.add(construct_sign_and_send_raw_middleware(private_key))
+
+    log.info("Using RPC endpoint", rpc_url=get_web3_provider_info(web3))
+    deposit_contract = contracts[CONTRACT_DEPOSIT]
+
+    # Check usage of correct key
+    withdrawer = deposit_contract.functions.withdrawer().call()
+    caller_address = private_key_to_address(private_key)
+    if to_canonical_address(withdrawer) != caller_address:
+        log.error(
+            "You must used the key used to deposit when withdrawing",
+            expected=withdrawer,
+            actual=caller_address,
+        )
+        sys.exit(1)
+
+    # Can we withdraw already?
+    release_at = deposit_contract.functions.release_at().call()
+    if time.time() < release_at:
+        log.error("Too early to withdraw")
+        sys.exit(1)
+
+    # Withdraw now!
+    log.info("Withdrawing", to=to_checksum_address(to))
+    deposit_contract.functions.withdraw(to).transact({"from": caller_address})
+    log.info("Withdraw successful")
+
+
+def main() -> None:
+    cli(auto_envvar_prefix="RDN_REGISTRY")
+
+
 if __name__ == "__main__":
-    main(auto_envvar_prefix="RDN_REGISTRY")  # pragma: no cover
+    main()  # pragma: no cover
