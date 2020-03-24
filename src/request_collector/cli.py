@@ -10,9 +10,11 @@ import click
 import structlog
 from request_collector.server import RequestCollector
 
+from monitoring_service.constants import MS_DISCLAIMER
 from monitoring_service.database import SharedDatabase
 from raiden.utils.cli import NetworkChoiceType
 from raiden_libs.cli import common_options, setup_sentry
+from raiden_libs.constants import CONFIRMATION_OF_UNDERSTANDING
 
 log = structlog.get_logger(__name__)
 
@@ -40,11 +42,22 @@ log = structlog.get_logger(__name__)
     multiple=True,
     help="Use this matrix server instead of the default ones. Include protocol in argument.",
 )
+@click.option(
+    "--accept-disclaimer",
+    type=bool,
+    default=False,
+    help="Bypass the experimental software disclaimer prompt",
+    is_flag=True,
+)
 @common_options("raiden-monitoring-service")
-def main(private_key: str, state_db: str, matrix_server: List[str]) -> int:
+def main(
+    private_key: str, state_db: str, matrix_server: List[str], accept_disclaimer: bool
+) -> int:
     """ The request collector for the monitoring service. """
     log.info("Starting Raiden Monitoring Request Collector")
-
+    click.secho(MS_DISCLAIMER, fg="yellow")
+    if not accept_disclaimer:
+        click.confirm(CONFIRMATION_OF_UNDERSTANDING, abort=True)
     if state_db != ":memory:" and not os.path.exists(state_db):
         log.error(
             "Database file from monitoring service not found. Is the monitoring service running?",

@@ -19,6 +19,7 @@ from pathfinding_service.constants import (
     DEFAULT_API_HOST,
     DEFAULT_INFO_MESSAGE,
     DEFAULT_POLL_INTERVALL,
+    PFS_DISCLAIMER,
 )
 from pathfinding_service.service import PathfindingService
 from raiden.settings import DEFAULT_NUMBER_OF_BLOCK_CONFIRMATIONS
@@ -30,6 +31,7 @@ from raiden_contracts.constants import (
 )
 from raiden_libs.blockchain import get_web3_provider_info
 from raiden_libs.cli import blockchain_options, common_options, setup_sentry
+from raiden_libs.constants import CONFIRMATION_OF_UNDERSTANDING
 
 log = structlog.get_logger(__name__)
 
@@ -67,8 +69,15 @@ log = structlog.get_logger(__name__)
     multiple=True,
     help="Use this matrix server instead of the default ones. Include protocol in argument.",
 )
+@click.option(
+    "--accept-disclaimer",
+    type=bool,
+    default=False,
+    help="Bypass the experimental software disclaimer prompt",
+    is_flag=True,
+)
 @common_options("raiden-pathfinding-service")
-def main(  # pylint: disable-msg=too-many-arguments
+def main(  # pylint: disable=too-many-arguments,too-many-locals
     private_key: str,
     state_db: str,
     web3: Web3,
@@ -81,9 +90,13 @@ def main(  # pylint: disable-msg=too-many-arguments
     info_message: str,
     enable_debug: bool,
     matrix_server: List[str],
+    accept_disclaimer: bool,
 ) -> int:
     """ The Pathfinding service for the Raiden Network. """
     log.info("Starting Raiden Pathfinding Service")
+    click.secho(PFS_DISCLAIMER, fg="yellow")
+    if not accept_disclaimer:
+        click.confirm(CONFIRMATION_OF_UNDERSTANDING, abort=True)
     log.info("Using RPC endpoint", rpc_url=get_web3_provider_info(web3))
     hex_addresses = {
         name: to_checksum_address(contract.address) for name, contract in contracts.items()

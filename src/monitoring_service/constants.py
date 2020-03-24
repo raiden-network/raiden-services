@@ -1,3 +1,4 @@
+import textwrap
 from datetime import timedelta
 
 DEFAULT_REQUIRED_CONFIRMATIONS: int = 10
@@ -14,3 +15,39 @@ MATRIX_RATE_LIMIT_RESET_INTERVAL = timedelta(minutes=5)
 
 # Number of blocks after the close, during which MRs are still being accepted
 CHANNEL_CLOSE_MARGIN: int = 10
+
+MS_DISCLAIMER: str = textwrap.dedent(
+    """\
+            ----------------------------------------------------------------------
+            | This is an Alpha version of experimental open source software      |
+            | released as a test version under an MIT license and may contain    |
+            | errors and/or bugs. No guarantee or representations whatsoever is  |
+            | made regarding its suitability (or its use) for any purpose or     |
+            | regarding its compliance with any applicable laws and regulations. |
+            | Use of the software is at your own risk and discretion and by      |
+            | using the software you acknowledge that you have read this         |
+            | disclaimer, understand its contents, assume all risk related       |
+            | thereto and hereby release, waive, discharge and covenant not to   |
+            | sue Brainbot Labs Establishment or any officers, employees or      |
+            | affiliates from and for any direct or indirect liability resulting |
+            | from the use of the software as permissible by applicable laws and |
+            | regulations.                                                       |
+            |                                                                    |
+            | Privacy Warning: Please be aware, that by using the Raiden         |
+            | Pathfinding service or Monitoring service among others, your       |
+            | Ethereum address, account balance and your transactions            |
+            | will be stored on the Ethereum chain, i.e. on servers of Ethereum  |
+            | node operators and ergo are to a certain extent publicly available.|
+            | The same might also be stored on systems of parties running Raiden |
+            | nodes connected to the same token network. Data present in the     |
+            | Ethereum chain is very unlikely to be able to be changed, removed  |
+            | or deleted from the public arena.                                  |
+            |                                                                    |
+            | Also be aware, that data on individual MonitorRequests will        |
+            | be made available via the Matrix protocol to all users and         |
+            | Matrix server operators.                                           |
+            | This implementation follows the technical specification of         |
+            | https://raiden-network-specification.readthedocs.io/en/latest/     |
+            | Monitoring Service.                                                |
+            ----------------------------------------------------------------------"""
+)
