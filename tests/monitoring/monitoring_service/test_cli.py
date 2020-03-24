@@ -13,8 +13,10 @@ from monitoring_service.service import check_gas_reserve
 def service_mock(monkeypatch):
     web3_mock = Mock(providers=[Mock()])
     connect_mock = Mock(return_value=(web3_mock, MagicMock(), Mock()))
-
     monkeypatch.setattr("raiden_libs.cli.connect_to_blockchain", connect_mock)
+
+    monkeypatch.setattr("monitoring_service.cli.get_web3_provider_info", Mock(return_value=""))
+
     service_mock = Mock()
     monkeypatch.setattr("monitoring_service.cli.MonitoringService", service_mock)
     return service_mock

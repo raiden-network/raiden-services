@@ -48,7 +48,7 @@ def get_web3_provider_info(web3: Web3) -> str:
         if endpoint is not None:
             return str(endpoint)
 
-    return ""
+    raise RuntimeError(f"Unsupported web3 provider {provider!r}")
 
 
 def create_registry_event_topics(contract_manager: ContractManager) -> List:
