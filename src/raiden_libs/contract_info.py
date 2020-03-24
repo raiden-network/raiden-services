@@ -44,8 +44,9 @@ def get_contract_addresses_and_start_block(
 
     # Get deployed addresses for those contracts which have no overwrites
     addresses = {
-        c: address_overwrites.get(
-            c, to_canonical_address(contract_data["contracts"][c]["address"])
+        c: (
+            address_overwrites.get(c)
+            or to_canonical_address(contract_data["contracts"][c]["address"])
         )
         for c in contracts
     }
