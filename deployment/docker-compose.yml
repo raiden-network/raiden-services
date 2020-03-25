@@ -215,11 +215,11 @@ services:
     restart: "no"
     command: ["python3", "-m", "raiden_libs.service_registry", "register"]
     environment:
-      - RDN_REGISTRY_LOG_LEVEL=DEBUG
-      - RDN_REGISTRY_KEYSTORE_FILE=${MS_KEYSTORE_FILE}
-      - RDN_REGISTRY_PASSWORD=${MS_PASSWORD}
-      - RDN_REGISTRY_SERVICE_URL=https://pfs-goerli-with-fee.services-${DEPLOY_ENV}.raiden.network
-      - RDN_REGISTRY_ETH_RPC=http://parity.goerli.ethnodes.brainbot.com:8545
+      - SR_REGISTER_LOG_LEVEL=DEBUG
+      - SR_REGISTER_KEYSTORE_FILE=${MS_KEYSTORE_FILE}
+      - SR_REGISTER_PASSWORD=${MS_PASSWORD}
+      - SR_REGISTER_SERVICE_URL=https://pfs-goerli-with-fee.services-${DEPLOY_ENV}.raiden.network
+      - SR_REGISTER_ETH_RPC=http://parity.goerli.ethnodes.brainbot.com:8545
     depends_on:
       - traefik
 
@@ -229,10 +229,10 @@ services:
     restart: "no"
     command: ["python3", "-m", "raiden_libs.service_registry", "register"]
     environment:
-      - RDN_REGISTRY_LOG_LEVEL=DEBUG
-      - RDN_REGISTRY_KEYSTORE_FILE=${MS_BACKUP_KEYSTORE_FILE}
-      - RDN_REGISTRY_PASSWORD=${MS_BACKUP_PASSWORD}
-      - RDN_REGISTRY_SERVICE_URL=""
-      - RDN_REGISTRY_ETH_RPC=http://parity.goerli.ethnodes.brainbot.com:8545
+      - SR_REGISTER_LOG_LEVEL=DEBUG
+      - SR_REGISTER_KEYSTORE_FILE=${MS_BACKUP_KEYSTORE_FILE}
+      - SR_REGISTER_PASSWORD=${MS_BACKUP_PASSWORD}
+      - SR_REGISTER_SERVICE_URL=""
+      - SR_REGISTER_ETH_RPC=http://parity.goerli.ethnodes.brainbot.com:8545
     depends_on:
       - traefik
