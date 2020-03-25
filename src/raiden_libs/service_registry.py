@@ -235,7 +235,7 @@ def withdraw(
 
 
 def main() -> None:
-    cli(auto_envvar_prefix="RDN_REGISTRY")
+    cli(auto_envvar_prefix="SR")  # for ServiceRegistry
 
 
 if __name__ == "__main__":
