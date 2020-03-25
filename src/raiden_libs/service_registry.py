@@ -1,7 +1,7 @@
 import sys
 import time
 from datetime import datetime
-from typing import Dict
+from typing import Dict, Optional
 
 import click
 import structlog
@@ -25,17 +25,17 @@ log = structlog.get_logger(__name__)
 
 
 def checked_transact(
-    web3: Web3, service_address: Address, function_call: ContractFunction, task_name: str
+    web3: Web3, sender_address: Address, function_call: ContractFunction, task_name: str
 ) -> None:
     log.info(f"Starting: {task_name}")
-    transaction_hash = function_call.transact({"from": service_address})
+    transaction_hash = function_call.transact({"from": sender_address})
     transaction_receipt = web3.eth.waitForTransactionReceipt(transaction_hash)
     was_successful = transaction_receipt["status"] == 1
 
     if not was_successful:
         log.error(
             f"Failed: {task_name}\nPlease check that the account "
-            f"{to_checksum_address(service_address)} has sufficient funds.",
+            f"{to_checksum_address(sender_address)} has sufficient funds.",
             receipt=transaction_receipt,
         )
         sys.exit(1)
@@ -137,7 +137,7 @@ def deposit_to_registry(
     if account_balance < required_deposit:
         checked_transact(
             web3=web3,
-            service_address=service_address,
+            sender_address=service_address,
             function_call=deposit_token_contract.functions.mint(required_deposit),
             task_name="Minting new Test RDN tokens",
         )
@@ -150,7 +150,7 @@ def deposit_to_registry(
     # Approve token transfer
     checked_transact(
         web3=web3,
-        service_address=service_address,
+        sender_address=service_address,
         function_call=deposit_token_contract.functions.approve(
             service_registry_contract.address, required_deposit
         ),
@@ -160,7 +160,7 @@ def deposit_to_registry(
     # Deposit tokens
     checked_transact(
         web3=web3,
-        service_address=service_address,
+        sender_address=service_address,
         function_call=service_registry_contract.functions.deposit(required_deposit),
         task_name="Depositing to service registry",
     )
@@ -177,7 +177,7 @@ def update_service_url(
     if service_url and service_url != current_url:
         checked_transact(
             web3=web3,
-            service_address=service_address,
+            sender_address=service_address,
             function_call=service_registry_contract.functions.setURL(service_url),
             task_name="Registering new URL",
         )
@@ -195,7 +195,7 @@ def withdraw(
     web3: Web3,
     contracts: Dict[str, Contract],
     start_block: BlockNumber,  # pylint: disable=unused-argument
-    to: str,
+    to: Optional[Address],
 ) -> None:
     """
     Withdraw tokens deposited to the ServiceRegistry.
@@ -226,10 +226,11 @@ def withdraw(
         )
         sys.exit(1)
 
+    receiver = to or private_key_to_address(private_key)
     checked_transact(
         web3=web3,
-        service_address=caller_address,
-        function_call=deposit_contract.functions.withdraw(to),
+        sender_address=caller_address,
+        function_call=deposit_contract.functions.withdraw(receiver),
         task_name="withdraw",
     )
 
