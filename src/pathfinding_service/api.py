@@ -402,6 +402,9 @@ class InfoResource(PathfinderResource):
                 "user_deposit_address": to_checksum_address(
                     self.pathfinding_service.user_deposit_contract.address
                 ),
+                "service_token_address": to_checksum_address(
+                    self.pathfinding_service.service_token_address
+                ),
                 "confirmed_block": {
                     "number": self.pathfinding_service.blockchain_state.latest_committed_block
                 },

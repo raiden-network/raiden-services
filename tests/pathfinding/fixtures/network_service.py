@@ -4,7 +4,7 @@ from typing import Callable, Generator, List
 from unittest.mock import Mock, patch
 
 import pytest
-from eth_utils import to_canonical_address
+from eth_utils import to_canonical_address, to_checksum_address
 from web3 import Web3
 from web3.contract import Contract
 
@@ -288,6 +288,9 @@ def pathfinding_service_mock_empty() -> Generator[PathfindingService, None, None
 
         mock_udc = Mock(address=bytes([8] * 20))
         mock_udc.functions.effectiveBalance.return_value.call.return_value = 10000
+        mock_udc.functions.token.return_value.call.return_value = to_checksum_address(
+            bytes([7] * 20)
+        )
         pathfinding_service = PathfindingService(
             web3=web3_mock,
             contracts={
