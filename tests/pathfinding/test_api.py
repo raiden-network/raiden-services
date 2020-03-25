@@ -417,6 +417,7 @@ def test_get_info(api_url: str, api_sut, pathfinding_service_mock):
     user_deposit_address = to_checksum_address(
         pathfinding_service_mock.user_deposit_contract.address
     )
+    service_token_address = pathfinding_service_mock.user_deposit_contract.functions.token().call()
 
     expected_response = {
         "price_info": 123,
@@ -424,6 +425,7 @@ def test_get_info(api_url: str, api_sut, pathfinding_service_mock):
             "chain_id": pathfinding_service_mock.chain_id,
             "token_network_registry_address": token_network_registry_address,
             "user_deposit_address": user_deposit_address,
+            "service_token_address": service_token_address,
             "confirmed_block": {"number": 0},
         },
         "version": pkg_resources.require("raiden-services")[0].version,
