@@ -32,7 +32,7 @@ def ms_address(create_service_account) -> Address:
 @pytest.fixture
 def default_cli_args_ms(default_cli_args) -> List[str]:
     return default_cli_args + [
-        "--token-network-registry-address",
+        "--token-network-registry-contract-address",
         "0x" + "1" * 40,
         "--monitor-contract-address",
         "0x" + "2" * 40,

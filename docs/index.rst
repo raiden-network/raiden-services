@@ -68,7 +68,7 @@ The services share a number of options. These are:
 
     Defaults to ``http://localhost:8545``.
 
-``--token-network-registry-address``
+``--token-network-registry-contract-address``
     Defines the address of the token network registry to be used.
 
     Defaults to the contract address that the Raiden client uses for the given
