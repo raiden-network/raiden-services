@@ -15,6 +15,7 @@ from tests.pathfinding.test_database import db_has_feedback_for
 
 import pathfinding_service.exceptions as exceptions
 from pathfinding_service.api import DEFAULT_MAX_PATHS, ServiceApi, last_failed_requests
+from pathfinding_service.constants import DEFAULT_INFO_MESSAGE
 from pathfinding_service.model import IOU, TokenNetwork
 from pathfinding_service.model.feedback import FeedbackToken
 from raiden.utils.signer import LocalSigner
@@ -410,7 +411,6 @@ def test_payment_with_new_iou_rejected(  # pylint: disable=too-many-locals
 def test_get_info(api_url: str, api_sut, pathfinding_service_mock):
     api_sut.service_fee = 123
     api_sut.operator = "John Doe"
-    api_sut.info_message = "This is your favorite pfs for token network registry "
     url = api_url + "/info"
 
     token_network_registry_address = to_checksum_address(pathfinding_service_mock.registry_address)
@@ -431,8 +431,7 @@ def test_get_info(api_url: str, api_sut, pathfinding_service_mock):
         "version": pkg_resources.require("raiden-services")[0].version,
         "contracts_version": pkg_resources.require("raiden-contracts")[0].version,
         "operator": "John Doe",
-        "message": "This is your favorite pfs for token network registry "
-        + token_network_registry_address,
+        "message": DEFAULT_INFO_MESSAGE,
         "payment_address": to_checksum_address(pathfinding_service_mock.address),
     }
     response = requests.get(url)
