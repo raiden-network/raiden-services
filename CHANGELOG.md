@@ -1,5 +1,16 @@
 # Changelog
 
+### 0.7.0 (2020-03-27)
+
+* PFS: Fix invalid hex encoding in `get_feedback_routes` (https://github.com/raiden-network/raiden-services/issues/711)
+* PFS: Add more information to `/info` endpoint (https://github.com/raiden-network/raiden-services/pull/705, https://github.com/raiden-network/raiden-services/pull/752)
+* MS: Do not send transactions too early (https://github.com/raiden-network/raiden/issues/5919, https://github.com/raiden-network/raiden-services/pull/737)
+* MS: Send transaction earlier if possible (https://github.com/raiden-network/raiden-services/issues/721)
+* MS/PFS: Improve sentry messages (https://github.com/raiden-network/raiden-services/pull/722)
+* MS/PFS: Use stricter mypy settings (https://github.com/raiden-network/raiden-services/pull/704, https://github.com/raiden-network/raiden-services/pull/745)
+* MS/PFS: Show disclaimer during startup (https://github.com/raiden-network/raiden-services/issues/741)
+* Service Registry: Add *withdraw* command to *register_service* script (https://github.com/raiden-network/raiden-services/issues/743)
+
 ### 0.6.0 (2020-01-14)
 
 * PFS: Fix DB schema to not override channels (https://github.com/raiden-network/raiden-services/issues/693)
