@@ -37,7 +37,6 @@ def api_sut(
         pathfinding_service=pathfinding_service_mock,
         one_to_n_address=Address(bytes([1] * 20)),
         operator="",
-        info_message="",
     )
     api.run(port=free_port)
     yield api

@@ -416,10 +416,6 @@ class InfoResource(PathfinderResource):
             "payment_address": to_checksum_address(self.pathfinding_service.address),
             "UTC": datetime.utcnow().isoformat(),
         }
-        if info["message"] == DEFAULT_INFO_MESSAGE:
-            info["message"] = str(info["message"]) + to_checksum_address(
-                self.pathfinding_service.registry_address
-            )
         return info, 200
 
 
@@ -521,7 +517,7 @@ class ServiceApi:
         pathfinding_service: PathfindingService,
         one_to_n_address: Address,
         operator: str,
-        info_message: str,
+        info_message: str = DEFAULT_INFO_MESSAGE,
         service_fee: TokenAmount = TokenAmount(0),
         debug_mode: bool = False,
     ) -> None:
