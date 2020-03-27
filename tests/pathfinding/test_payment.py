@@ -106,8 +106,11 @@ def test_process_payment(
     # deposit. But we set the deposit one token too low.
     deposit_to_udc(sender, round(2 * UDC_SECURITY_MARGIN_FACTOR_PFS) - 1)
     iou = make_iou(privkey, pfs.address, amount=2)
-    with pytest.raises(exceptions.DepositTooLow):
+    with pytest.raises(exceptions.DepositTooLow) as tb:
         process_payment(iou, pfs, service_fee, one_to_n_address)
+    assert tb.value.error_details["required_deposit"] == 2 * UDC_SECURITY_MARGIN_FACTOR_PFS
+    assert tb.value.error_details["seen_deposit"] == 1 * UDC_SECURITY_MARGIN_FACTOR_PFS
+    assert tb.value.error_details["block_number"] == web3.eth.blockNumber
 
     # With the higher amount and enough deposit, it works again!
     deposit_to_udc(sender, round(2 * UDC_SECURITY_MARGIN_FACTOR_PFS))
