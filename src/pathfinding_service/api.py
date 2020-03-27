@@ -282,7 +282,9 @@ def process_payment(  # pylint: disable=too-many-branches
     )
     required_deposit = round(expected_amount * UDC_SECURITY_MARGIN_FACTOR_PFS)
     if udc_balance < required_deposit:
-        raise exceptions.DepositTooLow(required_deposit=required_deposit)
+        raise exceptions.DepositTooLow(
+            required_deposit=required_deposit, seen_deposit=udc_balance, block_number=latest_block
+        )
 
     log.info(
         "Received service fee",
