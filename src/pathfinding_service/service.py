@@ -25,7 +25,7 @@ from pathfinding_service.typing import DeferableMessage
 from raiden.constants import PATH_FINDING_BROADCASTING_ROOM, UINT256_MAX
 from raiden.messages.abstract import Message
 from raiden.messages.path_finding_service import PFSCapacityUpdate, PFSFeeUpdate
-from raiden.utils.typing import BlockNumber, ChainID, TokenNetworkAddress
+from raiden.utils.typing import BlockNumber, BlockTimeout, ChainID, TokenNetworkAddress
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
 from raiden_libs.blockchain import get_blockchain_events
 from raiden_libs.constants import MATRIX_START_TIMEOUT
@@ -62,9 +62,9 @@ class PathfindingService(gevent.Greenlet):
         contracts: Dict[str, Contract],
         private_key: str,
         db_filename: str,
-        sync_start_block: BlockNumber = BlockNumber(0),
-        required_confirmations: int = 8,
-        poll_interval: float = 10,
+        sync_start_block: BlockNumber,
+        required_confirmations: BlockTimeout,
+        poll_interval: float,
         matrix_servers: Optional[List[str]] = None,
     ):
         super().__init__()

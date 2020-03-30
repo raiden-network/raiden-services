@@ -8,3 +8,5 @@ MATRIX_START_TIMEOUT = 30  # in seconds
 CONFIRMATION_OF_UNDERSTANDING = (
     "Have you read, understood and hereby accept the above disclaimer and privacy warning?"
 )
+
+DEFAULT_POLL_INTERVALL = 2

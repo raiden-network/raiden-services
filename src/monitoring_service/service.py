@@ -20,8 +20,7 @@ from monitoring_service.constants import (
 )
 from monitoring_service.database import Database
 from monitoring_service.handlers import HANDLERS, Context
-from raiden.settings import DEFAULT_NUMBER_OF_BLOCK_CONFIRMATIONS
-from raiden.utils.typing import BlockNumber, ChainID, MonitoringServiceAddress
+from raiden.utils.typing import BlockNumber, BlockTimeout, ChainID, MonitoringServiceAddress
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
     CONTRACT_SERVICE_REGISTRY,
@@ -88,9 +87,9 @@ class MonitoringService:  # pylint: disable=too-few-public-methods,too-many-inst
         private_key: str,
         db_filename: str,
         contracts: Dict[str, Contract],
-        sync_start_block: BlockNumber = BlockNumber(0),
-        required_confirmations: int = DEFAULT_NUMBER_OF_BLOCK_CONFIRMATIONS,
-        poll_interval: float = 1,
+        sync_start_block: BlockNumber,
+        required_confirmations: BlockTimeout,
+        poll_interval: float,
         min_reward: int = 0,
     ):
         self.web3 = web3

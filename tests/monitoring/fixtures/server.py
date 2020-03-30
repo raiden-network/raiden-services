@@ -11,7 +11,13 @@ from web3 import Web3
 
 from monitoring_service.database import Database
 from monitoring_service.service import MonitoringService
-from raiden.utils.typing import Address, ChainID, MonitoringServiceAddress
+from raiden.utils.typing import (
+    Address,
+    BlockNumber,
+    BlockTimeout,
+    ChainID,
+    MonitoringServiceAddress,
+)
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
     CONTRACT_SERVICE_REGISTRY,
@@ -73,7 +79,8 @@ def monitoring_service(  # pylint: disable=too-many-arguments
             CONTRACT_USER_DEPOSIT: user_deposit_contract,
             CONTRACT_SERVICE_REGISTRY: service_registry,
         },
-        required_confirmations=0,  # for faster tests
+        sync_start_block=BlockNumber(0),
+        required_confirmations=BlockTimeout(0),  # for faster tests
         poll_interval=0.01,  # for faster tests
         db_filename=":memory:",
     )

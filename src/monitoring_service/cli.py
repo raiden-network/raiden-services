@@ -9,7 +9,7 @@ from web3.contract import Contract
 from monitoring_service.constants import MS_DISCLAIMER
 from monitoring_service.service import MonitoringService
 from raiden.settings import DEFAULT_NUMBER_OF_BLOCK_CONFIRMATIONS
-from raiden.utils.typing import BlockNumber
+from raiden.utils.typing import BlockNumber, BlockTimeout
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
     CONTRACT_SERVICE_REGISTRY,
@@ -18,7 +18,7 @@ from raiden_contracts.constants import (
 )
 from raiden_libs.blockchain import get_web3_provider_info
 from raiden_libs.cli import blockchain_options, common_options, setup_sentry
-from raiden_libs.constants import CONFIRMATION_OF_UNDERSTANDING
+from raiden_libs.constants import CONFIRMATION_OF_UNDERSTANDING, DEFAULT_POLL_INTERVALL
 
 log = structlog.get_logger(__name__)
 
@@ -64,7 +64,7 @@ def main(  # pylint: disable=too-many-arguments
     web3: Web3,
     contracts: Dict[str, Contract],
     start_block: BlockNumber,
-    confirmations: BlockNumber,
+    confirmations: BlockTimeout,
     min_reward: int,
     debug_shell: bool,
     accept_disclaimer: bool,
@@ -86,6 +86,7 @@ def main(  # pylint: disable=too-many-arguments
         contracts=contracts,
         sync_start_block=start_block,
         required_confirmations=confirmations,
+        poll_interval=DEFAULT_POLL_INTERVALL,
         db_filename=state_db,
         min_reward=min_reward,
     )
