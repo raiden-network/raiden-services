@@ -94,6 +94,9 @@ def test_crash(
             private_key=server_private_key,
             contracts=contracts,  # type: ignore
             db_filename=os.path.join(tmpdir, filename),
+            poll_interval=0,
+            required_confirmations=BlockTimeout(0),
+            sync_start_block=BlockNumber(0),
         )
         msc = Mock()
         ms.context.monitoring_service_contract = msc

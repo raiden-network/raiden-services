@@ -15,15 +15,10 @@ from web3 import Web3
 from web3.contract import Contract
 
 from pathfinding_service.api import ServiceApi
-from pathfinding_service.constants import (
-    DEFAULT_API_HOST,
-    DEFAULT_INFO_MESSAGE,
-    DEFAULT_POLL_INTERVALL,
-    PFS_DISCLAIMER,
-)
+from pathfinding_service.constants import DEFAULT_API_HOST, DEFAULT_INFO_MESSAGE, PFS_DISCLAIMER
 from pathfinding_service.service import PathfindingService
 from raiden.settings import DEFAULT_NUMBER_OF_BLOCK_CONFIRMATIONS
-from raiden.utils.typing import BlockNumber, TokenAmount
+from raiden.utils.typing import BlockNumber, BlockTimeout, TokenAmount
 from raiden_contracts.constants import (
     CONTRACT_ONE_TO_N,
     CONTRACT_TOKEN_NETWORK_REGISTRY,
@@ -31,7 +26,7 @@ from raiden_contracts.constants import (
 )
 from raiden_libs.blockchain import get_web3_provider_info
 from raiden_libs.cli import blockchain_options, common_options, setup_sentry
-from raiden_libs.constants import CONFIRMATION_OF_UNDERSTANDING
+from raiden_libs.constants import CONFIRMATION_OF_UNDERSTANDING, DEFAULT_POLL_INTERVALL
 
 log = structlog.get_logger(__name__)
 
@@ -83,7 +78,7 @@ def main(  # pylint: disable=too-many-arguments,too-many-locals
     web3: Web3,
     contracts: Dict[str, Contract],
     start_block: BlockNumber,
-    confirmations: int,
+    confirmations: BlockTimeout,
     host: str,
     service_fee: TokenAmount,
     operator: str,

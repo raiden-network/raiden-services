@@ -125,6 +125,9 @@ def test_crash(tmpdir, mockchain):  # pylint: disable=too-many-locals
             web3=Web3Mock(),
             private_key=server_private_key,
             contracts=contracts,  # type: ignore
+            sync_start_block=BlockNumber(0),
+            required_confirmations=BlockTimeout(0),
+            poll_interval=0,
             db_filename=os.path.join(tmpdir, filename),
         )
         return service
