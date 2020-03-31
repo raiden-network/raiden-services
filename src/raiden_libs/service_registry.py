@@ -31,7 +31,14 @@ log = structlog.get_logger(__name__)
 
 
 # Subdomains must include trailing dot
-CHAINID_TO_ETHERSCAN_PREFIX = {1: "", 3: "ropsten.", 4: "rinkeby.", 5: "goerli.", 42: "kovan."}
+CHAINID_TO_ETHERSCAN_PREFIX = {
+    1: "",
+    3: "ropsten.",
+    4: "rinkeby.",
+    5: "goerli.",
+    42: "kovan.",
+    61: "eth-tester",
+}
 
 DISCLAIMER = textwrap.dedent(
     """
@@ -144,6 +151,27 @@ def register(
     The address that is registered is derived from the supplied private key.
     It also sets or updates the URL of the services deployment.
     """
+    register_account(
+        private_key=private_key,
+        web3=web3,
+        contracts=contracts,
+        start_block=start_block,
+        service_url=service_url,
+        accept_disclaimer=accept_disclaimer,
+        accept_all=accept_all,
+    )
+
+
+# Seperate function to make testing easier
+def register_account(
+    private_key: str,
+    web3: Web3,
+    contracts: Dict[str, Contract],
+    start_block: BlockNumber,
+    service_url: str,
+    accept_disclaimer: bool,
+    accept_all: bool,
+) -> None:
     click.secho(DISCLAIMER, fg="yellow")
     if not accept_disclaimer and not accept_all:
         click.confirm(CONFIRMATION_OF_UNDERSTANDING, abort=True)

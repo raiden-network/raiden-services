@@ -5,7 +5,7 @@ import structlog
 from eth_abi.codec import ABICodec
 from eth_utils import decode_hex, encode_hex, to_canonical_address, to_checksum_address
 from eth_utils.abi import event_abi_to_log_topic
-from web3 import HTTPProvider, Web3
+from web3 import EthereumTesterProvider, HTTPProvider, Web3
 from web3._utils.abi import filter_by_type
 from web3.contract import Contract, get_event_data
 from web3.types import ABIEvent, FilterParams, LogReceipt
@@ -47,6 +47,8 @@ def get_web3_provider_info(web3: Web3) -> str:
         endpoint = provider.endpoint_uri
         if endpoint is not None:
             return str(endpoint)
+    elif isinstance(provider, EthereumTesterProvider):
+        return "EthereumTesterProvider"
 
     raise RuntimeError(f"Unsupported web3 provider {provider!r}")
 
