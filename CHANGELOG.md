@@ -1,5 +1,10 @@
 # Changelog
 
+### 0.7.1 (2020-03-31)
+
+* PFS: Provide better error messages when user deposit is too low (https://github.com/raiden-network/raiden-services/pull/761)
+* Service Registry: Add interactive mode suitable for external service providers (https://github.com/raiden-network/raiden-services/issues/758)
+
 ### 0.7.0 (2020-03-27)
 
 * PFS: Fix invalid hex encoding in `get_feedback_routes` (https://github.com/raiden-network/raiden-services/issues/711)
