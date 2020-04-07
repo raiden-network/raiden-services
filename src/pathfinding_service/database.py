@@ -45,16 +45,6 @@ class PFSDatabase(BaseDatabase):
         super().__init__(filename, allow_create=allow_create)
         self.pfs_address = pfs_address
 
-        # Forbid concurrent access to the database. This fixes a class of
-        # DevOPS bugs were more than once process uses the same database,
-        # because of the lack of synchronization around the update of the
-        # confirmed block number this can lead to missing blockchain events.
-        # (Issue #5443).
-        #
-        # https://sqlite.org/atomiccommit.html#_exclusive_access_mode
-        # https://sqlite.org/pragma.html#pragma_locking_mode
-        self.conn.execute("PRAGMA locking_mode=EXCLUSIVE")
-
         # Keep the journal around and skip inode updates.
         # References:
         # https://sqlite.org/atomiccommit.html#_persistent_rollback_journals
