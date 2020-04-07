@@ -81,12 +81,6 @@ class PathfindingService(gevent.Greenlet):
 
         log.info("PFS payment address", address=self.address)
 
-        self.blockchain_state = BlockchainState(
-            latest_committed_block=BlockNumber(0),
-            token_network_registry_address=to_canonical_address(self.registry_address),
-            chain_id=self.chain_id,
-        )
-
         self.database = PFSDatabase(
             filename=db_filename,
             pfs_address=self.address,
@@ -95,6 +89,12 @@ class PathfindingService(gevent.Greenlet):
             chain_id=self.chain_id,
             user_deposit_contract_address=to_canonical_address(self.user_deposit_contract.address),
             allow_create=True,
+        )
+
+        self.blockchain_state = BlockchainState(
+            latest_committed_block=self.database.get_latest_committed_block(),
+            token_network_registry_address=to_canonical_address(self.registry_address),
+            chain_id=self.chain_id,
         )
 
         self.matrix_listener = MatrixListener(
@@ -160,7 +160,12 @@ class PathfindingService(gevent.Greenlet):
 
     def _process_new_blocks(self, to_block: BlockNumber) -> None:
         start = time.time()
-        self.blockchain_state.latest_committed_block = self.database.get_latest_committed_block()
+        db_block = self.database.get_latest_committed_block()
+        assert db_block == self.blockchain_state.latest_committed_block, (
+            f"Unexpected `latest_committed_block` in db: "
+            f"was {db_block}, expected {self.blockchain_state.latest_committed_block}. "
+            f"Is the db accidentally shared by two PFSes?"
+        )
         self.blockchain_state.token_network_addresses = list(self.token_networks.keys())
 
         before_get = time.time()
@@ -212,6 +217,7 @@ class PathfindingService(gevent.Greenlet):
                 self.handle_channel_closed(event)
             elif isinstance(event, UpdatedHeadBlockEvent):
                 # TODO: Store blockhash here as well
+                self.blockchain_state.latest_committed_block = event.head_block_number
                 self.database.update_lastest_committed_block(event.head_block_number)
             else:
                 log.debug("Unhandled event", evt=event)
