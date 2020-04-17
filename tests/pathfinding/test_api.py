@@ -433,6 +433,7 @@ def test_get_info(api_url: str, api_sut, pathfinding_service_mock):
         "operator": "John Doe",
         "message": DEFAULT_INFO_MESSAGE,
         "payment_address": to_checksum_address(pathfinding_service_mock.address),
+        "matrix_server": "https://matrix.server",
     }
     response = requests.get(url)
     assert response.status_code == 200
