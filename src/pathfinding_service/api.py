@@ -417,6 +417,7 @@ class InfoResource(PathfinderResource):
             "message": self.service_api.info_message,
             "payment_address": to_checksum_address(self.pathfinding_service.address),
             "UTC": datetime.utcnow().isoformat(),
+            "matrix_server": self.service_api.pathfinding_service.matrix_listener.base_url,
         }
         return info, 200
 

@@ -163,6 +163,7 @@ class MatrixListener(gevent.Greenlet):
         )
         self._broadcast_room: Optional[Room] = None
         self._displayname_cache = DisplayNameCache()
+        self.base_url = self._client.api.base_url
 
         self.user_manager = UserAddressManager(
             client=self._client,

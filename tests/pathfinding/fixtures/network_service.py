@@ -318,6 +318,7 @@ def pathfinding_service_mock(
         token_network_model.address: token_network_model
     }
     pathfinding_service_mock_empty.database.upsert_token_network(token_network_model.address)
+    pathfinding_service_mock_empty.matrix_listener.base_url = "https://matrix.server"
 
     yield pathfinding_service_mock_empty
 
