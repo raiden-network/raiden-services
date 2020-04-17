@@ -23,8 +23,6 @@ from web3 import Web3
 import pathfinding_service.exceptions as exceptions
 from pathfinding_service.constants import (
     API_PATH,
-    DEFAULT_API_HOST,
-    DEFAULT_API_PORT,
     DEFAULT_INFO_MESSAGE,
     DEFAULT_MAX_PATHS,
     MAX_AGE_OF_IOU_REQUESTS,
@@ -580,7 +578,7 @@ class ServiceApi:
                 resource, endpoint_url, resource_class_kwargs=kwargs, endpoint=endpoint
             )
 
-    def run(self, host: str = DEFAULT_API_HOST, port: int = DEFAULT_API_PORT) -> None:
+    def run(self, host: str, port: int) -> None:
         self.rest_server = WSGIServer((host, port), self.flask_app)
         self.rest_server.start()
 
