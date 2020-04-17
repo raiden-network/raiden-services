@@ -5,7 +5,7 @@ from typing import Iterator
 import pytest
 
 from pathfinding_service.api import ServiceApi
-from pathfinding_service.constants import API_PATH
+from pathfinding_service.constants import API_PATH, DEFAULT_API_HOST
 from raiden.utils.typing import Address
 
 from ..utils import SimpleReachabilityContainer
@@ -38,7 +38,7 @@ def api_sut(
         one_to_n_address=Address(bytes([1] * 20)),
         operator="",
     )
-    api.run(port=free_port)
+    api.run(host=DEFAULT_API_HOST, port=free_port)
     yield api
     api.stop()
 
@@ -58,6 +58,6 @@ def api_sut_with_debug(
         operator="",
         info_message="",
     )
-    api.run(port=free_port)
+    api.run(host=DEFAULT_API_HOST, port=free_port)
     yield api
     api.stop()
