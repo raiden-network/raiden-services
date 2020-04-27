@@ -6,7 +6,7 @@ from eth_utils import to_checksum_address
 from web3 import Web3
 from web3.contract import Contract
 
-from monitoring_service.constants import MS_DISCLAIMER
+from monitoring_service.constants import DEFAULT_MIN_REWARD, MS_DISCLAIMER
 from monitoring_service.service import MonitoringService
 from raiden.settings import DEFAULT_NUMBER_OF_BLOCK_CONFIRMATIONS
 from raiden.utils.typing import BlockNumber, BlockTimeout
@@ -34,7 +34,7 @@ log = structlog.get_logger(__name__)
 @click.command()
 @click.option(
     "--min-reward",
-    default=0,
+    default=DEFAULT_MIN_REWARD,
     type=click.IntRange(min=0),
     help="Minimum reward which is required before processing requests",
 )
