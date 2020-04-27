@@ -6,6 +6,9 @@ MAX_FILTER_INTERVAL: int = 100_000
 DEFAULT_GAS_BUFFER_FACTOR: int = 10
 DEFAULT_GAS_CHECK_BLOCKS: int = 100
 KEEP_MRS_WITHOUT_CHANNEL: timedelta = timedelta(minutes=15)
+# Make sure this stays <= Raiden's MONITORING_REWARD until there is a way to
+# inform Raiden about the expected rewards.
+DEFAULT_MIN_REWARD = 5 * 10 ** 18
 
 # A LockedTransfer message is roughly 1kb. Having 1000/min = 17/sec will be
 # hard to achieve outside of benchmarks for now. To have some safety margin for
