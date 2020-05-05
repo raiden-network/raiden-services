@@ -19,9 +19,11 @@ from sentry_sdk.integrations.flask import FlaskIntegration
 from sentry_sdk.integrations.logging import LoggingIntegration
 from web3 import HTTPProvider, Web3
 from web3.contract import Contract
-from web3.middleware import geth_poa_middleware
+from web3.middleware import geth_poa_middleware, simple_cache_middleware
+from web3.types import Wei
 
 from pathfinding_service.middleware import http_retry_with_backoff_middleware
+from raiden.utils.cli import GasPriceChoiceType
 from raiden.utils.typing import Address, BlockNumber, ChainID
 from raiden_contracts.constants import (
     CONTRACT_DEPOSIT,
@@ -179,7 +181,21 @@ def blockchain_options(contracts: List[str]) -> Callable:
     options = [
         click.Option(
             ["--eth-rpc"], default="http://localhost:8545", type=str, help="Ethereum node RPC URI"
-        )
+        ),
+        click.Option(
+            ["--gas-price"],
+            help=(
+                "Set the gas price for ethereum transactions. If not provided "
+                "the 'normal' gas price startegy is used.\n"
+                "Available options:\n"
+                '"fast" - transactions are usually mined within 60 seconds\n'
+                '"normal" - transactions are usually mined within 5 minutes\n'
+                "<GAS_PRICE> - use given gas price\n"
+            ),
+            type=GasPriceChoiceType(["normal", "fast"]),
+            default="fast",
+            show_default=True,
+        ),
     ]
 
     arg_for_contract = {
@@ -220,6 +236,7 @@ def blockchain_options(contracts: List[str]) -> Callable:
             }
             params["web3"], params["contracts"], params["start_block"] = connect_to_blockchain(
                 eth_rpc=params.pop("eth_rpc"),
+                gas_price_strategy=params.pop("gas_price"),
                 used_contracts=contracts,
                 address_overwrites=address_overwrites,
             )
@@ -232,7 +249,10 @@ def blockchain_options(contracts: List[str]) -> Callable:
 
 
 def connect_to_blockchain(
-    eth_rpc: URI, used_contracts: List[str], address_overwrites: Dict[str, Address]
+    eth_rpc: URI,
+    gas_price_strategy: Callable[[Web3, Any], Wei],
+    used_contracts: List[str],
+    address_overwrites: Dict[str, Address],
 ) -> Tuple[Web3, Dict[str, Contract], BlockNumber]:
     try:
         provider = HTTPProvider(eth_rpc)
@@ -249,6 +269,11 @@ def connect_to_blockchain(
 
     # Add POA middleware for geth POA chains, no/op for other chains
     web3.middleware_onion.inject(geth_poa_middleware, layer=0)
+
+    # Set gas price strategy
+    # for that we also need a cache middleware, otherwise sampling is expensive
+    web3.middleware_onion.add(simple_cache_middleware)
+    web3.eth.setGasPriceStrategy(gas_price_strategy)
 
     # give web3 some time between retries before failing
     # TODO: find a way to to this type safe
