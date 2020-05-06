@@ -1,5 +1,17 @@
 # Changelog
 
+### Unreleased
+
+* PFS: Add matrix server to `/info` endpoint (https://github.com/raiden-network/raiden-services/pull/771)
+* PFS: Add CLI option to set PFS port (https://github.com/raiden-network/raiden-services/pull/770)
+* MS: Change default minimum required reward to Raiden's default (https://github.com/raiden-network/raiden-services/pull/773)
+* MS: Add gas price CLI argument (https://github.com/raiden-network/raiden-services/pull/774)
+* Service Registry: Reset token allowance if necessary (https://github.com/raiden-network/raiden-services/issues/769)
+
+### 0.8.0 (2020-04-08)
+
+* Update to latest Raiden and contracts (https://github.com/raiden-network/raiden-services/pull/767)
+
 ### 0.7.1 (2020-03-31)
 
 * PFS: Provide better error messages when user deposit is too low (https://github.com/raiden-network/raiden-services/pull/761)
