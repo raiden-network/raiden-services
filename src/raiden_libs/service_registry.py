@@ -251,6 +251,22 @@ def register_account(
             "I have read the current deposit and understand that continuing will transfer tokens"
         )
 
+        # Check if the approved value is different from zero, if so reset
+        # See https://github.com/raiden-network/raiden-services/issues/769
+        old_allowance = deposit_token_contract.functions.allowance(
+            service_address, service_registry_contract.address
+        ).call()
+        if old_allowance > 0:
+            log.info("Found old allowance, resetting to zero", old_allowance=old_allowance)
+            checked_transact(
+                web3=web3,
+                sender_address=service_address,
+                function_call=deposit_token_contract.functions.approve(
+                    service_registry_contract.address, 0
+                ),
+                task_name="Resetting token allowance",
+            )
+
         # Get required deposit
         latest_deposit = service_registry_contract.functions.currentPrice().call()
 
