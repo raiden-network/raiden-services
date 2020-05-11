@@ -1,6 +1,6 @@
 # Changelog
 
-### Unreleased
+### 0.9.0 (2020-05-11)
 
 * PFS: Add matrix server to `/info` endpoint (https://github.com/raiden-network/raiden-services/pull/771)
 * PFS: Add CLI option to set PFS port (https://github.com/raiden-network/raiden-services/pull/770)
