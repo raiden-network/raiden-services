@@ -66,9 +66,7 @@ def main(
 
 
 def calc_claim_cost_rdn(web3: Web3, rdn_per_eth: float) -> TokenAmount:
-    # Wrong annotation in web3
-    # See https://github.com/ethereum/web3.py/pull/1612
-    web3.eth.setGasPriceStrategy(rpc_gas_price_strategy)  # type: ignore
+    web3.eth.setGasPriceStrategy(rpc_gas_price_strategy)
     claim_cost_gas = gas_measurements()["OneToN.claim"]
 
     gas_price = web3.eth.generateGasPrice()
