@@ -439,10 +439,12 @@ class TokenNetwork:
                 for a, b, view in self.G.out_edges(source, data="view")
             ]
             log.debug("Insufficient capacities", capacities=debug_capacities)
-            return "Source does not have a channel with sufficient capacity (%s < %s)" % (
-                source_capacities,
-                value,
+            message = (
+                f"Source does not have a channel with sufficient capacity "
+                f"(current capacities: {source_capacities} < requested amount: "
+                f" {value})"
             )
+            return message
         target_capacities = [view.capacity for _, _, view in self.G.in_edges(target, data="view")]
         if max(target_capacities) < value:
             return "Target does not have a channel with sufficient capacity (%s < %s)" % (
