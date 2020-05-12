@@ -150,11 +150,21 @@ class PathsResource(PathfinderResource):
                         routes=[],
                     )
                 )
+
+            # There is no synchronization on the block number updates and the
+            # query performed above, so this may be higher than the original
+            # value.
+            approximate_error_block = (
+                self.pathfinding_service.blockchain_state.latest_committed_block
+            )
+            msg = (
+                f"{error}. Approximate block at the time of the request {approximate_error_block}"
+            )
             raise exceptions.NoRouteFound(
                 from_=to_checksum_address(path_req.from_),
                 to=to_checksum_address(path_req.to),
                 value=path_req.value,
-                msg=error,
+                msg=msg,
             )
 
         # only add optional args if not None, so we can use defaults
