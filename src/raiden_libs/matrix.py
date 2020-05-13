@@ -276,7 +276,13 @@ class MatrixListener(gevent.Greenlet):
 
         sender_id = message["sender"]
         user = self._get_user_from_user_id(sender_id)
-        self._displayname_cache.warm_users([user])
+        try:
+            self._displayname_cache.warm_users([user])
+        # handles the "Could not get 'display_name' for user" case
+        except TransportError as ex:
+            log.error("Could not warm display cache", peer_user=user.user_id, error=str(ex))
+            return []
+
         peer_address = validate_userid_signature(user)
 
         if not peer_address:
