@@ -164,14 +164,17 @@ class MonitoringService:  # pylint: disable=too-few-public-methods,too-many-inst
         from_block = BlockNumber(blockchain_state.latest_committed_block + 1)
         to_block = min(
             latest_confirmed_block,
-            BlockNumber(from_block + blockchain_state.current_event_filter_interval),
+            # decrement by one, as both limits are inclusive
+            BlockNumber(from_block + blockchain_state.current_event_filter_interval - 1),
         )
+        token_network_addresses = self.context.database.get_token_network_addresses()
 
         try:
             before_query = time.monotonic()
-            new_chain_state, events = get_blockchain_events(
+            events = get_blockchain_events(
                 web3=self.web3,
                 contract_manager=CONTRACT_MANAGER,
+                token_network_addresses=token_network_addresses,
                 chain_state=blockchain_state,
                 from_block=from_block,
                 to_block=to_block,
@@ -180,11 +183,11 @@ class MonitoringService:  # pylint: disable=too-few-public-methods,too-many-inst
 
             filter_query_duration = after_query - before_query
             if filter_query_duration < ETH_GET_LOGS_THRESHOLD_FAST:
-                new_chain_state.current_event_filter_interval = BlockTimeout(
+                blockchain_state.current_event_filter_interval = BlockTimeout(
                     min(MAX_FILTER_INTERVAL, blockchain_state.current_event_filter_interval * 2)
                 )
             elif filter_query_duration > ETH_GET_LOGS_THRESHOLD_SLOW:
-                new_chain_state.current_event_filter_interval = BlockTimeout(
+                blockchain_state.current_event_filter_interval = BlockTimeout(
                     max(MIN_FILTER_INTERVAL, blockchain_state.current_event_filter_interval // 2)
                 )
         except ReadTimeout:
@@ -199,18 +202,6 @@ class MonitoringService:  # pylint: disable=too-few-public-methods,too-many-inst
             )
             return
 
-        # If a new token network was found we need to write it to the DB, otherwise
-        # the constraints for new channels will not be constrained. But only update
-        # the network addresses here, all else is done later.
-        token_networks_changed = (
-            blockchain_state.token_network_addresses != new_chain_state.token_network_addresses
-        )
-        if token_networks_changed:
-            blockchain_state.token_network_addresses = new_chain_state.token_network_addresses
-            self.context.database.update_blockchain_state(blockchain_state)
-
-        # Now set the updated chain state to the context, will be stored later
-        self.context.ms_state.blockchain_state = new_chain_state
         for event in events:
             handle_event(event, self.context)
 

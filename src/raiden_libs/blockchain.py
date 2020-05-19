@@ -1,5 +1,4 @@
-from copy import deepcopy
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 import structlog
 from eth_abi.codec import ABICodec
@@ -157,15 +156,15 @@ def parse_token_network_event(event: dict) -> Optional[Event]:
 def get_blockchain_events(
     web3: Web3,
     contract_manager: ContractManager,
+    token_network_addresses: List[TokenNetworkAddress],
     chain_state: BlockchainState,
     from_block: BlockNumber,
     to_block: BlockNumber,
-) -> Tuple[BlockchainState, List[Event]]:
+) -> List[Event]:
     # Check if the current block was already processed
     if from_block > to_block:
-        return chain_state, []
+        return []
 
-    new_chain_state = deepcopy(chain_state)
     log.info(
         "Querying new block(s)",
         from_block=from_block,
@@ -178,7 +177,7 @@ def get_blockchain_events(
     registry_events = query_blockchain_events(
         web3=web3,
         contract_manager=contract_manager,
-        contract_address=new_chain_state.token_network_registry_address,
+        contract_address=chain_state.token_network_registry_address,
         contract_name=CONTRACT_TOKEN_NETWORK_REGISTRY,
         topics=create_registry_event_topics(contract_manager),
         from_block=from_block,
@@ -197,10 +196,10 @@ def get_blockchain_events(
                 block_number=event_dict["blockNumber"],
             )
         )
-        new_chain_state.token_network_addresses.append(token_network_address)
+        token_network_addresses.append(token_network_address)
 
     # then check all token networks
-    for token_network_address in new_chain_state.token_network_addresses:
+    for token_network_address in token_network_addresses:
         network_events = query_blockchain_events(
             web3=web3,
             contract_manager=contract_manager,
@@ -221,7 +220,7 @@ def get_blockchain_events(
     monitoring_events = get_monitoring_blockchain_events(
         web3=web3,
         contract_manager=contract_manager,
-        chain_state=new_chain_state,
+        monitor_contract_address=chain_state.monitor_contract_address,
         from_block=from_block,
         to_block=to_block,
     )
@@ -230,23 +229,23 @@ def get_blockchain_events(
     # commit new block number
     events.append(UpdatedHeadBlockEvent(head_block_number=to_block))
 
-    return new_chain_state, events
+    return events
 
 
 def get_monitoring_blockchain_events(
     web3: Web3,
     contract_manager: ContractManager,
-    chain_state: BlockchainState,
+    monitor_contract_address: Optional[Address],
     from_block: BlockNumber,
     to_block: BlockNumber,
 ) -> List[Event]:
-    if chain_state.monitor_contract_address is None:
+    if monitor_contract_address is None:
         return []
 
     monitoring_service_events = query_blockchain_events(
         web3=web3,
         contract_manager=contract_manager,
-        contract_address=chain_state.monitor_contract_address,
+        contract_address=monitor_contract_address,
         contract_name=CONTRACT_MONITORING_SERVICE,
         topics=[None],
         from_block=from_block,

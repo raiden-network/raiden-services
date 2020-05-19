@@ -93,7 +93,7 @@ def test_first_allowed_monitoring(
         **shared_bp_args
     )
     monitoring_service._process_new_blocks(web3.eth.blockNumber)
-    assert monitoring_service.context.ms_state.blockchain_state.token_network_addresses
+    assert len(monitoring_service.context.database.get_token_network_addresses()) > 0
 
     # c1 asks MS to monitor the channel
     reward_amount = TokenAmount(1)
@@ -216,7 +216,7 @@ def test_e2e(  # pylint: disable=too-many-arguments,too-many-locals
 
     # need to wait here till the MS has some time to react
     gevent.sleep(0.01)
-    assert monitoring_service.context.ms_state.blockchain_state.token_network_addresses
+    assert len(monitoring_service.context.database.get_token_network_addresses()) > 0
 
     # c1 asks MS to monitor the channel
     reward_amount = TokenAmount(1)

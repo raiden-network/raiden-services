@@ -1,7 +1,7 @@
 import os
 import sqlite3
 import sys
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import structlog
 from eth_utils import to_canonical_address, to_checksum_address
@@ -142,10 +142,6 @@ class BaseDatabase:
 
     def get_blockchain_state(self) -> BlockchainState:
         blockchain = self.conn.execute("SELECT * FROM blockchain").fetchone()
-        token_network_addresses = [
-            TokenNetworkAddress(to_canonical_address(row[0]))
-            for row in self.conn.execute("SELECT address FROM token_network")
-        ]
         latest_committed_block = blockchain["latest_committed_block"]
 
         return BlockchainState(
@@ -153,17 +149,11 @@ class BaseDatabase:
             token_network_registry_address=blockchain["token_network_registry_address"],
             monitor_contract_address=blockchain["monitor_contract_address"],
             latest_committed_block=latest_committed_block,
-            token_network_addresses=token_network_addresses,
         )
 
-    def update_blockchain_state(self, state: BlockchainState) -> None:
+    def update_latest_committed_block(self, latest_committed_block: BlockNumber) -> None:
         self.conn.execute(
-            "UPDATE blockchain SET latest_committed_block = ?", [state.latest_committed_block]
-        )
-        # assumes that token_networks are not removed
-        self.conn.executemany(
-            "INSERT OR REPLACE INTO token_network VALUES (?)",
-            [[to_checksum_address(address)] for address in state.token_network_addresses],
+            "UPDATE blockchain SET latest_committed_block = ?", [latest_committed_block]
         )
 
     def upsert_token_network(self, token_network_address: TokenNetworkAddress) -> None:
@@ -171,3 +161,9 @@ class BaseDatabase:
             "INSERT OR REPLACE INTO token_network VALUES (?)",
             [to_checksum_address(token_network_address)],
         )
+
+    def get_token_network_addresses(self) -> List[TokenNetworkAddress]:
+        return [
+            TokenNetworkAddress(to_canonical_address(row[0]))
+            for row in self.conn.execute("SELECT address FROM token_network")
+        ]
