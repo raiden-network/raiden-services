@@ -151,17 +151,21 @@ def get_blockchain_events(
     web3: Web3,
     contract_manager: ContractManager,
     chain_state: BlockchainState,
+    from_block: BlockNumber,
     to_block: BlockNumber,
 ) -> Tuple[BlockchainState, List[Event]]:
-    # increment by one, as `latest_committed_block` has been queried last time already
-    from_block = BlockNumber(chain_state.latest_committed_block + 1)
-
     # Check if the current block was already processed
     if from_block > to_block:
         return chain_state, []
 
     new_chain_state = deepcopy(chain_state)
-    log.info("Querying new block(s)", from_block=from_block, end_block=to_block)
+    log.info(
+        "Querying new block(s)",
+        from_block=from_block,
+        to_block=to_block,
+        # When `to_block` == `from_block` we query one block, so add one
+        num_blocks=to_block - from_block + 1,
+    )
 
     # first check for new token networks and add to state
     registry_events = query_blockchain_events(

@@ -9,10 +9,11 @@ import sentry_sdk
 import structlog
 from eth_utils import to_canonical_address
 from gevent import Timeout
+from requests.exceptions import ReadTimeout
 from web3 import Web3
 from web3.contract import Contract
 
-from monitoring_service.constants import MAX_FILTER_INTERVAL
+from monitoring_service.constants import MAX_FILTER_INTERVAL, MIN_FILTER_INTERVAL
 from pathfinding_service.database import PFSDatabase
 from pathfinding_service.exceptions import (
     InvalidCapacityUpdate,
@@ -22,7 +23,12 @@ from pathfinding_service.exceptions import (
 from pathfinding_service.model import TokenNetwork
 from pathfinding_service.model.channel import Channel
 from pathfinding_service.typing import DeferableMessage
-from raiden.constants import PATH_FINDING_BROADCASTING_ROOM, UINT256_MAX
+from raiden.constants import (
+    ETH_GET_LOGS_THRESHOLD_FAST,
+    ETH_GET_LOGS_THRESHOLD_SLOW,
+    PATH_FINDING_BROADCASTING_ROOM,
+    UINT256_MAX,
+)
 from raiden.messages.abstract import Message
 from raiden.messages.path_finding_service import PFSCapacityUpdate, PFSFeeUpdate
 from raiden.utils.typing import BlockNumber, BlockTimeout, ChainID, TokenNetworkAddress
@@ -141,14 +147,9 @@ class PathfindingService(gevent.Greenlet):
             start_block=self.database.get_latest_committed_block(),
         )
         while not self._is_running.is_set():
-            latest_confirmed_block = self.web3.eth.blockNumber - self.required_confirmations
-
-            max_query_interval_end_block = (
-                self.database.get_latest_committed_block() + MAX_FILTER_INTERVAL
+            self._process_new_blocks(
+                BlockNumber(self.web3.eth.blockNumber - self.required_confirmations)
             )
-            # Limit the max number of blocks that is processed per iteration
-            to_block = BlockNumber(min(latest_confirmed_block, max_query_interval_end_block))
-            self._process_new_blocks(to_block)
 
             # Let tests waiting for this event know that we're done with processing
             self.updated.set()
@@ -158,8 +159,8 @@ class PathfindingService(gevent.Greenlet):
             gevent.sleep(self._poll_interval)
             gevent.joinall({self.matrix_listener}, timeout=0, raise_error=True)
 
-    def _process_new_blocks(self, to_block: BlockNumber) -> None:
-        start = time.time()
+    def _process_new_blocks(self, latest_confirmed_block: BlockNumber) -> None:
+        start = time.monotonic()
         db_block = self.database.get_latest_committed_block()
         assert db_block == self.blockchain_state.latest_committed_block, (
             f"Unexpected `latest_committed_block` in db: "
@@ -168,14 +169,52 @@ class PathfindingService(gevent.Greenlet):
         )
         self.blockchain_state.token_network_addresses = list(self.token_networks.keys())
 
-        before_get = time.time()
-        _, events = get_blockchain_events(
-            web3=self.web3,
-            contract_manager=CONTRACT_MANAGER,
-            chain_state=self.blockchain_state,
-            to_block=to_block,
+        # increment by one, as `latest_committed_block` has been queried last time already
+        from_block = BlockNumber(self.blockchain_state.latest_committed_block + 1)
+        to_block = min(
+            latest_confirmed_block,
+            BlockNumber(from_block + self.blockchain_state.current_event_filter_interval),
         )
-        before_process = time.time()
+
+        try:
+            before_query = time.monotonic()
+            _, events = get_blockchain_events(
+                web3=self.web3,
+                contract_manager=CONTRACT_MANAGER,
+                chain_state=self.blockchain_state,
+                from_block=from_block,
+                to_block=to_block,
+            )
+            after_query = time.monotonic()
+
+            filter_query_duration = after_query - before_query
+            if filter_query_duration < ETH_GET_LOGS_THRESHOLD_FAST:
+                self.blockchain_state.current_event_filter_interval = BlockTimeout(
+                    min(
+                        MAX_FILTER_INTERVAL,
+                        self.blockchain_state.current_event_filter_interval * 2,
+                    )
+                )
+            elif filter_query_duration > ETH_GET_LOGS_THRESHOLD_SLOW:
+                self.blockchain_state.current_event_filter_interval = BlockTimeout(
+                    max(
+                        MIN_FILTER_INTERVAL,
+                        self.blockchain_state.current_event_filter_interval // 2,
+                    )
+                )
+        except ReadTimeout:
+            old_interval = self.blockchain_state.current_event_filter_interval
+            self.blockchain_state.current_event_filter_interval = BlockTimeout(
+                max(MIN_FILTER_INTERVAL, old_interval // 5)
+            )
+            log.debug(
+                "Failed to query events in time, reducing interval",
+                old_interval=old_interval,
+                new_interval=self.blockchain_state.current_event_filter_interval,
+            )
+            return
+
+        before_process = time.monotonic()
         for event in events:
             self.handle_event(event)
             gevent.idle()  # Allow answering requests in between events
@@ -183,11 +222,11 @@ class PathfindingService(gevent.Greenlet):
         if events:
             log.info(
                 "Processed blocks",
-                from_block=self.blockchain_state.latest_committed_block + 1,
+                from_block=from_block,
                 to_block=to_block,
-                getting=round(before_process - before_get, 2),
-                processing=round(time.time() - before_process, 2),
-                total_duration=round(time.time() - start, 2),
+                getting=round(before_process - before_query, 2),
+                processing=round(time.monotonic() - before_process, 2),
+                total_duration=round(time.monotonic() - start, 2),
                 event_counts=collections.Counter(e.__class__.__name__ for e in events),
             )
 
