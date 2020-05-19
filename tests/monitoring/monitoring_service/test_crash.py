@@ -26,6 +26,7 @@ from raiden_contracts.constants import (
 )
 from raiden_contracts.tests.utils import get_random_address, get_random_privkey
 from raiden_libs.events import ReceiveChannelOpenedEvent, UpdatedHeadBlockEvent
+from raiden_libs.states import BlockchainState
 
 from ...libs.mocks.web3 import ContractMock, Web3Mock
 
@@ -125,7 +126,7 @@ def test_crash(
         stable_ms.monitor_mock.reset_mock()  # clear calls from last block
         result_state: List[dict] = []
         for ms in [stable_ms, crashy_ms]:
-            ms._process_new_blocks(to_block)  # pylint: disable=protected-access
+            ms._process_new_blocks(BlockNumber(to_block))  # pylint: disable=protected-access
             result_state.append(
                 dict(
                     blockchain_state=ms.context.ms_state.blockchain_state,
@@ -136,5 +137,17 @@ def test_crash(
 
         # both instances should have the same state after processing
         for stable_state, crashy_state in zip(result_state[0].values(), result_state[1].values()):
-            # do asserts for each key separately to get better error messages
-            assert stable_state == crashy_state
+            if isinstance(stable_state, BlockchainState):
+                assert stable_state.chain_id == crashy_state.chain_id
+                assert (
+                    stable_state.token_network_registry_address
+                    == crashy_state.token_network_registry_address
+                )
+                assert stable_state.latest_committed_block == crashy_state.latest_committed_block
+                assert (
+                    stable_state.monitor_contract_address == crashy_state.monitor_contract_address
+                )
+                assert stable_state.token_network_addresses == crashy_state.token_network_addresses
+                # Do not compare `current_event_filter_interval`, this is allowed to be different
+            else:
+                assert stable_state == crashy_state

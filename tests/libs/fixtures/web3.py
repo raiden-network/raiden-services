@@ -8,6 +8,7 @@ from eth_account import Account
 from tests.constants import KEYSTORE_FILE_NAME, KEYSTORE_PASSWORD
 from web3 import Web3
 
+from raiden.utils.typing import BlockNumber
 from raiden_contracts.contract_manager import ContractManager, contracts_precompiled_path
 from raiden_libs.events import Event
 from raiden_libs.states import BlockchainState
@@ -48,14 +49,13 @@ def keystore_file(tmp_path) -> str:
 def mockchain(monkeypatch):
     state: Dict[str, List[List[Event]]] = dict(block_events=[])
 
-    def get_events(
+    def get_blockchain_events(
         web3: Web3,
         contract_manager: ContractManager,
         chain_state: BlockchainState,
-        to_block: int,
-        query_ms: bool = True,
+        from_block: BlockNumber,
+        to_block: BlockNumber,
     ):  # pylint: disable=unused-argument
-        from_block = chain_state.latest_committed_block + 1
         blocks = state["block_events"][from_block : to_block + 1]
         events = [ev for block in blocks for ev in block]  # flatten
         return chain_state, events
@@ -63,6 +63,6 @@ def mockchain(monkeypatch):
     def set_events(events):
         state["block_events"] = events
 
-    monkeypatch.setattr("monitoring_service.service.get_blockchain_events", get_events)
-    monkeypatch.setattr("pathfinding_service.service.get_blockchain_events", get_events)
+    monkeypatch.setattr("monitoring_service.service.get_blockchain_events", get_blockchain_events)
+    monkeypatch.setattr("pathfinding_service.service.get_blockchain_events", get_blockchain_events)
     return set_events

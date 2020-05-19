@@ -1,8 +1,11 @@
 import textwrap
 from datetime import timedelta
 
-DEFAULT_REQUIRED_CONFIRMATIONS: int = 10
-MAX_FILTER_INTERVAL: int = 100_000
+from raiden.utils.typing import BlockTimeout
+
+DEFAULT_FILTER_INTERVAL: BlockTimeout = BlockTimeout(1_000)
+MAX_FILTER_INTERVAL: BlockTimeout = BlockTimeout(100_000)
+MIN_FILTER_INTERVAL: BlockTimeout = BlockTimeout(2)
 DEFAULT_GAS_BUFFER_FACTOR: int = 10
 DEFAULT_GAS_CHECK_BLOCKS: int = 100
 KEEP_MRS_WITHOUT_CHANNEL: timedelta = timedelta(minutes=15)
