@@ -167,20 +167,21 @@ class PathfindingService(gevent.Greenlet):
             f"was {db_block}, expected {self.blockchain_state.latest_committed_block}. "
             f"Is the db accidentally shared by two PFSes?"
         )
-        self.blockchain_state.token_network_addresses = list(self.token_networks.keys())
 
         # increment by one, as `latest_committed_block` has been queried last time already
         from_block = BlockNumber(self.blockchain_state.latest_committed_block + 1)
         to_block = min(
             latest_confirmed_block,
-            BlockNumber(from_block + self.blockchain_state.current_event_filter_interval),
+            # decrement by one, as both limits are inclusive
+            BlockNumber(from_block + self.blockchain_state.current_event_filter_interval - 1),
         )
 
         try:
             before_query = time.monotonic()
-            _, events = get_blockchain_events(
+            events = get_blockchain_events(
                 web3=self.web3,
                 contract_manager=CONTRACT_MANAGER,
+                token_network_addresses=list(self.token_networks.keys()),
                 chain_state=self.blockchain_state,
                 from_block=from_block,
                 to_block=to_block,

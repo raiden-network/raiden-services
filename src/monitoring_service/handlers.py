@@ -31,6 +31,7 @@ from raiden_libs.events import (
     ReceiveMonitoringNewBalanceProofEvent,
     ReceiveMonitoringRewardClaimedEvent,
     ReceiveNonClosingBalanceProofUpdatedEvent,
+    ReceiveTokenNetworkCreatedEvent,
     UpdatedHeadBlockEvent,
 )
 
@@ -59,6 +60,17 @@ class Context:
 
     def get_latest_unconfirmed_block(self) -> BlockNumber:
         return self.web3.eth.blockNumber
+
+
+def token_network_created_handler(event: Event, context: Context) -> None:
+    assert isinstance(event, ReceiveTokenNetworkCreatedEvent)
+    log.info(
+        "Received new token network",
+        token_network_address=event.token_network_address,
+        token_address=event.token_address,
+        token_network=event,
+    )
+    context.database.upsert_token_network(event.token_network_address)
 
 
 def channel_opened_event_handler(event: Event, context: Context) -> None:
@@ -386,9 +398,8 @@ def monitor_reward_claim_event_handler(
 def updated_head_block_event_handler(event: Event, context: Context) -> None:
     """ Triggers commit of the new block number. """
     assert isinstance(event, UpdatedHeadBlockEvent)
-    blockchain_state = context.ms_state.blockchain_state
-    blockchain_state.latest_committed_block = event.head_block_number
-    context.database.update_blockchain_state(blockchain_state)
+    context.ms_state.blockchain_state.latest_committed_block = event.head_block_number
+    context.database.update_latest_committed_block(event.head_block_number)
 
 
 def _is_mr_valid(monitor_request: MonitorRequest, channel: Channel) -> bool:
@@ -605,6 +616,7 @@ def action_claim_reward_triggered_event_handler(event: Event, context: Context) 
 
 
 HANDLERS = {
+    ReceiveTokenNetworkCreatedEvent: token_network_created_handler,
     ReceiveChannelOpenedEvent: channel_opened_event_handler,
     ReceiveChannelClosedEvent: channel_closed_event_handler,
     ReceiveNonClosingBalanceProofUpdatedEvent: non_closing_balance_proof_updated_event_handler,
