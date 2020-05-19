@@ -41,30 +41,25 @@ CHAINID_TO_ETHERSCAN_PREFIX = {
 }
 
 DISCLAIMER = textwrap.dedent(
-    """
-       --------------------------------------------------------------------------
-       | This is an Alpha version of experimental open source software          |
-       | released as a test version under an MIT license and may contain        |
-       | errors and/or bugs. No guarantee or representations whatsoever is      |
-       | made regarding its suitability (or its use) for any purpose or         |
-       | regarding its compliance with any applicable laws and regulations.     |
-       | Use of the software is at your own risk and discretion and by          |
-       | using the software you acknowledge that you have read this             |
-       | disclaimer, understand its contents, assume all risk related           |
-       | thereto and hereby release, waive, discharge and covenant not to       |
-       | sue Brainbot Labs Establishment or any officers, employees or          |
-       | affiliates from and for any direct or indirect liability resulting     |
-       | from the use of the software as permissible by applicable laws and     |
-       | regulations.                                                           |
-       |                                                                        |
-       | This script will help you to register at the Raiden Service Registry,  |
-       | see https://raiden-network-specification.readthedocs.io/en/latest/     |
-       | Service Contracts for more information.                                |
-       | The Raiden Service Registry is designed to hold RDN tokens as          |
-       | deposit. At the end of the duration of a slot (6 months) you will get  |
-       | your tokens back to the same address used for bidding for that slot.   |
-       | DO NOT LOSE YOUR PRIVATE KEY.                                          |
-       --------------------------------------------------------------------------
+    """\
+        +------------------------------------------------------------------------+
+        | This script will help you to register at the Raiden Service Registry,  |
+        | see https://raiden-network-specification.readthedocs.io/en/latest/     |
+        | Service Contracts for more information.                                |
+        |                                                                        |
+        | This is an Alpha version of experimental open source software released |
+        | as a test version under an MIT license and may contain errors and/or   |
+        | bugs. No guarantee or representation whatsoever is made regarding its  |
+        | suitability (or its use) for any purpose or regarding its compliance   |
+        | with any applicable laws and regulations. Use of the software is at    |
+        | your own risk and discretion and by using the software you warrant and |
+        | represent that you have read this disclaimer, understand its contents, |
+        | assume all risk related thereto and hereby release, waive, discharge   |
+        | and covenant not to hold liable Brainbot Labs Establishment or any of  |
+        | its officers, employees or affiliates from and for any direct or       |
+        | indirect damage resulting from the the software or the use thereof.    |
+        | Such to the extent as permissible by applicable laws and regulations.  |
+        +------------------------------------------------------------------------+
     """
 )
 
