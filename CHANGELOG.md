@@ -1,5 +1,12 @@
 # Changelog
 
+### 0.10.0 (2020-05-20)
+
+* PFS: Improve error messages (https://github.com/raiden-network/raiden-services/pull/779)
+* MS/PFS: Catch exceptions in Matrix correctly (https://github.com/raiden-network/raiden-services/pull/780)
+* MS/PFS: Update to latest contracts (https://github.com/raiden-network/raiden-services/pull/784)
+* MS/PFS: Make blockchain syncing adaptive (https://github.com/raiden-network/raiden-services/issues/782)
+
 ### 0.9.0 (2020-05-11)
 
 * PFS: Add matrix server to `/info` endpoint (https://github.com/raiden-network/raiden-services/pull/771)
