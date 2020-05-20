@@ -1,6 +1,6 @@
 FROM python:3.7
 
-LABEL Name=raiden-services Version=0.9.0 Maintainer="Raiden Network Team <contact@raiden.network>"
+LABEL Name=raiden-services Version=0.10.0 Maintainer="Raiden Network Team <contact@raiden.network>"
 EXPOSE 6000
 
 WORKDIR /services
