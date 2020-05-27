@@ -115,6 +115,7 @@ class PFSDatabase(BaseDatabase):
         sender: Optional[Address] = None,
         expiration_block: Optional[BlockNumber] = None,
         claimed: Optional[bool] = None,
+        expires_after: Optional[BlockNumber] = None,
         expires_before: Optional[BlockNumber] = None,
         amount_at_least: Optional[TokenAmount] = None,
     ) -> Iterator[IOU]:
@@ -136,6 +137,9 @@ class PFSDatabase(BaseDatabase):
         if expires_before is not None:
             query += " AND expiration_block < ?"
             args.append(hex256(expires_before))
+        if expires_after is not None:
+            query += " AND expiration_block > ?"
+            args.append(hex256(expires_after))
         if amount_at_least is not None:
             query += " AND amount >= ?"
             args.append(hex256(amount_at_least))
