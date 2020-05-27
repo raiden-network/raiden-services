@@ -5,6 +5,7 @@ import pytest
 from click.testing import CliRunner
 from eth_utils import decode_hex, to_canonical_address
 from tests.libs.mocks.web3 import Web3Mock
+from web3 import Web3
 
 from pathfinding_service.claim_fees import claim_ious, get_claimable_ious, main
 from pathfinding_service.model import IOU
@@ -16,7 +17,7 @@ from raiden.utils.typing import BlockNumber, ChainID, Signature, TokenAmount
 def test_claim_fees(  # pylint: disable=too-many-locals
     pathfinding_service_web3_mock: PathfindingService,
     one_to_n_contract,
-    web3,
+    web3: Web3,
     deposit_to_udc,
     get_accounts,
     get_private_key,
@@ -24,7 +25,7 @@ def test_claim_fees(  # pylint: disable=too-many-locals
     pfs = pathfinding_service_web3_mock
 
     # Prepare test data
-    accounts = [decode_hex(acc) for acc in get_accounts(6)]
+    accounts = [decode_hex(acc) for acc in get_accounts(7)]
     iou_inputs: List[dict] = [
         dict(sender=accounts[0], amount=100, deposit=200),
         dict(sender=accounts[1], amount=200, deposit=100),
@@ -33,6 +34,9 @@ def test_claim_fees(  # pylint: disable=too-many-locals
         dict(sender=accounts[4], amount=104, claimed=True),  # already claimed
         dict(sender=accounts[4], amount=99),  # too low amount
         dict(sender=accounts[5], expiration_block=1000, amount=104),  # does not expire, yet
+        dict(
+            sender=accounts[6], expiration_block=web3.eth.blockNumber - 1, amount=104
+        ),  # already expired
     ]
 
     # Create IOUs from `iou_inputs`
@@ -60,6 +64,7 @@ def test_claim_fees(  # pylint: disable=too-many-locals
     claimable_ious = list(
         get_claimable_ious(
             database=pfs.database,
+            expires_after=web3.eth.blockNumber,
             expires_before=BlockNumber(1000),
             claim_cost_rdn=TokenAmount(100),
         )

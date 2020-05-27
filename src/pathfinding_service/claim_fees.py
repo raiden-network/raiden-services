@@ -55,6 +55,7 @@ def main(
     ious = list(
         get_claimable_ious(
             database,
+            expires_after=web3.eth.blockNumber,
             expires_before=BlockNumber(web3.eth.blockNumber + expires_within),
             claim_cost_rdn=claim_cost_rdn,
         )
@@ -77,12 +78,17 @@ def calc_claim_cost_rdn(web3: Web3, rdn_per_eth: float) -> TokenAmount:
 
 
 def get_claimable_ious(
-    database: PFSDatabase, expires_before: BlockNumber, claim_cost_rdn: TokenAmount
+    database: PFSDatabase,
+    expires_after: BlockNumber,
+    expires_before: BlockNumber,
+    claim_cost_rdn: TokenAmount,
 ) -> Iterable[IOU]:
-    ious = database.get_ious(
-        claimed=False, expires_before=expires_before, amount_at_least=claim_cost_rdn
+    return database.get_ious(
+        claimed=False,
+        expires_after=expires_after,
+        expires_before=expires_before,
+        amount_at_least=claim_cost_rdn,
     )
-    return ious
 
 
 def claim_ious(
