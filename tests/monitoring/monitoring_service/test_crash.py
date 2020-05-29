@@ -147,7 +147,6 @@ def test_crash(
                 assert (
                     stable_state.monitor_contract_address == crashy_state.monitor_contract_address
                 )
-                # assert stable_state.token_network_addresses == crashy_state.token_network_addresses  # noqa
                 # Do not compare `current_event_filter_interval`, this is allowed to be different
             else:
                 assert stable_state == crashy_state
