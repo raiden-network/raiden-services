@@ -333,7 +333,7 @@ def register_account(
     log.info("Updated infos", current_url=current_url)
 
 
-@blockchain_options(contracts=[CONTRACT_DEPOSIT])
+@blockchain_options(contracts=[CONTRACT_DEPOSIT, CONTRACT_SERVICE_REGISTRY])
 @cli.command("withdraw")
 @click.option(
     "--to", type=str, callback=validate_address, help="Target address for withdrawn tokens"
@@ -355,6 +355,8 @@ def withdraw(
 
     log.info("Using RPC endpoint", rpc_url=get_web3_provider_info(web3))
     deposit_contract = contracts[CONTRACT_DEPOSIT]
+    # `Deposit.service_registry` is not public, so we can't get the address from there.
+    service_registry_contract = contracts[CONTRACT_SERVICE_REGISTRY]
 
     # Check usage of correct key
     withdrawer = deposit_contract.functions.withdrawer().call()
@@ -369,7 +371,8 @@ def withdraw(
 
     # Can we withdraw already?
     release_at = deposit_contract.functions.release_at().call()
-    if time.time() < release_at:
+    deprecated = service_registry_contract.functions.deprecated().call()
+    if time.time() < release_at and not deprecated:
         log.error(
             "Too early to withdraw",
             released_at_utc=datetime.utcfromtimestamp(release_at).isoformat(),
