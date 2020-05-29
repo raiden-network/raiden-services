@@ -55,7 +55,9 @@ def mockchain(monkeypatch):
         token_network_addresses: List[TokenNetworkAddress],
         latest_confirmed_block: BlockNumber,
     ):  # pylint: disable=unused-argument
-        blocks = state["block_events"][0 : latest_confirmed_block + 1]
+        blocks = state["block_events"][
+            blockchain_state.latest_committed_block : latest_confirmed_block + 1
+        ]
         events = [ev for block in blocks for ev in block]  # flatten
         return events
 

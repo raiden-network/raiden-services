@@ -321,8 +321,11 @@ def get_blockchain_events_adaptive(
 
     Args:
         web3: Web3 object
-        blockchain_state: This is mutated
-        token_network_addresses: List of known token network addresses
+        blockchain_state: The blockchain state objected. This is mutated and should be reused.
+        token_network_addresses: List of known token network addresses. This is mutated when a
+            new token network is found. However, additionally a `ReceiveTokenNetworkCreatedEvent`
+            is created as well and it is recommended to use that instead and to not reuse
+            this list.
         latest_confirmed_block: The latest block to query to
 
     Returns:
