@@ -1,15 +1,25 @@
+import time
 from typing import Dict, List, Optional
 
 import structlog
 from eth_abi.codec import ABICodec
 from eth_utils import decode_hex, encode_hex, to_canonical_address, to_checksum_address
 from eth_utils.abi import event_abi_to_log_topic
+from requests.exceptions import ReadTimeout
 from web3 import EthereumTesterProvider, HTTPProvider, Web3
 from web3._utils.abi import filter_by_type
 from web3.contract import Contract, get_event_data
 from web3.types import ABIEvent, FilterParams, LogReceipt
 
-from raiden.utils.typing import Address, BlockNumber, TokenAmount, TokenNetworkAddress
+from monitoring_service.constants import MAX_FILTER_INTERVAL, MIN_FILTER_INTERVAL
+from raiden.constants import ETH_GET_LOGS_THRESHOLD_FAST, ETH_GET_LOGS_THRESHOLD_SLOW
+from raiden.utils.typing import (
+    Address,
+    BlockNumber,
+    BlockTimeout,
+    TokenAmount,
+    TokenNetworkAddress,
+)
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
     CONTRACT_TOKEN_NETWORK,
@@ -19,6 +29,7 @@ from raiden_contracts.constants import (
     MonitoringServiceEvent,
 )
 from raiden_contracts.contract_manager import ContractManager
+from raiden_libs.contract_info import CONTRACT_MANAGER
 from raiden_libs.events import (
     Event,
     ReceiveChannelClosedEvent,
@@ -295,3 +306,68 @@ def get_pessimistic_udc_balance(
         udc.functions.effectiveBalance(address).call(block_identifier=BlockNumber(block))
         for block in range(from_block, to_block + 1)
     )
+
+
+def get_blockchain_events_adaptive(
+    web3: Web3,
+    blockchain_state: BlockchainState,
+    token_network_addresses: List[TokenNetworkAddress],
+    latest_confirmed_block: BlockNumber,
+) -> Optional[List[Event]]:
+    """
+    Queries new events from the blockchain.
+
+    Uses an adaptive interval, so that the ethereum nodes aren't overloaded.
+
+    Args:
+        web3: Web3 object
+        blockchain_state: This is mutated
+        token_network_addresses: List of known token network addresses
+        latest_confirmed_block: The latest block to query to
+
+    Returns:
+        A list of events if successful, otherwise ``None``
+    """
+    # increment by one, as `latest_committed_block` has been queried last time already
+    from_block = BlockNumber(blockchain_state.latest_committed_block + 1)
+    to_block = min(
+        latest_confirmed_block,
+        # decrement by one, as both limits are inclusive
+        BlockNumber(from_block + blockchain_state.current_event_filter_interval - 1),
+    )
+
+    try:
+        before_query = time.monotonic()
+        events = get_blockchain_events(
+            web3=web3,
+            contract_manager=CONTRACT_MANAGER,
+            token_network_addresses=token_network_addresses,
+            chain_state=blockchain_state,
+            from_block=from_block,
+            to_block=to_block,
+        )
+        after_query = time.monotonic()
+
+        filter_query_duration = after_query - before_query
+        if filter_query_duration < ETH_GET_LOGS_THRESHOLD_FAST:
+            blockchain_state.current_event_filter_interval = BlockTimeout(
+                min(MAX_FILTER_INTERVAL, blockchain_state.current_event_filter_interval * 2,)
+            )
+        elif filter_query_duration > ETH_GET_LOGS_THRESHOLD_SLOW:
+            blockchain_state.current_event_filter_interval = BlockTimeout(
+                max(MIN_FILTER_INTERVAL, blockchain_state.current_event_filter_interval // 2,)
+            )
+
+        return events
+    except ReadTimeout:
+        old_interval = blockchain_state.current_event_filter_interval
+        blockchain_state.current_event_filter_interval = BlockTimeout(
+            max(MIN_FILTER_INTERVAL, old_interval // 5)
+        )
+        log.debug(
+            "Failed to query events in time, reducing interval",
+            old_interval=old_interval,
+            new_interval=blockchain_state.current_event_filter_interval,
+        )
+
+    return None

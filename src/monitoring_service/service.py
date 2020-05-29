@@ -7,7 +7,6 @@ import sentry_sdk
 import structlog
 from eth_typing import Hash32
 from eth_utils import to_canonical_address
-from requests.exceptions import ReadTimeout
 from web3 import Web3
 from web3.contract import Contract
 from web3.exceptions import TransactionNotFound
@@ -17,12 +16,9 @@ from monitoring_service.constants import (
     DEFAULT_GAS_BUFFER_FACTOR,
     DEFAULT_GAS_CHECK_BLOCKS,
     KEEP_MRS_WITHOUT_CHANNEL,
-    MAX_FILTER_INTERVAL,
-    MIN_FILTER_INTERVAL,
 )
 from monitoring_service.database import Database
 from monitoring_service.handlers import HANDLERS, Context
-from raiden.constants import ETH_GET_LOGS_THRESHOLD_FAST, ETH_GET_LOGS_THRESHOLD_SLOW
 from raiden.utils.typing import BlockNumber, BlockTimeout, ChainID, MonitoringServiceAddress
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
@@ -31,8 +27,7 @@ from raiden_contracts.constants import (
     CONTRACT_USER_DEPOSIT,
 )
 from raiden_contracts.contract_manager import gas_measurements
-from raiden_libs.blockchain import get_blockchain_events
-from raiden_libs.contract_info import CONTRACT_MANAGER
+from raiden_libs.blockchain import get_blockchain_events_adaptive
 from raiden_libs.events import Event
 from raiden_libs.utils import private_key_to_address
 
@@ -158,48 +153,16 @@ class MonitoringService:  # pylint: disable=too-few-public-methods,too-many-inst
             wait_function(self.poll_interval)
 
     def _process_new_blocks(self, latest_confirmed_block: BlockNumber) -> None:
-        blockchain_state = self.context.ms_state.blockchain_state
-
-        # increment by one, as `latest_committed_block` has been queried last time already
-        from_block = BlockNumber(blockchain_state.latest_committed_block + 1)
-        to_block = min(
-            latest_confirmed_block,
-            # decrement by one, as both limits are inclusive
-            BlockNumber(from_block + blockchain_state.current_event_filter_interval - 1),
-        )
         token_network_addresses = self.context.database.get_token_network_addresses()
 
-        try:
-            before_query = time.monotonic()
-            events = get_blockchain_events(
-                web3=self.web3,
-                contract_manager=CONTRACT_MANAGER,
-                token_network_addresses=token_network_addresses,
-                chain_state=blockchain_state,
-                from_block=from_block,
-                to_block=to_block,
-            )
-            after_query = time.monotonic()
+        events = get_blockchain_events_adaptive(
+            web3=self.web3,
+            blockchain_state=self.context.ms_state.blockchain_state,
+            token_network_addresses=token_network_addresses,
+            latest_confirmed_block=latest_confirmed_block,
+        )
 
-            filter_query_duration = after_query - before_query
-            if filter_query_duration < ETH_GET_LOGS_THRESHOLD_FAST:
-                blockchain_state.current_event_filter_interval = BlockTimeout(
-                    min(MAX_FILTER_INTERVAL, blockchain_state.current_event_filter_interval * 2)
-                )
-            elif filter_query_duration > ETH_GET_LOGS_THRESHOLD_SLOW:
-                blockchain_state.current_event_filter_interval = BlockTimeout(
-                    max(MIN_FILTER_INTERVAL, blockchain_state.current_event_filter_interval // 2)
-                )
-        except ReadTimeout:
-            old_interval = blockchain_state.current_event_filter_interval
-            blockchain_state.current_event_filter_interval = BlockTimeout(
-                max(MIN_FILTER_INTERVAL, old_interval // 5)
-            )
-            log.debug(
-                "Failed to query events in time, reducing interval",
-                old_interval=old_interval,
-                new_interval=blockchain_state.current_event_filter_interval,
-            )
+        if events is None:
             return
 
         for event in events:
