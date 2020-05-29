@@ -51,19 +51,21 @@ def mockchain(monkeypatch):
 
     def get_blockchain_events(
         web3: Web3,
-        contract_manager: ContractManager,
+        blockchain_state: BlockchainState,
         token_network_addresses: List[TokenNetworkAddress],
-        chain_state: BlockchainState,
-        from_block: BlockNumber,
-        to_block: BlockNumber,
+        latest_confirmed_block: BlockNumber,
     ):  # pylint: disable=unused-argument
-        blocks = state["block_events"][from_block : to_block + 1]
+        blocks = state["block_events"][0 : latest_confirmed_block + 1]
         events = [ev for block in blocks for ev in block]  # flatten
-        return chain_state, events
+        return events
 
     def set_events(events):
         state["block_events"] = events
 
-    monkeypatch.setattr("monitoring_service.service.get_blockchain_events", get_blockchain_events)
-    monkeypatch.setattr("pathfinding_service.service.get_blockchain_events", get_blockchain_events)
+    monkeypatch.setattr(
+        "monitoring_service.service.get_blockchain_events_adaptive", get_blockchain_events
+    )
+    monkeypatch.setattr(
+        "pathfinding_service.service.get_blockchain_events_adaptive", get_blockchain_events
+    )
     return set_events
