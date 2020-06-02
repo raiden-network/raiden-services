@@ -6,6 +6,7 @@ from raiden.utils.typing import (
     BlockTimeout,
     ChannelID,
     Nonce,
+    TokenAddress,
     TokenAmount,
     TokenNetworkAddress,
 )
@@ -18,7 +19,7 @@ class Event:
 
 @dataclass
 class ReceiveTokenNetworkCreatedEvent(Event):
-    token_address: Address
+    token_address: TokenAddress
     token_network_address: TokenNetworkAddress
     block_number: BlockNumber
 

@@ -23,6 +23,7 @@ from raiden.utils.typing import (
     FeeAmount,
     MessageID,
     ProportionalFeeAmount,
+    TokenAddress,
     TokenAmount,
     TokenNetworkAddress,
 )
@@ -46,7 +47,7 @@ PARTICIPANT2 = Address(bytes([2] * 20))
 def test_save_and_load_token_networks(pathfinding_service_mock_empty):
     pfs = pathfinding_service_mock_empty
 
-    token_address = Address(bytes([1] * 20))
+    token_address = TokenAddress(bytes([1] * 20))
     token_network_address = TokenNetworkAddress(bytes([2] * 20))
     channel_id = ChannelID(1)
     p1 = Address(bytes([3] * 20))
@@ -87,7 +88,7 @@ def test_crash(tmpdir, mockchain):  # pylint: disable=too-many-locals
     A somewhat meaninful crash handling is simulated by not including the
     UpdatedHeadBlockEvent in every block.
     """
-    token_address = Address(bytes([1] * 20))
+    token_address = TokenAddress(bytes([1] * 20))
     token_network_address = TokenNetworkAddress(bytes([2] * 20))
     channel_id = ChannelID(1)
     p1 = Address(bytes([3] * 20))
@@ -164,7 +165,7 @@ def test_crash(tmpdir, mockchain):  # pylint: disable=too-many-locals
 
 
 def test_token_network_created(pathfinding_service_mock):
-    token_address = Address(bytes([1] * 20))
+    token_address = TokenAddress(bytes([1] * 20))
     token_network_address = TokenNetworkAddress(bytes(bytes([2] * 20)))
     network_event = ReceiveTokenNetworkCreatedEvent(
         token_address=token_address,
@@ -305,7 +306,7 @@ def test_logging_processor():
     logger = Mock()
     log_method = Mock()
 
-    address = Address(b"\x7f[\xf6\xc9To\xa8\x185w\xe4\x9f\x15\xbc\xef@mr\xd5\xd9")
+    address = TokenAddress(b"\x7f[\xf6\xc9To\xa8\x185w\xe4\x9f\x15\xbc\xef@mr\xd5\xd9")
     address_log = format_to_hex(
         _logger=logger, _log_method=log_method, event_dict=dict(address=address)
     )

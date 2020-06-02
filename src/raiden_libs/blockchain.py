@@ -17,6 +17,7 @@ from raiden.utils.typing import (
     Address,
     BlockNumber,
     BlockTimeout,
+    TokenAddress,
     TokenAmount,
     TokenNetworkAddress,
 )
@@ -203,7 +204,9 @@ def get_blockchain_events(
         events.append(
             ReceiveTokenNetworkCreatedEvent(
                 token_network_address=token_network_address,
-                token_address=to_canonical_address(event_dict["args"]["token_address"]),
+                token_address=TokenAddress(
+                    to_canonical_address(event_dict["args"]["token_address"])
+                ),
                 block_number=event_dict["blockNumber"],
             )
         )

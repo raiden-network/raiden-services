@@ -17,6 +17,7 @@ from raiden.utils.typing import (
     ChannelID,
     Nonce,
     Optional,
+    TokenAddress,
     TokenAmount,
     TokenNetworkAddress,
 )
@@ -24,6 +25,7 @@ from raiden_contracts.constants import ChannelState
 from raiden_libs.utils import private_key_to_address
 
 DEFAULT_TOKEN_NETWORK_ADDRESS = TokenNetworkAddress(bytes([1] * 20))
+DEFAULT_TOKEN_ADDRESS = TokenAddress(bytes([9] * 20))
 DEFAULT_CHANNEL_IDENTIFIER = ChannelID(3)
 DEFAULT_PRIVATE_KEY1 = "0x" + "1" * 64
 DEFAULT_PRIVATE_KEY2 = "0x" + "2" * 64

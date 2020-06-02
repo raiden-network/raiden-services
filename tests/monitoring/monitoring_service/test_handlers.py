@@ -10,6 +10,7 @@ from tests.monitoring.monitoring_service.factories import (
     DEFAULT_PARTICIPANT1,
     DEFAULT_PARTICIPANT2,
     DEFAULT_SETTLE_TIMEOUT,
+    DEFAULT_TOKEN_ADDRESS,
     DEFAULT_TOKEN_NETWORK_ADDRESS,
     create_signed_monitor_request,
 )
@@ -30,6 +31,7 @@ from monitoring_service.handlers import (
     monitor_new_balance_proof_event_handler,
     monitor_reward_claim_event_handler,
     non_closing_balance_proof_updated_event_handler,
+    token_network_created_handler,
     updated_head_block_event_handler,
 )
 from monitoring_service.states import OnChainUpdateStatus
@@ -45,6 +47,7 @@ from raiden_libs.events import (
     ReceiveMonitoringNewBalanceProofEvent,
     ReceiveMonitoringRewardClaimedEvent,
     ReceiveNonClosingBalanceProofUpdatedEvent,
+    ReceiveTokenNetworkCreatedEvent,
 )
 
 
@@ -135,6 +138,7 @@ def test_event_handler_ignore_other_events(context: Context):
     event = Event()
 
     for handler in [
+        token_network_created_handler,
         channel_opened_event_handler,
         channel_closed_event_handler,
         non_closing_balance_proof_updated_event_handler,
@@ -147,6 +151,23 @@ def test_event_handler_ignore_other_events(context: Context):
     ]:
         with pytest.raises(AssertionError):
             handler(event=event, context=context)
+
+
+def test_token_network_created_handlers_add_network(context: Context):
+    event = ReceiveTokenNetworkCreatedEvent(
+        token_address=DEFAULT_TOKEN_ADDRESS,
+        token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
+        block_number=BlockNumber(12),
+    )
+
+    assert len(context.database.get_token_network_addresses()) == 0
+
+    token_network_created_handler(event, context)
+    assert len(context.database.get_token_network_addresses()) == 1
+
+    # Test idempotency
+    token_network_created_handler(event, context)
+    assert len(context.database.get_token_network_addresses()) == 1
 
 
 def test_channel_opened_event_handler_adds_channel(context: Context):
