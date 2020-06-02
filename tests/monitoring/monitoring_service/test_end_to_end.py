@@ -15,24 +15,15 @@ from raiden.utils.typing import (
     TokenAmount,
     TokenNetworkAddress,
 )
-from raiden_contracts.constants import (
-    CONTRACT_MONITORING_SERVICE,
-    LOCKSROOT_OF_NO_LOCKS,
-    MonitoringServiceEvent,
-)
-from raiden_contracts.contract_manager import ContractManager
+from raiden_contracts.constants import LOCKSROOT_OF_NO_LOCKS, MonitoringServiceEvent
 from raiden_libs.blockchain import query_blockchain_events
 
 
-def create_ms_contract_events_query(
-    web3: Web3, contract_manager: ContractManager, contract_address: Address
-) -> Callable:
+def create_ms_contract_events_query(web3: Web3, contract_address: Address) -> Callable:
     def f():
         return query_blockchain_events(
             web3=web3,
-            contract_manager=contract_manager,
             contract_addresses=[contract_address],
-            contract_name=CONTRACT_MONITORING_SERVICE,
             from_block=BlockNumber(0),
             to_block=web3.eth.blockNumber,
         )
@@ -47,7 +38,6 @@ def test_first_allowed_monitoring(
     service_registry,
     monitoring_service: MonitoringService,
     request_collector: RequestCollector,
-    contracts_manager: ContractManager,
     deposit_to_udc,
     create_channel,
     token_network,
@@ -55,9 +45,7 @@ def test_first_allowed_monitoring(
     get_private_key,
 ):
     # pylint: disable=too-many-arguments,too-many-locals,protected-access
-    query = create_ms_contract_events_query(
-        web3, contracts_manager, monitoring_service_contract.address
-    )
+    query = create_ms_contract_events_query(web3, monitoring_service_contract.address)
     c1, c2 = get_accounts(2)
 
     # add deposit for c1
@@ -158,7 +146,6 @@ def test_e2e(  # pylint: disable=too-many-arguments,too-many-locals
     service_registry,
     monitoring_service: MonitoringService,
     request_collector: RequestCollector,
-    contracts_manager: ContractManager,
     deposit_to_udc,
     create_channel,
     token_network,
@@ -173,9 +160,7 @@ def test_e2e(  # pylint: disable=too-many-arguments,too-many-locals
         5) wait for channel settle
         6) MS claims the reward
     """
-    query = create_ms_contract_events_query(
-        web3, contracts_manager, monitoring_service_contract.address
-    )
+    query = create_ms_contract_events_query(web3, monitoring_service_contract.address)
     initial_balance = user_deposit_contract.functions.balances(monitoring_service.address).call()
     c1, c2 = get_accounts(2)
 

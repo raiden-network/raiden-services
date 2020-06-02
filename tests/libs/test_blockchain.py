@@ -9,8 +9,7 @@ from web3.contract import Contract
 
 from monitoring_service.constants import DEFAULT_FILTER_INTERVAL
 from raiden.utils.typing import Address, BlockNumber, ChainID
-from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, EVENT_TOKEN_NETWORK_CREATED
-from raiden_contracts.contract_manager import ContractManager
+from raiden_contracts.constants import EVENT_TOKEN_NETWORK_CREATED
 from raiden_libs.blockchain import (
     get_blockchain_events,
     get_blockchain_events_adaptive,
@@ -20,15 +19,11 @@ from raiden_libs.blockchain import (
 from raiden_libs.states import BlockchainState
 
 
-def create_tnr_contract_events_query(
-    web3: Web3, contract_manager: ContractManager, contract_address: Address
-):
+def create_tnr_contract_events_query(web3: Web3, contract_address: Address):
     def query_callback():
         return query_blockchain_events(
             web3=web3,
-            contract_manager=contract_manager,
             contract_addresses=[contract_address],
-            contract_name=CONTRACT_TOKEN_NETWORK_REGISTRY,
             from_block=BlockNumber(0),
             to_block=web3.eth.blockNumber,
         )
@@ -38,14 +33,9 @@ def create_tnr_contract_events_query(
 
 @pytest.mark.usefixtures("token_network")
 def test_limit_inclusivity_in_query_blockchain_events(
-    web3: Web3,
-    wait_for_blocks,
-    contracts_manager: ContractManager,
-    token_network_registry_contract,
+    web3: Web3, wait_for_blocks, token_network_registry_contract,
 ):
-    query = create_tnr_contract_events_query(
-        web3, contracts_manager, token_network_registry_contract.address
-    )
+    query = create_tnr_contract_events_query(web3, token_network_registry_contract.address)
 
     # A new token network has been registered by the `token_network_registry_contract` fixture
     events = query()
@@ -57,9 +47,7 @@ def test_limit_inclusivity_in_query_blockchain_events(
     # test to_block is inclusive
     events = query_blockchain_events(
         web3=web3,
-        contract_manager=contracts_manager,
         contract_addresses=[token_network_registry_contract.address],
-        contract_name=CONTRACT_TOKEN_NETWORK_REGISTRY,
         from_block=BlockNumber(0),
         to_block=BlockNumber(registry_event_block - 1),
     )
@@ -67,9 +55,7 @@ def test_limit_inclusivity_in_query_blockchain_events(
 
     events = query_blockchain_events(
         web3=web3,
-        contract_manager=contracts_manager,
         contract_addresses=[token_network_registry_contract.address],
-        contract_name=CONTRACT_TOKEN_NETWORK_REGISTRY,
         from_block=BlockNumber(0),
         to_block=registry_event_block,
     )
@@ -83,9 +69,7 @@ def test_limit_inclusivity_in_query_blockchain_events(
     # test to_block is inclusive
     events = query_blockchain_events(
         web3=web3,
-        contract_manager=contracts_manager,
         contract_addresses=[token_network_registry_contract.address],
-        contract_name=CONTRACT_TOKEN_NETWORK_REGISTRY,
         from_block=BlockNumber(registry_event_block + 1),
         to_block=current_block_number,
     )
@@ -93,9 +77,7 @@ def test_limit_inclusivity_in_query_blockchain_events(
 
     events = query_blockchain_events(
         web3=web3,
-        contract_manager=contracts_manager,
         contract_addresses=[token_network_registry_contract.address],
-        contract_name=CONTRACT_TOKEN_NETWORK_REGISTRY,
         from_block=registry_event_block,
         to_block=current_block_number,
     )
@@ -104,9 +86,7 @@ def test_limit_inclusivity_in_query_blockchain_events(
     # test that querying just one block works
     events = query_blockchain_events(
         web3=web3,
-        contract_manager=contracts_manager,
         contract_addresses=[token_network_registry_contract.address],
-        contract_name=CONTRACT_TOKEN_NETWORK_REGISTRY,
         from_block=registry_event_block,
         to_block=registry_event_block,
     )
@@ -146,11 +126,10 @@ def test_get_pessimistic_udc_balance(user_deposit_contract, web3, deposit_to_udc
 
 
 def test_get_blockchain_events_returns_early_for_invalid_interval(
-    web3: Web3, contracts_manager: ContractManager, token_network_registry_contract: Contract
+    web3: Web3, token_network_registry_contract: Contract
 ):
     events = get_blockchain_events(
         web3=web3,
-        contract_manager=contracts_manager,
         token_network_addresses=[],
         chain_state=BlockchainState(
             chain_id=ChainID(1),
