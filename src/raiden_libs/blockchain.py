@@ -1,9 +1,9 @@
 import time
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional
 
 import structlog
 from eth_abi.codec import ABICodec
-from eth_utils import decode_hex, encode_hex, to_canonical_address, to_checksum_address
+from eth_utils import decode_hex, encode_hex, to_canonical_address
 from eth_utils.abi import event_abi_to_log_topic
 from requests.exceptions import ReadTimeout
 from web3 import EthereumTesterProvider, HTTPProvider, Web3
@@ -25,7 +25,6 @@ from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
     CONTRACT_TOKEN_NETWORK,
     CONTRACT_TOKEN_NETWORK_REGISTRY,
-    EVENT_TOKEN_NETWORK_CREATED,
     ChannelEvent,
     MonitoringServiceEvent,
 )
@@ -64,14 +63,6 @@ def get_web3_provider_info(web3: Web3) -> str:
     raise RuntimeError(f"Unsupported web3 provider {provider!r}")
 
 
-def create_registry_event_topics(contract_manager: ContractManager) -> List:
-    new_network_abi = contract_manager.get_event_abi(
-        CONTRACT_TOKEN_NETWORK_REGISTRY, EVENT_TOKEN_NETWORK_CREATED
-    )
-    # eth-utils doesn't have strict ABI types yet
-    return [encode_hex(event_abi_to_log_topic(new_network_abi))]  # type: ignore
-
-
 def decode_event(
     abi_codec: ABICodec, topic_to_event_abi: Dict[bytes, ABIEvent], log_entry: LogReceipt
 ) -> Dict:
@@ -84,7 +75,7 @@ def decode_event(
 def query_blockchain_events(
     web3: Web3,
     contract_manager: ContractManager,
-    contract_addresses: Union[Address, List[Address]],
+    contract_addresses: List[Address],
     contract_name: str,
     from_block: BlockNumber,
     to_block: BlockNumber,
@@ -94,8 +85,7 @@ def query_blockchain_events(
     Args:
         web3: A Web3 instance
         contract_manager: A contract manager
-        contract_addresses: The address of the contract to be filtered, can be a single address
-            or a list of addresses
+        contract_addresses: The address(es) of the contract(s) to be filtered
         contract_name: The name of the contract
         from_block: The block to start search events
         to_block: The block to stop searching for events
@@ -110,14 +100,12 @@ def query_blockchain_events(
         event_abi_to_log_topic(event_abi): event_abi for event_abi in events_abi  # type: ignore
     }
 
-    if not isinstance(contract_addresses, list):
-        addresses = [contract_addresses]
-    else:
-        addresses = contract_addresses
-
-    checksummed_addresses = [to_checksum_address(address) for address in addresses]
     filter_params = FilterParams(
-        {"fromBlock": from_block, "toBlock": to_block, "address": checksummed_addresses}
+        {
+            "fromBlock": from_block,
+            "toBlock": to_block,
+            "address": contract_addresses,  # type: ignore
+        }
     )
 
     events = web3.eth.getLogs(filter_params)
@@ -256,9 +244,8 @@ def get_monitoring_blockchain_events(
     monitoring_service_events = query_blockchain_events(
         web3=web3,
         contract_manager=contract_manager,
-        contract_addresses=monitor_contract_address,
+        contract_addresses=[monitor_contract_address],
         contract_name=CONTRACT_MONITORING_SERVICE,
-        # topics=[None],
         from_block=from_block,
         to_block=to_block,
     )

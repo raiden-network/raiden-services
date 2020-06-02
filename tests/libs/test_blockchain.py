@@ -27,7 +27,7 @@ def create_tnr_contract_events_query(
         return query_blockchain_events(
             web3=web3,
             contract_manager=contract_manager,
-            contract_addresses=contract_address,
+            contract_addresses=[contract_address],
             contract_name=CONTRACT_TOKEN_NETWORK_REGISTRY,
             from_block=BlockNumber(0),
             to_block=web3.eth.blockNumber,
@@ -58,7 +58,7 @@ def test_limit_inclusivity_in_query_blockchain_events(
     events = query_blockchain_events(
         web3=web3,
         contract_manager=contracts_manager,
-        contract_addresses=token_network_registry_contract.address,
+        contract_addresses=[token_network_registry_contract.address],
         contract_name=CONTRACT_TOKEN_NETWORK_REGISTRY,
         from_block=BlockNumber(0),
         to_block=BlockNumber(registry_event_block - 1),
@@ -68,7 +68,7 @@ def test_limit_inclusivity_in_query_blockchain_events(
     events = query_blockchain_events(
         web3=web3,
         contract_manager=contracts_manager,
-        contract_addresses=token_network_registry_contract.address,
+        contract_addresses=[token_network_registry_contract.address],
         contract_name=CONTRACT_TOKEN_NETWORK_REGISTRY,
         from_block=BlockNumber(0),
         to_block=registry_event_block,
@@ -84,7 +84,7 @@ def test_limit_inclusivity_in_query_blockchain_events(
     events = query_blockchain_events(
         web3=web3,
         contract_manager=contracts_manager,
-        contract_addresses=token_network_registry_contract.address,
+        contract_addresses=[token_network_registry_contract.address],
         contract_name=CONTRACT_TOKEN_NETWORK_REGISTRY,
         from_block=BlockNumber(registry_event_block + 1),
         to_block=current_block_number,
@@ -94,7 +94,7 @@ def test_limit_inclusivity_in_query_blockchain_events(
     events = query_blockchain_events(
         web3=web3,
         contract_manager=contracts_manager,
-        contract_addresses=token_network_registry_contract.address,
+        contract_addresses=[token_network_registry_contract.address],
         contract_name=CONTRACT_TOKEN_NETWORK_REGISTRY,
         from_block=registry_event_block,
         to_block=current_block_number,
@@ -105,7 +105,7 @@ def test_limit_inclusivity_in_query_blockchain_events(
     events = query_blockchain_events(
         web3=web3,
         contract_manager=contracts_manager,
-        contract_addresses=token_network_registry_contract.address,
+        contract_addresses=[token_network_registry_contract.address],
         contract_name=CONTRACT_TOKEN_NETWORK_REGISTRY,
         from_block=registry_event_block,
         to_block=registry_event_block,

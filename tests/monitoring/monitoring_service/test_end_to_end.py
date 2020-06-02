@@ -31,7 +31,7 @@ def create_ms_contract_events_query(
         return query_blockchain_events(
             web3=web3,
             contract_manager=contract_manager,
-            contract_addresses=contract_address,
+            contract_addresses=[contract_address],
             contract_name=CONTRACT_MONITORING_SERVICE,
             from_block=BlockNumber(0),
             to_block=web3.eth.blockNumber,
