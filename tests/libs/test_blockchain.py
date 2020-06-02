@@ -1,11 +1,23 @@
+from unittest.mock import patch
+
 import eth_tester
 import pytest
+from eth_utils import to_canonical_address
+from requests.exceptions import ReadTimeout
 from web3 import Web3
+from web3.contract import Contract
 
-from raiden.utils.typing import Address, BlockNumber
+from monitoring_service.constants import DEFAULT_FILTER_INTERVAL
+from raiden.utils.typing import Address, BlockNumber, ChainID
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, EVENT_TOKEN_NETWORK_CREATED
 from raiden_contracts.contract_manager import ContractManager
-from raiden_libs.blockchain import get_pessimistic_udc_balance, query_blockchain_events
+from raiden_libs.blockchain import (
+    get_blockchain_events,
+    get_blockchain_events_adaptive,
+    get_pessimistic_udc_balance,
+    query_blockchain_events,
+)
+from raiden_libs.states import BlockchainState
 
 
 def create_tnr_contract_events_query(
@@ -134,3 +146,48 @@ def test_get_pessimistic_udc_balance(user_deposit_contract, web3, deposit_to_udc
     # That's two blocks that do not exist, yet!
     with pytest.raises(eth_tester.exceptions.BlockNotFound):
         deposit(0, 7)
+
+
+def test_get_blockchain_events_returns_early_for_invalid_interval(
+    web3: Web3, contracts_manager: ContractManager, token_network_registry_contract: Contract
+):
+    events = get_blockchain_events(
+        web3=web3,
+        contract_manager=contracts_manager,
+        token_network_addresses=[],
+        chain_state=BlockchainState(
+            chain_id=ChainID(1),
+            token_network_registry_address=to_canonical_address(
+                token_network_registry_contract.address
+            ),
+            latest_committed_block=BlockNumber(4),
+        ),
+        from_block=BlockNumber(10),
+        to_block=BlockNumber(5),
+    )
+
+    assert len(events) == 0
+
+
+def test_get_blockchain_events_adaptive_reduces_block_interval_after_timeout(
+    web3: Web3, token_network_registry_contract: Contract
+):
+    chain_state = BlockchainState(
+        chain_id=ChainID(1),
+        token_network_registry_address=to_canonical_address(
+            token_network_registry_contract.address
+        ),
+        latest_committed_block=BlockNumber(4),
+    )
+
+    assert chain_state.current_event_filter_interval == DEFAULT_FILTER_INTERVAL
+
+    with patch("raiden_libs.blockchain.get_blockchain_events", side_effect=ReadTimeout):
+        _ = get_blockchain_events_adaptive(
+            web3=web3,
+            token_network_addresses=[],
+            blockchain_state=chain_state,
+            latest_confirmed_block=BlockNumber(1),
+        )
+
+        assert chain_state.current_event_filter_interval == DEFAULT_FILTER_INTERVAL // 5
