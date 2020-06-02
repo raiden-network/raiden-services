@@ -1,5 +1,5 @@
 import time
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 import structlog
 from eth_abi.codec import ABICodec
@@ -84,9 +84,8 @@ def decode_event(
 def query_blockchain_events(
     web3: Web3,
     contract_manager: ContractManager,
-    contract_address: Address,
+    contract_addresses: Union[Address, List[Address]],
     contract_name: str,
-    topics: List,
     from_block: BlockNumber,
     to_block: BlockNumber,
 ) -> List[Dict]:
@@ -95,9 +94,9 @@ def query_blockchain_events(
     Args:
         web3: A Web3 instance
         contract_manager: A contract manager
-        contract_address: The address of the contract to be filtered, can be `None`
+        contract_addresses: The address of the contract to be filtered, can be a single address
+            or a list of addresses
         contract_name: The name of the contract
-        topics: The topics to filter for
         from_block: The block to start search events
         to_block: The block to stop searching for events
 
@@ -111,13 +110,14 @@ def query_blockchain_events(
         event_abi_to_log_topic(event_abi): event_abi for event_abi in events_abi  # type: ignore
     }
 
+    if not isinstance(contract_addresses, list):
+        addresses = [contract_addresses]
+    else:
+        addresses = contract_addresses
+
+    checksummed_addresses = [to_checksum_address(address) for address in addresses]
     filter_params = FilterParams(
-        {
-            "fromBlock": from_block,
-            "toBlock": to_block,
-            "address": to_checksum_address(contract_address),
-            "topics": topics,
-        }
+        {"fromBlock": from_block, "toBlock": to_block, "address": checksummed_addresses}
     )
 
     events = web3.eth.getLogs(filter_params)
@@ -189,9 +189,8 @@ def get_blockchain_events(
     registry_events = query_blockchain_events(
         web3=web3,
         contract_manager=contract_manager,
-        contract_address=chain_state.token_network_registry_address,
+        contract_addresses=[chain_state.token_network_registry_address],
         contract_name=CONTRACT_TOKEN_NETWORK_REGISTRY,
-        topics=create_registry_event_topics(contract_manager),
         from_block=from_block,
         to_block=to_block,
     )
@@ -213,21 +212,19 @@ def get_blockchain_events(
         token_network_addresses.append(token_network_address)
 
     # then check all token networks
-    for token_network_address in token_network_addresses:
-        network_events = query_blockchain_events(
-            web3=web3,
-            contract_manager=contract_manager,
-            contract_address=Address(token_network_address),
-            contract_name=CONTRACT_TOKEN_NETWORK,
-            topics=[None],
-            from_block=from_block,
-            to_block=to_block,
-        )
+    network_events = query_blockchain_events(
+        web3=web3,
+        contract_manager=contract_manager,
+        contract_addresses=token_network_addresses,  # type: ignore
+        contract_name=CONTRACT_TOKEN_NETWORK,
+        from_block=from_block,
+        to_block=to_block,
+    )
 
-        for event_dict in network_events:
-            event = parse_token_network_event(event_dict)
-            if event:
-                events.append(event)
+    for event_dict in network_events:
+        event = parse_token_network_event(event_dict)
+        if event:
+            events.append(event)
 
     # get events from monitoring service contract, this only queries the chain
     # if the monitor contract address is set in chain_state
@@ -259,9 +256,9 @@ def get_monitoring_blockchain_events(
     monitoring_service_events = query_blockchain_events(
         web3=web3,
         contract_manager=contract_manager,
-        contract_address=monitor_contract_address,
+        contract_addresses=monitor_contract_address,
         contract_name=CONTRACT_MONITORING_SERVICE,
-        topics=[None],
+        # topics=[None],
         from_block=from_block,
         to_block=to_block,
     )
