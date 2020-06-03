@@ -1,4 +1,4 @@
-raiden==0.200.0rc9
+git+https://github.com/raiden-network/raiden.git@70089423a198c8e6b3408c516bf6cf1fff892aa4
 raiden-contracts==0.37.0
 
 structlog==20.1.0
@@ -13,8 +13,8 @@ eth-abi==2.1.0
 eth-account==0.5.2
 eth-typing==2.2.1
 
-flask==1.0.3
-flask-restful==0.3.7
+flask==1.1.2
+flask-restful==0.3.8
 gevent==1.5a3
 networkx==2.3
 requests==2.22.0
