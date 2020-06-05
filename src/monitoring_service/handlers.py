@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import cast
 
 import structlog
 from eth_utils import encode_hex
@@ -175,7 +174,7 @@ def channel_closed_event_handler(event: Event, context: Context) -> None:
         # scheduled (e.g. after a restart) the DB takes care that it is only
         # stored once.
         context.database.upsert_scheduled_event(
-            ScheduledEvent(trigger_block_number=trigger_block, event=cast(Event, triggered_event))
+            ScheduledEvent(trigger_block_number=trigger_block, event=Event)
         )
     else:
         log.warning(
@@ -376,7 +375,7 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context) -> N
         # If the event is already scheduled (e.g. after a restart) the DB takes care that
         # it is only stored once
         context.database.upsert_scheduled_event(
-            ScheduledEvent(trigger_block_number=trigger_block, event=cast(Event, triggered_event))
+            ScheduledEvent(trigger_block_number=trigger_block, event=Event)
         )
 
 
