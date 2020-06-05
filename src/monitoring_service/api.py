@@ -1,0 +1,91 @@
+from datetime import datetime
+from typing import List, Optional, Tuple, cast
+
+import pkg_resources
+import structlog
+from eth_utils import to_checksum_address
+from flask import Flask
+from flask_restful import Resource
+from gevent.pywsgi import WSGIServer
+
+from monitoring_service.constants import API_PATH, DEFAULT_INFO_MESSAGE
+from monitoring_service.service import MonitoringService
+from raiden_libs.api import ApiWithErrorHandler
+
+log = structlog.get_logger(__name__)
+
+
+class MSResource(Resource):
+    def __init__(self, monitoring_service: MonitoringService, api: "MsApi"):
+        self.monitoring_service = monitoring_service
+        self.service_token_address = (
+            self.monitoring_service.context.user_deposit_contract.functions.token().call()
+        )
+        self.api = api
+
+
+class InfoResource(MSResource):
+    version = pkg_resources.get_distribution("raiden-services").version
+    contracts_version = pkg_resources.get_distribution("raiden-contracts").version
+
+    def get(self) -> Tuple[dict, int]:
+        info = {
+            "price_info": self.api.monitoring_service.context.min_reward,
+            "network_info": {
+                "chain_id": self.monitoring_service.chain_id,
+                "token_network_registry_address": to_checksum_address(
+                    self.monitoring_service.context.ms_state.blockchain_state.token_network_registry_address  # noqa
+                ),
+                "user_deposit_address": to_checksum_address(
+                    self.monitoring_service.context.user_deposit_contract.address
+                ),
+                "service_token_address": to_checksum_address(self.service_token_address),
+                "confirmed_block": {
+                    "number": self.monitoring_service.context.ms_state.blockchain_state.latest_committed_block  # noqa
+                },
+            },
+            "version": self.version,
+            "contracts_version": self.contracts_version,
+            "operator": self.api.operator,
+            "message": self.api.info_message,
+            "UTC": datetime.utcnow().isoformat(),
+        }
+        return info, 200
+
+
+class MsApi:
+    def __init__(
+        self,
+        monitoring_service: MonitoringService,
+        operator: str,
+        info_message: str = DEFAULT_INFO_MESSAGE,
+    ) -> None:
+        self.flask_app = Flask(__name__)
+        self.api = ApiWithErrorHandler(self.flask_app)
+        self.rest_server: Optional[WSGIServer] = None
+
+        self.monitoring_service = monitoring_service
+        self.operator = operator
+        self.info_message = info_message
+
+        resources: List[Tuple[str, Resource, str]] = [
+            ("/info", cast(Resource, InfoResource), "info"),
+        ]
+
+        for endpoint_url, resource, endpoint in resources:
+            self.api.add_resource(
+                resource,
+                API_PATH + endpoint_url,
+                resource_class_kwargs={"monitoring_service": monitoring_service, "api": self},
+                endpoint=endpoint,
+            )
+
+    def run(self, host: str, port: int) -> None:
+        self.rest_server = WSGIServer((host, port), self.flask_app)
+        self.rest_server.start()
+
+        log.info("Running endpoint", endpoint=f"http://{host}:{port}")
+
+    def stop(self) -> None:
+        if self.rest_server:
+            self.rest_server.stop()

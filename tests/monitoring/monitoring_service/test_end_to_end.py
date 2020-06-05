@@ -196,7 +196,7 @@ def test_e2e(  # pylint: disable=too-many-arguments,too-many-locals
         **shared_bp_args
     )
 
-    ms_greenlet = gevent.spawn(monitoring_service.start, gevent.sleep)
+    ms_greenlet = gevent.spawn(monitoring_service.start)
 
     # need to wait here till the MS has some time to react
     gevent.sleep(0.01)

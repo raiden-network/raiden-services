@@ -174,7 +174,7 @@ def channel_closed_event_handler(event: Event, context: Context) -> None:
         # scheduled (e.g. after a restart) the DB takes care that it is only
         # stored once.
         context.database.upsert_scheduled_event(
-            ScheduledEvent(trigger_block_number=trigger_block, event=Event)
+            ScheduledEvent(trigger_block_number=trigger_block, event=triggered_event)
         )
     else:
         log.warning(
@@ -375,7 +375,7 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context) -> N
         # If the event is already scheduled (e.g. after a restart) the DB takes care that
         # it is only stored once
         context.database.upsert_scheduled_event(
-            ScheduledEvent(trigger_block_number=trigger_block, event=Event)
+            ScheduledEvent(trigger_block_number=trigger_block, event=triggered_event)
         )
 
 
