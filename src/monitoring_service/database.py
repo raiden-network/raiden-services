@@ -1,6 +1,6 @@
 import os
 import sqlite3
-from typing import List, Optional, Union, cast
+from typing import List, Optional, Union
 
 import structlog
 from eth_utils import decode_hex, encode_hex, to_canonical_address, to_checksum_address, to_hex
@@ -162,7 +162,7 @@ class SharedDatabase(BaseDatabase):
         return self.conn.execute("SELECT count(*) FROM channel").fetchone()[0]
 
     def upsert_scheduled_event(self, event: ScheduledEvent) -> None:
-        contained_event: SubEvent = cast(SubEvent, event.event)
+        contained_event: SubEvent = event.event
         values = [
             hex256(event.trigger_block_number),
             EVENT_TYPE_ID_MAP[type(contained_event)],
@@ -199,7 +199,7 @@ class SharedDatabase(BaseDatabase):
         return [create_scheduled_event(row) for row in rows]
 
     def remove_scheduled_event(self, event: ScheduledEvent) -> None:
-        contained_event: SubEvent = cast(SubEvent, event.event)
+        contained_event: SubEvent = event.event
         values = [
             hex256(event.trigger_block_number),
             to_checksum_address(contained_event.token_network_address),

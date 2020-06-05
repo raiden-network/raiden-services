@@ -1,4 +1,4 @@
-from typing import Callable, cast
+from typing import Callable
 from unittest.mock import Mock, patch
 
 from tests.monitoring.monitoring_service.factories import DEFAULT_TOKEN_NETWORK_ADDRESS
@@ -13,7 +13,6 @@ from raiden.tests.utils.factories import (
     make_transaction_hash,
 )
 from raiden.utils.typing import BlockNumber
-from raiden_libs.events import Event
 
 
 def test_check_pending_transactions(
@@ -51,7 +50,7 @@ def test_trigger_scheduled_events(monitoring_service: MonitoringService):
 
     assert len(monitoring_service.database.get_scheduled_events(trigger_block)) == 0
     monitoring_service.context.database.upsert_scheduled_event(
-        ScheduledEvent(trigger_block_number=trigger_block, event=cast(Event, triggered_event))
+        ScheduledEvent(trigger_block_number=trigger_block, event=triggered_event)
     )
     assert len(monitoring_service.database.get_scheduled_events(trigger_block)) == 1
 
