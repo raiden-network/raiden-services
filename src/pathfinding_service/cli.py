@@ -1,4 +1,3 @@
-"""Console script for pathfinding_service."""
 from gevent import monkey, config  # isort:skip # noqa
 
 # there were some issues with the 'thread' resolver, remove it from the options
@@ -14,13 +13,8 @@ from eth_utils import to_canonical_address, to_checksum_address
 from web3 import Web3
 from web3.contract import Contract
 
-from pathfinding_service.api import ServiceApi
-from pathfinding_service.constants import (
-    DEFAULT_API_HOST,
-    DEFAULT_API_PORT,
-    DEFAULT_INFO_MESSAGE,
-    PFS_DISCLAIMER,
-)
+from pathfinding_service.api import PfsApi
+from pathfinding_service.constants import DEFAULT_INFO_MESSAGE, PFS_DISCLAIMER
 from pathfinding_service.service import PathfindingService
 from raiden.settings import DEFAULT_NUMBER_OF_BLOCK_CONFIRMATIONS
 from raiden.utils.typing import BlockNumber, BlockTimeout, TokenAmount
@@ -31,7 +25,12 @@ from raiden_contracts.constants import (
 )
 from raiden_libs.blockchain import get_web3_provider_info
 from raiden_libs.cli import blockchain_options, common_options, setup_sentry
-from raiden_libs.constants import CONFIRMATION_OF_UNDERSTANDING, DEFAULT_POLL_INTERVALL
+from raiden_libs.constants import (
+    CONFIRMATION_OF_UNDERSTANDING,
+    DEFAULT_API_HOST,
+    DEFAULT_API_PORT_PFS,
+    DEFAULT_POLL_INTERVALL,
+)
 
 log = structlog.get_logger(__name__)
 
@@ -44,7 +43,10 @@ log = structlog.get_logger(__name__)
     "--host", default=DEFAULT_API_HOST, type=str, help="The host to use for serving the REST API"
 )
 @click.option(
-    "--port", default=DEFAULT_API_PORT, type=int, help="The port to use for serving the REST API"
+    "--port",
+    default=DEFAULT_API_PORT_PFS,
+    type=int,
+    help="The port to use for serving the REST API",
 )
 @click.option(
     "--service-fee",
@@ -128,7 +130,7 @@ def main(  # pylint: disable=too-many-arguments,too-many-locals
             raise Exception("PFS did not start within time.")
 
         log.debug("Starting API")
-        api = ServiceApi(
+        api = PfsApi(
             pathfinding_service=service,
             service_fee=service_fee,
             debug_mode=enable_debug,

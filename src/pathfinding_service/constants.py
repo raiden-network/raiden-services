@@ -4,8 +4,6 @@ from datetime import timedelta
 from raiden.utils.typing import BlockTimeout
 
 API_PATH: str = "/api/v1"
-DEFAULT_API_HOST: str = "localhost"
-DEFAULT_API_PORT: int = 6000
 
 WEB3_PROVIDER_DEFAULT: str = "http://127.0.0.1:8545"
 

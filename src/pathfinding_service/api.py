@@ -14,7 +14,7 @@ from eth_utils import (
     to_checksum_address,
 )
 from flask import Flask, Response, request
-from flask_restful import Api, Resource
+from flask_restful import Resource
 from gevent.pywsgi import WSGIServer
 from marshmallow import fields
 from marshmallow_dataclass import add_schema
@@ -43,8 +43,10 @@ from raiden.utils.typing import (
     TokenAmount,
     TokenNetworkAddress,
 )
+from raiden_libs.api import ApiWithErrorHandler
 from raiden_libs.blockchain import get_pessimistic_udc_balance
 from raiden_libs.constants import UDC_SECURITY_MARGIN_FACTOR_PFS
+from raiden_libs.exceptions import ApiException
 from raiden_libs.marshmallow import ChecksumAddress, HexedBytes
 
 log = structlog.get_logger(__name__)
@@ -53,23 +55,10 @@ T = TypeVar("T")
 last_failed_requests: collections.deque = collections.deque([], maxlen=200)
 
 
-class ApiWithErrorHandler(Api):
-    def handle_error(self, e: Exception) -> Response:
-        if isinstance(e, exceptions.ApiException):
-            log.warning(
-                "Error while handling request", error=e, details=e.error_details, message=e.msg
-            )
-            return self.make_response(
-                {"errors": e.msg, "error_code": e.error_code, "error_details": e.error_details},
-                e.http_code,
-            )
-        return super().handle_error(e)
-
-
 class PathfinderResource(Resource):
-    def __init__(self, pathfinding_service: PathfindingService, service_api: "ServiceApi"):
+    def __init__(self, pathfinding_service: PathfindingService, api: "PfsApi"):
         self.pathfinding_service = pathfinding_service
-        self.service_api = service_api
+        self.api = api
 
     def _validate_token_network_argument(self, token_network_address: str) -> TokenNetwork:
         if not is_checksum_address(token_network_address):
@@ -89,7 +78,7 @@ class PathfinderResource(Resource):
     def _parse_post(req_class: T) -> T:
         json = request.get_json()
         if not json:
-            raise exceptions.ApiException("JSON payload expected")
+            raise ApiException("JSON payload expected")
         try:
             return req_class.Schema().load(json)  # type: ignore
         except marshmallow.ValidationError as ex:
@@ -128,8 +117,8 @@ class PathsResource(PathfinderResource):
         process_payment(
             iou=path_req.iou,
             pathfinding_service=self.pathfinding_service,
-            service_fee=self.service_api.service_fee,
-            one_to_n_address=self.service_api.one_to_n_address,
+            service_fee=self.api.service_fee,
+            one_to_n_address=self.api.one_to_n_address,
         )
 
         # check for common error cases to provide clear error messages
@@ -403,7 +392,7 @@ class InfoResource(PathfinderResource):
 
     def get(self) -> Tuple[dict, int]:
         info = {
-            "price_info": self.service_api.service_fee,
+            "price_info": self.api.service_fee,
             "network_info": {
                 "chain_id": self.pathfinding_service.chain_id,
                 "token_network_registry_address": to_checksum_address(
@@ -421,11 +410,11 @@ class InfoResource(PathfinderResource):
             },
             "version": self.version,
             "contracts_version": self.contracts_version,
-            "operator": self.service_api.operator,
-            "message": self.service_api.info_message,
+            "operator": self.api.operator,
+            "message": self.api.info_message,
             "payment_address": to_checksum_address(self.pathfinding_service.address),
             "UTC": datetime.utcnow().isoformat(),
-            "matrix_server": self.service_api.pathfinding_service.matrix_listener.base_url,
+            "matrix_server": self.api.pathfinding_service.matrix_listener.base_url,
         }
         return info, 200
 
@@ -519,7 +508,7 @@ class DebugStatsResource(PathfinderResource):
         )
 
 
-class ServiceApi:
+class PfsApi:
     # pylint: disable=too-many-instance-attributes
     # Nine is reasonable in this case.
 
@@ -584,7 +573,7 @@ class ServiceApi:
 
         for endpoint_url, resource, kwargs, endpoint in resources:
             endpoint_url = API_PATH + endpoint_url
-            kwargs.update({"pathfinding_service": pathfinding_service, "service_api": self})
+            kwargs.update({"pathfinding_service": pathfinding_service, "api": self})
             self.api.add_resource(
                 resource, endpoint_url, resource_class_kwargs=kwargs, endpoint=endpoint
             )

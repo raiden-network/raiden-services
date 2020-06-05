@@ -1,8 +1,8 @@
 import sys
-import time
 from datetime import datetime
-from typing import Callable, Dict
+from typing import Dict
 
+import gevent
 import sentry_sdk
 import structlog
 from eth_typing import Hash32
@@ -78,7 +78,8 @@ def handle_event(event: Event, context: Context) -> None:
                 sentry_sdk.capture_exception(ex)
 
 
-class MonitoringService:  # pylint: disable=too-few-public-methods,too-many-instance-attributes
+class MonitoringService:
+    # pylint: disable=too-few-public-methods,too-many-instance-attributes
     def __init__(  # pylint: disable=too-many-arguments
         self,
         web3: Web3,
@@ -96,17 +97,17 @@ class MonitoringService:  # pylint: disable=too-few-public-methods,too-many-inst
         self.address = private_key_to_address(private_key)
         self.poll_interval = poll_interval
         self.service_registry = contracts[CONTRACT_SERVICE_REGISTRY]
+        self.token_network_registry = contracts[CONTRACT_TOKEN_NETWORK_REGISTRY]
 
         web3.middleware_onion.add(construct_sign_and_send_raw_middleware(private_key))
 
         monitoring_contract = contracts[CONTRACT_MONITORING_SERVICE]
         user_deposit_contract = contracts[CONTRACT_USER_DEPOSIT]
-        token_network_registry_contract = contracts[CONTRACT_TOKEN_NETWORK_REGISTRY]
 
         self.database = Database(
             filename=db_filename,
             chain_id=self.chain_id,
-            registry_address=to_canonical_address(token_network_registry_contract.address),
+            registry_address=to_canonical_address(self.token_network_registry.address),
             receiver=self.address,
             msc_address=MonitoringServiceAddress(
                 to_canonical_address(monitoring_contract.address)
@@ -125,9 +126,7 @@ class MonitoringService:  # pylint: disable=too-few-public-methods,too-many-inst
             required_confirmations=required_confirmations,
         )
 
-    def start(
-        self, wait_function: Callable = time.sleep, check_account_gas_reserve: bool = True
-    ) -> None:
+    def start(self) -> None:
         if not self.service_registry.functions.hasValidRegistration(self.address).call():
             log.error("No valid registration in ServiceRegistry", address=self.address)
             sys.exit(1)
@@ -138,8 +137,7 @@ class MonitoringService:  # pylint: disable=too-few-public-methods,too-many-inst
 
             # check gas reserve
             do_gas_reserve_check = (
-                check_account_gas_reserve
-                and last_confirmed_block >= last_gas_check_block + DEFAULT_GAS_CHECK_BLOCKS
+                last_confirmed_block >= last_gas_check_block + DEFAULT_GAS_CHECK_BLOCKS
             )
             if do_gas_reserve_check:
                 check_gas_reserve(self.web3, self.private_key)
@@ -150,7 +148,7 @@ class MonitoringService:  # pylint: disable=too-few-public-methods,too-many-inst
             self._check_pending_transactions()
             self._purge_old_monitor_requests()
 
-            wait_function(self.poll_interval)
+            gevent.sleep(self.poll_interval)
 
     def _process_new_blocks(self, latest_confirmed_block: BlockNumber) -> None:
         token_network_addresses = self.context.database.get_token_network_addresses()

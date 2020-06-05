@@ -4,9 +4,11 @@ from typing import Iterator
 
 import pytest
 
-from pathfinding_service.api import ServiceApi
-from pathfinding_service.constants import API_PATH, DEFAULT_API_HOST
+from pathfinding_service.api import PfsApi
+from pathfinding_service.constants import API_PATH
+from pathfinding_service.service import PathfindingService
 from raiden.utils.typing import Address
+from raiden_libs.constants import DEFAULT_API_HOST
 
 from ..utils import SimpleReachabilityContainer
 
@@ -27,13 +29,13 @@ def api_url(free_port: int) -> str:
 
 @pytest.fixture
 def api_sut(
-    pathfinding_service_mock,
+    pathfinding_service_mock: PathfindingService,
     reachability_state: SimpleReachabilityContainer,
     free_port: int,
     populate_token_network_case_1,  # pylint: disable=unused-argument
-) -> Iterator[ServiceApi]:
+) -> Iterator[PfsApi]:
     pathfinding_service_mock.matrix_listener.user_manager = reachability_state
-    api = ServiceApi(
+    api = PfsApi(
         pathfinding_service=pathfinding_service_mock,
         one_to_n_address=Address(bytes([1] * 20)),
         operator="",
@@ -49,9 +51,9 @@ def api_sut_with_debug(
     reachability_state: SimpleReachabilityContainer,
     free_port: int,
     populate_token_network_case_1,  # pylint: disable=unused-argument
-) -> Iterator[ServiceApi]:
+) -> Iterator[PfsApi]:
     pathfinding_service_mock.matrix_listener.user_manager = reachability_state
-    api = ServiceApi(
+    api = PfsApi(
         pathfinding_service=pathfinding_service_mock,
         one_to_n_address=Address(bytes([1] * 20)),
         debug_mode=True,
