@@ -1,4 +1,5 @@
 from .cli import default_cli_args
+from .network import free_port
 from .web3 import contracts_manager, keystore_file, mockchain, wait_for_blocks
 
 # Without declaring `__all__`, the names `cli` and `web3` would get imported
@@ -9,4 +10,5 @@ __all__ = [
     "keystore_file",
     "mockchain",
     "default_cli_args",
+    "free_port",
 ]

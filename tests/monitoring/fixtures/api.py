@@ -1,5 +1,4 @@
 # pylint: disable=redefined-outer-name
-import socket
 from typing import Generator, Iterator
 from unittest.mock import Mock
 
@@ -9,8 +8,8 @@ from eth_utils import to_checksum_address
 from tests.libs.mocks.web3 import Web3Mock
 
 from monitoring_service.api import MsApi
+from monitoring_service.constants import API_PATH
 from monitoring_service.service import MonitoringService
-from pathfinding_service.constants import API_PATH
 from raiden.utils.typing import BlockTimeout
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
@@ -19,15 +18,6 @@ from raiden_contracts.constants import (
     CONTRACT_USER_DEPOSIT,
 )
 from raiden_libs.constants import DEFAULT_API_HOST
-
-
-@pytest.fixture(scope="session")
-def free_port() -> int:
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.bind(("localhost", 0))  # binding to port 0 will choose a free socket
-    port = sock.getsockname()[1]
-    sock.close()
-    return port
 
 
 @pytest.fixture(scope="session")
