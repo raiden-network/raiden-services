@@ -2,12 +2,12 @@ import pkg_resources
 import requests
 from eth_utils import to_checksum_address
 
-from monitoring_service.api import MsApi
+from monitoring_service.api import MSApi
 from monitoring_service.constants import DEFAULT_INFO_MESSAGE
 from monitoring_service.service import MonitoringService
 
 
-def test_get_info(api_url: str, ms_api_sut: MsApi, monitoring_service_mock: MonitoringService):
+def test_get_info(api_url: str, ms_api_sut: MSApi, monitoring_service_mock: MonitoringService):
     monitoring_service_mock.context.min_reward = 123
     ms_api_sut.operator = "John Doe"
     url = api_url + "/info"

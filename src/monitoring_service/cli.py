@@ -13,7 +13,7 @@ from eth_utils import to_checksum_address
 from web3 import Web3
 from web3.contract import Contract
 
-from monitoring_service.api import MsApi
+from monitoring_service.api import MSApi
 from monitoring_service.constants import DEFAULT_INFO_MESSAGE, DEFAULT_MIN_REWARD, MS_DISCLAIMER
 from monitoring_service.service import MonitoringService
 from raiden.settings import DEFAULT_NUMBER_OF_BLOCK_CONFIRMATIONS
@@ -137,7 +137,7 @@ def main(  # pylint: disable=too-many-arguments,too-many-locals
         task = spawn_named("MonitoringService", service.start)
 
         log.debug("Starting API")
-        api = MsApi(monitoring_service=service, operator=operator, info_message=info_message)
+        api = MSApi(monitoring_service=service, operator=operator, info_message=info_message)
         api.run(host=host, port=port)
 
         task.get()

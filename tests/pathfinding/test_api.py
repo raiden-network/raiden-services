@@ -14,7 +14,7 @@ from eth_utils import (
 from tests.pathfinding.test_database import db_has_feedback_for
 
 import pathfinding_service.exceptions as exceptions
-from pathfinding_service.api import DEFAULT_MAX_PATHS, PfsApi, last_failed_requests
+from pathfinding_service.api import DEFAULT_MAX_PATHS, PFSApi, last_failed_requests
 from pathfinding_service.constants import DEFAULT_INFO_MESSAGE
 from pathfinding_service.model import IOU, TokenNetwork
 from pathfinding_service.model.feedback import FeedbackToken
@@ -186,7 +186,7 @@ def test_get_paths_via_debug_endpoint_empty_routes(
 
 
 def test_get_ious_via_debug_endpoint(
-    api_sut_with_debug: PfsApi, api_url: str, addresses: List[Address]
+    api_sut_with_debug: PFSApi, api_url: str, addresses: List[Address]
 ):
     hex_addrs = [to_checksum_address(addr) for addr in addresses]
     iou = IOU(
@@ -222,7 +222,7 @@ def test_get_ious_via_debug_endpoint(
 # tests for /paths endpoint
 #
 def test_get_paths_validation(
-    api_sut: PfsApi,
+    api_sut: PFSApi,
     api_url: str,
     addresses: List[Address],
     token_network_model: TokenNetwork,
@@ -453,7 +453,7 @@ def test_get_info(api_url: str, api_sut, pathfinding_service_mock):
 #
 # tests for /payment/iou endpoint
 #
-def test_get_iou(api_sut: PfsApi, api_url: str, token_network_model: TokenNetwork, make_iou):
+def test_get_iou(api_sut: PFSApi, api_url: str, token_network_model: TokenNetwork, make_iou):
     privkey = get_random_privkey()
     sender = private_key_to_address(privkey)
     url = api_url + f"/{to_checksum_address(token_network_model.address)}/payment/iou"
@@ -517,7 +517,7 @@ def test_get_iou(api_sut: PfsApi, api_url: str, token_network_model: TokenNetwor
 #
 # tests for /feedback endpoint
 #
-def test_feedback(api_sut: PfsApi, api_url: str, token_network_model: TokenNetwork):
+def test_feedback(api_sut: PFSApi, api_url: str, token_network_model: TokenNetwork):
     database = api_sut.pathfinding_service.database
     default_path_hex = ["0x" + "1" * 40, "0x" + "2" * 40, "0x" + "3" * 40]
     default_path = [to_canonical_address(e) for e in default_path_hex]
@@ -571,7 +571,7 @@ def test_feedback(api_sut: PfsApi, api_url: str, token_network_model: TokenNetwo
 
 
 def test_stats_endpoint(
-    api_sut_with_debug: PfsApi, api_url: str, token_network_model: TokenNetwork
+    api_sut_with_debug: PFSApi, api_url: str, token_network_model: TokenNetwork
 ):
     database = api_sut_with_debug.pathfinding_service.database
     default_path = [Address(b"1" * 20), Address(b"2" * 20), Address(b"3" * 20)]

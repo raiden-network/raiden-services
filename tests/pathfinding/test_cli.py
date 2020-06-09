@@ -17,7 +17,7 @@ from raiden_contracts.constants import (
 PATCH_ARGS = {
     "target": "pathfinding_service.cli",
     "PathfindingService": DEFAULT,
-    "PfsApi": DEFAULT,
+    "PFSApi": DEFAULT,
     "get_web3_provider_info": MagicMock(return_value=""),
 }
 
@@ -126,7 +126,7 @@ def test_shutdown(default_cli_args):
         assert result.exit_code == 0
         assert "Exiting" in result.output
         assert mocks["PathfindingService"].return_value.stop.called
-        assert mocks["PfsApi"].return_value.stop.called
+        assert mocks["PFSApi"].return_value.stop.called
 
 
 @pytest.mark.usefixtures("provider_mock")
