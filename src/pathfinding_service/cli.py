@@ -13,7 +13,7 @@ from eth_utils import to_canonical_address, to_checksum_address
 from web3 import Web3
 from web3.contract import Contract
 
-from pathfinding_service.api import PfsApi
+from pathfinding_service.api import PFSApi
 from pathfinding_service.constants import DEFAULT_INFO_MESSAGE, PFS_DISCLAIMER
 from pathfinding_service.service import PathfindingService
 from raiden.settings import DEFAULT_NUMBER_OF_BLOCK_CONFIRMATIONS
@@ -130,7 +130,7 @@ def main(  # pylint: disable=too-many-arguments,too-many-locals
             raise Exception("PFS did not start within time.")
 
         log.debug("Starting API")
-        api = PfsApi(
+        api = PFSApi(
             pathfinding_service=service,
             service_fee=service_fee,
             debug_mode=enable_debug,

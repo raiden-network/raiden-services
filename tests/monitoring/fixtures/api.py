@@ -7,7 +7,7 @@ from eth_typing import BlockNumber
 from eth_utils import to_checksum_address
 from tests.libs.mocks.web3 import Web3Mock
 
-from monitoring_service.api import MsApi
+from monitoring_service.api import MSApi
 from monitoring_service.constants import API_PATH
 from monitoring_service.service import MonitoringService
 from raiden.utils.typing import BlockTimeout
@@ -51,8 +51,8 @@ def monitoring_service_mock() -> Generator[MonitoringService, None, None]:
 
 
 @pytest.fixture
-def ms_api_sut(monitoring_service_mock: MonitoringService, free_port: int) -> Iterator[MsApi]:
-    api = MsApi(monitoring_service=monitoring_service_mock, operator="")
+def ms_api_sut(monitoring_service_mock: MonitoringService, free_port: int) -> Iterator[MSApi]:
+    api = MSApi(monitoring_service=monitoring_service_mock, operator="")
     api.run(host=DEFAULT_API_HOST, port=free_port)
     yield api
     api.stop()

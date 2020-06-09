@@ -56,7 +56,7 @@ last_failed_requests: collections.deque = collections.deque([], maxlen=200)
 
 
 class PathfinderResource(Resource):
-    def __init__(self, pathfinding_service: PathfindingService, api: "PfsApi"):
+    def __init__(self, pathfinding_service: PathfindingService, api: "PFSApi"):
         self.pathfinding_service = pathfinding_service
         self.api = api
 
@@ -508,7 +508,7 @@ class DebugStatsResource(PathfinderResource):
         )
 
 
-class PfsApi:
+class PFSApi:
     # pylint: disable=too-many-instance-attributes
     # Nine is reasonable in this case.
 

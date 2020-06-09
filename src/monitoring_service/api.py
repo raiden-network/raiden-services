@@ -16,7 +16,7 @@ log = structlog.get_logger(__name__)
 
 
 class MSResource(Resource):
-    def __init__(self, monitoring_service: MonitoringService, api: "MsApi"):
+    def __init__(self, monitoring_service: MonitoringService, api: "MSApi"):
         self.monitoring_service = monitoring_service
         self.service_token_address = (
             self.monitoring_service.context.user_deposit_contract.functions.token().call()
@@ -53,7 +53,7 @@ class InfoResource(MSResource):
         return info, 200
 
 
-class MsApi:
+class MSApi:
     def __init__(
         self,
         monitoring_service: MonitoringService,
