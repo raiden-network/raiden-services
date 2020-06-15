@@ -6,7 +6,7 @@ from pathfinding_service.constants import MIN_IOU_EXPIRY
 from pathfinding_service.model import IOU
 from raiden.utils.typing import Address
 from raiden_contracts.utils.proofs import sign_one_to_n_iou
-from raiden_contracts.utils.type_aliases import ChainID
+from raiden_contracts.utils.type_aliases import ChainID, PrivateKey
 from raiden_libs.utils import private_key_to_address
 
 
@@ -15,7 +15,7 @@ def make_iou(one_to_n_contract: Contract):
     one_to_n_contract_address = to_canonical_address(one_to_n_contract.address)
 
     def f(
-        sender_priv_key,
+        sender_priv_key: PrivateKey,
         receiver: Address,
         amount=1,
         expiration_block=MIN_IOU_EXPIRY + 100,

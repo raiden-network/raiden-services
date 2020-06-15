@@ -1,5 +1,5 @@
-raiden==0.200.0rc9
-raiden-contracts==0.37.0
+raiden==1.0.1
+raiden-contracts==0.37.1
 
 structlog==20.1.0
 colorama==0.4.1

@@ -1,5 +1,6 @@
 import random
 
+from eth_utils import decode_hex
 from tests.constants import TEST_MSC_ADDRESS
 
 from monitoring_service.states import (
@@ -22,13 +23,14 @@ from raiden.utils.typing import (
     TokenNetworkAddress,
 )
 from raiden_contracts.constants import ChannelState
+from raiden_contracts.utils.type_aliases import PrivateKey
 from raiden_libs.utils import private_key_to_address
 
 DEFAULT_TOKEN_NETWORK_ADDRESS = TokenNetworkAddress(bytes([1] * 20))
 DEFAULT_TOKEN_ADDRESS = TokenAddress(bytes([9] * 20))
 DEFAULT_CHANNEL_IDENTIFIER = ChannelID(3)
-DEFAULT_PRIVATE_KEY1 = "0x" + "1" * 64
-DEFAULT_PRIVATE_KEY2 = "0x" + "2" * 64
+DEFAULT_PRIVATE_KEY1 = PrivateKey(decode_hex("0x" + "1" * 64))
+DEFAULT_PRIVATE_KEY2 = PrivateKey(decode_hex("0x" + "2" * 64))
 DEFAULT_PARTICIPANT1 = private_key_to_address(DEFAULT_PRIVATE_KEY1)
 DEFAULT_PARTICIPANT2 = private_key_to_address(DEFAULT_PRIVATE_KEY2)
 DEFAULT_REWARD_AMOUNT = TokenAmount(1)
@@ -39,8 +41,8 @@ def create_signed_monitor_request(
     chain_id: ChainID = ChainID(61),
     nonce: Nonce = Nonce(5),
     reward_amount: TokenAmount = DEFAULT_REWARD_AMOUNT,
-    closing_privkey: str = DEFAULT_PRIVATE_KEY1,
-    nonclosing_privkey: str = DEFAULT_PRIVATE_KEY2,
+    closing_privkey: PrivateKey = DEFAULT_PRIVATE_KEY1,
+    nonclosing_privkey: PrivateKey = DEFAULT_PRIVATE_KEY2,
 ) -> MonitorRequest:
     bp = HashedBalanceProof(
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,

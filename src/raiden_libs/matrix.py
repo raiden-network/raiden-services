@@ -5,7 +5,7 @@ from urllib.parse import urlparse
 
 import gevent
 import structlog
-from eth_utils import decode_hex, to_checksum_address
+from eth_utils import to_checksum_address
 from gevent.event import AsyncResult
 from marshmallow import ValidationError
 from matrix_client.errors import MatrixRequestError
@@ -42,6 +42,7 @@ from raiden.storage.serialization.serializer import MessageSerializer
 from raiden.utils.cli import get_matrix_servers
 from raiden.utils.signer import LocalSigner
 from raiden.utils.typing import Address, ChainID
+from raiden_contracts.utils.type_aliases import PrivateKey
 
 log = structlog.get_logger(__name__)
 
@@ -131,7 +132,7 @@ class MatrixListener(gevent.Greenlet):
     # pylint: disable=too-many-instance-attributes
     def __init__(
         self,
-        private_key: str,
+        private_key: PrivateKey,
         chain_id: ChainID,
         service_room_suffix: str,
         message_received_callback: Callable[[Message], None],
@@ -205,7 +206,7 @@ class MatrixListener(gevent.Greenlet):
             self.user_manager.start()
 
             login(
-                self._client, signer=LocalSigner(private_key=decode_hex(self.private_key)),
+                self._client, signer=LocalSigner(private_key=self.private_key),
             )
         except (MatrixRequestError, ValueError):
             raise ConnectionError("Could not login/register to matrix.")

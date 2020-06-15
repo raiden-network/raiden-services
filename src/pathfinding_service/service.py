@@ -26,6 +26,7 @@ from raiden.messages.abstract import Message
 from raiden.messages.path_finding_service import PFSCapacityUpdate, PFSFeeUpdate
 from raiden.utils.typing import BlockNumber, BlockTimeout, ChainID, TokenNetworkAddress
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
+from raiden_contracts.utils.type_aliases import PrivateKey
 from raiden_libs.blockchain import get_blockchain_events_adaptive
 from raiden_libs.constants import MATRIX_START_TIMEOUT
 from raiden_libs.events import (
@@ -58,7 +59,7 @@ class PathfindingService(gevent.Greenlet):
         self,
         web3: Web3,
         contracts: Dict[str, Contract],
-        private_key: str,
+        private_key: PrivateKey,
         db_filename: str,
         sync_start_block: BlockNumber,
         required_confirmations: BlockTimeout,

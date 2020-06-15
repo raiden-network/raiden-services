@@ -4,7 +4,7 @@ from unittest.mock import Mock
 
 import pytest
 from eth_typing import BlockNumber
-from eth_utils import to_checksum_address
+from eth_utils import decode_hex, to_checksum_address
 from tests.libs.mocks.web3 import Web3Mock
 
 from monitoring_service.api import MSApi
@@ -17,6 +17,7 @@ from raiden_contracts.constants import (
     CONTRACT_TOKEN_NETWORK_REGISTRY,
     CONTRACT_USER_DEPOSIT,
 )
+from raiden_contracts.utils.type_aliases import PrivateKey
 from raiden_libs.constants import DEFAULT_API_HOST
 
 
@@ -34,7 +35,9 @@ def monitoring_service_mock() -> Generator[MonitoringService, None, None]:
     mock_udc.functions.token.return_value.call.return_value = to_checksum_address(bytes([7] * 20))
     ms = MonitoringService(
         web3=web3_mock,
-        private_key="3a1076bf45ab87712ad64ccb3b10217737f7faacbf2872e88fdd9a537d8fe266",
+        private_key=PrivateKey(
+            decode_hex("3a1076bf45ab87712ad64ccb3b10217737f7faacbf2872e88fdd9a537d8fe266")
+        ),
         db_filename=":memory:",
         contracts={
             CONTRACT_TOKEN_NETWORK_REGISTRY: Mock(address=bytes([9] * 20)),

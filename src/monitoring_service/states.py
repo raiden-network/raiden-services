@@ -25,6 +25,7 @@ from raiden.utils.typing import (
 )
 from raiden_contracts.constants import ChannelState, MessageTypeId
 from raiden_contracts.utils.proofs import pack_balance_proof, pack_reward_proof
+from raiden_contracts.utils.type_aliases import PrivateKey
 from raiden_libs.states import BlockchainState
 
 
@@ -83,7 +84,7 @@ class HashedBalanceProof:
         locked_amount: Optional[int] = None,
         locksroot: Optional[str] = None,
         # can be used instead of passing `signature`
-        priv_key: Optional[str] = None,
+        priv_key: Optional[PrivateKey] = None,
     ) -> None:
         self.channel_identifier = channel_identifier
         self.token_network_address = token_network_address
@@ -103,7 +104,7 @@ class HashedBalanceProof:
 
         if signature is None:
             assert priv_key
-            local_signer = LocalSigner(private_key=decode_hex(priv_key))
+            local_signer = LocalSigner(private_key=priv_key)
             self.signature = local_signer.sign(self.serialize_bin())
         else:
             self.signature = signature
@@ -113,20 +114,20 @@ class HashedBalanceProof:
             to_checksum_address(self.token_network_address),
             self.chain_id,
             self.channel_identifier,
-            decode_hex(self.balance_hash),
+            BalanceHash(decode_hex(self.balance_hash)),
             self.nonce,
-            decode_hex(self.additional_hash),
+            AdditionalHash(decode_hex(self.additional_hash)),
             msg_type,
         )
 
     def get_request_monitoring(
         self,
-        privkey: str,
+        privkey: PrivateKey,
         reward_amount: TokenAmount,
         monitoring_service_contract_address: MonitoringServiceAddress,
     ) -> RequestMonitoring:
         """Returns raiden client's RequestMonitoring object"""
-        non_closing_signer = LocalSigner(decode_hex(privkey))
+        non_closing_signer = LocalSigner(privkey)
         partner_signed_self = SignedBlindedBalanceProof(
             channel_identifier=self.channel_identifier,
             token_network_address=self.token_network_address,
@@ -138,7 +139,7 @@ class HashedBalanceProof:
         )
         request_monitoring = RequestMonitoring(
             balance_proof=partner_signed_self,
-            non_closing_participant=privatekey_to_address(decode_hex(privkey)),
+            non_closing_participant=privatekey_to_address(privkey),
             reward_amount=reward_amount,
             signature=EMPTY_SIGNATURE,
             monitoring_service_contract_address=monitoring_service_contract_address,
@@ -147,7 +148,10 @@ class HashedBalanceProof:
         return request_monitoring
 
     def get_monitor_request(
-        self, privkey: str, reward_amount: TokenAmount, msc_address: MonitoringServiceAddress
+        self,
+        privkey: PrivateKey,
+        reward_amount: TokenAmount,
+        msc_address: MonitoringServiceAddress,
     ) -> "MonitorRequest":
         """Get monitor request message for a given balance proof."""
         return UnsignedMonitorRequest(
@@ -159,16 +163,16 @@ class HashedBalanceProof:
             additional_hash=self.additional_hash,
             closing_signature=self.signature,
             reward_amount=reward_amount,
-            non_closing_participant=privatekey_to_address(decode_hex(privkey)),
+            non_closing_participant=privatekey_to_address(privkey),
             msc_address=msc_address,
         ).sign(privkey)
 
-    def get_counter_signature(self, privkey: str) -> Signature:
+    def get_counter_signature(self, privkey: PrivateKey) -> Signature:
         """Get a signature of this balance proof by the other party
 
         Useful for `closing_signature` of `TokenNetwork.closeChannel`
         """
-        signer = LocalSigner(decode_hex(privkey))
+        signer = LocalSigner(privkey)
         return signer.sign(self.serialize_bin() + self.signature)
 
 
@@ -205,8 +209,8 @@ class UnsignedMonitorRequest:
             data=self.packed_balance_proof_data(), signature=self.closing_signature
         )
 
-    def sign(self, priv_key: str) -> "MonitorRequest":
-        local_signer = LocalSigner(private_key=decode_hex(priv_key))
+    def sign(self, priv_key: PrivateKey) -> "MonitorRequest":
+        local_signer = LocalSigner(private_key=priv_key)
         non_closing_signature = local_signer.sign(self.packed_non_closing_data())
         return MonitorRequest(
             channel_identifier=self.channel_identifier,
@@ -232,9 +236,9 @@ class UnsignedMonitorRequest:
             to_checksum_address(self.token_network_address),
             self.chain_id,
             self.channel_identifier,
-            decode_hex(self.balance_hash),
+            BalanceHash(decode_hex(self.balance_hash)),
             self.nonce,
-            decode_hex(self.additional_hash),
+            AdditionalHash(decode_hex(self.additional_hash)),
             message_type,
         )
 

@@ -23,6 +23,7 @@ from raiden_contracts.constants import (
     CONTRACT_TOKEN_NETWORK_REGISTRY,
     CONTRACT_USER_DEPOSIT,
 )
+from raiden_contracts.utils.type_aliases import PrivateKey
 from raiden_libs.blockchain import get_web3_provider_info
 from raiden_libs.cli import blockchain_options, common_options, setup_sentry
 from raiden_libs.constants import (
@@ -83,7 +84,7 @@ log = structlog.get_logger(__name__)
 )
 @common_options("raiden-pathfinding-service")
 def main(  # pylint: disable=too-many-arguments,too-many-locals
-    private_key: str,
+    private_key: PrivateKey,
     state_db: str,
     web3: Web3,
     contracts: Dict[str, Contract],

@@ -31,6 +31,7 @@ from raiden.utils.typing import (
     TokenAmount,
 )
 from raiden_contracts.tests.utils import get_random_privkey
+from raiden_contracts.utils.type_aliases import PrivateKey
 from raiden_libs.utils import private_key_to_address
 
 ID_12 = 12
@@ -273,7 +274,7 @@ def test_get_paths_validation(
 
     # prepare iou for payment tests
     iou = make_iou(
-        get_random_privkey(),
+        PrivateKey(decode_hex(get_random_privkey())),
         api_sut.pathfinding_service.address,
         one_to_n_address=api_sut.one_to_n_address,
     )
@@ -380,7 +381,7 @@ def test_payment_with_new_iou_rejected(  # pylint: disable=too-many-locals
 
     # test with payment
     api_sut.service_fee = 100
-    sender = get_random_privkey()
+    sender = PrivateKey(decode_hex(get_random_privkey()))
     iou = make_iou(
         sender,
         api_sut.pathfinding_service.address,
@@ -454,7 +455,7 @@ def test_get_info(api_url: str, api_sut, pathfinding_service_mock):
 # tests for /payment/iou endpoint
 #
 def test_get_iou(api_sut: PFSApi, api_url: str, token_network_model: TokenNetwork, make_iou):
-    privkey = get_random_privkey()
+    privkey = PrivateKey(decode_hex(get_random_privkey()))
     sender = private_key_to_address(privkey)
     url = api_url + f"/{to_checksum_address(token_network_model.address)}/payment/iou"
 
@@ -464,7 +465,7 @@ def test_get_iou(api_sut: PFSApi, api_url: str, token_network_model: TokenNetwor
             "receiver": to_checksum_address(api_sut.pathfinding_service.address),
             "timestamp": timestamp,
         }
-        local_signer = LocalSigner(private_key=decode_hex(privkey))
+        local_signer = LocalSigner(private_key=privkey)
         params["signature"] = encode_hex(
             local_signer.sign(
                 to_canonical_address(params["sender"])
@@ -579,7 +580,7 @@ def test_stats_endpoint(
     estimated_fee = FeeAmount(0)
 
     def check_response(num_all: int, num_only_feedback: int, num_only_success: int) -> None:
-        url = api_url + f"/_debug/stats"
+        url = api_url + "/_debug/stats"
         response = requests.get(url)
 
         assert response.status_code == 200

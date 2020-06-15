@@ -4,9 +4,11 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 from click.testing import CliRunner
+from eth_utils import decode_hex
 
 from monitoring_service.cli import main
 from monitoring_service.service import check_gas_reserve
+from raiden_contracts.utils.type_aliases import PrivateKey
 
 
 @pytest.fixture(autouse=True)
@@ -23,7 +25,9 @@ def service_mock(monkeypatch):
 
 
 def test_account_check(web3, capsys):
-    private_key = "0F951D6EAF7685D420AACCA3900127E669892FE5CA6C8E4C572A59B0609AAE6B"
+    private_key = PrivateKey(
+        decode_hex("0F951D6EAF7685D420AACCA3900127E669892FE5CA6C8E4C572A59B0609AAE6B")
+    )
     check_gas_reserve(web3, private_key)
     out = capsys.readouterr().out
     assert "Your account's balance is below the estimated gas reserve of" in out

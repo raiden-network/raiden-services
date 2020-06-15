@@ -3,7 +3,7 @@ from typing import Optional
 from unittest.mock import Mock, patch
 
 import pytest
-from eth_utils import to_checksum_address
+from eth_utils import decode_hex, to_checksum_address
 from tests.libs.mocks.web3 import Web3Mock
 from tests.monitoring.monitoring_service.factories import (
     DEFAULT_CHANNEL_IDENTIFIER,
@@ -38,6 +38,7 @@ from monitoring_service.states import OnChainUpdateStatus
 from raiden.utils.typing import Address, BlockNumber, BlockTimeout, ChannelID, Nonce, TokenAmount
 from raiden_contracts.constants import ChannelState
 from raiden_contracts.tests.utils import get_random_privkey
+from raiden_contracts.utils.type_aliases import PrivateKey
 from raiden_libs.constants import UDC_SECURITY_MARGIN_FACTOR_MS
 from raiden_libs.events import (
     Event,
@@ -723,8 +724,14 @@ def test_mr_with_unknown_signatures(context: Context):
         action_monitoring_triggered_event_handler(event, context)
         assert not context.monitoring_service_contract.functions.monitor.called
 
-    assert_mr_is_ignored(create_signed_monitor_request(closing_privkey=get_random_privkey()))
-    assert_mr_is_ignored(create_signed_monitor_request(nonclosing_privkey=get_random_privkey()))
+    assert_mr_is_ignored(
+        create_signed_monitor_request(closing_privkey=PrivateKey(decode_hex(get_random_privkey())))
+    )
+    assert_mr_is_ignored(
+        create_signed_monitor_request(
+            nonclosing_privkey=PrivateKey(decode_hex(get_random_privkey()))
+        )
+    )
 
 
 def test_action_claim_reward_triggered_event_handler_does_trigger_claim_call(  # noqa
