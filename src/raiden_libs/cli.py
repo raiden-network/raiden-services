@@ -34,19 +34,20 @@ from raiden_contracts.constants import (
     CONTRACT_USER_DEPOSIT,
     CONTRACTS_VERSION,
 )
+from raiden_contracts.utils.type_aliases import PrivateKey
 from raiden_libs.contract_info import CONTRACT_MANAGER, get_contract_addresses_and_start_block
 from raiden_libs.logging import setup_logging
 
 log = structlog.get_logger(__name__)
 
 
-def _open_keystore(keystore_file: str, password: str) -> str:
+def _open_keystore(keystore_file: str, password: str) -> PrivateKey:
     with open(keystore_file, "r") as keystore:
         try:
-            private_key = Account.decrypt(
-                keyfile_json=json.load(keystore), password=password
-            ).hex()
-            return private_key
+            private_key = bytes(
+                Account.decrypt(keyfile_json=json.load(keystore), password=password)
+            )
+            return PrivateKey(private_key)
         except ValueError as error:
             log.critical(
                 "Could not decode keyfile with given password. Please try again.",

@@ -4,7 +4,7 @@ from typing import Callable, Generator, List
 from unittest.mock import Mock, patch
 
 import pytest
-from eth_utils import to_canonical_address, to_checksum_address
+from eth_utils import decode_hex, to_canonical_address, to_checksum_address
 from web3 import Web3
 from web3.contract import Contract
 
@@ -25,6 +25,7 @@ from raiden.utils.typing import (
     TokenNetworkAddress,
 )
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
+from raiden_contracts.utils.type_aliases import PrivateKey
 from raiden_libs.utils import private_key_to_address
 
 from ...libs.mocks.web3 import Web3Mock
@@ -301,7 +302,9 @@ def pathfinding_service_mock_empty() -> Generator[PathfindingService, None, None
             sync_start_block=BlockNumber(0),
             required_confirmations=BlockTimeout(0),
             poll_interval=0,
-            private_key="3a1076bf45ab87712ad64ccb3b10217737f7faacbf2872e88fdd9a537d8fe266",
+            private_key=PrivateKey(
+                decode_hex("3a1076bf45ab87712ad64ccb3b10217737f7faacbf2872e88fdd9a537d8fe266")
+            ),
             db_filename=":memory:",
         )
 

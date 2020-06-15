@@ -27,6 +27,7 @@ from raiden_contracts.constants import (
     CONTRACT_USER_DEPOSIT,
 )
 from raiden_contracts.contract_manager import gas_measurements
+from raiden_contracts.utils.type_aliases import PrivateKey
 from raiden_libs.blockchain import get_blockchain_events_adaptive
 from raiden_libs.events import Event
 from raiden_libs.utils import private_key_to_address
@@ -34,7 +35,7 @@ from raiden_libs.utils import private_key_to_address
 log = structlog.get_logger(__name__)
 
 
-def check_gas_reserve(web3: Web3, private_key: str) -> None:
+def check_gas_reserve(web3: Web3, private_key: PrivateKey) -> None:
     """ Check periodically for gas reserve in the account """
     gas_price = web3.eth.gasPrice
     gas_limit = gas_measurements()["MonitoringService.monitor"]
@@ -83,7 +84,7 @@ class MonitoringService:
     def __init__(  # pylint: disable=too-many-arguments
         self,
         web3: Web3,
-        private_key: str,
+        private_key: PrivateKey,
         db_filename: str,
         contracts: Dict[str, Contract],
         sync_start_block: BlockNumber,

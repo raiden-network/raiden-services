@@ -1,9 +1,8 @@
-from typing import Union
-
 from coincurve import PrivateKey, PublicKey
-from eth_utils import decode_hex, keccak
+from eth_utils import keccak
 
 from raiden.utils.typing import Address
+from raiden_contracts.utils.type_aliases import PrivateKey as PrivateKeyType
 
 
 def public_key_to_address(public_key: PublicKey) -> Address:
@@ -12,11 +11,7 @@ def public_key_to_address(public_key: PublicKey) -> Address:
     return Address(keccak(key_bytes[1:])[-20:])
 
 
-def private_key_to_address(private_key: Union[str, bytes]) -> Address:
+def private_key_to_address(private_key: PrivateKeyType) -> Address:
     """ Converts a private key to an Ethereum address. """
-    if isinstance(private_key, str):
-        private_key = decode_hex(private_key)
-
-    assert isinstance(private_key, bytes)
     privkey = PrivateKey(private_key)
     return public_key_to_address(privkey.public_key)

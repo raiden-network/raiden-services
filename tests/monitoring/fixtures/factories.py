@@ -1,18 +1,18 @@
 import pytest
-from eth_utils import encode_hex, to_checksum_address
+from eth_utils import decode_hex, encode_hex, to_checksum_address
 from tests.constants import TEST_MSC_ADDRESS
 
 from monitoring_service.states import HashedBalanceProof
 from raiden.messages.monitoring_service import RequestMonitoring
 from raiden.utils.typing import ChannelID, Nonce, TokenAmount, TokenNetworkAddress
 from raiden_contracts.tests.utils.address import get_random_privkey
-from raiden_contracts.utils.type_aliases import ChainID
+from raiden_contracts.utils.type_aliases import ChainID, PrivateKey
 from raiden_libs.utils import private_key_to_address
 
 
 @pytest.fixture
 def build_request_monitoring():
-    non_closing_privkey = get_random_privkey()
+    non_closing_privkey = PrivateKey(decode_hex(get_random_privkey()))
     non_closing_address = private_key_to_address(non_closing_privkey)
 
     def f(
@@ -28,7 +28,7 @@ def build_request_monitoring():
             nonce=nonce,
             additional_hash="",
             balance_hash=encode_hex(bytes([amount])),
-            priv_key=get_random_privkey(),
+            priv_key=PrivateKey(decode_hex(get_random_privkey())),
         )
         request_monitoring = balance_proof.get_request_monitoring(
             privkey=non_closing_privkey,

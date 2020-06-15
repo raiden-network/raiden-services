@@ -5,13 +5,13 @@ pip
 wheel>=0.30.0
 watchdog>=0.8.3
 
-flake8==3.7.9
-flake8-bugbear==20.1.2
+flake8==3.8.3
+flake8-bugbear==20.1.4
 flake8-tuple==0.4.1
 isort==4.3.21
-mypy==0.770
+mypy==0.780
 black==19.10b0
-pylint==2.4.4
+pylint==2.5.3
 
 pytest
 pytest-gevent
@@ -24,7 +24,7 @@ coverage>=4.5.4
 ipython==4.2.1
 pdbpp
 
-eth-tester[py-evm]==0.4.0b2
+eth-tester[py-evm]==0.5.0b1
 
 # Release
 bump2version

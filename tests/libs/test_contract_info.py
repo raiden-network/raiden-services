@@ -9,8 +9,8 @@ from raiden_contracts.constants import (
 )
 from raiden_libs.contract_info import get_contract_addresses_and_start_block
 
-DEFAULT_CHAIN_ID = ChainID(3)
-DEFAULT_VERSION = "0.10.1"
+DEFAULT_CHAIN_ID = ChainID(5)
+DEFAULT_VERSION = "0.37.0"
 
 
 def test_contract_info_defaults():
@@ -26,13 +26,13 @@ def test_contract_info_defaults():
     )
     assert infos is not None
     assert infos[CONTRACT_TOKEN_NETWORK_REGISTRY] == decode_hex(
-        "0xde1fAa1385403f05C20a8ca5a0D5106163A35B6e"
+        "0x5a5cf4a63022f61f1506d1a2398490c2e8dfbb98"
     )
     assert infos[CONTRACT_MONITORING_SERVICE] == decode_hex(
-        "0x58c73CabCFB3c55B420E3F60a4b06098e9D1960E"
+        "0x20e8e5181000e60799a523a2023d630868f378fd"
     )
-    assert infos[CONTRACT_USER_DEPOSIT] == decode_hex("0x85F2c5eA50861DF5eA2EBd3651fAB091e14B849C")
-    assert start_block == 5235446
+    assert infos[CONTRACT_USER_DEPOSIT] == decode_hex("0x0794f09913aa8c77c8c5bdd1ec4bb51759ee0cc5")
+    assert start_block == 2723614
 
 
 def test_contract_info_overwrite_defaults():

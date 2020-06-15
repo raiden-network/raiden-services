@@ -7,7 +7,7 @@ Therefore, usually mocked_integration should be used.
 from typing import List
 from unittest.mock import Mock, patch
 
-from eth_utils import encode_hex, to_canonical_address
+from eth_utils import decode_hex, encode_hex, to_canonical_address
 
 from monitoring_service.states import HashedBalanceProof
 from pathfinding_service.constants import DEFAULT_REVEAL_TIMEOUT
@@ -20,6 +20,7 @@ from raiden_contracts.constants import (
     LOCKSROOT_OF_NO_LOCKS,
     TEST_SETTLE_TIMEOUT_MIN,
 )
+from raiden_contracts.utils.type_aliases import PrivateKey
 
 
 def test_pfs_with_mocked_client(  # pylint: disable=too-many-arguments
@@ -52,7 +53,9 @@ def test_pfs_with_mocked_client(  # pylint: disable=too-many-arguments
             db_filename=":memory:",
             poll_interval=0.1,
             sync_start_block=BlockNumber(0),
-            private_key="3a1076bf45ab87712ad64ccb3b10217737f7faacbf2872e88fdd9a537d8fe266",
+            private_key=PrivateKey(
+                decode_hex("3a1076bf45ab87712ad64ccb3b10217737f7faacbf2872e88fdd9a537d8fe266")
+            ),
         )
 
     # greenlet needs to be started and context switched to

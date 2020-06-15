@@ -68,7 +68,7 @@ def test_bad_eth_client(log, default_cli_args):
 def test_success(default_cli_args):
     """ Calling the pathfinding_service with default args should succeed after heavy mocking """
     runner = CliRunner()
-    with patch.multiple(**PATCH_ARGS), patch.multiple(**PATCH_INFO_ARGS):
+    with patch.multiple(**PATCH_ARGS), patch.multiple(**PATCH_INFO_ARGS):  # type: ignore
         result = runner.invoke(main, default_cli_args, catch_exceptions=False)
     assert result.exit_code == 0
 
@@ -77,7 +77,7 @@ def test_eth_rpc(default_cli_args, provider_mock):
     """ The `eth-rpc` parameter must reach the `HTTPProvider` """
     runner = CliRunner()
     eth_rpc = "example.com:1234"
-    with patch.multiple(**PATCH_ARGS), patch.multiple(**PATCH_INFO_ARGS):
+    with patch.multiple(**PATCH_ARGS), patch.multiple(**PATCH_INFO_ARGS):  # type: ignore
         runner.invoke(main, default_cli_args + ["--eth-rpc", eth_rpc])
     provider_mock.assert_called_with(eth_rpc)
 
@@ -105,7 +105,7 @@ def test_registry_address(default_cli_args):
 def test_confirmations(default_cli_args):
     """ The `confirmations` parameter must reach the `PathfindingService` """
     runner = CliRunner()
-    with patch.multiple(**PATCH_ARGS) as mocks, patch.multiple(**PATCH_INFO_ARGS):
+    with patch.multiple(**PATCH_ARGS) as mocks, patch.multiple(**PATCH_INFO_ARGS):  # type: ignore
         confirmations = 77
         result = runner.invoke(
             main,
@@ -120,7 +120,7 @@ def test_confirmations(default_cli_args):
 def test_shutdown(default_cli_args):
     """ Clean shutdown after KeyboardInterrupt """
     runner = CliRunner()
-    with patch.multiple(**PATCH_ARGS) as mocks, patch.multiple(**PATCH_INFO_ARGS):
+    with patch.multiple(**PATCH_ARGS) as mocks, patch.multiple(**PATCH_INFO_ARGS):  # type: ignore
         mocks["PathfindingService"].return_value.get.side_effect = KeyboardInterrupt
         result = runner.invoke(main, default_cli_args, catch_exceptions=False)
         assert result.exit_code == 0
@@ -133,7 +133,7 @@ def test_shutdown(default_cli_args):
 def test_log_level(default_cli_args):
     """ Setting of log level via command line switch """
     runner = CliRunner()
-    with patch.multiple(**PATCH_ARGS), patch.multiple(**PATCH_INFO_ARGS), patch(
+    with patch.multiple(**PATCH_ARGS), patch.multiple(**PATCH_INFO_ARGS), patch(  # type: ignore
         "logging.basicConfig"
     ) as basic_config:
         for log_level in ("CRITICAL", "WARNING"):

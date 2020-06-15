@@ -26,7 +26,7 @@ def test_retries(make_post_request_mock):
     start_time = time()
     retry_times = []
 
-    def side_effect(*args, **kwargs):
+    def side_effect(*_args, **_kwargs):
         retry_times.append(time() - start_time)
         raise requests.exceptions.ConnectionError
 

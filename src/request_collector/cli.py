@@ -13,6 +13,7 @@ from request_collector.server import RequestCollector
 from monitoring_service.constants import MS_DISCLAIMER
 from monitoring_service.database import SharedDatabase
 from raiden.utils.cli import NetworkChoiceType
+from raiden_contracts.utils.type_aliases import PrivateKey
 from raiden_libs.cli import common_options, setup_sentry
 from raiden_libs.constants import CONFIRMATION_OF_UNDERSTANDING
 
@@ -51,7 +52,7 @@ log = structlog.get_logger(__name__)
 )
 @common_options("raiden-monitoring-service")
 def main(
-    private_key: str, state_db: str, matrix_server: List[str], accept_disclaimer: bool
+    private_key: PrivateKey, state_db: str, matrix_server: List[str], accept_disclaimer: bool
 ) -> int:
     """ The request collector for the monitoring service. """
     log.info("Starting Raiden Monitoring Request Collector")

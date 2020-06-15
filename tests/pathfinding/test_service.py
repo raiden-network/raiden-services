@@ -4,7 +4,7 @@ from typing import List
 from unittest.mock import Mock, call, patch
 
 import pytest
-from eth_utils import to_checksum_address
+from eth_utils import decode_hex, to_checksum_address
 
 from pathfinding_service.model.token_network import PFSFeeUpdate
 from pathfinding_service.service import PathfindingService
@@ -29,6 +29,7 @@ from raiden.utils.typing import (
 )
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
 from raiden_contracts.tests.utils import get_random_privkey
+from raiden_contracts.utils.type_aliases import PrivateKey
 from raiden_libs.events import (
     ReceiveChannelClosedEvent,
     ReceiveChannelOpenedEvent,
@@ -116,7 +117,7 @@ def test_crash(tmpdir, mockchain):  # pylint: disable=too-many-locals
     ]
     mockchain(events)
 
-    server_private_key = get_random_privkey()
+    server_private_key = PrivateKey(decode_hex(get_random_privkey()))
     contracts = {
         CONTRACT_TOKEN_NETWORK_REGISTRY: ContractMock(),
         CONTRACT_USER_DEPOSIT: ContractMock(),

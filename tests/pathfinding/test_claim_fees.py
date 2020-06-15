@@ -42,7 +42,7 @@ def test_claim_fees(  # pylint: disable=too-many-locals
     # Create IOUs from `iou_inputs`
     ious: List[IOU] = []
     for iou_dict in iou_inputs:
-        local_signer = LocalSigner(private_key=decode_hex(get_private_key(iou_dict["sender"])))
+        local_signer = LocalSigner(private_key=get_private_key(iou_dict["sender"]))
         iou = IOU(
             sender=iou_dict["sender"],
             receiver=pfs.address,
