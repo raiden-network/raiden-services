@@ -299,7 +299,7 @@ def register_account(
             function_call=service_registry_contract.functions.deposit(latest_deposit),
             task_name="Depositing to service registry",
         )
-        events = service_registry_contract.events.RegisteredService().processReceipt(  # type: ignore # noqa
+        events = service_registry_contract.events.RegisteredService().processReceipt(
             receipt, errors=DISCARD
         )
         assert len(events) == 1
