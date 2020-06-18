@@ -105,11 +105,7 @@ def query_blockchain_events(
         All matching events
     """
     filter_params = FilterParams(
-        {
-            "fromBlock": from_block,
-            "toBlock": to_block,
-            "address": contract_addresses,  # type: ignore
-        }
+        {"fromBlock": from_block, "toBlock": to_block, "address": contract_addresses}
     )
 
     events = web3.eth.getLogs(filter_params)
