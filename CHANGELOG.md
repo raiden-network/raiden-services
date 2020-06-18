@@ -1,5 +1,16 @@
 # Changelog
 
+### 0.11.0 (2020-06-18)
+
+* MS/PFS: Minimize ETH-RPC requests by batching token network event queries (https://github.com/raiden-network/raiden-services/pull/793)
+* MS/PFS: Optimize event decoding (https://github.com/raiden-network/raiden-services/pull/795)
+* MS/PFS: Introduce adaptive blockchain event filtering (https://github.com/raiden-network/raiden-services/issues/782)
+* MS/PFS: Handle `DeprecationSwitch` event properly (https://github.com/raiden-network/raiden-services/issues/787)
+* MS/PFS: Update to latest Raiden release (https://github.com/raiden-network/raiden-services/pull/800)
+* MS: Prepare API for the MS (not publicly available yet) (https://github.com/raiden-network/raiden-services/pull/797)
+* RSB: Check for deprecation of service registry before withdraw (https://github.com/raiden-network/raiden-services/pull/792)
+* RSB: Check if IOUs expiration is still valid when collection fees (https://github.com/raiden-network/raiden-services/pull/790)
+
 ### 0.10.0 (2020-05-20)
 
 * PFS: Improve error messages (https://github.com/raiden-network/raiden-services/pull/779)
