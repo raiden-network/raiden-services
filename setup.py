@@ -49,12 +49,13 @@ setup(
     zip_safe=False,
     classifiers=[
         # complete classifier list: http://pypi.python.org/pypi?%3Aaction=list_classifiers
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",
         "Natural Language :: English",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
     ],
     keywords=["raiden", "ethereum", "blockchain"],
     install_requires=[read_requirements("requirements.txt")],
