@@ -4,7 +4,6 @@ from unittest.mock import DEFAULT, MagicMock, Mock, patch
 
 import pytest
 from click.testing import CliRunner
-from tests.libs.mocks.web3 import Web3Mock
 
 from pathfinding_service.cli import main
 from raiden_contracts.constants import (
@@ -13,6 +12,7 @@ from raiden_contracts.constants import (
     CONTRACT_TOKEN_NETWORK_REGISTRY,
     CONTRACT_USER_DEPOSIT,
 )
+from tests.libs.mocks.web3 import Web3Mock
 
 PATCH_ARGS = {
     "target": "pathfinding_service.cli",

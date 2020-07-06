@@ -5,7 +5,6 @@ from unittest.mock import Mock
 import pytest
 from eth_typing import BlockNumber
 from eth_utils import decode_hex, to_checksum_address
-from tests.libs.mocks.web3 import Web3Mock
 
 from monitoring_service.api import MSApi
 from monitoring_service.constants import API_PATH
@@ -19,6 +18,7 @@ from raiden_contracts.constants import (
 )
 from raiden_contracts.utils.type_aliases import PrivateKey
 from raiden_libs.constants import DEFAULT_API_HOST
+from tests.libs.mocks.web3 import Web3Mock
 
 
 @pytest.fixture(scope="session")

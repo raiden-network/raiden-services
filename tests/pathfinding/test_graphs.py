@@ -6,7 +6,6 @@ from typing import List
 
 import pytest
 from eth_utils import to_canonical_address, to_checksum_address
-from tests.pathfinding.utils import SimpleReachabilityContainer
 
 from pathfinding_service.constants import DIVERSITY_PEN_DEFAULT
 from pathfinding_service.model import ChannelView, TokenNetwork
@@ -22,6 +21,7 @@ from raiden.utils.typing import (
     TokenAmount,
     TokenNetworkAddress,
 )
+from tests.pathfinding.utils import SimpleReachabilityContainer
 
 
 def test_edge_weight(addresses):

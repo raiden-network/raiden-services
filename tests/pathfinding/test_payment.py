@@ -1,7 +1,7 @@
 import pytest
 from eth_utils import decode_hex, to_canonical_address
 
-import pathfinding_service.exceptions as exceptions
+from pathfinding_service import exceptions
 from pathfinding_service.api import process_payment
 from raiden.utils.typing import Address, TokenAmount
 from raiden_contracts.tests.utils import get_random_privkey

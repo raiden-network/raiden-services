@@ -3,7 +3,6 @@ from datetime import datetime
 from typing import List
 
 import pytest
-from tests.pathfinding.utils import SimpleReachabilityContainer
 
 from pathfinding_service.model import ChannelView
 from pathfinding_service.model.token_network import TokenNetwork
@@ -24,6 +23,7 @@ from raiden.utils.typing import (
     TokenAmount as TA,
     TokenNetworkAddress,
 )
+from tests.pathfinding.utils import SimpleReachabilityContainer
 
 
 class PrettyBytes(bytes):

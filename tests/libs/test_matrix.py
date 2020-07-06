@@ -8,11 +8,6 @@ from unittest.mock import Mock, patch
 
 import pytest
 from eth_utils import encode_hex, to_canonical_address
-from tests.pathfinding.test_fee_updates import (
-    PRIVATE_KEY_1,
-    PRIVATE_KEY_1_ADDRESS,
-    get_fee_update_message,
-)
 
 from monitoring_service.states import HashedBalanceProof
 from raiden.messages.monitoring_service import RequestMonitoring
@@ -32,6 +27,11 @@ from raiden_libs.matrix import (
     RateLimiter,
     deserialize_messages,
     matrix_http_retry_delay,
+)
+from tests.pathfinding.test_fee_updates import (
+    PRIVATE_KEY_1,
+    PRIVATE_KEY_1_ADDRESS,
+    get_fee_update_message,
 )
 
 INVALID_PEER_ADDRESS = Address(to_canonical_address("0x" + "1" * 40))

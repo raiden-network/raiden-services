@@ -1,7 +1,6 @@
 import random
 
 from eth_utils import decode_hex
-from tests.constants import TEST_MSC_ADDRESS
 
 from monitoring_service.states import (
     Channel,
@@ -25,6 +24,7 @@ from raiden.utils.typing import (
 from raiden_contracts.constants import ChannelState
 from raiden_contracts.utils.type_aliases import PrivateKey
 from raiden_libs.utils import private_key_to_address
+from tests.constants import TEST_MSC_ADDRESS
 
 DEFAULT_TOKEN_NETWORK_ADDRESS = TokenNetworkAddress(bytes([1] * 20))
 DEFAULT_TOKEN_ADDRESS = TokenAddress(bytes([9] * 20))

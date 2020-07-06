@@ -5,8 +5,6 @@ from unittest.mock import patch
 
 import pytest
 from eth_utils import to_canonical_address
-from request_collector.server import RequestCollector
-from tests.constants import TEST_MSC_ADDRESS
 from web3 import Web3
 
 from monitoring_service.database import Database
@@ -24,6 +22,8 @@ from raiden_contracts.constants import (
     CONTRACT_TOKEN_NETWORK_REGISTRY,
     CONTRACT_USER_DEPOSIT,
 )
+from request_collector.server import RequestCollector
+from tests.constants import TEST_MSC_ADDRESS
 
 log = logging.getLogger(__name__)
 

@@ -5,13 +5,13 @@ from typing import Dict, List
 import gevent
 import pytest
 from eth_account import Account
-from tests.constants import KEYSTORE_FILE_NAME, KEYSTORE_PASSWORD
 from web3 import Web3
 
 from raiden.utils.typing import BlockNumber, TokenNetworkAddress
 from raiden_contracts.contract_manager import ContractManager, contracts_precompiled_path
 from raiden_libs.events import Event
 from raiden_libs.states import BlockchainState
+from tests.constants import KEYSTORE_FILE_NAME, KEYSTORE_PASSWORD
 
 log = logging.getLogger(__name__)
 

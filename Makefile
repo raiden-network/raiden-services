@@ -1,5 +1,5 @@
 CODE_DIRS = src/ tests/ setup.py
-ISORT_PARAMS = --ignore-whitespace --settings-path . --recursive $(CODE_DIRS)
+ISORT_PARAMS = --ignore-whitespace --settings-path . $(CODE_DIRS)
 
 all: lint
 

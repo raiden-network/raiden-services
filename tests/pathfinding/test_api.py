@@ -11,9 +11,8 @@ from eth_utils import (
     to_checksum_address,
     to_normalized_address,
 )
-from tests.pathfinding.test_database import db_has_feedback_for
 
-import pathfinding_service.exceptions as exceptions
+from pathfinding_service import exceptions
 from pathfinding_service.api import DEFAULT_MAX_PATHS, PFSApi, last_failed_requests
 from pathfinding_service.constants import DEFAULT_INFO_MESSAGE
 from pathfinding_service.model import IOU, TokenNetwork
@@ -33,6 +32,7 @@ from raiden.utils.typing import (
 from raiden_contracts.tests.utils import get_random_privkey
 from raiden_contracts.utils.type_aliases import PrivateKey
 from raiden_libs.utils import private_key_to_address
+from tests.pathfinding.test_database import db_has_feedback_for
 
 ID_12 = 12
 ID_123 = 123
