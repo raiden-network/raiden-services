@@ -2,7 +2,6 @@ from typing import Callable
 
 import gevent
 from eth_utils import decode_hex, encode_hex, to_canonical_address
-from request_collector.server import RequestCollector
 from web3 import Web3
 
 from monitoring_service.service import MonitoringService, handle_event
@@ -17,6 +16,7 @@ from raiden.utils.typing import (
 )
 from raiden_contracts.constants import LOCKSROOT_OF_NO_LOCKS, MonitoringServiceEvent
 from raiden_libs.blockchain import query_blockchain_events
+from request_collector.server import RequestCollector
 
 
 def create_ms_contract_events_query(web3: Web3, contract_address: Address) -> Callable:

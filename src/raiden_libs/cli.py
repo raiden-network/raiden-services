@@ -72,7 +72,7 @@ def start_profiler(output_dir: Optional[str]) -> Optional[Any]:
     if not output_dir:
         return None
 
-    from raiden.utils.profiling.sampler import SignalSampler, FlameGraphCollector
+    from raiden.utils.profiling.sampler import FlameGraphCollector, SignalSampler
 
     os.makedirs(output_dir, exist_ok=True)
     now = datetime.datetime.now()

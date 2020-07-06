@@ -22,9 +22,8 @@ from prometheus_client import make_wsgi_app
 from web3 import Web3
 from werkzeug.exceptions import NotFound
 from werkzeug.middleware.dispatcher import DispatcherMiddleware
-
-import pathfinding_service.exceptions as exceptions
 from pathfinding_service import metrics
+from pathfinding_service import exceptions
 from pathfinding_service.constants import (
     API_PATH,
     CACHE_TIMEOUT_SUGGEST_PARTNER,

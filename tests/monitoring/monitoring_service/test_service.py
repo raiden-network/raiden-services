@@ -1,8 +1,6 @@
 from typing import Callable
 from unittest.mock import Mock, patch
 
-from tests.monitoring.monitoring_service.factories import DEFAULT_TOKEN_NETWORK_ADDRESS
-from tests.monitoring.monitoring_service.test_handlers import create_default_token_network
 from web3 import Web3
 
 from monitoring_service.events import ActionMonitoringTriggeredEvent, ScheduledEvent
@@ -13,6 +11,8 @@ from raiden.tests.utils.factories import (
     make_transaction_hash,
 )
 from raiden.utils.typing import BlockNumber
+from tests.monitoring.monitoring_service.factories import DEFAULT_TOKEN_NETWORK_ADDRESS
+from tests.monitoring.monitoring_service.test_handlers import create_default_token_network
 
 
 def test_check_pending_transactions(

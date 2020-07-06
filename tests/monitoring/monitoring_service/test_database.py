@@ -1,11 +1,6 @@
 import random
 
 from eth_utils import to_checksum_address
-from tests.monitoring.monitoring_service.factories import (
-    DEFAULT_TOKEN_NETWORK_ADDRESS,
-    create_channel,
-    create_signed_monitor_request,
-)
 
 from monitoring_service.database import Database
 from monitoring_service.events import ActionMonitoringTriggeredEvent, ScheduledEvent
@@ -21,6 +16,11 @@ from raiden.utils.typing import (
     TransactionHash,
 )
 from raiden_libs.database import hex256
+from tests.monitoring.monitoring_service.factories import (
+    DEFAULT_TOKEN_NETWORK_ADDRESS,
+    create_channel,
+    create_signed_monitor_request,
+)
 
 
 def test_scheduled_events(ms_database: Database):
