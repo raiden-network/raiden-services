@@ -1,7 +1,9 @@
 import collections
+import json
 import sys
 import time
 from dataclasses import asdict
+from pathlib import Path
 from typing import Dict, List, Optional
 
 import gevent
@@ -20,6 +22,7 @@ from pathfinding_service.exceptions import (
 )
 from pathfinding_service.model import TokenNetwork
 from pathfinding_service.model.channel import Channel
+from pathfinding_service.model.claim import Claim
 from pathfinding_service.typing import DeferableMessage
 from raiden.constants import PATH_FINDING_BROADCASTING_ROOM, UINT256_MAX
 from raiden.messages.abstract import Message
@@ -65,6 +68,7 @@ class PathfindingService(gevent.Greenlet):
         required_confirmations: BlockTimeout,
         poll_interval: float,
         matrix_servers: Optional[List[str]] = None,
+        claims_file: Optional[Path] = None,
     ):
         super().__init__()
 
@@ -75,6 +79,7 @@ class PathfindingService(gevent.Greenlet):
         self.chain_id = ChainID(web3.eth.chainId)
         self.address = private_key_to_address(private_key)
         self.required_confirmations = required_confirmations
+        self.claims_file = claims_file
         self._poll_interval = poll_interval
         self._is_running = gevent.event.Event()
 
@@ -139,6 +144,8 @@ class PathfindingService(gevent.Greenlet):
             registry_address=self.registry_address,
             start_block=self.database.get_latest_committed_block(),
         )
+        self._process_claims_file()
+
         while not self._is_running.is_set():
             self._process_new_blocks(
                 BlockNumber(self.web3.eth.blockNumber - self.required_confirmations)
@@ -151,6 +158,47 @@ class PathfindingService(gevent.Greenlet):
             # Sleep, then collect errors from greenlets
             gevent.sleep(self._poll_interval)
             gevent.joinall({self.matrix_listener}, timeout=0, raise_error=True)
+
+    def _process_claims_file(self) -> None:
+        if self.claims_file is None:
+            return
+
+        log.info("Reading claims from file", claims_file=self.claims_file)
+        claims_data = json.loads(self.claims_file.read_text())
+
+        operator = to_canonical_address(claims_data["operator"])
+        claims = [Claim.Schema().load(claim) for claim in claims_data["claims"]]
+
+        for claim in claims:
+            log.debug("Processing claim", claim=claim)
+            assert claim.signer() == operator, "Claim not signed by operator"
+
+            # Create token network if it doesn't exist yet
+            token_network = self.get_token_network(claim.token_network_address)
+            if token_network is None:
+                self.handle_token_network_created(
+                    ReceiveTokenNetworkCreatedEvent(
+                        token_network_address=claim.token_network_address,
+                        token_address=claim.token_network_address,
+                        block_number=BlockNumber(0),  # FIXME: use better value
+                    )
+                )
+                token_network = self.get_token_network(claim.token_network_address)
+            assert token_network is not None
+
+            # Calculate the channel id and check if channel already exists
+            channel_id = claim.channel_id()
+            if channel_id not in token_network.channel_id_to_addresses:
+                self.handle_channel_opened(
+                    ReceiveChannelOpenedEvent(
+                        token_network_address=claim.token_network_address,
+                        channel_identifier=channel_id,
+                        participant1=claim.owner,
+                        participant2=claim.partner,
+                        settle_timeout=BlockTimeout(30),  # FIXME: read from contract
+                        block_number=BlockNumber(0),  # FIXME: use better value
+                    )
+                )
 
     def _process_new_blocks(self, latest_confirmed_block: BlockNumber) -> None:
         start = time.monotonic()
