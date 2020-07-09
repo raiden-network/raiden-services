@@ -4,7 +4,8 @@ from gevent import monkey, config  # isort:skip # noqa
 config.resolver = ["dnspython", "ares", "block"]  # noqa
 monkey.patch_all(subprocess=False, thread=False)  # isort:skip # noqa
 
-from typing import Dict, List
+from pathlib import Path
+from typing import Dict, List, Optional
 
 import click
 import gevent
@@ -82,6 +83,11 @@ log = structlog.get_logger(__name__)
     help="Bypass the experimental software disclaimer prompt",
     is_flag=True,
 )
+@click.option(
+    "--claims-file",
+    type=click.Path(exists=True),
+    help="The location of the claims file to be used",
+)
 @common_options("raiden-pathfinding-service")
 def main(  # pylint: disable=too-many-arguments,too-many-locals
     private_key: PrivateKey,
@@ -98,6 +104,7 @@ def main(  # pylint: disable=too-many-arguments,too-many-locals
     enable_debug: bool,
     matrix_server: List[str],
     accept_disclaimer: bool,
+    claims_file: Optional[Path],
 ) -> int:
     """ The Pathfinding service for the Raiden Network. """
     log.info("Starting Raiden Pathfinding Service")
@@ -122,6 +129,7 @@ def main(  # pylint: disable=too-many-arguments,too-many-locals
             poll_interval=DEFAULT_POLL_INTERVALL,
             db_filename=state_db,
             matrix_servers=matrix_server,
+            claims_file=claims_file,
         )
         service.start()
         log.debug("Waiting for service to start before accepting API requests")
