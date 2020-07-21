@@ -2,7 +2,7 @@ import os
 from typing import List
 from unittest.mock import Mock
 
-from eth_utils import decode_hex, encode_hex, to_canonical_address, to_checksum_address
+from eth_utils import encode_hex, to_canonical_address, to_checksum_address
 from tests.constants import TEST_MSC_ADDRESS
 
 from monitoring_service.events import ActionMonitoringTriggeredEvent
@@ -81,7 +81,7 @@ def test_crash(
     ]
     mockchain(events)
 
-    server_private_key = PrivateKey(decode_hex(get_random_privkey()))
+    server_private_key = PrivateKey(get_random_privkey())
 
     contracts = {
         CONTRACT_TOKEN_NETWORK_REGISTRY: ContractMock(),
