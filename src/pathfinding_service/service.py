@@ -22,11 +22,11 @@ from pathfinding_service.exceptions import (
 )
 from pathfinding_service.model import TokenNetwork
 from pathfinding_service.model.channel import Channel
-from pathfinding_service.model.claim import Claim
 from pathfinding_service.typing import DeferableMessage
 from raiden.constants import PATH_FINDING_BROADCASTING_ROOM, UINT256_MAX
 from raiden.messages.abstract import Message
 from raiden.messages.path_finding_service import PFSCapacityUpdate, PFSFeeUpdate
+from raiden.storage.serialization.serializer import DictSerializer
 from raiden.utils.typing import BlockNumber, BlockTimeout, ChainID, TokenNetworkAddress
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
 from raiden_contracts.utils.type_aliases import PrivateKey
@@ -167,11 +167,14 @@ class PathfindingService(gevent.Greenlet):
         claims_data = json.loads(self.claims_file.read_text())
 
         operator = to_canonical_address(claims_data["operator"])
-        claims = [Claim.Schema().load(claim) for claim in claims_data["claims"]]
+        claims = [
+            DictSerializer.deserialize({"_type": "raiden.transfer.state.Claim", **claim})
+            for claim in claims_data["claims"]
+        ]
 
         for claim in claims:
             log.debug("Processing claim", claim=claim)
-            assert claim.signer() == operator, "Claim not signed by operator"
+            assert claim.signer == operator, "Claim not signed by operator"
 
             # Create token network if it doesn't exist yet
             token_network = self.get_token_network(claim.token_network_address)
@@ -187,7 +190,7 @@ class PathfindingService(gevent.Greenlet):
             assert token_network is not None
 
             # Calculate the channel id and check if channel already exists
-            channel_id = claim.channel_id()
+            channel_id = claim.channel_id
             if channel_id not in token_network.channel_id_to_addresses:
                 self.handle_channel_opened(
                     ReceiveChannelOpenedEvent(
