@@ -34,6 +34,7 @@ from pathfinding_service.model.feedback import FeedbackToken
 from pathfinding_service.model.token_network import Path, TokenNetwork
 from pathfinding_service.service import PathfindingService
 from raiden.exceptions import InvalidSignature
+from raiden.network.transport.matrix.utils import UserPresence
 from raiden.utils.signer import recover
 from raiden.utils.typing import (
     Address,
@@ -497,12 +498,22 @@ class DebugStatsResource(PathfinderResource):
         num_successful = self.pathfinding_service.database.get_num_routes_feedback(
             only_successful=True
         )
+        user_manager = self.pathfinding_service.matrix_listener.user_manager
+        num_online_nodes = len(
+            [
+                presence
+                # pylint: disable=protected-access
+                for presence in user_manager._userid_to_presence.values()
+                if presence == UserPresence.ONLINE
+            ]
+        )
 
         return (
             {
                 "total_calculated_routes": num_calculated_routes,
                 "total_feedback_received": num_feedback_received,
                 "total_successful_routes": num_successful,
+                "online_nodes": num_online_nodes,
             },
             200,
         )
