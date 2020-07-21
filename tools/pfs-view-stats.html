@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<title>PFS Info Viewer</title>
+<style>
+.chart-container {
+	width: 30rem;
+	height: 15rem;
+}
+</style>
+
+<h1>PFS Info Viewer</h1>
+
+<label>
+	PFS URL: <input id="pfs-url" size="35">
+</label>
+
+<dl>
+	<!--dt>total_calculated_routes</dt>
+	<dd id="total_calculated_routes"></dd-->
+
+	<dt>total_successful_routes</dt>
+	<dd id="total_successful_routes"></dd>
+
+	<dt>Online Nodes (with open channels)</dt>
+	<dd>
+		<span id="online_nodes"></span>
+		<div class="chart-container">
+			<canvas id="online_nodes_chart"></canvas>
+		</div>
+	</dd>
+	<dt>Successful Transfers</dt>
+	<dd>
+		<span id="new_successful_routes"></span>
+		<div class="chart-container">
+			<canvas id="new_successful_routes_chart"></canvas>
+		</div>
+	</dd>
+
+	<dt>Transfers per Second</dt>
+	<dd id="tps"></dd>
+</dl>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.bundle.min.js" integrity="sha512-vBmx0N/uQOXznm/Nbkp7h0P1RfLSj0HQrFSzV8m7rOGyj30fYAOKHYvCNez+yM8IrfnW0TCodDEjRqf6fodf/Q==" crossorigin="anonymous"></script>
+<script>
+	const interval = 3;
+
+	var commonOptions = {
+		scales: {
+			xAxes: [{
+				type: 'time',
+				time: {unit: 'second'}
+			}],
+			yAxes: [{
+				ticks: {min: 0}
+			}]
+		},
+		maintainAspectRatio: false,
+	};
+
+	var charts = {
+		online_nodes: new Chart(
+			document.getElementById('online_nodes_chart').getContext('2d'),
+			{
+				type: 'line',
+				data: {
+					datasets: [{
+									label: 'Online Nodes',
+									backgroundColor: 'rgb(255, 99, 132)',
+									borderColor: 'rgb(255, 99, 132)',
+									data: []
+								}]
+				},
+				options: commonOptions
+			}
+		),
+		new_successful_routes: new Chart(
+			document.getElementById('new_successful_routes_chart').getContext('2d'),
+			{
+				type: 'line',
+				data: {
+					datasets: [{
+									label: 'Successful Transfers',
+									backgroundColor: 'green',
+									borderColor: 'green',
+									data: []
+								}]
+				},
+				options: commonOptions
+			}
+		)
+	};
+
+	function addData(chart, label, data) {
+		chart.data.labels.push(label);
+		chart.data.datasets[0].data.push(data);
+		if (chart.data.labels.length > 20) {
+			chart.data.labels.shift();
+			chart.data.datasets[0].data.shift();
+		}
+		chart.update();
+	}
+
+	function update() {
+		const url = document.getElementById('pfs-url').value + '/api/v1/_debug/stats';
+		const myRequest = new Request(url);
+		fetch(myRequest)
+		  .then(response => response.json())
+		  .then(data => {
+			  // Generate last_successful_routes entry
+			  if (typeof last_successful_routes === 'undefined') {
+				  last_successful_routes = data.total_successful_routes;
+			  }
+			  data.new_successful_routes = data.total_successful_routes - last_successful_routes;
+			  last_successful_routes = data.total_successful_routes;
+
+			  const routes_data = charts.new_successful_routes.data.datasets[0].data;
+			  const tps = routes_data.reduce((a, b) => a + b, 0) / (routes_data.length || 1) / interval;
+			  document.getElementById('tps').innerHTML = tps.toFixed(2);
+
+			  // Update chart
+			  for (const key in data) {
+				element = document.getElementById(key);
+				if (element) {
+					element.innerHTML = data[key];
+					if (charts[key]) {
+						addData(charts[key], new Date(), data[key]);
+					}
+				}
+			  }
+		  })
+		  .catch(console.error);
+	}
+
+	update();
+	setInterval(update, interval * 1000);
+</script>
+
