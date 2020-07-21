@@ -7,6 +7,7 @@ Therefore, usually mocked_integration should be used.
 from typing import List
 from unittest.mock import Mock, patch
 
+import pytest
 from eth_utils import decode_hex, encode_hex, to_canonical_address
 
 from monitoring_service.states import HashedBalanceProof
@@ -23,6 +24,7 @@ from raiden_contracts.constants import (
 from raiden_contracts.utils.type_aliases import PrivateKey
 
 
+@pytest.mark.skip()
 def test_pfs_with_mocked_client(  # pylint: disable=too-many-arguments
     web3,
     token_network_registry_contract,
