@@ -84,9 +84,7 @@ log = structlog.get_logger(__name__)
     is_flag=True,
 )
 @click.option(
-    "--claims-file",
-    type=click.Path(exists=True),
-    help="The location of the claims file to be used",
+    "--claims-file", type=click.File(), help="The location of the claims file to be used",
 )
 @common_options("raiden-pathfinding-service")
 def main(  # pylint: disable=too-many-arguments,too-many-locals

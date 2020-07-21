@@ -3,8 +3,7 @@ import json
 import sys
 import time
 from dataclasses import asdict
-from pathlib import Path
-from typing import Dict, List, Optional
+from typing import IO, Dict, List, Optional
 
 import gevent
 import sentry_sdk
@@ -68,7 +67,7 @@ class PathfindingService(gevent.Greenlet):
         required_confirmations: BlockTimeout,
         poll_interval: float,
         matrix_servers: Optional[List[str]] = None,
-        claims_file: Optional[Path] = None,
+        claims_file: Optional[IO] = None,
     ):
         super().__init__()
 
@@ -164,12 +163,12 @@ class PathfindingService(gevent.Greenlet):
             return
 
         log.info("Reading claims from file", claims_file=self.claims_file)
-        claims_data = json.loads(self.claims_file.read_text())
+        claims_data = [json.loads(line) for line in self.claims_file.readlines()]
 
-        operator = to_canonical_address(claims_data["operator"])
+        operator = to_canonical_address(claims_data.pop(0)["operator"])
         claims = [
             DictSerializer.deserialize({"_type": "raiden.transfer.state.Claim", **claim})
-            for claim in claims_data["claims"]
+            for claim in claims_data
         ]
 
         for claim in claims:
