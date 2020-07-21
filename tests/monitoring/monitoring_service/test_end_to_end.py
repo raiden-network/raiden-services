@@ -1,6 +1,7 @@
 from typing import Callable
 
 import gevent
+import pytest
 from eth_utils import decode_hex, encode_hex, to_canonical_address
 from request_collector.server import RequestCollector
 from web3 import Web3
@@ -15,7 +16,11 @@ from raiden.utils.typing import (
     TokenAmount,
     TokenNetworkAddress,
 )
-from raiden_contracts.constants import LOCKSROOT_OF_NO_LOCKS, MonitoringServiceEvent
+from raiden_contracts.constants import (
+    LOCKSROOT_OF_NO_LOCKS,
+    TEST_SETTLE_TIMEOUT_MIN,
+    MonitoringServiceEvent,
+)
 from raiden_libs.blockchain import query_blockchain_events
 
 
@@ -31,6 +36,7 @@ def create_ms_contract_events_query(web3: Web3, contract_address: Address) -> Ca
     return f
 
 
+@pytest.mark.skip("monitoring not needed for PoC")
 def test_first_allowed_monitoring(
     web3: Web3,
     monitoring_service_contract,
@@ -55,7 +61,7 @@ def test_first_allowed_monitoring(
     assert service_registry.functions.hasValidRegistration(monitoring_service.address).call()
 
     # each client does a transfer
-    channel_id = create_channel(c1, c2, settle_timeout=10)[0]
+    channel_id = create_channel(c1, c2)[0]
 
     shared_bp_args = dict(
         channel_identifier=channel_id,
@@ -102,12 +108,13 @@ def test_first_allowed_monitoring(
         balance_proof_c1.nonce,
         balance_proof_c1.additional_hash,
         balance_proof_c1.signature,
+        0,
         balance_proof_c1.get_counter_signature(get_private_key(c2)),
     ).transact({"from": c2})
 
     monitoring_service._process_new_blocks(web3.eth.blockNumber)
     triggered_events = monitoring_service.database.get_scheduled_events(
-        max_trigger_block=BlockNumber(web3.eth.blockNumber + 10)
+        max_trigger_block=BlockNumber(web3.eth.blockNumber + TEST_SETTLE_TIMEOUT_MIN)
     )
     assert len(triggered_events) == 1
 
@@ -138,6 +145,7 @@ def test_first_allowed_monitoring(
     assert [e.event for e in query()] == [MonitoringServiceEvent.NEW_BALANCE_PROOF_RECEIVED]
 
 
+@pytest.mark.skip("monitoring not needed for PoC")
 def test_e2e(  # pylint: disable=too-many-arguments,too-many-locals
     web3,
     monitoring_service_contract,
