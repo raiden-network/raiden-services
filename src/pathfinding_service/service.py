@@ -163,15 +163,16 @@ class PathfindingService(gevent.Greenlet):
             return
 
         log.info("Reading claims from file", claims_file=self.claims_file)
-        claims_data = [json.loads(line) for line in self.claims_file.readlines()]
 
-        operator = to_canonical_address(claims_data.pop(0)["operator"])
-        claims = [
-            DictSerializer.deserialize({"_type": "raiden.transfer.state.Claim", **claim})
-            for claim in claims_data
-        ]
+        metadata = json.loads(self.claims_file.readline())
+        operator = to_canonical_address(metadata["operator"])
 
-        for claim in claims:
+        for claim_json in self.claims_file.readlines():
+            claim_data = json.loads(claim_json)
+            claim = DictSerializer.deserialize(
+                {"_type": "raiden.transfer.state.Claim", **claim_data}
+            )
+
             log.debug("Processing claim", claim=claim)
             assert claim.signer == operator, "Claim not signed by operator"
 
