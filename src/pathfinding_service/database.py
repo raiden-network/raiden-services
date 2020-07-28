@@ -348,3 +348,7 @@ class PFSDatabase(BaseDatabase):
             "DELETE FROM waiting_message WHERE token_network_address = ? AND channel_id = ?",
             [to_checksum_address(token_network_address), hex256(channel_id)],
         )
+
+    def clear(self) -> None:
+        self.conn.close()
+        os.unlink(self.filename)
