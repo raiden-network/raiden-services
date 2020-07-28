@@ -1,4 +1,5 @@
 import collections
+import json
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, ClassVar, Dict, List, Optional, Tuple, Type, TypeVar, cast
@@ -506,6 +507,21 @@ class DebugStatsResource(PathfinderResource):
             },
             200,
         )
+
+
+class DebugReloadClaimsResource(PathfinderResource):
+    def post(self, post_data: str) -> Tuple[dict, int]:
+        try:
+            data = []
+            for line in post_data.split("\n"):
+                data.append(json.loads(line.strip()))
+            claims = self.pathfinding_service.parse_claims_data(data)
+            self.pathfinding_service.database.clear()
+            self.pathfinding_service.write_claims_file(claims)
+            self.pathfinding_service.trigger_restart()
+            return ({"claims_written": True}, 200)
+        except Exception as ex:
+            return ({"claims_written": False, "msg": str(ex)}, 409)
 
 
 class PFSApi:
