@@ -29,7 +29,6 @@ from raiden.storage.serialization.serializer import DictSerializer
 from raiden.utils.typing import BlockNumber, BlockTimeout, ChainID, TokenNetworkAddress
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
 from raiden_contracts.utils.type_aliases import PrivateKey
-from raiden_libs.blockchain import get_blockchain_events_adaptive
 from raiden_libs.constants import MATRIX_START_TIMEOUT
 from raiden_libs.events import (
     Event,
@@ -214,12 +213,7 @@ class PathfindingService(gevent.Greenlet):
             f"Is the db accidentally shared by two PFSes?"
         )
 
-        events = get_blockchain_events_adaptive(
-            web3=self.web3,
-            blockchain_state=self.blockchain_state,
-            token_network_addresses=list(self.token_networks.keys()),
-            latest_confirmed_block=latest_confirmed_block,
-        )
+        events = None
 
         if events is None:
             return
