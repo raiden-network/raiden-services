@@ -1,4 +1,5 @@
 import collections
+import gzip
 import json
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -16,10 +17,12 @@ from eth_utils import (
 )
 from flask import Flask, Response, request
 from flask_restful import Resource
+from flask_restful.reqparse import RequestParser
 from gevent.pywsgi import WSGIServer
 from marshmallow import fields
 from marshmallow_dataclass import add_schema
 from web3 import Web3
+from werkzeug.datastructures import FileStorage
 
 import pathfinding_service.exceptions as exceptions
 from pathfinding_service.constants import (
@@ -197,7 +200,7 @@ class PathsResource(PathfinderResource):
         )
 
         return (
-            {"result": [p.to_dict() for p in paths], "feedback_token": feedback_token.uuid.hex},
+            {"result": [p.to_dict() for p in paths], "feedback_token": feedback_token.uuid.hex,},
             200,
         )
 
@@ -281,7 +284,7 @@ def process_payment(  # pylint: disable=too-many-branches
     required_deposit = round(expected_amount * UDC_SECURITY_MARGIN_FACTOR_PFS)
     if udc_balance < required_deposit:
         raise exceptions.DepositTooLow(
-            required_deposit=required_deposit, seen_deposit=udc_balance, block_number=latest_block
+            required_deposit=required_deposit, seen_deposit=udc_balance, block_number=latest_block,
         )
 
     log.info(
@@ -349,7 +352,7 @@ class FeedbackRequest:
     token: UUID = field(metadata={"required": True})
     success: bool = field(metadata={"required": True})
     path: List[Address] = field(
-        metadata={"marshmallow_field": fields.List(ChecksumAddress, many=True), "required": True}
+        metadata={"marshmallow_field": fields.List(ChecksumAddress, many=True), "required": True,}
     )
     Schema: ClassVar[Type[marshmallow.Schema]]
 
@@ -372,7 +375,7 @@ class FeedbackResource(PathfinderResource):
             return {}, 400
 
         updated_rows = self.pathfinding_service.database.update_feedback(
-            token=feedback_token, route=feedback_request.path, successful=feedback_request.success
+            token=feedback_token, route=feedback_request.path, successful=feedback_request.success,
         )
 
         if updated_rows > 0:
@@ -422,7 +425,10 @@ class InfoResource(PathfinderResource):
 
 class DebugPathResource(PathfinderResource):
     def get(  # pylint: disable=no-self-use
-        self, token_network_address: str, source_address: str, target_address: Optional[str] = None
+        self,
+        token_network_address: str,
+        source_address: str,
+        target_address: Optional[str] = None,
     ) -> Tuple[dict, int]:
         request_count = 0
         responses = []
@@ -509,19 +515,26 @@ class DebugStatsResource(PathfinderResource):
         )
 
 
-class DebugReloadClaimsResource(PathfinderResource):
-    def post(self, post_data: str) -> Tuple[dict, int]:
+class DebugLoadClaimsResource(PathfinderResource):
+    def post(self) -> Tuple[dict, int]:
+        parser = RequestParser()
+        parser.add_argument("file", type=FileStorage, location="files")
+        args = parser.parse_args()
+        claims_file: FileStorage = args.get("file")
+        if claims_file is None:
+            return {"claims_loaded": False, "error": "claims file missing"}, 400
+
+        log.debug("Claims file", content_type=claims_file.content_type)
+        stream = claims_file.stream
         try:
-            data = []
-            for line in post_data.split("\n"):
-                data.append(json.loads(line.strip()))
-            claims = self.pathfinding_service.parse_claims_data(data)
-            self.pathfinding_service.database.clear()
-            self.pathfinding_service.write_claims_file(claims)
-            self.pathfinding_service.trigger_restart()
-            return ({"claims_written": True}, 200)
+            if claims_file.content_type in {"application/gzip", "application/x-gzip"}:
+                stream = gzip.open(claims_file.stream, "rt")
+            self.pathfinding_service._process_claims_file(stream)
+            return {"claims_loaded": True}, 200
         except Exception as ex:
-            return ({"claims_written": False, "msg": str(ex)}, 409)
+            return {"claims_loaded": False, "error": str(ex)}, 500
+        finally:
+            stream.close()
 
 
 class PFSApi:
@@ -584,6 +597,7 @@ class PFSApi:
                     ),
                     ("/_debug/ious/<source_address>", DebugIOUResource, {}, "debug3"),
                     ("/_debug/stats", DebugStatsResource, {}, "debug4"),
+                    ("/_debug/reload_claims", DebugLoadClaimsResource, {}, "reload_claims",),
                 ]
             )
 

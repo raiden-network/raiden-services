@@ -3,7 +3,7 @@ import json
 import sys
 import time
 from dataclasses import asdict
-from typing import Any, IO, Dict, List, Optional
+from typing import IO, Dict, List, Optional, Text
 
 import gevent
 import sentry_sdk
@@ -26,7 +26,6 @@ from raiden.constants import PATH_FINDING_BROADCASTING_ROOM, UINT256_MAX
 from raiden.messages.abstract import Message
 from raiden.messages.path_finding_service import PFSCapacityUpdate, PFSFeeUpdate
 from raiden.storage.serialization.serializer import DictSerializer
-from raiden.utils.claim import Claim
 from raiden.utils.typing import BlockNumber, BlockTimeout, ChainID, TokenNetworkAddress
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
 from raiden_contracts.utils.type_aliases import PrivateKey
@@ -144,7 +143,8 @@ class PathfindingService(gevent.Greenlet):
             registry_address=self.registry_address,
             start_block=self.database.get_latest_committed_block(),
         )
-        self._process_claims_file()
+        if self.claims_file is not None:
+            self._process_claims_file(self.claims_file)
 
         while not self._is_running.is_set():
             self._process_new_blocks(
@@ -159,16 +159,13 @@ class PathfindingService(gevent.Greenlet):
             gevent.sleep(self._poll_interval)
             gevent.joinall({self.matrix_listener}, timeout=0, raise_error=True)
 
-    def _process_claims_file(self) -> None:
-        if self.claims_file is None:
-            return
+    def _process_claims_file(self, claims_file: IO[Text]) -> None:
+        log.info("Reading claims")
 
-        log.info("Reading claims from file", claims_file=self.claims_file)
-
-        metadata = json.loads(self.claims_file.readline())
+        metadata = json.loads(claims_file.readline())
         operator = to_canonical_address(metadata["operator"])
 
-        for claim_json in self.claims_file.readlines():
+        for claim_json in claims_file:
             claim_data = json.loads(claim_json)
             claim = DictSerializer.deserialize(
                 {"_type": "raiden.transfer.state.Claim", **claim_data}
@@ -203,54 +200,6 @@ class PathfindingService(gevent.Greenlet):
                         block_number=BlockNumber(0),  # FIXME: use better value
                     )
                 )
-
-    def parse_claims_data(self, data: List[dict]) -> List[Any]:  # really: List[dict, Claim,...]
-        result = []
-        metadata = data[0]
-        operator = to_canonical_address(metadata["operator"])
-        result.append(metadata)
-
-        for claim_data in data[1:]:
-            claim = DictSerializer.deserialize(
-                {"_type": "raiden.transfer.state.Claim", **claim_data}
-            )
-
-            log.debug("Processing claim", claim=claim)
-            if claim.signer != operator:
-                raise ValueError("Claim not signed by operator")
-
-            # Create token network if it doesn't exist yet
-            token_network = self.get_token_network(claim.token_network_address)
-            if token_network is None:
-                self.handle_token_network_created(
-                    ReceiveTokenNetworkCreatedEvent(
-                        token_network_address=claim.token_network_address,
-                        token_address=claim.token_network_address,
-                        block_number=BlockNumber(0),  # FIXME: use better value
-                    )
-                )
-                token_network = self.get_token_network(claim.token_network_address)
-            if token_network is None:
-                raise ValueError(f"Unknown TokenNetwork {claim.token_network_address}.")
-            result.append(claim)
-        return result
-
-    def write_claims_file(self, claims_data: List[Any]) -> None:
-        if self.claims_file is None:
-            log.info("Using default claims path '/claims/claims.json'")
-            claims_fn = "/claims/claims.json"
-        else:
-            claims_fn = self.claims_file.name
-            self.claims_file.close()
-        with open(claims_fn, "wt") as output_fd:
-            metadata = claims_data[0]
-            output_fd.write(json.dumps(metadata))
-            output_fd.write("\n")
-            for line in claims_data:
-                claim = line
-                msg = f"not a Claim {claim}"
-                assert isinstance(claim, Claim), msg
-                output_fd.write(json.dumps(claim.serialize()) + "\n")
 
     def trigger_restart(self, timeout: int = 5) -> None:
         gevent.spawn_later(timeout, self.stop)
@@ -349,7 +298,7 @@ class PathfindingService(gevent.Greenlet):
         # Handle messages for this channel which where received before ChannelOpened
         with self.database.conn:
             for message in self.database.pop_waiting_messages(
-                token_network_address=token_network.address, channel_id=event.channel_identifier
+                token_network_address=token_network.address, channel_id=event.channel_identifier,
             ):
                 log.debug("Processing deferred message", message=message)
                 self.handle_message(message)
@@ -482,7 +431,7 @@ class PathfindingService(gevent.Greenlet):
         log.debug("Received Capacity Update", message=message)
         self.database.upsert_capacity_update(message)
 
-        updating_capacity_partner, other_capacity_partner = self.database.get_capacity_updates(
+        (updating_capacity_partner, other_capacity_partner,) = self.database.get_capacity_updates(
             updating_participant=message.other_participant,
             token_network_address=TokenNetworkAddress(
                 message.canonical_identifier.token_network_address
