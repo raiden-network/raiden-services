@@ -47,9 +47,11 @@ from raiden.utils.typing import (
     TokenAmount,
     TokenNetworkAddress,
 )
+from raiden_contracts.constants import CONTRACT_CUSTOM_TOKEN
 from raiden_libs.api import ApiWithErrorHandler
 from raiden_libs.blockchain import get_pessimistic_udc_balance
 from raiden_libs.constants import UDC_SECURITY_MARGIN_FACTOR_PFS
+from raiden_libs.contract_info import CONTRACT_MANAGER
 from raiden_libs.exceptions import ApiException
 from raiden_libs.marshmallow import ChecksumAddress, HexedBytes
 
@@ -504,12 +506,30 @@ class DebugStatsResource(PathfinderResource):
         num_successful = self.pathfinding_service.database.get_num_routes_feedback(
             only_successful=True
         )
+        # token_address for Raiddit token as in " \
+        # https://github.com/raiden-network/raiden-contracts/blob/raiddit/raiden_contracts/data/" \
+        # deployment_goerli.json
+
+        token_network_address_raiddit = "0x0a197b12A2a6B5450610347e62c5Ec803022cB97"
+        raiddit_token_contract_address = "0x2D8142F642df7732d55BEa431b30aa78F176A783"
+
+        abi = CONTRACT_MANAGER.get_contract_abi(CONTRACT_CUSTOM_TOKEN)
+        raiddit_token_contract = self.pathfinding_service.web3.eth.contract(
+            abi=abi, address=Address(to_canonical_address(raiddit_token_contract_address))
+        )
+
+        total_burned = raiddit_token_contract.functions.balanceOf(
+            token_network_address_raiddit
+        ).call()
+        total_minted = raiddit_token_contract.functions.totalSupply().call()
 
         return (
             {
                 "total_calculated_routes": num_calculated_routes,
                 "total_feedback_received": num_feedback_received,
                 "total_successful_routes": num_successful,
+                "total_burned": total_burned,
+                "total_minted": total_minted,
             },
             200,
         )
