@@ -510,8 +510,8 @@ class DebugStatsResource(PathfinderResource):
         # https://github.com/raiden-network/raiden-contracts/blob/raiddit/raiden_contracts/data/" \
         # deployment_goerli.json
 
-        token_network_address_raiddit = "0x0a197b12A2a6B5450610347e62c5Ec803022cB97"
-        raiddit_token_contract_address = "0x2D8142F642df7732d55BEa431b30aa78F176A783"
+        token_network_address_raiddit = "0xf962EE5534f839257ae0950e3EDAa356a5fcA639"
+        raiddit_token_contract_address = "0x64249b026Cb2C20FdAe40c9d1D899F03f47105D4"
 
         abi = CONTRACT_MANAGER.get_contract_abi(CONTRACT_CUSTOM_TOKEN)
         raiddit_token_contract = self.pathfinding_service.web3.eth.contract(
