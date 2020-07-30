@@ -114,7 +114,7 @@
 			  last_successful_routes = data.total_successful_routes;
 
 			  const routes_data = charts.new_successful_routes.data.datasets[0].data;
-			  const tps = routes_data.reduce((a, b) => a + b, 0) / (routes_data.length || 1) / interval;
+			  const tps = routes_data.reduce((a, b) => a + b, 0) / (routes_data.filter(x => x > 0).length || 1) / interval;
 			  document.getElementById('tps').innerHTML = tps.toFixed(2);
 
 			  // Update chart
