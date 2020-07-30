@@ -233,7 +233,7 @@ class PathfindingService(gevent.Greenlet):
         raiddit_token_contract_address = "0x64249b026Cb2C20FdAe40c9d1D899F03f47105D4"
 
         abi = CONTRACT_MANAGER.get_contract_abi(CONTRACT_CUSTOM_TOKEN)
-        raiddit_token_contract = self.pathfinding_service.web3.eth.contract(
+        raiddit_token_contract = self.web3.eth.contract(
             abi=abi, address=Address(to_canonical_address(raiddit_token_contract_address))
         )
 
