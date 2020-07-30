@@ -1,10 +1,14 @@
 import collections
+
+from raiden_contracts.constants import CONTRACT_CUSTOM_TOKEN
+from raiden_libs.contract_info import CONTRACT_MANAGER
 import json
 import sys
 import time
 from dataclasses import asdict
 from typing import IO, Dict, List, Optional, Text
 
+from raiden.utils.typing import Address
 import gevent
 import sentry_sdk
 import structlog
@@ -80,6 +84,8 @@ class PathfindingService(gevent.Greenlet):
         self.claims_file = claims_file
         self._poll_interval = poll_interval
         self._is_running = gevent.event.Event()
+        self.total_burned = 0
+        self.total_minted = 0
 
         log.info("PFS payment address", address=self.address)
 
@@ -214,6 +220,27 @@ class PathfindingService(gevent.Greenlet):
         )
 
         events = None
+
+        if db_block >= latest_confirmed_block:
+            return
+        # store the minted/burned values in an instance variable on a new block
+
+        # token_address for Raiddit token as in " \
+        # https://github.com/raiden-network/raiden-contracts/blob/raiddit/raiden_contracts/data/" \
+        # deployment_goerli.json
+
+        token_network_address_raiddit = "0xf962EE5534f839257ae0950e3EDAa356a5fcA639"
+        raiddit_token_contract_address = "0x64249b026Cb2C20FdAe40c9d1D899F03f47105D4"
+
+        abi = CONTRACT_MANAGER.get_contract_abi(CONTRACT_CUSTOM_TOKEN)
+        raiddit_token_contract = self.pathfinding_service.web3.eth.contract(
+            abi=abi, address=Address(to_canonical_address(raiddit_token_contract_address))
+        )
+
+        self.total_burned = raiddit_token_contract.functions.balanceOf(
+            token_network_address_raiddit
+        ).call()
+        self.total_minted = raiddit_token_contract.functions.totalSupply().call()
 
         if events is None:
             return
