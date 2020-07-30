@@ -488,6 +488,17 @@ class TokenNetwork:
             fee_penalty=fee_penalty,
         )
 
+        if self.G.has_edge(source, target):
+            log.info("Using shortcut for direct channel")
+            return [
+                Path(
+                    G=self.G,
+                    nodes=[source, target],
+                    value=value,
+                    reachability_state=reachability_state,
+                )
+            ]
+
         # TODO: improve the pruning
         # Currently we make a snapshot of the currently reachable nodes, so the searched graph
         # becomes smaller

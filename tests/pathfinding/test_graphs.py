@@ -105,6 +105,26 @@ def test_edge_weight(addresses):
 
 
 @pytest.mark.usefixtures("populate_token_network_case_1")
+def test_direct_route_speed(
+    token_network_model: TokenNetwork,
+    reachability_state: SimpleReachabilityContainer,
+    addresses: List[Address],
+):
+    start = time.monotonic()
+    for _ in range(1000):
+        # 0->2 is a direct channel
+        paths = token_network_model.get_paths(
+            source=addresses[0],
+            target=addresses[2],
+            value=PaymentAmount(10),
+            max_paths=1,
+            reachability_state=reachability_state,
+        )
+        assert len(paths) == 1
+    assert time.monotonic() - start < 2
+
+
+@pytest.mark.usefixtures("populate_token_network_case_1")
 def test_routing_simple(
     token_network_model: TokenNetwork,
     reachability_state: SimpleReachabilityContainer,
