@@ -1,6 +1,5 @@
 import collections
 import gzip
-import json
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, ClassVar, Dict, List, Optional, Tuple, Type, TypeVar, cast
@@ -47,11 +46,9 @@ from raiden.utils.typing import (
     TokenAmount,
     TokenNetworkAddress,
 )
-from raiden_contracts.constants import CONTRACT_CUSTOM_TOKEN
 from raiden_libs.api import ApiWithErrorHandler
 from raiden_libs.blockchain import get_pessimistic_udc_balance
 from raiden_libs.constants import UDC_SECURITY_MARGIN_FACTOR_PFS
-from raiden_libs.contract_info import CONTRACT_MANAGER
 from raiden_libs.exceptions import ApiException
 from raiden_libs.marshmallow import ChecksumAddress, HexedBytes
 
@@ -202,7 +199,7 @@ class PathsResource(PathfinderResource):
         )
 
         return (
-            {"result": [p.to_dict() for p in paths], "feedback_token": feedback_token.uuid.hex,},
+            {"result": [p.to_dict() for p in paths], "feedback_token": feedback_token.uuid.hex},
             200,
         )
 
@@ -354,7 +351,7 @@ class FeedbackRequest:
     token: UUID = field(metadata={"required": True})
     success: bool = field(metadata={"required": True})
     path: List[Address] = field(
-        metadata={"marshmallow_field": fields.List(ChecksumAddress, many=True), "required": True,}
+        metadata={"marshmallow_field": fields.List(ChecksumAddress, many=True), "required": True}
     )
     Schema: ClassVar[Type[marshmallow.Schema]]
 
@@ -506,30 +503,14 @@ class DebugStatsResource(PathfinderResource):
         num_successful = self.pathfinding_service.database.get_num_routes_feedback(
             only_successful=True
         )
-        # token_address for Raiddit token as in " \
-        # https://github.com/raiden-network/raiden-contracts/blob/raiddit/raiden_contracts/data/" \
-        # deployment_goerli.json
-
-        token_network_address_raiddit = "0xf962EE5534f839257ae0950e3EDAa356a5fcA639"
-        raiddit_token_contract_address = "0x64249b026Cb2C20FdAe40c9d1D899F03f47105D4"
-
-        abi = CONTRACT_MANAGER.get_contract_abi(CONTRACT_CUSTOM_TOKEN)
-        raiddit_token_contract = self.pathfinding_service.web3.eth.contract(
-            abi=abi, address=Address(to_canonical_address(raiddit_token_contract_address))
-        )
-
-        total_burned = raiddit_token_contract.functions.balanceOf(
-            token_network_address_raiddit
-        ).call()
-        total_minted = raiddit_token_contract.functions.totalSupply().call()
 
         return (
             {
                 "total_calculated_routes": num_calculated_routes,
                 "total_feedback_received": num_feedback_received,
                 "total_successful_routes": num_successful,
-                "total_burned": total_burned,
-                "total_minted": total_minted,
+                "total_burned": self.pathfinding_service.total_burned,
+                "total_minted": self.pathfinding_service.total_minted,
             },
             200,
         )
@@ -542,7 +523,7 @@ class DebugLoadClaimsResource(PathfinderResource):
         args = parser.parse_args()
         claims_file: FileStorage = args.get("file")
         if claims_file is None:
-            return {"claims_loaded": False, "error": "claims file missing"}, 400
+            return {"claims_loaded": False, "error": "claims file missing"}, 400  # type: ignore
 
         log.debug("Claims file", content_type=claims_file.content_type)
         stream = claims_file.stream
