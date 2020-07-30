@@ -42,6 +42,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.bundle.min.js" integrity="sha512-vBmx0N/uQOXznm/Nbkp7h0P1RfLSj0HQrFSzV8m7rOGyj30fYAOKHYvCNez+yM8IrfnW0TCodDEjRqf6fodf/Q==" crossorigin="anonymous"></script>
 <script>
 	const interval = 3;
+	let date = new Date();
 
 	var commonOptions = {
 		scales: {
@@ -122,10 +123,12 @@
 				if (element) {
 					element.innerHTML = data[key];
 					if (charts[key]) {
-						addData(charts[key], new Date(), data[key]);
+						addData(charts[key], date, data[key]);
 					}
 				}
 			  }
+			  date = new Date(date.valueOf())
+			  date.setSeconds(date.getSeconds() + interval);
 		  })
 		  .catch(console.error);
 	}
