@@ -1,3 +1,4 @@
+# pylint: disable=unused-import
 from gevent import config  # isort:skip # noqa
 
 # there were some issues with the 'thread' resolver, remove it from the options
@@ -8,10 +9,42 @@ import gc
 import gevent
 import pytest
 
-from raiden_contracts.tests.fixtures import *  # noqa
+from raiden_contracts.tests.fixtures import (  # noqa
+    auto_revert_chain,
+    channel_participant_deposit_limit,
+    create_account,
+    create_channel,
+    create_service_account,
+    custom_token,
+    custom_token_factory,
+    deploy_contract,
+    deploy_contract_txhash,
+    deploy_tester_contract,
+    deposit_to_udc,
+    ethereum_tester,
+    get_accounts,
+    get_private_key,
+    monitoring_service_external,
+    one_to_n_contract,
+    patch_genesis_gas_limit,
+    register_token_network,
+    secret_registry_contract,
+    service_registry,
+    token_args,
+    token_network,
+    token_network_deposit_limit,
+    token_network_registry_constructor_args,
+    token_network_registry_contract,
+    uninitialized_user_deposit_contract,
+    user_deposit_contract,
+    user_deposit_whole_balance_limit,
+    web3,
+)
 from raiden_libs.cli import start_profiler
 
 from .libs.fixtures import *  # noqa
+
+# from raiden_contracts.tests.fixtures import *  # isort:skip
 
 
 def pytest_addoption(parser):
