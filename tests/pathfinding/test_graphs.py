@@ -1,6 +1,7 @@
 import random
 import time
 from copy import deepcopy
+from datetime import timedelta
 from typing import List
 
 import pytest
@@ -405,3 +406,25 @@ def test_routing_benchmark(token_network_model: TokenNetwork):  # pylint: disabl
     print("Min runtime: ", min(times))
     print("Max runtime: ", max(times))
     print("Total runtime: ", end - start)
+
+
+@pytest.mark.usefixtures("populate_token_network_case_2")
+def test_suggest_partner(
+    token_network_model: TokenNetwork, addresses: List[Address],
+):
+    a = addresses  # pylint: disable=invalid-name
+
+    reachability = SimpleReachabilityContainer(
+        {a[i]: AddressReachability.REACHABLE for i in range(3)}
+    )
+    suggestions = token_network_model.suggest_partner(reachability)
+    assert len(suggestions) == 3
+    assert set(s["address"] for s in suggestions) == set(
+        to_checksum_address(a[i]) for i in range(3)
+    )
+    assert suggestions[0]["address"] == to_checksum_address(a[1])
+
+    # Increasing uptime of node 0 should move it to first place
+    reachability.times[a[0]] -= timedelta(seconds=10)
+    suggestions = token_network_model.suggest_partner(reachability)
+    assert suggestions[0]["address"] == to_checksum_address(a[0])

@@ -1,6 +1,6 @@
 import collections
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import MINYEAR, datetime
 from typing import Any, ClassVar, Dict, List, Optional, Tuple, Type, TypeVar, cast
 from uuid import UUID
 
@@ -18,6 +18,7 @@ from flask_restful import Resource
 from gevent.pywsgi import WSGIServer
 from marshmallow import fields
 from marshmallow_dataclass import add_schema
+from src.pathfinding_service.constants import CACHE_TIMEOUT_SUGGEST_PARTNER
 from web3 import Web3
 
 import pathfinding_service.exceptions as exceptions
@@ -420,6 +421,28 @@ class InfoResource(PathfinderResource):
         return info, 200
 
 
+class SuggestPartnerResource(PathfinderResource):
+
+    cache: Dict[str, Tuple[list, datetime]] = {}
+
+    def get(self, token_network_address: str) -> Tuple[List[Dict[str, Any]], int]:
+        token_network = self._validate_token_network_argument(token_network_address)
+        # Check cache
+        cache_key = token_network_address
+        cache_entry, cache_timestamp = self.cache.get(cache_key, (None, datetime(MINYEAR, 1, 1)))
+        if cache_timestamp > datetime.utcnow() - CACHE_TIMEOUT_SUGGEST_PARTNER:
+            assert cache_entry
+            return cache_entry, 200
+
+        # Get result and write to cache
+        suggestions = token_network.suggest_partner(
+            self.pathfinding_service.matrix_listener.user_manager
+        )
+        self.cache[cache_key] = (suggestions, datetime.utcnow())
+
+        return suggestions, 200
+
+
 class DebugPathResource(PathfinderResource):
     def get(  # pylint: disable=no-self-use
         self, token_network_address: str, source_address: str, target_address: Optional[str] = None
@@ -558,6 +581,12 @@ class PFSApi:
             ),
             ("/<token_network_address>/payment/iou", IOUResource, {}, "payments"),
             ("/<token_network_address>/feedback", FeedbackResource, {}, "feedback"),
+            (
+                "/<token_network_address>/suggest_partner",
+                SuggestPartnerResource,
+                {},
+                "suggest_partner",
+            ),
             ("/info", InfoResource, {}, "info"),
         ]
 
