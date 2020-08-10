@@ -12,6 +12,7 @@ from web3.contract import Contract
 from web3.exceptions import TransactionNotFound
 from web3.middleware import construct_sign_and_send_raw_middleware
 
+from monitoring_service import metrics
 from monitoring_service.constants import (
     DEFAULT_GAS_BUFFER_FACTOR,
     DEFAULT_GAS_CHECK_BLOCKS,
@@ -49,6 +50,7 @@ def check_gas_reserve(web3: Web3, private_key: PrivateKey) -> None:
             "to perform on-chain transactions and cannot monitor any channels. "
             "Please add funds to your account as soon as possible."
         )
+        metrics.ERRORS_LOGGED.labels(error_category="blockchain").inc()
 
 
 def handle_event(event: Event, context: Context) -> None:
@@ -69,7 +71,8 @@ def handle_event(event: Event, context: Context) -> None:
         with sentry_sdk.push_scope() as sentry_scope:
             sentry_scope.set_tag("event", event.__class__.__name__)
             try:
-                handler(event, context)
+                with metrics.collect_event_metrics(event):
+                    handler(event, context)
                 log.debug(
                     "Processed event",
                     num_scheduled_events=context.database.scheduled_event_count(),
@@ -209,7 +212,9 @@ class MonitoringService:
             self.context.database.remove_waiting_transaction(tx_hash)
             if receipt["status"] == 1:
                 log.info(
-                    "Transaction was mined successfully", transaction_hash=tx_hash, receipt=receipt
+                    "Transaction was mined successfully",
+                    transaction_hash=tx_hash,
+                    receipt=receipt,
                 )
             else:
                 log.error(
