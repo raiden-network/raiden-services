@@ -617,3 +617,15 @@ def test_cors(api_url: str):
     response = requests.options(api_url, headers=headers)
     assert response.headers["Access-Control-Allow-Origin"] == "*"
     assert response.headers["Access-Control-Allow-Headers"] == "Origin, Content-Type, Accept"
+
+
+@pytest.mark.usefixtures("api_sut")
+def test_suggest_partner_api(api_url: str, token_network_model: TokenNetwork):
+    """ Smoke test for partner suggestion REST endpoint
+
+    The actual content is tested in ``test_graphs.test_suggest_partner``.
+    """
+    token_network_address_hex = to_checksum_address(token_network_model.address)
+    url = api_url + f"/{token_network_address_hex}/suggest_partner"
+    response = requests.get(url)
+    assert response.status_code == 200

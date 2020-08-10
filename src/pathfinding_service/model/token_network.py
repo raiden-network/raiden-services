@@ -2,7 +2,7 @@ from collections import defaultdict
 from copy import copy
 from datetime import datetime, timedelta
 from itertools import islice
-from typing import Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 import networkx as nx
 import structlog
@@ -538,3 +538,40 @@ class TokenNetwork:
             paths=paths,
         )
         return paths
+
+    def suggest_partner(
+        self, reachability_state: AddressReachabilityProtocol, limit: int = 5
+    ) -> List[Dict[str, Any]]:
+        """ Suggest good partners for Raiden nodes joining the token network """
+
+        # centrality
+        centrality_of_node = nx.algorithms.centrality.closeness_centrality(self.G)
+
+        # uptime, only include online nodes
+        uptime_of_node = {}
+        now = datetime.utcnow()
+        for node in self.G.nodes:
+            node_reach_state = reachability_state.get_address_reachability_state(node)
+            if node_reach_state.reachability == AddressReachability.REACHABLE:
+                uptime_of_node[node] = (now - node_reach_state.time).total_seconds()
+
+        # capacity
+        capacity_of_node = {}
+        for node in uptime_of_node:
+            channel_views = [
+                channel_data["view"] for _, _, channel_data in self.G.edges(node, data=True)
+            ]
+            capacity_of_node[node] = sum(cv.capacity for cv in channel_views)
+
+        # sort by overall score
+        suggestions = [
+            dict(
+                address=to_checksum_address(node),
+                score=centrality_of_node[node] * uptime * capacity_of_node[node],
+                centrality=centrality_of_node[node],
+                uptime=uptime,
+                capacity=capacity_of_node[node],
+            )
+            for node, uptime in uptime_of_node.items()
+        ]
+        return sorted(suggestions, key=lambda n: -n["score"])[:limit]
