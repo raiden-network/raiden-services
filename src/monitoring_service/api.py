@@ -7,6 +7,9 @@ from eth_utils import to_checksum_address
 from flask import Flask
 from flask_restful import Resource
 from gevent.pywsgi import WSGIServer
+from prometheus_client import make_wsgi_app
+from werkzeug.exceptions import NotFound
+from werkzeug.middleware.dispatcher import DispatcherMiddleware
 
 from monitoring_service.constants import API_PATH, DEFAULT_INFO_MESSAGE
 from monitoring_service.service import MonitoringService
@@ -60,8 +63,14 @@ class MSApi:
         operator: str,
         info_message: str = DEFAULT_INFO_MESSAGE,
     ) -> None:
-        self.flask_app = Flask(__name__)
-        self.api = ApiWithErrorHandler(self.flask_app)
+        flask_app = Flask(__name__)
+        self.api = ApiWithErrorHandler(flask_app)
+
+        # Add the metrics prometheus app
+        self.flask_app = DispatcherMiddleware(
+            NotFound(), {API_PATH + "/metrics": make_wsgi_app(), API_PATH: flask_app.wsgi_app},
+        )
+
         self.rest_server: Optional[WSGIServer] = None
 
         self.monitoring_service = monitoring_service
@@ -75,7 +84,7 @@ class MSApi:
         for endpoint_url, resource, endpoint in resources:
             self.api.add_resource(
                 resource,
-                API_PATH + endpoint_url,
+                endpoint_url,
                 resource_class_kwargs={"monitoring_service": monitoring_service, "api": self},
                 endpoint=endpoint,
             )

@@ -5,6 +5,7 @@ from eth_utils import encode_hex
 from web3 import Web3
 from web3.contract import Contract
 
+from monitoring_service import metrics
 from monitoring_service.database import Database
 from monitoring_service.events import (
     ActionClaimRewardTriggeredEvent,
@@ -130,6 +131,7 @@ def channel_closed_event_handler(event: Event, context: Context) -> None:
             token_network_address=event.token_network_address,
             identifier=event.channel_identifier,
         )
+        metrics.ERRORS_LOGGED.labels(error_category="channel").inc()
         return
 
     # Check if the settle timeout is already over.
@@ -202,6 +204,7 @@ def non_closing_balance_proof_updated_event_handler(event: Event, context: Conte
             token_network_address=event.token_network_address,
             identifier=event.channel_identifier,
         )
+        metrics.ERRORS_LOGGED.labels(error_category="database").inc()
         return
 
     log.info(
@@ -221,6 +224,7 @@ def non_closing_balance_proof_updated_event_handler(event: Event, context: Conte
             participant2=channel.participant2,
             closing_participant=event.closing_participant,
         )
+        metrics.ERRORS_LOGGED.labels(error_category="protocol").inc()
         return
 
     # check for known update calls and update accordingly
@@ -245,6 +249,7 @@ def non_closing_balance_proof_updated_event_handler(event: Event, context: Conte
                 know_nonce=channel.update_status.nonce,
                 received_nonce=event.nonce,
             )
+            metrics.ERRORS_LOGGED.labels(error_category="protocol").inc()
             return
 
         log.info(
@@ -272,6 +277,7 @@ def channel_settled_event_handler(event: Event, context: Context) -> None:
             token_network_address=event.token_network_address,
             identifier=event.channel_identifier,
         )
+        metrics.ERRORS_LOGGED.labels(error_category="database").inc()
         return
 
     log.info(
@@ -294,6 +300,7 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context) -> N
             token_network_address=event.token_network_address,
             identifier=event.channel_identifier,
         )
+        metrics.ERRORS_LOGGED.labels(error_category="database").inc()
         return
 
     log.info(
@@ -327,6 +334,7 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context) -> N
                 know_nonce=update_status.nonce,
                 received_nonce=event.nonce,
             )
+            metrics.ERRORS_LOGGED.labels(error_category="protocol").inc()
             return
 
         log.info(
@@ -386,12 +394,16 @@ def monitor_reward_claim_event_handler(
 
     if event.ms_address == context.ms_state.address:
         log.info(
-            "Successfully claimed reward", amount=event.amount, reward_id=event.reward_identifier
+            "Successfully claimed reward", amount=event.amount, reward_id=event.reward_identifier,
         )
+        metrics.REWARD_CLAIMS.labels(who="us").inc()
+        metrics.REWARD_CLAIMS_TOKEN.labels(who="us").inc(event.amount)
     else:
         log.debug(
-            "Another MS claimed reward", amount=event.amount, reward_id=event.reward_identifier
+            "Another MS claimed reward", amount=event.amount, reward_id=event.reward_identifier,
         )
+        metrics.REWARD_CLAIMS.labels(who="they").inc()
+        metrics.REWARD_CLAIMS_TOKEN.labels(who="they").inc(event.amount)
 
 
 def updated_head_block_event_handler(event: Event, context: Context) -> None:
@@ -431,6 +443,7 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
             token_network_address=event.token_network_address,
             channel_id=event.channel_identifier,
         )
+        metrics.ERRORS_LOGGED.labels(error_category="database").inc()
         return
 
     channel = context.database.get_channel(
@@ -439,12 +452,14 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
     )
     if channel is None:
         log.error("Channel cannot be found", monitor_request=monitor_request)
+        metrics.ERRORS_LOGGED.labels(error_category="database").inc()
         return
 
     if not _is_mr_valid(monitor_request, channel):
         log.error(
-            "MonitorRequest lost its validity", monitor_request=monitor_request, channel=channel
+            "MonitorRequest lost its validity", monitor_request=monitor_request, channel=channel,
         )
+        metrics.ERRORS_LOGGED.labels(error_category="protocol").inc()
         return
 
     last_onchain_nonce = 0
@@ -453,7 +468,7 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
 
     if monitor_request.nonce <= last_onchain_nonce:
         log.info(
-            "Another MS submitted the last known channel state", monitor_request=monitor_request
+            "Another MS submitted the last known channel state", monitor_request=monitor_request,
         )
         return
 
@@ -523,6 +538,7 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
             first_allowed=first_allowed,
             failed_at=failed_at,
         )
+        metrics.ERRORS_LOGGED.labels(error_category="blockchain").inc()
         return
 
     log.info(
@@ -612,6 +628,10 @@ def action_claim_reward_triggered_event_handler(event: Event, context: Context) 
                 context.database.upsert_channel(channel)
         except Exception as exc:  # pylint: disable=broad-except
             log.error("Sending tx failed", exc_info=True, err=exc)
+            metrics.ERRORS_LOGGED.labels(error_category="protocol").inc()
+            # manually increase exception counter here because
+            # exception is not visible from outside
+            metrics.EVENTS_EXCEPTIONS_RAISED.labels(event_type=event.__class__.__name__).inc()
 
 
 HANDLERS = {

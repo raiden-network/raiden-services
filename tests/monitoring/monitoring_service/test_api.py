@@ -2,6 +2,7 @@ import pkg_resources
 import requests
 from eth_utils import to_checksum_address
 
+from monitoring_service import metrics
 from monitoring_service.api import MSApi
 from monitoring_service.constants import DEFAULT_INFO_MESSAGE
 from monitoring_service.service import MonitoringService
@@ -49,3 +50,24 @@ def test_get_info(api_url: str, ms_api_sut: MSApi, monitoring_service_mock: Moni
     response_json = response.json()
     del response_json["UTC"]
     assert response_json == expected_response
+
+
+def test_prometheus_exposure(
+    api_url: str, ms_api_sut: MSApi, monitoring_service_mock: MonitoringService
+):
+
+    monitoring_service_mock.context.min_reward = 123
+    ms_api_sut.operator = "John Doe"
+    url = api_url + "/metrics"
+
+    # call one of the metrics here, just to make sure that there is some output on the
+    # API's '/metrics' prometheus endpoint
+    metrics.ERRORS_LOGGED.labels(error_category="test").inc()
+
+    response = requests.get(url)
+
+    assert response.status_code == 200
+    assert (
+        "\n# TYPE events_log_errors_total counter"
+        '\nevents_log_errors_total{error_category="test"} 1.0' in response.text
+    )
