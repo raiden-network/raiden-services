@@ -33,6 +33,8 @@ DEFAULT_PRIVATE_KEY1 = PrivateKey(decode_hex("0x" + "1" * 64))
 DEFAULT_PRIVATE_KEY2 = PrivateKey(decode_hex("0x" + "2" * 64))
 DEFAULT_PARTICIPANT1 = private_key_to_address(DEFAULT_PRIVATE_KEY1)
 DEFAULT_PARTICIPANT2 = private_key_to_address(DEFAULT_PRIVATE_KEY2)
+DEFAULT_PRIVATE_KEY_OTHER = PrivateKey(decode_hex("0x" + "3" * 64))
+DEFAULT_PARTICIPANT_OTHER = private_key_to_address(DEFAULT_PRIVATE_KEY_OTHER)
 DEFAULT_REWARD_AMOUNT = TokenAmount(1)
 DEFAULT_SETTLE_TIMEOUT = BlockTimeout(100)
 
