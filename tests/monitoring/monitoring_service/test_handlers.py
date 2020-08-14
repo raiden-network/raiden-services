@@ -1,20 +1,23 @@
 # pylint: disable=redefined-outer-name
-from typing import Optional
+from typing import Any, Dict, List, Optional
 from unittest.mock import Mock, patch
 
 import pytest
 from eth_utils import decode_hex, to_checksum_address
+from prometheus_client.metrics import Metric
 from tests.libs.mocks.web3 import Web3Mock
 from tests.monitoring.monitoring_service.factories import (
     DEFAULT_CHANNEL_IDENTIFIER,
     DEFAULT_PARTICIPANT1,
     DEFAULT_PARTICIPANT2,
+    DEFAULT_PARTICIPANT_OTHER,
     DEFAULT_SETTLE_TIMEOUT,
     DEFAULT_TOKEN_ADDRESS,
     DEFAULT_TOKEN_NETWORK_ADDRESS,
     create_signed_monitor_request,
 )
 
+from monitoring_service import metrics
 from monitoring_service.database import Database
 from monitoring_service.events import (
     ActionClaimRewardTriggeredEvent,
@@ -59,12 +62,37 @@ def mock_first_allowed_block(monkeypatch):
     )
 
 
+@pytest.fixture
+def prometheus_client_collectors() -> List[Metric]:
+    return [
+        metrics.EVENTS_PROCESSING_TIME,
+        metrics.ERRORS_LOGGED,
+        metrics.REWARD_CLAIMS_TOKEN,
+        metrics.REWARD_CLAIMS,
+        metrics.EVENTS_EXCEPTIONS_RAISED,
+    ]
+
+
+@pytest.fixture
+def prometheus_client_teardown(prometheus_client_collectors) -> None:
+    for collector in prometheus_client_collectors:
+        # HACK access private attr. in order to easily delete the samples
+        # Since the library doesn't have a reliable way of accessing the tuple
+        # of label values this is as hacky as any other solution
+        for vals in list(collector._metrics.keys()):  # pylint: disable=protected-access
+            collector.remove(*vals)
+
+
 def assert_channel_state(context: Context, state: ChannelState):
     channel = context.database.get_channel(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS, channel_id=DEFAULT_CHANNEL_IDENTIFIER
     )
     assert channel
     assert channel.state == state
+
+
+def assert_metrics_has(namespace: str, value: Any, labels: Optional[Dict[str, str]] = None):
+    assert metrics.REGISTRY.get_sample_value(namespace, labels=labels) == value
 
 
 def create_default_token_network(context: Context) -> None:
@@ -263,6 +291,24 @@ def test_channel_closed_event_handler_leaves_existing_channel(context: Context):
     assert_channel_state(context, ChannelState.OPENED)
 
 
+def test_channel_closed_event_handler_channel_not_in_database(
+    context: Context, prometheus_client_teardown: None
+):  # pylint: disable=unused-argument
+    # only setup the token network without channels
+    create_default_token_network(context)
+
+    event = ReceiveChannelClosedEvent(
+        token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
+        channel_identifier=ChannelID(4),
+        closing_participant=DEFAULT_PARTICIPANT2,
+        block_number=BlockNumber(52),
+    )
+    assert context.database.channel_count() == 0
+    channel_closed_event_handler(event, context)
+    assert context.database.channel_count() == 0
+    assert_metrics_has("events_log_errors_total", 1.0, {"error_category": "channel"})
+
+
 def test_channel_closed_event_handler_trigger_action_monitor_event_with_monitor_request(
     context: Context,
 ):
@@ -373,6 +419,84 @@ def test_channel_bp_updated_event_handler_sets_update_status_if_not_set(context:
     assert channel.update_status.update_sender_address == DEFAULT_PARTICIPANT1
 
 
+def test_channel_bp_updated_event_handler_channel_not_in_database(
+    context: Context, prometheus_client_teardown: None
+):  # pylint: disable=unused-argument
+    # only setup the token network without channels
+    create_default_token_network(context)
+
+    event_bp = ReceiveNonClosingBalanceProofUpdatedEvent(
+        token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
+        channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
+        closing_participant=DEFAULT_PARTICIPANT2,
+        nonce=Nonce(2),
+        block_number=BlockNumber(23),
+    )
+
+    channel = context.database.get_channel(
+        event_bp.token_network_address, event_bp.channel_identifier
+    )
+    assert channel is None
+    assert context.database.channel_count() == 0
+    print(metrics.ERRORS_LOGGED.__dir__)
+
+    non_closing_balance_proof_updated_event_handler(event_bp, context)
+    # TODO we can't query the logs here
+    # assert log.has("Channel not in database")
+    assert_metrics_has("events_log_errors_total", 1.0, {"error_category": "database"})
+
+
+def test_channel_bp_updated_event_handler_invalid_closing_participant(
+    context: Context, prometheus_client_teardown: None
+):  # pylint: disable=unused-argument
+
+    context = setup_state_with_closed_channel(context)
+
+    event_bp = ReceiveNonClosingBalanceProofUpdatedEvent(
+        token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
+        channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
+        closing_participant=DEFAULT_PARTICIPANT_OTHER,
+        nonce=Nonce(2),
+        block_number=BlockNumber(23),
+    )
+
+    channel = context.database.get_channel(
+        event_bp.token_network_address, event_bp.channel_identifier
+    )
+    assert context.database.channel_count() == 1
+    assert channel
+    assert channel.update_status is None
+
+    non_closing_balance_proof_updated_event_handler(event_bp, context)
+    assert_metrics_has("events_log_errors_total", 1.0, {"error_category": "protocol"})
+
+
+def test_channel_bp_updated_event_handler_lower_nonce_than_expected(
+    context: Context, prometheus_client_teardown: None
+):  # pylint: disable=unused-argument
+    context = setup_state_with_closed_channel(context)
+
+    event_bp = ReceiveNonClosingBalanceProofUpdatedEvent(
+        token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
+        channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
+        closing_participant=DEFAULT_PARTICIPANT2,
+        nonce=Nonce(1),
+        block_number=BlockNumber(23),
+    )
+
+    channel = context.database.get_channel(
+        event_bp.token_network_address, event_bp.channel_identifier
+    )
+    assert context.database.channel_count() == 1
+    assert channel
+    assert channel.update_status is None
+
+    non_closing_balance_proof_updated_event_handler(event_bp, context)
+    # send twice the same message to trigger the non-increasing nonce
+    non_closing_balance_proof_updated_event_handler(event_bp, context)
+    assert_metrics_has("events_log_errors_total", 1.0, {"error_category": "protocol"})
+
+
 def test_monitor_new_balance_proof_event_handler_sets_update_status(context: Context):
     context = setup_state_with_closed_channel(context)
 
@@ -478,7 +602,9 @@ def test_monitor_new_balance_proof_event_handler_idempotency(context: Context):
     assert channel.update_status.update_sender_address == bytes([3] * 20)
 
 
-def test_monitor_reward_claimed_event_handler(context: Context, log):
+def test_monitor_reward_claimed_event_handler(
+    context: Context, log, prometheus_client_teardown: None
+):  # pylint: disable=unused-argument
     context = setup_state_with_closed_channel(context)
 
     claim_event = ReceiveMonitoringRewardClaimedEvent(
@@ -489,10 +615,16 @@ def test_monitor_reward_claimed_event_handler(context: Context, log):
     )
 
     monitor_reward_claim_event_handler(claim_event, context)
+
+    assert_metrics_has("economics_reward_claims_successful_total", 1, {"who": "us"})
+    assert_metrics_has("economics_reward_claims_token_total", 1, {"who": "us"})
     assert log.has("Successfully claimed reward")
 
     claim_event.ms_address = Address(bytes([3] * 20))
     monitor_reward_claim_event_handler(claim_event, context)
+
+    assert_metrics_has("economics_reward_claims_successful_total", 1, {"who": "they"})
+    assert_metrics_has("economics_reward_claims_token_total", 1, {"who": "they"})
     assert log.has("Another MS claimed reward")
 
 

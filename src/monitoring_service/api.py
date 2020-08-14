@@ -11,6 +11,7 @@ from prometheus_client import make_wsgi_app
 from werkzeug.exceptions import NotFound
 from werkzeug.middleware.dispatcher import DispatcherMiddleware
 
+from monitoring_service import metrics
 from monitoring_service.constants import API_PATH, DEFAULT_INFO_MESSAGE
 from monitoring_service.service import MonitoringService
 from raiden_libs.api import ApiWithErrorHandler
@@ -68,7 +69,11 @@ class MSApi:
 
         # Add the metrics prometheus app
         self.flask_app = DispatcherMiddleware(
-            NotFound(), {API_PATH + "/metrics": make_wsgi_app(), API_PATH: flask_app.wsgi_app},
+            NotFound(),
+            {
+                API_PATH + "/metrics": make_wsgi_app(registry=metrics.REGISTRY),
+                API_PATH: flask_app.wsgi_app,
+            },
         )
 
         self.rest_server: Optional[WSGIServer] = None
