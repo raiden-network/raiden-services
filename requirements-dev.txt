@@ -21,7 +21,7 @@ pytest-structlog==0.3
 pytest-xdist
 coverage>=4.5.4
 
-ipython==7.16.1
+ipython==7.17.0
 pdbpp
 
 eth-tester[py-evm]==0.5.0b1
