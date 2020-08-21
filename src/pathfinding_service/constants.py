@@ -24,7 +24,7 @@ MIN_IOU_EXPIRY: int = 7 * 24 * 60 * 4
 
 MAX_AGE_OF_IOU_REQUESTS: timedelta = timedelta(hours=1)
 MAX_AGE_OF_FEEDBACK_REQUESTS: timedelta = timedelta(minutes=10)
-CACHE_TIMEOUT_SUGGEST_PARTNER = timedelta(hours=1)
+CACHE_TIMEOUT_SUGGEST_PARTNER = timedelta(minutes=1)
 
 PFS_DISCLAIMER: str = textwrap.dedent(
     """\

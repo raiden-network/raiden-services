@@ -431,7 +431,7 @@ class SuggestPartnerResource(PathfinderResource):
         cache_key = token_network_address
         cache_entry, cache_timestamp = self.cache.get(cache_key, (None, datetime(MINYEAR, 1, 1)))
         if cache_timestamp > datetime.utcnow() - CACHE_TIMEOUT_SUGGEST_PARTNER:
-            assert cache_entry
+            assert cache_entry is not None
             return cache_entry, 200
 
         # Get result and write to cache
