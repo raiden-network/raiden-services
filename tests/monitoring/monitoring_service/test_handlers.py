@@ -306,7 +306,9 @@ def test_channel_closed_event_handler_channel_not_in_database(
     assert context.database.channel_count() == 0
     channel_closed_event_handler(event, context)
     assert context.database.channel_count() == 0
-    assert_metrics_has("events_log_errors_total", 1.0, {"error_category": "channel"})
+    assert_metrics_has(
+        "events_log_errors_total", 1.0, {"error_category": metrics.LabelErrorCategory.STATE.value}
+    )
 
 
 def test_channel_closed_event_handler_trigger_action_monitor_event_with_monitor_request(
@@ -438,12 +440,11 @@ def test_channel_bp_updated_event_handler_channel_not_in_database(
     )
     assert channel is None
     assert context.database.channel_count() == 0
-    print(metrics.ERRORS_LOGGED.__dir__)
 
     non_closing_balance_proof_updated_event_handler(event_bp, context)
-    # TODO we can't query the logs here
-    # assert log.has("Channel not in database")
-    assert_metrics_has("events_log_errors_total", 1.0, {"error_category": "database"})
+    assert_metrics_has(
+        "events_log_errors_total", 1.0, {"error_category": metrics.LabelErrorCategory.STATE.value}
+    )
 
 
 def test_channel_bp_updated_event_handler_invalid_closing_participant(
@@ -468,7 +469,11 @@ def test_channel_bp_updated_event_handler_invalid_closing_participant(
     assert channel.update_status is None
 
     non_closing_balance_proof_updated_event_handler(event_bp, context)
-    assert_metrics_has("events_log_errors_total", 1.0, {"error_category": "protocol"})
+    assert_metrics_has(
+        "events_log_errors_total",
+        1.0,
+        {"error_category": metrics.LabelErrorCategory.PROTOCOL.value},
+    )
 
 
 def test_channel_bp_updated_event_handler_lower_nonce_than_expected(
@@ -494,7 +499,11 @@ def test_channel_bp_updated_event_handler_lower_nonce_than_expected(
     non_closing_balance_proof_updated_event_handler(event_bp, context)
     # send twice the same message to trigger the non-increasing nonce
     non_closing_balance_proof_updated_event_handler(event_bp, context)
-    assert_metrics_has("events_log_errors_total", 1.0, {"error_category": "protocol"})
+    assert_metrics_has(
+        "events_log_errors_total",
+        1.0,
+        {"error_category": metrics.LabelErrorCategory.PROTOCOL.value},
+    )
 
 
 def test_monitor_new_balance_proof_event_handler_sets_update_status(context: Context):
@@ -616,15 +625,23 @@ def test_monitor_reward_claimed_event_handler(
 
     monitor_reward_claim_event_handler(claim_event, context)
 
-    assert_metrics_has("economics_reward_claims_successful_total", 1, {"who": "us"})
-    assert_metrics_has("economics_reward_claims_token_total", 1, {"who": "us"})
+    assert_metrics_has(
+        "economics_reward_claims_successful_total", 1, {"who": metrics.LabelWho.US.value}
+    )
+    assert_metrics_has(
+        "economics_reward_claims_token_total", 1, {"who": metrics.LabelWho.US.value}
+    )
     assert log.has("Successfully claimed reward")
 
     claim_event.ms_address = Address(bytes([3] * 20))
     monitor_reward_claim_event_handler(claim_event, context)
 
-    assert_metrics_has("economics_reward_claims_successful_total", 1, {"who": "they"})
-    assert_metrics_has("economics_reward_claims_token_total", 1, {"who": "they"})
+    assert_metrics_has(
+        "economics_reward_claims_successful_total", 1, {"who": metrics.LabelWho.THEY.value}
+    )
+    assert_metrics_has(
+        "economics_reward_claims_token_total", 1, {"who": metrics.LabelWho.THEY.value}
+    )
     assert log.has("Another MS claimed reward")
 
 

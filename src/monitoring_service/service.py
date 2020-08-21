@@ -50,7 +50,9 @@ def check_gas_reserve(web3: Web3, private_key: PrivateKey) -> None:
             "to perform on-chain transactions and cannot monitor any channels. "
             "Please add funds to your account as soon as possible."
         )
-        metrics.ERRORS_LOGGED.labels(error_category="blockchain").inc()
+        metrics.ERRORS_LOGGED.labels(
+            error_category=metrics.LabelErrorCategory.BLOCKCHAIN.value
+        ).inc()
 
 
 def handle_event(event: Event, context: Context) -> None:

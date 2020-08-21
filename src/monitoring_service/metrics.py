@@ -1,12 +1,31 @@
 from contextlib import contextmanager
-from typing import Generator
+from enum import Enum, unique
+from typing import Generator, Tuple
 
 from prometheus_client import CollectorRegistry, Counter, Histogram
+from prometheus_client.context_managers import ExceptionCounter, Timer
 
 from raiden_libs.events import Event
 
 # registry should be used throughout one app (per /metrics API endpoint)
 REGISTRY = CollectorRegistry(auto_describe=True)
+
+
+EventMetricsGenerator = Generator[Tuple[Timer, ExceptionCounter], None, None]
+
+
+@unique
+class LabelErrorCategory(Enum):
+    STATE = "state"
+    BLOCKCHAIN = "blockchain"
+    PROTOCOL = "protocol"
+
+
+@unique
+class LabelWho(Enum):
+    US = "us"
+    THEY = "they"
+
 
 REWARD_CLAIMS = Counter(
     "economics_reward_claims_successful_total",
@@ -47,7 +66,7 @@ EVENTS_PROCESSING_TIME = Histogram(
 
 
 @contextmanager
-def collect_event_metrics(event: Event) -> Generator:
+def collect_event_metrics(event: Event) -> EventMetricsGenerator:
     event_type = event.__class__.__name__
     with EVENTS_PROCESSING_TIME.labels(
         event_type=event_type
