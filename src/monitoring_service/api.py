@@ -71,7 +71,7 @@ class MSApi:
         self.flask_app = DispatcherMiddleware(
             NotFound(),
             {
-                API_PATH + "/metrics": make_wsgi_app(registry=metrics.REGISTRY),
+                f"{API_PATH}/metrics": make_wsgi_app(registry=metrics.REGISTRY),
                 API_PATH: flask_app.wsgi_app,
             },
         )
