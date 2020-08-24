@@ -4,7 +4,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 from eth_utils import decode_hex, to_checksum_address
-from prometheus_client.metrics import Metric
+from tests.asserts import assert_metrics_has
 from tests.libs.mocks.web3 import Web3Mock
 from tests.monitoring.monitoring_service.factories import (
     DEFAULT_CHANNEL_IDENTIFIER,
@@ -62,27 +62,6 @@ def mock_first_allowed_block(monkeypatch):
     )
 
 
-@pytest.fixture
-def prometheus_client_collectors() -> List[Metric]:
-    return [
-        metrics.EVENTS_PROCESSING_TIME,
-        metrics.ERRORS_LOGGED,
-        metrics.REWARD_CLAIMS_TOKEN,
-        metrics.REWARD_CLAIMS,
-        metrics.EVENTS_EXCEPTIONS_RAISED,
-    ]
-
-
-@pytest.fixture
-def prometheus_client_teardown(prometheus_client_collectors) -> None:
-    for collector in prometheus_client_collectors:
-        # HACK access private attr. in order to easily delete the samples
-        # Since the library doesn't have a reliable way of accessing the tuple
-        # of label values this is as hacky as any other solution
-        for vals in list(collector._metrics.keys()):  # pylint: disable=protected-access
-            collector.remove(*vals)
-
-
 def assert_channel_state(context: Context, state: ChannelState):
     channel = context.database.get_channel(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS, channel_id=DEFAULT_CHANNEL_IDENTIFIER
@@ -90,9 +69,6 @@ def assert_channel_state(context: Context, state: ChannelState):
     assert channel
     assert channel.state == state
 
-
-def assert_metrics_has(namespace: str, value: Any, labels: Optional[Dict[str, str]] = None):
-    assert metrics.REGISTRY.get_sample_value(namespace, labels=labels) == value
 
 
 def create_default_token_network(context: Context) -> None:
