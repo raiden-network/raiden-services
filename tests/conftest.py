@@ -44,6 +44,8 @@ from raiden_libs.cli import start_profiler
 
 from .libs.fixtures import *  # noqa
 
+pytest.register_assert_rewrite('tests.asserts')
+
 # from raiden_contracts.tests.fixtures import *  # isort:skip
 
 
