@@ -61,13 +61,15 @@ def test_prometheus_exposure(
     url = api_url + "/metrics"
 
     # call one of the metrics here, just to make sure that there is some output on the
-    # API's '/metrics' prometheus endpoint
+    # API's '/metrics' prometheus endpoint. Create a new category label,
+    # since the global state might overwrite the values that are outputted
     metrics.ERRORS_LOGGED.labels(error_category="test").inc()
 
     response = requests.get(url)
 
+    print(response.text)
     assert response.status_code == 200
     assert (
-        "\n# TYPE events_log_errors_total counter"
-        '\nevents_log_errors_total{error_category="test"} 1.0' in response.text
+        "\n# TYPE events_log_errors_total counter" in response.text
+        and '\nevents_log_errors_total{error_category="test"} 1.0' in response.text
     )

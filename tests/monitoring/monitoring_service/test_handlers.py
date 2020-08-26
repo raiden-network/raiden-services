@@ -4,7 +4,6 @@ from unittest.mock import Mock, patch
 
 import pytest
 from eth_utils import decode_hex, to_checksum_address
-from tests.asserts import assert_metrics_has
 from tests.libs.mocks.web3 import Web3Mock
 from tests.monitoring.monitoring_service.factories import (
     DEFAULT_CHANNEL_IDENTIFIER,
@@ -16,6 +15,7 @@ from tests.monitoring.monitoring_service.factories import (
     DEFAULT_TOKEN_NETWORK_ADDRESS,
     create_signed_monitor_request,
 )
+from tests.utils import save_metrics_state
 
 from monitoring_service import metrics
 from monitoring_service.database import Database
@@ -68,7 +68,6 @@ def assert_channel_state(context: Context, state: ChannelState):
     )
     assert channel
     assert channel.state == state
-
 
 
 def create_default_token_network(context: Context) -> None:
@@ -267,24 +266,27 @@ def test_channel_closed_event_handler_leaves_existing_channel(context: Context):
     assert_channel_state(context, ChannelState.OPENED)
 
 
-def test_channel_closed_event_handler_channel_not_in_database(
-    context: Context, prometheus_client_teardown: None
-):  # pylint: disable=unused-argument
-    # only setup the token network without channels
-    create_default_token_network(context)
+def test_channel_closed_event_handler_channel_not_in_database(context: Context):
+    with save_metrics_state(metrics.REGISTRY) as metrics_state:
+        # only setup the token network without channels
+        create_default_token_network(context)
 
-    event = ReceiveChannelClosedEvent(
-        token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
-        channel_identifier=ChannelID(4),
-        closing_participant=DEFAULT_PARTICIPANT2,
-        block_number=BlockNumber(52),
-    )
-    assert context.database.channel_count() == 0
-    channel_closed_event_handler(event, context)
-    assert context.database.channel_count() == 0
-    assert_metrics_has(
-        "events_log_errors_total", 1.0, {"error_category": metrics.LabelErrorCategory.STATE.value}
-    )
+        event = ReceiveChannelClosedEvent(
+            token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
+            channel_identifier=ChannelID(4),
+            closing_participant=DEFAULT_PARTICIPANT2,
+            block_number=BlockNumber(52),
+        )
+        assert context.database.channel_count() == 0
+        channel_closed_event_handler(event, context)
+        assert context.database.channel_count() == 0
+
+        assert (
+            metrics_state.get_delta(
+                "events_log_errors_total", labels=metrics.ErrorCategory.STATE.to_label_dict()
+            )
+            == 1.0
+        )
 
 
 def test_channel_closed_event_handler_trigger_action_monitor_event_with_monitor_request(
@@ -397,89 +399,93 @@ def test_channel_bp_updated_event_handler_sets_update_status_if_not_set(context:
     assert channel.update_status.update_sender_address == DEFAULT_PARTICIPANT1
 
 
-def test_channel_bp_updated_event_handler_channel_not_in_database(
-    context: Context, prometheus_client_teardown: None
-):  # pylint: disable=unused-argument
-    # only setup the token network without channels
-    create_default_token_network(context)
+def test_channel_bp_updated_event_handler_channel_not_in_database(context: Context):
+    with save_metrics_state(metrics.REGISTRY) as metrics_state:
+        # only setup the token network without channels
+        create_default_token_network(context)
 
-    event_bp = ReceiveNonClosingBalanceProofUpdatedEvent(
-        token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
-        channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
-        closing_participant=DEFAULT_PARTICIPANT2,
-        nonce=Nonce(2),
-        block_number=BlockNumber(23),
-    )
+        event_bp = ReceiveNonClosingBalanceProofUpdatedEvent(
+            token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
+            channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
+            closing_participant=DEFAULT_PARTICIPANT2,
+            nonce=Nonce(2),
+            block_number=BlockNumber(23),
+        )
 
-    channel = context.database.get_channel(
-        event_bp.token_network_address, event_bp.channel_identifier
-    )
-    assert channel is None
-    assert context.database.channel_count() == 0
+        channel = context.database.get_channel(
+            event_bp.token_network_address, event_bp.channel_identifier
+        )
+        assert channel is None
+        assert context.database.channel_count() == 0
 
-    non_closing_balance_proof_updated_event_handler(event_bp, context)
-    assert_metrics_has(
-        "events_log_errors_total", 1.0, {"error_category": metrics.LabelErrorCategory.STATE.value}
-    )
+        non_closing_balance_proof_updated_event_handler(event_bp, context)
 
-
-def test_channel_bp_updated_event_handler_invalid_closing_participant(
-    context: Context, prometheus_client_teardown: None
-):  # pylint: disable=unused-argument
-
-    context = setup_state_with_closed_channel(context)
-
-    event_bp = ReceiveNonClosingBalanceProofUpdatedEvent(
-        token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
-        channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
-        closing_participant=DEFAULT_PARTICIPANT_OTHER,
-        nonce=Nonce(2),
-        block_number=BlockNumber(23),
-    )
-
-    channel = context.database.get_channel(
-        event_bp.token_network_address, event_bp.channel_identifier
-    )
-    assert context.database.channel_count() == 1
-    assert channel
-    assert channel.update_status is None
-
-    non_closing_balance_proof_updated_event_handler(event_bp, context)
-    assert_metrics_has(
-        "events_log_errors_total",
-        1.0,
-        {"error_category": metrics.LabelErrorCategory.PROTOCOL.value},
-    )
+        assert (
+            metrics_state.get_delta(
+                "events_log_errors_total", labels=metrics.ErrorCategory.STATE.to_label_dict()
+            )
+            == 1.0
+        )
 
 
-def test_channel_bp_updated_event_handler_lower_nonce_than_expected(
-    context: Context, prometheus_client_teardown: None
-):  # pylint: disable=unused-argument
-    context = setup_state_with_closed_channel(context)
+def test_channel_bp_updated_event_handler_invalid_closing_participant(context: Context):
+    with save_metrics_state(metrics.REGISTRY) as metrics_state:
+        context = setup_state_with_closed_channel(context)
 
-    event_bp = ReceiveNonClosingBalanceProofUpdatedEvent(
-        token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
-        channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
-        closing_participant=DEFAULT_PARTICIPANT2,
-        nonce=Nonce(1),
-        block_number=BlockNumber(23),
-    )
+        event_bp = ReceiveNonClosingBalanceProofUpdatedEvent(
+            token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
+            channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
+            closing_participant=DEFAULT_PARTICIPANT_OTHER,
+            nonce=Nonce(2),
+            block_number=BlockNumber(23),
+        )
 
-    channel = context.database.get_channel(
-        event_bp.token_network_address, event_bp.channel_identifier
-    )
-    assert context.database.channel_count() == 1
-    assert channel
-    assert channel.update_status is None
+        channel = context.database.get_channel(
+            event_bp.token_network_address, event_bp.channel_identifier
+        )
+        assert context.database.channel_count() == 1
+        assert channel
+        assert channel.update_status is None
 
-    non_closing_balance_proof_updated_event_handler(event_bp, context)
-    # send twice the same message to trigger the non-increasing nonce
-    non_closing_balance_proof_updated_event_handler(event_bp, context)
-    assert_metrics_has(
-        "events_log_errors_total",
-        1.0,
-        {"error_category": metrics.LabelErrorCategory.PROTOCOL.value},
-    )
+        non_closing_balance_proof_updated_event_handler(event_bp, context)
+
+        assert (
+            metrics_state.get_delta(
+                "events_log_errors_total", labels=metrics.ErrorCategory.PROTOCOL.to_label_dict()
+            )
+            == 1.0
+        )
+
+
+def test_channel_bp_updated_event_handler_lower_nonce_than_expected(context: Context):
+    with save_metrics_state(metrics.REGISTRY) as metrics_state:
+        context = setup_state_with_closed_channel(context)
+
+        event_bp = ReceiveNonClosingBalanceProofUpdatedEvent(
+            token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
+            channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
+            closing_participant=DEFAULT_PARTICIPANT2,
+            nonce=Nonce(1),
+            block_number=BlockNumber(23),
+        )
+
+        channel = context.database.get_channel(
+            event_bp.token_network_address, event_bp.channel_identifier
+        )
+        assert context.database.channel_count() == 1
+        assert channel
+        assert channel.update_status is None
+
+        non_closing_balance_proof_updated_event_handler(event_bp, context)
+        # send twice the same message to trigger the non-increasing nonce
+        non_closing_balance_proof_updated_event_handler(event_bp, context)
+
+        assert (
+            metrics_state.get_delta(
+                "events_log_errors_total", labels=metrics.ErrorCategory.PROTOCOL.to_label_dict()
+            )
+            == 1.0
+        )
 
 
 def test_monitor_new_balance_proof_event_handler_sets_update_status(context: Context):
@@ -587,38 +593,52 @@ def test_monitor_new_balance_proof_event_handler_idempotency(context: Context):
     assert channel.update_status.update_sender_address == bytes([3] * 20)
 
 
-def test_monitor_reward_claimed_event_handler(
-    context: Context, log, prometheus_client_teardown: None
-):  # pylint: disable=unused-argument
-    context = setup_state_with_closed_channel(context)
+def test_monitor_reward_claimed_event_handler(context: Context, log):
+    with save_metrics_state(metrics.REGISTRY) as metrics_state:
 
-    claim_event = ReceiveMonitoringRewardClaimedEvent(
-        ms_address=context.ms_state.address,
-        amount=TokenAmount(1),
-        reward_identifier="REWARD",
-        block_number=BlockNumber(23),
-    )
+        context = setup_state_with_closed_channel(context)
 
-    monitor_reward_claim_event_handler(claim_event, context)
+        claim_event = ReceiveMonitoringRewardClaimedEvent(
+            ms_address=context.ms_state.address,
+            amount=TokenAmount(1),
+            reward_identifier="REWARD",
+            block_number=BlockNumber(23),
+        )
 
-    assert_metrics_has(
-        "economics_reward_claims_successful_total", 1, {"who": metrics.LabelWho.US.value}
-    )
-    assert_metrics_has(
-        "economics_reward_claims_token_total", 1, {"who": metrics.LabelWho.US.value}
-    )
-    assert log.has("Successfully claimed reward")
+        monitor_reward_claim_event_handler(claim_event, context)
 
-    claim_event.ms_address = Address(bytes([3] * 20))
-    monitor_reward_claim_event_handler(claim_event, context)
+        assert (
+            metrics_state.get_delta(
+                "economics_reward_claims_successful_total", labels=metrics.Who.US.to_label_dict()
+            )
+            == 1.0
+        )
+        assert (
+            metrics_state.get_delta(
+                "economics_reward_claims_token_total", labels=metrics.Who.US.to_label_dict()
+            )
+            == 1.0
+        )
 
-    assert_metrics_has(
-        "economics_reward_claims_successful_total", 1, {"who": metrics.LabelWho.THEY.value}
-    )
-    assert_metrics_has(
-        "economics_reward_claims_token_total", 1, {"who": metrics.LabelWho.THEY.value}
-    )
-    assert log.has("Another MS claimed reward")
+        assert log.has("Successfully claimed reward")
+
+        claim_event.ms_address = Address(bytes([3] * 20))
+        monitor_reward_claim_event_handler(claim_event, context)
+
+        assert (
+            metrics_state.get_delta(
+                "economics_reward_claims_successful_total", labels=metrics.Who.THEY.to_label_dict()
+            )
+            == 1.0
+        )
+        assert (
+            metrics_state.get_delta(
+                "economics_reward_claims_token_total", labels=metrics.Who.THEY.to_label_dict()
+            )
+            == 1.0
+        )
+
+        assert log.has("Another MS claimed reward")
 
 
 def test_action_monitoring_triggered_event_handler_does_not_trigger_monitor_call_when_nonce_to_small(  # noqa

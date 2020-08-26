@@ -131,7 +131,7 @@ def channel_closed_event_handler(event: Event, context: Context) -> None:
             token_network_address=event.token_network_address,
             identifier=event.channel_identifier,
         )
-        metrics.ERRORS_LOGGED.labels(error_category=metrics.LabelErrorCategory.STATE.value).inc()
+        metrics.get_metrics_for_label(metrics.ERRORS_LOGGED, metrics.ErrorCategory.STATE).inc()
         return
 
     # Check if the settle timeout is already over.
@@ -204,7 +204,7 @@ def non_closing_balance_proof_updated_event_handler(event: Event, context: Conte
             token_network_address=event.token_network_address,
             identifier=event.channel_identifier,
         )
-        metrics.ERRORS_LOGGED.labels(error_category=metrics.LabelErrorCategory.STATE.value).inc()
+        metrics.get_metrics_for_label(metrics.ERRORS_LOGGED, metrics.ErrorCategory.STATE).inc()
         return
 
     log.info(
@@ -224,9 +224,7 @@ def non_closing_balance_proof_updated_event_handler(event: Event, context: Conte
             participant2=channel.participant2,
             closing_participant=event.closing_participant,
         )
-        metrics.ERRORS_LOGGED.labels(
-            error_category=metrics.LabelErrorCategory.PROTOCOL.value
-        ).inc()
+        metrics.get_metrics_for_label(metrics.ERRORS_LOGGED, metrics.ErrorCategory.PROTOCOL).inc()
         return
 
     # check for known update calls and update accordingly
@@ -251,8 +249,8 @@ def non_closing_balance_proof_updated_event_handler(event: Event, context: Conte
                 know_nonce=channel.update_status.nonce,
                 received_nonce=event.nonce,
             )
-            metrics.ERRORS_LOGGED.labels(
-                error_category=metrics.LabelErrorCategory.PROTOCOL.value
+            metrics.get_metrics_for_label(
+                metrics.ERRORS_LOGGED, metrics.ErrorCategory.PROTOCOL
             ).inc()
             return
 
@@ -281,7 +279,7 @@ def channel_settled_event_handler(event: Event, context: Context) -> None:
             token_network_address=event.token_network_address,
             identifier=event.channel_identifier,
         )
-        metrics.ERRORS_LOGGED.labels(error_category=metrics.LabelErrorCategory.STATE.value).inc()
+        metrics.get_metrics_for_label(metrics.ERRORS_LOGGED, metrics.ErrorCategory.STATE).inc()
         return
 
     log.info(
@@ -304,7 +302,7 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context) -> N
             token_network_address=event.token_network_address,
             identifier=event.channel_identifier,
         )
-        metrics.ERRORS_LOGGED.labels(error_category=metrics.LabelErrorCategory.STATE.value).inc()
+        metrics.get_metrics_for_label(metrics.ERRORS_LOGGED, metrics.ErrorCategory.STATE).inc()
         return
 
     log.info(
@@ -338,8 +336,8 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context) -> N
                 know_nonce=update_status.nonce,
                 received_nonce=event.nonce,
             )
-            metrics.ERRORS_LOGGED.labels(
-                error_category=metrics.LabelErrorCategory.PROTOCOL.value
+            metrics.get_metrics_for_label(
+                metrics.ERRORS_LOGGED, metrics.ErrorCategory.PROTOCOL
             ).inc()
             return
 
@@ -400,14 +398,12 @@ def monitor_reward_claim_event_handler(event: Event, context: Context) -> None:
         log.info(
             "Successfully claimed reward", amount=event.amount, reward_id=event.reward_identifier,
         )
-        metrics.REWARD_CLAIMS.labels(who=metrics.LabelWho.US.value).inc()
-        metrics.REWARD_CLAIMS_TOKEN.labels(who=metrics.LabelWho.US.value).inc(event.amount)
+        metrics.report_increased_reward_claims(event.amount, metrics.Who.US)
     else:
         log.debug(
             "Another MS claimed reward", amount=event.amount, reward_id=event.reward_identifier,
         )
-        metrics.REWARD_CLAIMS.labels(who=metrics.LabelWho.THEY.value).inc()
-        metrics.REWARD_CLAIMS_TOKEN.labels(who=metrics.LabelWho.THEY.value).inc(event.amount)
+        metrics.report_increased_reward_claims(event.amount, metrics.Who.THEY)
 
 
 def updated_head_block_event_handler(event: Event, context: Context) -> None:
@@ -447,7 +443,7 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
             token_network_address=event.token_network_address,
             channel_id=event.channel_identifier,
         )
-        metrics.ERRORS_LOGGED.labels(error_category=metrics.LabelErrorCategory.STATE.value).inc()
+        metrics.get_metrics_for_label(metrics.ERRORS_LOGGED, metrics.ErrorCategory.STATE).inc()
         return
 
     channel = context.database.get_channel(
@@ -456,16 +452,14 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
     )
     if channel is None:
         log.error("Channel cannot be found", monitor_request=monitor_request)
-        metrics.ERRORS_LOGGED.labels(error_category=metrics.LabelErrorCategory.STATE.value).inc()
+        metrics.get_metrics_for_label(metrics.ERRORS_LOGGED, metrics.ErrorCategory.STATE).inc()
         return
 
     if not _is_mr_valid(monitor_request, channel):
         log.error(
             "MonitorRequest lost its validity", monitor_request=monitor_request, channel=channel,
         )
-        metrics.ERRORS_LOGGED.labels(
-            error_category=metrics.LabelErrorCategory.PROTOCOL.value
-        ).inc()
+        metrics.get_metrics_for_label(metrics.ERRORS_LOGGED, metrics.ErrorCategory.PROTOCOL).inc()
         return
 
     last_onchain_nonce = 0
@@ -544,8 +538,8 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
             first_allowed=first_allowed,
             failed_at=failed_at,
         )
-        metrics.ERRORS_LOGGED.labels(
-            error_category=metrics.LabelErrorCategory.BLOCKCHAIN.value
+        metrics.get_metrics_for_label(
+            metrics.ERRORS_LOGGED, metrics.ErrorCategory.BLOCKCHAIN
         ).inc()
         return
 
@@ -636,8 +630,9 @@ def action_claim_reward_triggered_event_handler(event: Event, context: Context) 
                 context.database.upsert_channel(channel)
         except Exception as exc:  # pylint: disable=broad-except
             log.error("Sending tx failed", exc_info=True, err=exc)
-            metrics.ERRORS_LOGGED.labels(
-                error_category=metrics.LabelErrorCategory.PROTOCOL.value
+
+            metrics.get_metrics_for_label(
+                metrics.ERRORS_LOGGED, metrics.ErrorCategory.PROTOCOL
             ).inc()
             # manually increase exception counter here because
             # exception is not visible from outside

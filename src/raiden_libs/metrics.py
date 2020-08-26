@@ -1,14 +1,13 @@
 from contextlib import contextmanager
 from enum import Enum, unique
-from typing import Generator, Tuple
+from typing import Dict, Generator, Tuple
 
-from prometheus_client import CollectorRegistry, Counter, Histogram
-from prometheus_client import CollectorRegistry, Counter, Histogram
+from prometheus_client import CollectorRegistry, Counter, Histogram, Metric
 from prometheus_client.context_managers import ExceptionCounter, Timer
 
-from raiden_libs.events import Event
 from raiden.messages.abstract import Message
-
+from raiden_libs.events import Event
+from raiden_libs.utils import camel_to_snake
 
 REGISTRY = CollectorRegistry(auto_describe=True)
 
@@ -17,7 +16,19 @@ MetricsGenerator = Generator[Tuple[Timer, ExceptionCounter], None, None]
 
 
 @unique
-class LabelErrorCategory(Enum):
+class MetricsEnum(Enum):
+    def __str__(self) -> str:
+        return str(self.value)
+
+    @classmethod
+    def label_name(cls) -> str:
+        return camel_to_snake(cls.__name__)
+
+    def to_label_dict(self) -> Dict[str, str]:
+        return {self.label_name(): str(self)}
+
+
+class ErrorCategory(MetricsEnum):
     STATE = "state"
     BLOCKCHAIN = "blockchain"
     PROTOCOL = "protocol"
@@ -26,7 +37,7 @@ class LabelErrorCategory(Enum):
 ERRORS_LOGGED = Counter(
     "events_log_errors_total",
     "The number of errors that were written to the log.",
-    labelnames=["error_category"],
+    labelnames=[ErrorCategory.label_name()],
     registry=REGISTRY,
 )
 
@@ -63,11 +74,6 @@ MESSAGES_PROCESSING_TIME = Histogram(
 )
 
 
-def report_error(error_category: LabelErrorCategory) -> None:
-    """ Convenience method to increase the error logged counter for a certain error category """
-    ERRORS_LOGGED.labels(error_category=error_category).inc()
-
-
 @contextmanager
 def collect_event_metrics(event: Event) -> MetricsGenerator:
     event_type = event.__class__.__name__
@@ -82,9 +88,18 @@ def collect_event_metrics(event: Event) -> MetricsGenerator:
 @contextmanager
 def collect_message_metrics(message: Message) -> MetricsGenerator:
     message_type = message.__class__.__name__
-    with MESSAGES_PROCESSING_TIME.labels(message_type=message_type
+    with MESSAGES_PROCESSING_TIME.labels(
+        message_type=message_type
     ).time() as timer, MESSAGES_EXCEPTIONS_RAISED.labels(
         message_type=message_type
     ).count_exceptions() as exception_counter:
         yield (timer, exception_counter)
 
+
+def get_metrics_for_label(metric: Metric, enum: MetricsEnum) -> Metric:
+    return metric.labels(**enum.to_label_dict())
+
+
+def report_error(error_category: ErrorCategory) -> None:
+    """ Convenience method to increase the error logged counter for a certain error category """
+    get_metrics_for_label(ERRORS_LOGGED, error_category).inc()
