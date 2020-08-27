@@ -5,7 +5,9 @@ from unittest.mock import Mock, call, patch
 
 import pytest
 from eth_utils import decode_hex, to_checksum_address
+from tests.utils import save_metrics_state
 
+from pathfinding_service import metrics
 from pathfinding_service.model.token_network import PFSFeeUpdate
 from pathfinding_service.service import PathfindingService
 from raiden.constants import EMPTY_SIGNATURE
@@ -43,6 +45,78 @@ from ..libs.mocks.web3 import ContractMock, Web3Mock
 
 PARTICIPANT1_PRIVKEY, PARTICIPANT1 = make_privkey_address()
 PARTICIPANT2 = Address(bytes([2] * 20))
+
+
+def test_prometheus_event_handling_no_exceptions(pathfinding_service_mock_empty):
+
+    metrics_state = save_metrics_state(metrics.REGISTRY)
+    pfs = pathfinding_service_mock_empty
+
+    token_address = TokenAddress(bytes([1] * 20))
+    token_network_address = TokenNetworkAddress(bytes([2] * 20))
+    channel_id = ChannelID(1)
+    p1 = Address(bytes([3] * 20))
+    p2 = Address(bytes([4] * 20))
+    events = [
+        ReceiveTokenNetworkCreatedEvent(
+            token_address=token_address,
+            token_network_address=token_network_address,
+            block_number=BlockNumber(1),
+        ),
+        ReceiveChannelOpenedEvent(
+            token_network_address=token_network_address,
+            channel_identifier=channel_id,
+            participant1=p1,
+            participant2=p2,
+            settle_timeout=BlockTimeout(10),
+            block_number=BlockNumber(2),
+        ),
+    ]
+    for event in events:
+        pfs.handle_event(event)
+
+        # check that we have non-zero processing time for the events we created
+        assert (
+            metrics_state.get_delta(
+                "events_processing_duration_seconds_sum",
+                labels={"event_type": event.__class__.__name__},
+            )
+            > 0.0
+        )
+        # there should be no exception raised
+        assert (
+            metrics_state.get_delta(
+                "events_exceptions_total", labels={"event_type": event.__class__.__name__}
+            )
+            == 0.0
+        )
+
+
+def test_prometheus_event_handling_raise_exception(pathfinding_service_mock_empty):
+    metrics_state = save_metrics_state(metrics.REGISTRY)
+    pfs = pathfinding_service_mock_empty
+
+    event = ReceiveTokenNetworkCreatedEvent(
+        token_address=TokenAddress(bytes([1] * 20)),
+        token_network_address=TokenNetworkAddress(bytes([2] * 20)),
+        block_number=BlockNumber(1),
+    )
+
+    pfs.handle_token_network_created = Mock(side_effect=KeyError())
+
+    with pytest.raises(KeyError):
+        pfs.handle_event(event)
+        # The exceptions raised in the wrapped part of the prometheus logging
+        # will not be handled anywhere at the moment.
+        # Force an exception and test correct logging of it anyways,
+        # since at some point higher in the call stack we could catch exceptions.
+        assert (
+            metrics_state.get_delta(
+                "events_exceptions_total",
+                labels={"event_type": "ReceiveTokenNetworkCreatedEvent"},
+            )
+            == 1.0
+        )
 
 
 def test_save_and_load_token_networks(pathfinding_service_mock_empty):
@@ -260,11 +334,16 @@ def test_token_channel_closed(pathfinding_service_mock, token_network_model):
 
 @pytest.mark.parametrize("order", ["normal", "fee_update_before_channel_open"])
 def test_update_fee(order, pathfinding_service_mock, token_network_model):
+    metrics_state = save_metrics_state(metrics.REGISTRY)
+
     pathfinding_service_mock.database.insert(
         "token_network", dict(address=token_network_model.address)
     )
     if order == "normal":
         setup_channel(pathfinding_service_mock, token_network_model)
+        exception_expected = False
+    else:
+        exception_expected = True
 
     fee_schedule = FeeScheduleState(
         flat=FeeAmount(1),
@@ -285,6 +364,18 @@ def test_update_fee(order, pathfinding_service_mock, token_network_model):
     fee_update.sign(LocalSigner(PARTICIPANT1_PRIVKEY))
     pathfinding_service_mock.handle_message(fee_update)
 
+    # Test for metrics having seen the processing of the message
+    assert (
+        metrics_state.get_delta(
+            "messages_processing_duration_seconds_sum",
+            labels={"message_type": "PFSFeeUpdate"},
+        )
+        > 0.0
+    )
+    assert metrics_state.get_delta(
+        "messages_exceptions_total", labels={"message_type": "PFSFeeUpdate"}
+    ) == float(exception_expected)
+
     if order == "fee_update_before_channel_open":
         setup_channel(pathfinding_service_mock, token_network_model)
 
@@ -294,10 +385,27 @@ def test_update_fee(order, pathfinding_service_mock, token_network_model):
 
 
 def test_unhandled_message(pathfinding_service_mock, log):
+    metrics_state = save_metrics_state(metrics.REGISTRY)
+
     unknown_message = Processed(MessageID(123), signature=EMPTY_SIGNATURE)
     unknown_message.sign(LocalSigner(PARTICIPANT1_PRIVKEY))
 
     pathfinding_service_mock.handle_message(unknown_message)
+
+    # Although the message is unknown and will be ignored,
+    # it is still logged under it's message type
+    assert (
+        metrics_state.get_delta(
+            "messages_processing_duration_seconds_sum",
+            labels={"message_type": "Processed"},
+        )
+        > 0.0
+    )
+    assert (
+        metrics_state.get_delta("messages_exceptions_total", labels={"message_type": "Processed"})
+        == 0.0
+    )
+
     assert log.has("Ignoring message", unknown_message=unknown_message)
 
 

@@ -396,12 +396,16 @@ def monitor_reward_claim_event_handler(event: Event, context: Context) -> None:
 
     if event.ms_address == context.ms_state.address:
         log.info(
-            "Successfully claimed reward", amount=event.amount, reward_id=event.reward_identifier,
+            "Successfully claimed reward",
+            amount=event.amount,
+            reward_id=event.reward_identifier,
         )
         metrics.report_increased_reward_claims(event.amount, metrics.Who.US)
     else:
         log.debug(
-            "Another MS claimed reward", amount=event.amount, reward_id=event.reward_identifier,
+            "Another MS claimed reward",
+            amount=event.amount,
+            reward_id=event.reward_identifier,
         )
         metrics.report_increased_reward_claims(event.amount, metrics.Who.THEY)
 
@@ -457,7 +461,9 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
 
     if not _is_mr_valid(monitor_request, channel):
         log.error(
-            "MonitorRequest lost its validity", monitor_request=monitor_request, channel=channel,
+            "MonitorRequest lost its validity",
+            monitor_request=monitor_request,
+            channel=channel,
         )
         metrics.get_metrics_for_label(metrics.ERRORS_LOGGED, metrics.ErrorCategory.PROTOCOL).inc()
         return
@@ -468,7 +474,8 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
 
     if monitor_request.nonce <= last_onchain_nonce:
         log.info(
-            "Another MS submitted the last known channel state", monitor_request=monitor_request,
+            "Another MS submitted the last known channel state",
+            monitor_request=monitor_request,
         )
         return
 

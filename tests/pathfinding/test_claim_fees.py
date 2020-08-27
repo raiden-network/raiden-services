@@ -5,13 +5,68 @@ import pytest
 from click.testing import CliRunner
 from eth_utils import decode_hex, to_canonical_address
 from tests.libs.mocks.web3 import Web3Mock
+from tests.utils import save_metrics_state
 from web3 import Web3
 
+from pathfinding_service import metrics
 from pathfinding_service.claim_fees import claim_ious, get_claimable_ious, main
 from pathfinding_service.model import IOU
 from pathfinding_service.service import PathfindingService
 from raiden.utils.signer import LocalSigner
 from raiden.utils.typing import BlockNumber, ChainID, Signature, TokenAmount
+
+
+def test_metrics_iou(  # pylint: disable=too-many-locals
+    pathfinding_service_web3_mock: PathfindingService,
+    one_to_n_contract,
+    web3: Web3,
+    deposit_to_udc,
+    get_accounts,
+    get_private_key,
+):
+    pfs = pathfinding_service_web3_mock
+
+    metrics_state = save_metrics_state(metrics.REGISTRY)
+    # Prepare test data
+    account = [decode_hex(acc) for acc in get_accounts(1)][0]
+    local_signer = LocalSigner(private_key=get_private_key(account))
+    iou = IOU(
+        sender=account,
+        receiver=pfs.address,
+        amount=TokenAmount(100),
+        expiration_block=BlockNumber(100),
+        signature=Signature(bytes([1] * 64)),
+        chain_id=ChainID(61),
+        one_to_n_address=to_canonical_address(one_to_n_contract.address),
+        claimed=False,
+    )
+    iou.signature = Signature(local_signer.sign(iou.packed_data()))
+    pfs.database.upsert_iou(iou)
+    deposit_to_udc(iou.sender, 300)
+
+    # Claim IOUs
+    skipped, failures = claim_ious(
+        ious=[iou],
+        claim_cost_rdn=TokenAmount(100),
+        one_to_n_contract=one_to_n_contract,
+        web3=web3,
+        database=pfs.database,
+    )
+    assert (skipped, failures) == (0, 0)
+
+    assert (
+        metrics_state.get_delta(
+            "economics_iou_claims_total", labels=metrics.IouStatus.SUCCESSFUL.to_label_dict()
+        )
+        == 1.0
+    )
+    assert (
+        metrics_state.get_delta(
+            "economics_iou_claims_token_total",
+            labels=metrics.IouStatus.SUCCESSFUL.to_label_dict(),
+        )
+        == 100.0
+    )
 
 
 def test_claim_fees(  # pylint: disable=too-many-locals

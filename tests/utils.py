@@ -1,5 +1,4 @@
-import copy
-from typing import Dict, Generator, List, Optional
+from typing import Dict, List, Optional
 
 from prometheus_client import CollectorRegistry, Metric
 
@@ -23,7 +22,7 @@ class MetricsRelativeState:
         before = self.get_saved_sample_value(name, labels=labels) or 0.0
         after = self._registry.get_sample_value(name, labels=labels) or 0.0
 
-        if type(before) != type(after):
+        if not isinstance(after, type(before)):
             raise TypeError(
                 "Sample value changed type after saving the state. This is not expected!"
             )

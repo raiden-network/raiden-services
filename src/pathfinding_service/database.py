@@ -149,6 +149,17 @@ class PFSDatabase(BaseDatabase):
             iou_dict["receiver"] = to_checksum_address(self.pfs_address)
             yield IOU.Schema().load(iou_dict)
 
+    def get_nof_claimed_ious(self) -> int:
+        query = """
+            SELECT COUNT(*)
+            FROM iou
+            where claimed
+        """
+        result = self.conn.execute(query)
+        nof_claimed_ious = result.fetchone()
+        assert result.fetchone() is None
+        return nof_claimed_ious["COUNT(*)"]
+
     def get_iou(
         self,
         sender: Address,
