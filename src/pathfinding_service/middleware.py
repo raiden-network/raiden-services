@@ -20,7 +20,7 @@ def http_retry_with_backoff_middleware(
     first_backoff: float = 0.2,
     backoff_factor: float = 2,
 ) -> Callable:
-    """ Retry requests with exponential backoff
+    """Retry requests with exponential backoff
 
     Creates middleware that retries failed HTTP requests and exponentially
     increases the backoff between retries. Meant to replace the default

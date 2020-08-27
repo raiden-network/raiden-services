@@ -187,7 +187,7 @@ class PFSDatabase(BaseDatabase):
     def delete_channel(
         self, token_network_address: TokenNetworkAddress, channel_id: ChannelID
     ) -> bool:
-        """ Tries to delete a channel from the database
+        """Tries to delete a channel from the database
 
         Args:
             token_network_address: The address of the token network of the channel

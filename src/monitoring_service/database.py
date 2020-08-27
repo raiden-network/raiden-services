@@ -237,8 +237,7 @@ class SharedDatabase(BaseDatabase):
         )
 
     def load_state(self) -> MonitoringServiceState:
-        """ Load MS state from db or return a new empty state if not saved one is present
-        """
+        """Load MS state from db or return a new empty state if not saved one is present"""
         blockchain = self.conn.execute("SELECT * FROM blockchain").fetchone()
         ms_state = MonitoringServiceState(
             blockchain_state=self.get_blockchain_state(),

@@ -83,7 +83,7 @@ class Path:
         log.debug("Created Path object", nodes=nodes, is_valid=self.is_valid, fees=self.fees)
 
     def _calculate_fees(self) -> Optional[List[FeeAmount]]:
-        """ Calcluates fees backwards for this path.
+        """Calcluates fees backwards for this path.
 
         Returns ``None``, if the fee calculation cannot be done.
         """
@@ -141,7 +141,7 @@ class Path:
         return fees
 
     def _check_validity_and_calculate_fees(self) -> Optional[List[FeeAmount]]:
-        """ Checks validity of this path and calculates fees if valid.
+        """Checks validity of this path and calculates fees if valid.
 
         Capacity: The capacity for the last channel must be at least
         the payment value. The previous channel's capacity has to be larger
@@ -237,7 +237,7 @@ class TokenNetwork:
         participant2: Address,
         settle_timeout: BlockTimeout,
     ) -> Channel:
-        """ Register the channel in the graph, add participants to graph if necessary.
+        """Register the channel in the graph, add participants to graph if necessary.
 
         Corresponds to the ChannelOpened event.
         We swap participants unless participant1 < participant2.
@@ -269,7 +269,7 @@ class TokenNetwork:
         self.G.add_edge(channel_view.participant1, channel_view.participant2, view=channel_view)
 
     def handle_channel_closed_event(self, channel_identifier: ChannelID) -> None:
-        """ Close a channel. This doesn't mean that the channel is settled yet, but it cannot
+        """Close a channel. This doesn't mean that the channel is settled yet, but it cannot
         transfer any more.
 
         Corresponds to the ChannelClosed event."""
@@ -469,7 +469,7 @@ class TokenNetwork:
         diversity_penalty: float = DIVERSITY_PEN_DEFAULT,
         fee_penalty: float = FEE_PEN_DEFAULT,
     ) -> List[Path]:
-        """ Find best routes according to given preferences
+        """Find best routes according to given preferences
 
         value: Amount of transferred tokens. Used for capacity checks
         diversity_penalty: One previously used channel is as bad as X more hops

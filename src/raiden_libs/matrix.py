@@ -206,7 +206,8 @@ class MatrixListener(gevent.Greenlet):
             self.user_manager.start()
 
             login(
-                self._client, signer=LocalSigner(private_key=self.private_key),
+                self._client,
+                signer=LocalSigner(private_key=self.private_key),
             )
         except (MatrixRequestError, ValueError):
             raise ConnectionError("Could not login/register to matrix.")
@@ -230,7 +231,8 @@ class MatrixListener(gevent.Greenlet):
         if refresh:
             self.user_manager.populate_userids_for_address(address)
             self.user_manager.track_address_presence(
-                address=address, user_ids=self.user_manager.get_userids_for_address(address),
+                address=address,
+                user_ids=self.user_manager.get_userids_for_address(address),
             )
 
         log.debug(
@@ -264,7 +266,7 @@ class MatrixListener(gevent.Greenlet):
         return True
 
     def _handle_message(self, room: Room, message: MatrixMessage) -> List[SignedMessage]:
-        """ Handle a single Matrix message.
+        """Handle a single Matrix message.
 
         The matrix message is expected to be a NDJSON, and each entry should be
         a valid JSON encoded Raiden message.

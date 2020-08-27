@@ -49,8 +49,8 @@ class Context:
 
     @property
     def latest_committed_block(self) -> BlockNumber:
-        """ The latest block for which all events have been processed and which
-        has been written to the DB. """
+        """The latest block for which all events have been processed and which
+        has been written to the DB."""
         return self.ms_state.blockchain_state.latest_committed_block
 
     @property

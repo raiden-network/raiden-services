@@ -35,7 +35,7 @@ from ...libs.mocks.web3 import ContractMock, Web3Mock
 def test_crash(
     tmpdir, get_accounts, get_private_key, mockchain
 ):  # pylint: disable=too-many-locals
-    """ Process blocks and compare results with/without crash
+    """Process blocks and compare results with/without crash
 
     A somewhat meaningful crash handling is simulated by not including the
     UpdatedHeadBlockEvent in every block.

@@ -98,7 +98,7 @@ def test_graph_pruning():
 
 
 def test_path_without_capacity(token_network_model: TokenNetwork, addresses: List[Address]):
-    """ Channels without capacity must not cause unexpected exceptions.
+    """Channels without capacity must not cause unexpected exceptions.
 
     Regression test for https://github.com/raiden-network/raiden-services/issues/636
     """

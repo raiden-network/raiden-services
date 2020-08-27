@@ -580,7 +580,7 @@ def test_action_monitoring_rescheduling_when_user_lacks_funds(context: Context):
 def test_action_monitoring_triggered_event_handler_with_sufficient_balance_does_trigger_monitor_call(  # noqa
     context: Context,
 ):
-    """ Tests that `monitor` is called when the ActionMonitoringTriggeredEvent is triggered and
+    """Tests that `monitor` is called when the ActionMonitoringTriggeredEvent is triggered and
     user has sufficient balance in user deposit contract
 
     Also a test for https://github.com/raiden-network/raiden-services/issues/29 , as the MR
@@ -616,7 +616,7 @@ def test_action_monitoring_triggered_event_handler_with_sufficient_balance_does_
 def test_action_monitoring_triggered_event_handler_with_insufficient_reward_amount_does_not_trigger_monitor_call(  # noqa
     context: Context,
 ):
-    """ Tests that `monitor` is not called when the ActionMonitoringTriggeredEvent is triggered but
+    """Tests that `monitor` is not called when the ActionMonitoringTriggeredEvent is triggered but
     the monitor request shows an insufficient reward amount
     """
     context = setup_state_with_closed_channel(context)
@@ -649,7 +649,7 @@ def test_action_monitoring_triggered_event_handler_with_insufficient_reward_amou
 def test_action_monitoring_triggered_event_handler_without_sufficient_balance_doesnt_trigger_monitor_call(  # noqa
     context: Context,
 ):
-    """ Tests that `monitor` is not called when user has insufficient balance in user deposit contract
+    """Tests that `monitor` is not called when user has insufficient balance in user deposit contract
 
     Also a test for https://github.com/raiden-network/raiden-services/issues/29 , as the MR
     is sent after the channel has been closed.
@@ -682,7 +682,7 @@ def test_action_monitoring_triggered_event_handler_without_sufficient_balance_do
 
 
 def test_mr_available_before_channel_triggers_monitor_call(context: Context):
-    """ Tests that the MR is read from the DB, even if it is supplied before the channel was opened.
+    """Tests that the MR is read from the DB, even if it is supplied before the channel was opened.
 
     See https://github.com/raiden-network/raiden-services/issues/26
     """
@@ -708,8 +708,7 @@ def test_mr_available_before_channel_triggers_monitor_call(context: Context):
 
 
 def test_mr_with_unknown_signatures(context: Context):
-    """ The signatures are valid but don't belong to the participants.
-    """
+    """The signatures are valid but don't belong to the participants."""
     context = setup_state_with_closed_channel(context)
 
     def assert_mr_is_ignored(mr):
@@ -737,7 +736,7 @@ def test_mr_with_unknown_signatures(context: Context):
 def test_action_claim_reward_triggered_event_handler_does_trigger_claim_call(  # noqa
     context: Context,
 ):
-    """ Tests that `claimReward` is called when the ActionMonitoringTriggeredEvent is triggered and
+    """Tests that `claimReward` is called when the ActionMonitoringTriggeredEvent is triggered and
     user has sufficient balance in user deposit contract
     """
     context = setup_state_with_closed_channel(context)
@@ -773,7 +772,7 @@ def test_action_claim_reward_triggered_event_handler_does_trigger_claim_call(  #
 def test_action_claim_reward_triggered_event_handler_without_reward_doesnt_trigger_claim_call(  # noqa
     context: Context,
 ):
-    """ Tests that `claimReward` is called when the ActionMonitoringTriggeredEvent is triggered and
+    """Tests that `claimReward` is called when the ActionMonitoringTriggeredEvent is triggered and
     user has sufficient balance in user deposit contract
     """
     context = setup_state_with_closed_channel(context)
@@ -809,7 +808,7 @@ def test_action_claim_reward_triggered_event_handler_without_reward_doesnt_trigg
 def test_action_claim_reward_triggered_event_handler_without_update_state_doesnt_trigger_claim_call(  # noqa
     context: Context,
 ):
-    """ Tests that `claimReward` is called when the ActionMonitoringTriggeredEvent is triggered and
+    """Tests that `claimReward` is called when the ActionMonitoringTriggeredEvent is triggered and
     user has sufficient balance in user deposit contract
     """
     context = setup_state_with_closed_channel(context)
