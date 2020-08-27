@@ -21,7 +21,7 @@ def get_contract_addresses_and_start_block(
     address_overwrites: Dict[str, Address],
     contracts_version: Optional[str] = None,
 ) -> Tuple[Dict[str, Address], BlockNumber]:
-    """ Returns contract addresses and start query block for a given chain and contracts version.
+    """Returns contract addresses and start query block for a given chain and contracts version.
 
     The default contracts can be overwritten by the additional parameters.
 

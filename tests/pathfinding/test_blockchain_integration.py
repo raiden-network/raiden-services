@@ -34,7 +34,7 @@ def test_pfs_with_mocked_client(  # pylint: disable=too-many-arguments
     create_channel,
     get_private_key,
 ):  # pylint: disable=too-many-locals
-    """ Instantiates some MockClients and the PathfindingService.
+    """Instantiates some MockClients and the PathfindingService.
 
     Mocks blockchain events to setup a token network with a given topology, specified in
     the channel_description fixture. Tests all PFS methods w.r.t. to that topology

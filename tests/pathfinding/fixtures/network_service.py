@@ -34,7 +34,7 @@ from ..utils import SimpleReachabilityContainer
 
 @pytest.fixture(scope="session")
 def channel_descriptions_case_1() -> List:
-    """ Creates a network with some edge cases.
+    """Creates a network with some edge cases.
 
     These include disconneced subgraph, depleted channels...
     """
@@ -75,7 +75,7 @@ def channel_descriptions_case_1() -> List:
 
 @pytest.fixture
 def channel_descriptions_case_2() -> List:
-    """ Creates a network with three paths from 0 to 4.
+    """Creates a network with three paths from 0 to 4.
 
     The paths differ in length and cost.
     """

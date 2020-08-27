@@ -348,7 +348,7 @@ def test_regression_issue_554():
     ],
 )
 def test_compounding_fees(flat_fee_cli, prop_fee_cli, estimated_fee):
-    """ The transferred amount needs to include the fees for all mediators.
+    """The transferred amount needs to include the fees for all mediators.
     Earlier mediators will apply the proportional fee not only on the payment
     amount, but also on the fees for later mediators.
     """

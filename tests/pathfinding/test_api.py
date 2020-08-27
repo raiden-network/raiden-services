@@ -621,7 +621,7 @@ def test_cors(api_url: str):
 
 @pytest.mark.usefixtures("api_sut")
 def test_suggest_partner_api(api_url: str, token_network_model: TokenNetwork):
-    """ Smoke test for partner suggestion REST endpoint
+    """Smoke test for partner suggestion REST endpoint
 
     The actual content is tested in ``test_graphs.test_suggest_partner``.
     """

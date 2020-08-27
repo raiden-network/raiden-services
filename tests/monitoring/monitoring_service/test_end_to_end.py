@@ -153,12 +153,12 @@ def test_e2e(  # pylint: disable=too-many-arguments,too-many-locals
     get_private_key,
 ):
     """Test complete message lifecycle
-        1) client opens channel & submits monitoring request
-        2) other client closes channel
-        3) MS registers channelClose event
-        4) MS calls monitoring contract update
-        5) wait for channel settle
-        6) MS claims the reward
+    1) client opens channel & submits monitoring request
+    2) other client closes channel
+    3) MS registers channelClose event
+    4) MS calls monitoring contract update
+    5) wait for channel settle
+    6) MS claims the reward
     """
     query = create_ms_contract_events_query(web3, monitoring_service_contract.address)
     initial_balance = user_deposit_contract.functions.balances(monitoring_service.address).call()

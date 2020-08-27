@@ -67,7 +67,7 @@ EVENT_TOPIC_TO_ABI = create_event_topic_to_abi_dict()
 
 
 def get_web3_provider_info(web3: Web3) -> str:
-    """ Returns information about the provider
+    """Returns information about the provider
 
     Currently works only with `HTTPProvider`. Needs to be adapted when new procviders
     are added.
@@ -276,7 +276,7 @@ def get_monitoring_blockchain_events(
 def get_pessimistic_udc_balance(
     udc: Contract, address: Address, from_block: BlockNumber, to_block: BlockNumber
 ) -> TokenAmount:
-    """ Get the effective UDC balance using the block with the lowest result.
+    """Get the effective UDC balance using the block with the lowest result.
 
     Blocks between the latest confirmed block and the latest block are considered.
     """
@@ -331,11 +331,17 @@ def get_blockchain_events_adaptive(
         filter_query_duration = after_query - before_query
         if filter_query_duration < ETH_GET_LOGS_THRESHOLD_FAST:
             blockchain_state.current_event_filter_interval = BlockTimeout(
-                min(MAX_FILTER_INTERVAL, blockchain_state.current_event_filter_interval * 2,)
+                min(
+                    MAX_FILTER_INTERVAL,
+                    blockchain_state.current_event_filter_interval * 2,
+                )
             )
         elif filter_query_duration > ETH_GET_LOGS_THRESHOLD_SLOW:
             blockchain_state.current_event_filter_interval = BlockTimeout(
-                max(MIN_FILTER_INTERVAL, blockchain_state.current_event_filter_interval // 2,)
+                max(
+                    MIN_FILTER_INTERVAL,
+                    blockchain_state.current_event_filter_interval // 2,
+                )
             )
 
         return events

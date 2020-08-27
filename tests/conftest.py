@@ -75,7 +75,7 @@ def _get_running_greenlets():
 
 @pytest.fixture(autouse=True)
 def no_greenlets_left():
-    """ Check that no greenlets run at the end of a test
+    """Check that no greenlets run at the end of a test
 
     It's easy to forget to properly stop all greenlets or to introduce a subtle
     bug in the shutdown process. Left over greenlets will cause other tests to

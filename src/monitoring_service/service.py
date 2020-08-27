@@ -52,7 +52,7 @@ def check_gas_reserve(web3: Web3, private_key: PrivateKey) -> None:
 
 
 def handle_event(event: Event, context: Context) -> None:
-    """ Calls the handler for the given event.
+    """Calls the handler for the given event.
 
     Exceptions are caught and generate both error logs and sentry issues.
     Events are not retried after an exception.
@@ -168,7 +168,7 @@ class MonitoringService:
             handle_event(event, self.context)
 
     def _trigger_scheduled_events(self) -> None:
-        """ Trigger scheduled events
+        """Trigger scheduled events
 
         Here `latest_block` is used instead of `latest_confirmed_block`, because triggered
         events only rely on block number, and not on certain events that might change during
@@ -184,7 +184,7 @@ class MonitoringService:
             self.context.database.remove_scheduled_event(scheduled_event)
 
     def _check_pending_transactions(self) -> None:
-        """ Checks if pending transaction have been mined and confirmed.
+        """Checks if pending transaction have been mined and confirmed.
 
         This is done here so we don't have to block waiting for receipts in the state machine.
 
@@ -219,7 +219,7 @@ class MonitoringService:
                 )
 
     def _purge_old_monitor_requests(self) -> None:
-        """ Delete all old MRs for which still no channel exists.
+        """Delete all old MRs for which still no channel exists.
 
         Also marks all MRs which have a channel as not waiting_for_channel to
         avoid checking them again, every time.
