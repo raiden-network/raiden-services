@@ -1,5 +1,5 @@
 # pylint: disable=redefined-outer-name
-from typing import Any, Dict, List, Optional
+from typing import Optional
 from unittest.mock import Mock, patch
 
 import pytest

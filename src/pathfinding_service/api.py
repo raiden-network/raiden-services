@@ -18,12 +18,16 @@ from flask_restful import Resource
 from gevent.pywsgi import WSGIServer
 from marshmallow import fields
 from marshmallow_dataclass import add_schema
-from src.pathfinding_service.constants import CACHE_TIMEOUT_SUGGEST_PARTNER
+from prometheus_client import make_wsgi_app
 from web3 import Web3
+from werkzeug.exceptions import NotFound
+from werkzeug.middleware.dispatcher import DispatcherMiddleware
 
 import pathfinding_service.exceptions as exceptions
+from pathfinding_service import metrics
 from pathfinding_service.constants import (
     API_PATH,
+    CACHE_TIMEOUT_SUGGEST_PARTNER,
     DEFAULT_INFO_MESSAGE,
     DEFAULT_MAX_PATHS,
     MAX_AGE_OF_IOU_REQUESTS,
@@ -559,8 +563,17 @@ class PFSApi:
         service_fee: TokenAmount = TokenAmount(0),
         debug_mode: bool = False,
     ) -> None:
-        self.flask_app = Flask(__name__)
-        self.api = ApiWithErrorHandler(self.flask_app)
+        flask_app = Flask(__name__)
+
+        self.flask_app = DispatcherMiddleware(
+            NotFound(),
+            {
+                f"{API_PATH}/metrics": make_wsgi_app(registry=metrics.REGISTRY),
+                API_PATH: flask_app.wsgi_app,
+            },
+        )
+
+        self.api = ApiWithErrorHandler(flask_app)
         self.rest_server: Optional[WSGIServer] = None
         self.one_to_n_address = one_to_n_address
         self.pathfinding_service = pathfinding_service
@@ -569,7 +582,7 @@ class PFSApi:
         self.info_message = info_message
 
         # Enable cross origin requests
-        @self.flask_app.after_request
+        @flask_app.after_request
         def after_request(response: Response) -> Response:  # pylint: disable=unused-variable
             response.headers.add("Access-Control-Allow-Origin", "*")
             response.headers.add("Access-Control-Allow-Headers", "Origin, Content-Type, Accept")
@@ -616,7 +629,6 @@ class PFSApi:
             )
 
         for endpoint_url, resource, kwargs, endpoint in resources:
-            endpoint_url = API_PATH + endpoint_url
             kwargs.update({"pathfinding_service": pathfinding_service, "api": self})
             self.api.add_resource(
                 resource, endpoint_url, resource_class_kwargs=kwargs, endpoint=endpoint

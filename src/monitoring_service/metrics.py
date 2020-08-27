@@ -1,7 +1,7 @@
-from prometheus_client import CollectorRegistry, Counter
+from prometheus_client import Counter
 
 from raiden.utils.typing import TokenAmount
-from raiden_libs.metrics import (
+from raiden_libs.metrics import (  # noqa: F401, pylint: disable=unused-import
     ERRORS_LOGGED,
     EVENTS_EXCEPTIONS_RAISED,
     EVENTS_PROCESSING_TIME,

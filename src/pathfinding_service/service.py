@@ -2,7 +2,7 @@ import collections
 import sys
 import time
 from dataclasses import asdict
-from typing import Dict, List, Optional
+from typing import Dict, Iterator, List, Optional
 
 import gevent
 import sentry_sdk
@@ -12,13 +12,14 @@ from gevent import Timeout
 from web3 import Web3
 from web3.contract import Contract
 
+from pathfinding_service import metrics
 from pathfinding_service.database import PFSDatabase
 from pathfinding_service.exceptions import (
     InvalidCapacityUpdate,
     InvalidFeeUpdate,
     InvalidGlobalMessage,
 )
-from pathfinding_service.model import TokenNetwork
+from pathfinding_service.model import IOU, TokenNetwork
 from pathfinding_service.model.channel import Channel
 from pathfinding_service.typing import DeferableMessage
 from raiden.constants import PATH_FINDING_BROADCASTING_ROOM, UINT256_MAX
@@ -107,6 +108,25 @@ class PathfindingService(gevent.Greenlet):
         self.token_networks = self._load_token_networks()
         self.updated = gevent.event.Event()  # set whenever blocks are processed
         self.startup_finished = gevent.event.AsyncResult()
+
+        self._init_metrics()
+
+    def _init_metrics(self) -> None:
+        def _get_number_of_claimed_ious() -> float:
+            return float(self.database.get_nof_claimed_ious())
+
+        def _get_total_amount_of_claimed_ious() -> float:
+            return float(sum(iou.amount for iou in self._iter_claimed_ious()))
+
+        metrics.get_metrics_for_label(
+            metrics.IOU_CLAIMS, metrics.IouStatus.SUCCESSFUL
+        ).set_function(_get_number_of_claimed_ious)
+        metrics.get_metrics_for_label(
+            metrics.IOU_CLAIMS_TOKEN, metrics.IouStatus.SUCCESSFUL
+        ).set_function(_get_total_amount_of_claimed_ious)
+
+    def _iter_claimed_ious(self) -> Iterator[IOU]:
+        return self.database.get_ious(claimed=True)
 
     def _load_token_networks(self) -> Dict[TokenNetworkAddress, TokenNetwork]:
         network_for_address = {n.address: n for n in self.database.get_token_networks()}
@@ -203,19 +223,20 @@ class PathfindingService(gevent.Greenlet):
 
     def handle_event(self, event: Event) -> None:
         with sentry_sdk.configure_scope() as scope:
-            scope.set_extra("event", event)
-            if isinstance(event, ReceiveTokenNetworkCreatedEvent):
-                self.handle_token_network_created(event)
-            elif isinstance(event, ReceiveChannelOpenedEvent):
-                self.handle_channel_opened(event)
-            elif isinstance(event, ReceiveChannelClosedEvent):
-                self.handle_channel_closed(event)
-            elif isinstance(event, UpdatedHeadBlockEvent):
-                # TODO: Store blockhash here as well
-                self.blockchain_state.latest_committed_block = event.head_block_number
-                self.database.update_lastest_committed_block(event.head_block_number)
-            else:
-                log.debug("Unhandled event", evt=event)
+            with metrics.collect_event_metrics(event):
+                scope.set_extra("event", event)
+                if isinstance(event, ReceiveTokenNetworkCreatedEvent):
+                    self.handle_token_network_created(event)
+                elif isinstance(event, ReceiveChannelOpenedEvent):
+                    self.handle_channel_opened(event)
+                elif isinstance(event, ReceiveChannelClosedEvent):
+                    self.handle_channel_closed(event)
+                elif isinstance(event, UpdatedHeadBlockEvent):
+                    # TODO: Store blockhash here as well
+                    self.blockchain_state.latest_committed_block = event.head_block_number
+                    self.database.update_lastest_committed_block(event.head_block_number)
+                else:
+                    log.debug("Unhandled event", evt=event)
 
     def handle_token_network_created(self, event: ReceiveTokenNetworkCreatedEvent) -> None:
         network_address = event.token_network_address
@@ -269,21 +290,23 @@ class PathfindingService(gevent.Greenlet):
                 token_network_address=event.token_network_address,
                 channel_identifier=event.channel_identifier,
             )
+            metrics.get_metrics_for_label(metrics.ERRORS_LOGGED, metrics.ErrorCategory.STATE).inc()
 
     def handle_message(self, message: Message) -> None:
         with sentry_sdk.configure_scope() as scope:
             scope.set_extra("message", message)
             try:
-                if isinstance(message, PFSCapacityUpdate):
-                    changed_channel: Optional[Channel] = self.on_capacity_update(message)
-                elif isinstance(message, PFSFeeUpdate):
-                    changed_channel = self.on_fee_update(message)
-                else:
-                    log.debug("Ignoring message", unknown_message=message)
-                    return
+                with metrics.collect_message_metrics(message):
+                    if isinstance(message, PFSCapacityUpdate):
+                        changed_channel: Optional[Channel] = self.on_capacity_update(message)
+                    elif isinstance(message, PFSFeeUpdate):
+                        changed_channel = self.on_fee_update(message)
+                    else:
+                        log.debug("Ignoring message", unknown_message=message)
+                        return
 
-                if changed_channel:
-                    self.database.upsert_channel(changed_channel)
+                    if changed_channel:
+                        self.database.upsert_channel(changed_channel)
 
             except DeferMessage as ex:
                 self.defer_message_until_channel_is_open(ex.deferred_message)
