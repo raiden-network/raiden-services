@@ -1,5 +1,4 @@
 import copy
-from contextlib import contextmanager
 from typing import Dict, Generator, List, Optional
 
 from prometheus_client import CollectorRegistry, Metric
@@ -47,8 +46,7 @@ class MetricsRelativeState:
         return None
 
 
-@contextmanager
-def save_metrics_state(registry: CollectorRegistry) -> Generator[MetricsRelativeState, None, None]:
+def save_metrics_state(registry: CollectorRegistry) -> MetricsRelativeState:
     state = MetricsRelativeState(registry)
     state.save_state()
-    yield state
+    return state
