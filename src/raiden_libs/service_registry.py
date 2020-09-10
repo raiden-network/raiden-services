@@ -15,6 +15,7 @@ from web3.logs import DISCARD
 from web3.middleware import construct_sign_and_send_raw_middleware
 from web3.types import TxReceipt
 
+from raiden.settings import DEFAULT_NUMBER_OF_BLOCK_CONFIRMATIONS
 from raiden.utils.typing import Address, BlockNumber
 from raiden_contracts.constants import (
     CONTRACT_CUSTOM_TOKEN,
@@ -76,8 +77,13 @@ def etherscan_url_for_txhash(chain_id: int, tx_hash: HexBytes) -> str:
 
 
 def checked_transact(
-    web3: Web3, sender_address: Address, function_call: ContractFunction, task_name: str
+    web3: Web3,
+    sender_address: Address,
+    function_call: ContractFunction,
+    task_name: str,
+    wait_confirmation_interval: bool = True,
 ) -> TxReceipt:
+
     log.info(f"Starting: {task_name}")
     transaction_hash = function_call.transact({"from": sender_address})
 
@@ -87,6 +93,16 @@ def checked_transact(
     )
 
     transaction_receipt = web3.eth.waitForTransactionReceipt(transaction_hash)
+
+    if wait_confirmation_interval:
+        while (
+            "blockNumber" not in transaction_receipt
+            or web3.eth.blockNumber
+            < transaction_receipt["blockNumber"] + DEFAULT_NUMBER_OF_BLOCK_CONFIRMATIONS
+        ):
+            time.sleep(5)
+            transaction_receipt = web3.eth.waitForTransactionReceipt(transaction_hash)
+
     was_successful = transaction_receipt["status"] == 1
 
     if not was_successful:
@@ -198,7 +214,8 @@ def register_account(
     service_registry_address = to_canonical_address(service_registry_contract.address)
     deposit_token_address = service_registry_contract.functions.token().call()
     deposit_token_contract = web3.eth.contract(
-        address=deposit_token_address, abi=CONTRACT_MANAGER.get_contract_abi(CONTRACT_CUSTOM_TOKEN)
+        address=deposit_token_address,
+        abi=CONTRACT_MANAGER.get_contract_abi(CONTRACT_CUSTOM_TOKEN),
     )
 
     click.secho(
@@ -251,6 +268,7 @@ def register_account(
         old_allowance = deposit_token_contract.functions.allowance(
             service_address, service_registry_contract.address
         ).call()
+
         if old_allowance > 0:
             log.info("Found old allowance, resetting to zero", old_allowance=old_allowance)
             checked_transact(
@@ -281,7 +299,11 @@ def register_account(
             )
 
             balance = deposit_token_contract.functions.balanceOf(service_address).call()
-            log.info("Updated account balance", balance=balance, desired_deposit=latest_deposit)
+            log.info(
+                "Updated account balance",
+                balance=balance,
+                desired_deposit=latest_deposit,
+            )
 
         # Approve token transfer
         checked_transact(
@@ -292,6 +314,7 @@ def register_account(
             ),
             task_name="Allowing token transfer for deposit",
         )
+
         # Deposit tokens
         receipt = checked_transact(
             web3=web3,
@@ -299,6 +322,7 @@ def register_account(
             function_call=service_registry_contract.functions.deposit(latest_deposit),
             task_name="Depositing to service registry",
         )
+
         events = service_registry_contract.events.RegisteredService().processReceipt(
             receipt, errors=DISCARD
         )
@@ -336,7 +360,10 @@ def register_account(
 @blockchain_options(contracts=[CONTRACT_DEPOSIT, CONTRACT_SERVICE_REGISTRY])
 @cli.command("withdraw")
 @click.option(
-    "--to", type=str, callback=validate_address, help="Target address for withdrawn tokens"
+    "--to",
+    type=str,
+    callback=validate_address,
+    help="Target address for withdrawn tokens",
 )
 @common_options("service_registry")
 def withdraw(
@@ -385,6 +412,7 @@ def withdraw(
         sender_address=caller_address,
         function_call=deposit_contract.functions.withdraw(receiver),
         task_name="withdraw",
+        wait_confirmation_interval=False,
     )
 
 
