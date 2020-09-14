@@ -171,7 +171,7 @@ def register_account(
     if not accept_disclaimer and not accept_all:
         click.confirm(CONFIRMATION_OF_UNDERSTANDING, abort=True)
 
-    def maybe_promt(query: str) -> None:
+    def maybe_prompt(query: str) -> None:
         if not accept_all:
             click.confirm(query, abort=True)
 
@@ -191,7 +191,7 @@ def register_account(
         f"\nThis will run the registration with the address {to_checksum_address(service_address)}"
         f"\n\tSee {etherscan_url_for_address(chain_id, service_address)}"
     )
-    maybe_promt("I have checked that the address is correct and want to continue")
+    maybe_prompt("I have checked that the address is correct and want to continue")
 
     # Create contract proxies
     service_registry_contract = contracts[CONTRACT_SERVICE_REGISTRY]
@@ -206,7 +206,7 @@ def register_account(
         f"{to_checksum_address(service_registry_contract.address)}"
         f"\n\tSee {etherscan_url_for_address(chain_id, service_registry_address)}"
     )
-    maybe_promt("I have checked that the address is correct and want to continue")
+    maybe_prompt("I have checked that the address is correct and want to continue")
 
     # Check current token balance
     account_balance = deposit_token_contract.functions.balanceOf(service_address).call()
@@ -217,7 +217,7 @@ def register_account(
         f"\n\tSee {etherscan_url_for_address(chain_id, deposit_token_address)}"
         f"\nThe account balance of that token is {account_balance}"  # TODO: format nicely
     )
-    maybe_promt("I have checked that the address and my balance are correct and want to continue")
+    maybe_prompt("I have checked that the address and my balance are correct and want to continue")
 
     # check if already registered
     currently_registered = service_registry_contract.functions.hasValidRegistration(
@@ -242,7 +242,7 @@ def register_account(
             "\n\tNote: The required deposit may change over time."
             # TODO: add link to high level description of the auction format
         )
-        maybe_promt(
+        maybe_prompt(
             "I have read the current deposit and understand that continuing will transfer tokens"
         )
 
@@ -318,7 +318,7 @@ def register_account(
     #       Can we even do that without running in a circular dependency?
     if service_url and service_url != current_url:
         click.secho(f"\nNew Url to be registered {service_url}")
-        maybe_promt("I have checked the URL and it is correct")
+        maybe_prompt("I have checked the URL and it is correct")
 
         checked_transact(
             web3=web3,
