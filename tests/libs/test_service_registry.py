@@ -9,10 +9,7 @@ from raiden_libs.service_registry import register_account
 
 
 def test_registration(
-    web3: Web3,
-    service_registry: Contract,
-    get_accounts: Callable,
-    get_private_key: Callable,
+    web3: Web3, service_registry: Contract, get_accounts: Callable, get_private_key: Callable
 ) -> None:
     (account,) = get_accounts(1)
     pk1 = get_private_key(account)

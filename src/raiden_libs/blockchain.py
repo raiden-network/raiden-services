@@ -331,17 +331,11 @@ def get_blockchain_events_adaptive(
         filter_query_duration = after_query - before_query
         if filter_query_duration < ETH_GET_LOGS_THRESHOLD_FAST:
             blockchain_state.current_event_filter_interval = BlockTimeout(
-                min(
-                    MAX_FILTER_INTERVAL,
-                    blockchain_state.current_event_filter_interval * 2,
-                )
+                min(MAX_FILTER_INTERVAL, blockchain_state.current_event_filter_interval * 2)
             )
         elif filter_query_duration > ETH_GET_LOGS_THRESHOLD_SLOW:
             blockchain_state.current_event_filter_interval = BlockTimeout(
-                max(
-                    MIN_FILTER_INTERVAL,
-                    blockchain_state.current_event_filter_interval // 2,
-                )
+                max(MIN_FILTER_INTERVAL, blockchain_state.current_event_filter_interval // 2)
             )
 
         return events

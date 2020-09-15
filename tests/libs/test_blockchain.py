@@ -33,9 +33,7 @@ def create_tnr_contract_events_query(web3: Web3, contract_address: Address):
 
 @pytest.mark.usefixtures("token_network")
 def test_limit_inclusivity_in_query_blockchain_events(
-    web3: Web3,
-    wait_for_blocks,
-    token_network_registry_contract,
+    web3: Web3, wait_for_blocks, token_network_registry_contract
 ):
     query = create_tnr_contract_events_query(web3, token_network_registry_contract.address)
 
