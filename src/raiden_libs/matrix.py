@@ -41,7 +41,7 @@ from raiden.settings import (
 from raiden.storage.serialization.serializer import MessageSerializer
 from raiden.utils.cli import get_matrix_servers
 from raiden.utils.signer import LocalSigner
-from raiden.utils.typing import Address, ChainID
+from raiden.utils.typing import Address, ChainID, RoomID
 from raiden_contracts.utils.type_aliases import PrivateKey
 
 log = structlog.get_logger(__name__)
@@ -162,6 +162,7 @@ class MatrixListener(gevent.Greenlet):
             http_retry_timeout=40,
             http_retry_delay=matrix_http_retry_delay,
         )
+        self.broadcast_room_id: Optional[RoomID] = None
         self._broadcast_room: Optional[Room] = None
         self._displayname_cache = DisplayNameCache()
         self.base_url = self._client.api.base_url
@@ -205,10 +206,7 @@ class MatrixListener(gevent.Greenlet):
         try:
             self.user_manager.start()
 
-            login(
-                self._client,
-                signer=LocalSigner(private_key=self.private_key),
-            )
+            login(self._client, signer=LocalSigner(private_key=self.private_key))
         except (MatrixRequestError, ValueError):
             raise ConnectionError("Could not login/register to matrix.")
 
@@ -219,6 +217,7 @@ class MatrixListener(gevent.Greenlet):
             self._broadcast_room = join_broadcast_room(
                 client=self._client, broadcast_room_alias=room_alias
             )
+            self.broadcast_room_id = self._broadcast_room.room_id
 
             sync_filter_id = self._client.create_sync_filter(rooms=[self._broadcast_room])
             self._client.set_sync_filter_id(sync_filter_id)
@@ -231,8 +230,7 @@ class MatrixListener(gevent.Greenlet):
         if refresh:
             self.user_manager.populate_userids_for_address(address)
             self.user_manager.track_address_presence(
-                address=address,
-                user_ids=self.user_manager.get_userids_for_address(address),
+                address=address, user_ids=self.user_manager.get_userids_for_address(address)
             )
 
         log.debug(
