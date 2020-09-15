@@ -70,14 +70,14 @@ def test_first_allowed_monitoring(
         nonce=Nonce(1),
         transferred_amount=transferred_c1,
         priv_key=get_private_key(c1),
-        **shared_bp_args
+        **shared_bp_args,
     )
     transferred_c2 = 6
     balance_proof_c2 = HashedBalanceProof(
         nonce=Nonce(2),
         transferred_amount=transferred_c2,
         priv_key=get_private_key(c2),
-        **shared_bp_args
+        **shared_bp_args,
     )
     monitoring_service._process_new_blocks(web3.eth.blockNumber)
     assert len(monitoring_service.context.database.get_token_network_addresses()) > 0
@@ -186,14 +186,14 @@ def test_e2e(  # pylint: disable=too-many-arguments,too-many-locals
         nonce=Nonce(1),
         transferred_amount=transferred_c1,
         priv_key=get_private_key(c1),
-        **shared_bp_args
+        **shared_bp_args,
     )
     transferred_c2 = 6
     balance_proof_c2 = HashedBalanceProof(
         nonce=Nonce(2),
         transferred_amount=transferred_c2,
         priv_key=get_private_key(c2),
-        **shared_bp_args
+        **shared_bp_args,
     )
 
     ms_greenlet = gevent.spawn(monitoring_service.start)

@@ -1,11 +1,10 @@
 CODE_DIRS = src/ tests/ setup.py
 ISORT_PARAMS = --ignore-whitespace --settings-path . --recursive $(CODE_DIRS)
-BLACK_PARAMS = --line-length 99
 
 all: lint
 
 lint: mypy
-	black --check --diff $(BLACK_PARAMS) $(CODE_DIRS)
+	black --check --diff $(CODE_DIRS)
 	flake8 $(CODE_DIRS)
 	isort $(ISORT_PARAMS) --diff --check-only
 	pylint $(CODE_DIRS)
@@ -17,7 +16,7 @@ isort:
 	isort $(ISORT_PARAMS)
 
 black:
-	black $(BLACK_PARAMS) $(CODE_DIRS)
+	black $(CODE_DIRS)
 
 format: isort black
 
