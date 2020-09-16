@@ -1,5 +1,11 @@
 # Changelog
 
+### 0.12.0 (2020-09-16)
+
+* MS/PFS: Add prometheus endpoints for accessing metrics (https://github.com/raiden-network/raiden-services/pull/836)
+* PFS: Return broadcast room ID in `info` endpoint (https://github.com/raiden-network/raiden-services/pull/858)
+* MS/PFS: Add Python 3.8 support (https://github.com/raiden-network/raiden-services/pull/810)
+
 ### 0.11.0 (2020-06-18)
 
 * MS/PFS: Minimize ETH-RPC requests by batching token network event queries (https://github.com/raiden-network/raiden-services/pull/793)
