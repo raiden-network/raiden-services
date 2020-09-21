@@ -24,13 +24,13 @@ def test_get_info(api_url: str, ms_api_sut: MSApi, monitoring_service_mock: Moni
     )
 
     expected_response = {
-        "price_info": 123,
+        "price_info": "123",
         "network_info": {
             "chain_id": monitoring_service_mock.chain_id,
             "token_network_registry_address": token_network_registry_address,
             "user_deposit_address": user_deposit_address,
             "service_token_address": service_token_address,
-            "confirmed_block": {"number": 0},
+            "confirmed_block": {"number": "0"},
         },
         "version": pkg_resources.require("raiden-services")[0].version,
         "contracts_version": pkg_resources.require("raiden-contracts")[0].version,

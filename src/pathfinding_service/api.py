@@ -398,7 +398,7 @@ class InfoResource(PathfinderResource):
 
     def get(self) -> Tuple[dict, int]:
         info = {
-            "price_info": self.api.service_fee,
+            "price_info": str(self.api.service_fee),
             "network_info": {
                 "chain_id": self.pathfinding_service.chain_id,
                 "token_network_registry_address": to_checksum_address(
@@ -411,7 +411,7 @@ class InfoResource(PathfinderResource):
                     self.pathfinding_service.service_token_address
                 ),
                 "confirmed_block": {
-                    "number": self.pathfinding_service.blockchain_state.latest_committed_block
+                    "number": str(self.pathfinding_service.blockchain_state.latest_committed_block)
                 },
             },
             "version": self.version,
