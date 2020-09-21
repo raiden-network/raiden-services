@@ -57,6 +57,37 @@ class InfoResource(MSResource):
         return info, 200
 
 
+class InfoResource2(MSResource):
+    version = pkg_resources.get_distribution("raiden-services").version
+    contracts_version = pkg_resources.get_distribution("raiden-contracts").version
+
+    def get(self) -> Tuple[dict, int]:
+        info = {
+            "price_info": str(self.api.monitoring_service.context.min_reward),
+            "network_info": {
+                "chain_id": self.monitoring_service.chain_id,
+                "token_network_registry_address": to_checksum_address(
+                    self.monitoring_service.context.ms_state.blockchain_state.token_network_registry_address  # noqa
+                ),
+                "user_deposit_address": to_checksum_address(
+                    self.monitoring_service.context.user_deposit_contract.address
+                ),
+                "service_token_address": to_checksum_address(self.service_token_address),
+                "confirmed_block": {
+                    "number": str(
+                        self.monitoring_service.context.ms_state.blockchain_state.latest_committed_block  # noqa
+                    )
+                },
+            },
+            "version": self.version,
+            "contracts_version": self.contracts_version,
+            "operator": self.api.operator,
+            "message": self.api.info_message,
+            "UTC": datetime.utcnow().isoformat(),
+        }
+        return info, 200
+
+
 class MSApi:
     def __init__(
         self,
@@ -83,7 +114,8 @@ class MSApi:
         self.info_message = info_message
 
         resources: List[Tuple[str, Resource, str]] = [
-            ("/info", cast(Resource, InfoResource), "info"),
+            ("/v1/info", cast(Resource, InfoResource), "info"),
+            ("/v2/info", cast(Resource, InfoResource2), "info2"),
         ]
 
         for endpoint_url, resource, endpoint in resources:

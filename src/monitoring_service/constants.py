@@ -22,7 +22,7 @@ MATRIX_RATE_LIMIT_RESET_INTERVAL = timedelta(minutes=5)
 # Number of blocks after the close, during which MRs are still being accepted
 CHANNEL_CLOSE_MARGIN: int = 10
 
-API_PATH: str = "/api/v1"
+API_PATH: str = "/api"
 DEFAULT_INFO_MESSAGE = "This is your favorite MS."
 
 MS_DISCLAIMER: str = textwrap.dedent(
