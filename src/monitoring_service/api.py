@@ -34,7 +34,7 @@ class InfoResource(MSResource):
 
     def get(self) -> Tuple[dict, int]:
         info = {
-            "price_info": self.api.monitoring_service.context.min_reward,
+            "price_info": str(self.api.monitoring_service.context.min_reward),
             "network_info": {
                 "chain_id": self.monitoring_service.chain_id,
                 "token_network_registry_address": to_checksum_address(
@@ -45,7 +45,9 @@ class InfoResource(MSResource):
                 ),
                 "service_token_address": to_checksum_address(self.service_token_address),
                 "confirmed_block": {
-                    "number": self.monitoring_service.context.ms_state.blockchain_state.latest_committed_block  # noqa
+                    "number": str(
+                        self.monitoring_service.context.ms_state.blockchain_state.latest_committed_block  # noqa
+                    )
                 },
             },
             "version": self.version,
