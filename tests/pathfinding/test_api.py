@@ -47,7 +47,7 @@ def test_get_paths_via_debug_endpoint_with_debug_disabled(
 ):
     token_network_address_hex = to_checksum_address(token_network_model.address)
     address_hex = to_checksum_address(addresses[0])
-    url_debug = api_url + f"/_debug/routes/{token_network_address_hex}/{address_hex}"
+    url_debug = api_url + f"/v1/_debug/routes/{token_network_address_hex}/{address_hex}"
 
     # now there must be a debug endpoint for that specific route
     response_debug = requests.get(url_debug)
@@ -67,7 +67,7 @@ def test_get_paths_via_debug_endpoint_a(
     # Make two requests, so we can test the `request_count` as well
     for _ in range(2):
         response = requests.post(
-            api_url + f"/{token_network_address}/paths",
+            api_url + f"/v1/{token_network_address}/paths",
             json={
                 "from": hex_addrs[0],
                 "to": hex_addrs[2],
@@ -81,7 +81,7 @@ def test_get_paths_via_debug_endpoint_a(
         assert paths == [{"path": [hex_addrs[0], hex_addrs[1], hex_addrs[2]], "estimated_fee": 0}]
 
     # now there must be a debug endpoint for that specific route
-    url_debug = api_url + f"/_debug/routes/{token_network_address}/{hex_addrs[0]}"
+    url_debug = api_url + f"/v1/_debug/routes/{token_network_address}/{hex_addrs[0]}"
     response_debug = requests.get(url_debug)
     assert response_debug.status_code == 200
     request_count = response_debug.json()["request_count"]
@@ -102,7 +102,7 @@ def test_get_paths_via_debug_endpoint_a(
 
     # now there must be a debug endpoint for that specific route and that specific target
     url_debug_incl_requested_target = (
-        api_url + f"/_debug/routes/{token_network_address}/{hex_addrs[0]}/{hex_addrs[2]}"
+        api_url + f"/v1/_debug/routes/{token_network_address}/{hex_addrs[0]}/{hex_addrs[2]}"
     )
     response_debug_incl_target = requests.get(url_debug_incl_requested_target)
     assert response_debug_incl_target.status_code == 200
@@ -124,7 +124,7 @@ def test_get_paths_via_debug_endpoint_a(
 
     # when requesting info for a target that was no path requested for
     url_debug_incl_unrequested_target = (
-        api_url + f"/_debug/routes/{token_network_address}/{hex_addrs[0]}/{hex_addrs[3]}"
+        api_url + f"/v1/_debug/routes/{token_network_address}/{hex_addrs[0]}/{hex_addrs[3]}"
     )
     response_debug_incl_unrequested_target = requests.get(url_debug_incl_unrequested_target)
     assert response_debug_incl_unrequested_target.status_code == 200
@@ -145,7 +145,7 @@ def test_get_paths_via_debug_endpoint_empty_routes(
     token_network_address = to_checksum_address(token_network_model.address)
 
     response = requests.post(
-        api_url + f"/{token_network_address}/paths",
+        api_url + f"/v1/{token_network_address}/paths",
         json={
             "from": hex_addrs[0],
             "to": hex_addrs[5],
@@ -157,7 +157,7 @@ def test_get_paths_via_debug_endpoint_empty_routes(
 
     # test that requests with no routes found are returned as well
     url_debug_incl_impossible_route = (
-        api_url + f"/_debug/routes/{token_network_address}/{hex_addrs[0]}/{hex_addrs[5]}"
+        api_url + f"/v1/_debug/routes/{token_network_address}/{hex_addrs[0]}/{hex_addrs[5]}"
     )
     response_debug_incl_impossible_route = requests.get(url_debug_incl_impossible_route)
     assert response_debug_incl_impossible_route.status_code == 200
@@ -165,7 +165,7 @@ def test_get_paths_via_debug_endpoint_empty_routes(
     assert request_count == 1
 
     response = requests.post(
-        api_url + f"/{token_network_address}/paths",
+        api_url + f"/v1/{token_network_address}/paths",
         json={
             "from": hex_addrs[0],
             "to": hex_addrs[6],
@@ -178,7 +178,7 @@ def test_get_paths_via_debug_endpoint_empty_routes(
     # test that requests with no routes found are returned as well
     # regression test for https://github.com/raiden-network/raiden/issues/5421
     url_debug_incl_impossible_route = (
-        api_url + f"/_debug/routes/{token_network_address}/{hex_addrs[0]}/{hex_addrs[6]}"
+        api_url + f"/v1/_debug/routes/{token_network_address}/{hex_addrs[0]}/{hex_addrs[6]}"
     )
     response_debug_incl_impossible_route = requests.get(url_debug_incl_impossible_route)
     assert response_debug_incl_impossible_route.status_code == 200
@@ -205,14 +205,14 @@ def test_get_ious_via_debug_endpoint(
     api_sut_with_debug.pathfinding_service.database.upsert_iou(iou)
 
     # now there must be an iou debug endpoint for a request of a sender in the database
-    url_iou_debug = api_url + f"/_debug/ious/{hex_addrs[0]}"
+    url_iou_debug = api_url + f"/v1/_debug/ious/{hex_addrs[0]}"
     response_debug = requests.get(url_iou_debug)
     assert response_debug.status_code == 200
     response_iou = response_debug.json()
     assert response_iou == {"sender": hex_addrs[0], "amount": 111, "expiration_block": 7619644}
 
     # but there is no iou debug endpoint for a request of a sender not in the database
-    url_iou_debug = api_url + f"/_debug/ious/{hex_addrs[1]}"
+    url_iou_debug = api_url + f"/v1/_debug/ious/{hex_addrs[1]}"
     response_debug = requests.get(url_iou_debug)
     assert response_debug.status_code == 200
     ious = response_debug.json()
@@ -231,7 +231,7 @@ def test_get_paths_validation(
 ):
     initiator_address = to_checksum_address(addresses[0])
     target_address = to_checksum_address(addresses[1])
-    url = api_url + "/" + to_checksum_address(token_network_model.address) + "/paths"
+    url = api_url + "/v1/" + to_checksum_address(token_network_model.address) + "/paths"
     default_params = {"from": initiator_address, "to": target_address, "value": 5, "max_paths": 3}
 
     def request_path_with(status_code=400, **kwargs):
@@ -319,11 +319,11 @@ def test_get_paths_path_validation(api_url: str):
         "/df173a5173c3d0ae5ba11dae84470c5d3f1a8413/paths",
         "/0xdf173a5173c3d0ae5ba11dae84470c5d3f1a8413/paths",
     ]:
-        response = requests.post(api_url + url)
+        response = requests.post(api_url + "/v1" + url)
         assert response.status_code == 400
         assert response.json()["error_code"] == exceptions.InvalidTokenNetwork.error_code
 
-    url = api_url + "/0x0000000000000000000000000000000000000000/paths"
+    url = api_url + "/v1/0x0000000000000000000000000000000000000000/paths"
     response = requests.post(url)
     assert response.status_code == 400
     assert response.json()["error_code"] == exceptions.UnsupportedTokenNetwork.error_code
@@ -332,7 +332,7 @@ def test_get_paths_path_validation(api_url: str):
 @pytest.mark.usefixtures("api_sut")
 def test_get_paths(api_url: str, addresses: List[Address], token_network_model: TokenNetwork):
     hex_addrs = [to_checksum_address(addr) for addr in addresses]
-    url = api_url + "/" + to_checksum_address(token_network_model.address) + "/paths"
+    url = api_url + "/v1/" + to_checksum_address(token_network_model.address) + "/paths"
 
     data = {"from": hex_addrs[0], "to": hex_addrs[2], "value": 10, "max_paths": DEFAULT_MAX_PATHS}
     response = requests.post(url, json=data)
@@ -369,7 +369,7 @@ def test_payment_with_new_iou_rejected(  # pylint: disable=too-many-locals
 
     initiator_address = to_checksum_address(addresses[0])
     target_address = to_checksum_address(addresses[1])
-    url = api_url + "/" + to_checksum_address(token_network_model.address) + "/paths"
+    url = api_url + "/v1/" + to_checksum_address(token_network_model.address) + "/paths"
     default_params = {"from": initiator_address, "to": target_address, "value": 5, "max_paths": 3}
 
     def request_path_with(status_code=400, **kwargs):
@@ -412,7 +412,7 @@ def test_payment_with_new_iou_rejected(  # pylint: disable=too-many-locals
 def test_get_info(api_url: str, api_sut, pathfinding_service_mock):
     api_sut.service_fee = 123
     api_sut.operator = "John Doe"
-    url = api_url + "/info"
+    url = api_url + "/v1/info"
 
     token_network_registry_address = to_checksum_address(pathfinding_service_mock.registry_address)
     user_deposit_address = to_checksum_address(
@@ -452,13 +452,56 @@ def test_get_info(api_url: str, api_sut, pathfinding_service_mock):
     assert response_json == expected_response
 
 
+def test_get_info2(api_url: str, api_sut, pathfinding_service_mock):
+    api_sut.service_fee = 123
+    api_sut.operator = "John Doe"
+    url = api_url + "/v2/info"
+
+    token_network_registry_address = to_checksum_address(pathfinding_service_mock.registry_address)
+    user_deposit_address = to_checksum_address(
+        pathfinding_service_mock.user_deposit_contract.address
+    )
+    service_token_address = pathfinding_service_mock.user_deposit_contract.functions.token().call()
+
+    expected_response = {
+        "price_info": "123",
+        "network_info": {
+            "chain_id": pathfinding_service_mock.chain_id,
+            "token_network_registry_address": token_network_registry_address,
+            "user_deposit_address": user_deposit_address,
+            "service_token_address": service_token_address,
+            "confirmed_block": {"number": "0"},
+        },
+        "version": pkg_resources.require("raiden-services")[0].version,
+        "contracts_version": pkg_resources.require("raiden-contracts")[0].version,
+        "operator": "John Doe",
+        "message": DEFAULT_INFO_MESSAGE,
+        "payment_address": to_checksum_address(pathfinding_service_mock.address),
+        "matrix_server": "https://matrix.server",
+        "matrix_room_id": "!room-id:matrix.server",
+    }
+    response = requests.get(url)
+    assert response.status_code == 200
+    response_json = response.json()
+    del response_json["UTC"]
+    assert response_json == expected_response
+
+    # Test with a custom info message
+    api_sut.info_message = expected_response["message"] = "Other message"
+    response = requests.get(url)
+    assert response.status_code == 200
+    response_json = response.json()
+    del response_json["UTC"]
+    assert response_json == expected_response
+
+
 #
 # tests for /payment/iou endpoint
 #
 def test_get_iou(api_sut: PFSApi, api_url: str, token_network_model: TokenNetwork, make_iou):
     privkey = PrivateKey(decode_hex(get_random_privkey()))
     sender = private_key_to_address(privkey)
-    url = api_url + f"/{to_checksum_address(token_network_model.address)}/payment/iou"
+    url = api_url + f"/v1/{to_checksum_address(token_network_model.address)}/payment/iou"
 
     def make_params(timestamp: str):
         params = {
@@ -528,7 +571,7 @@ def test_feedback(api_sut: PFSApi, api_url: str, token_network_model: TokenNetwo
     def make_request(
         token_id: Optional[str] = None, success: bool = True, path: Optional[List[str]] = None
     ):
-        url = api_url + f"/{to_checksum_address(token_network_model.address)}/feedback"
+        url = api_url + f"/v1/{to_checksum_address(token_network_model.address)}/feedback"
 
         token_id = token_id or uuid4().hex
         path = path or default_path_hex
@@ -581,7 +624,7 @@ def test_stats_endpoint(
     estimated_fee = FeeAmount(0)
 
     def check_response(num_all: int, num_only_feedback: int, num_only_success: int) -> None:
-        url = api_url + "/_debug/stats"
+        url = api_url + "/v1/_debug/stats"
         response = requests.get(url)
 
         assert response.status_code == 200
@@ -627,6 +670,6 @@ def test_suggest_partner_api(api_url: str, token_network_model: TokenNetwork):
     The actual content is tested in ``test_graphs.test_suggest_partner``.
     """
     token_network_address_hex = to_checksum_address(token_network_model.address)
-    url = api_url + f"/{token_network_address_hex}/suggest_partner"
+    url = api_url + f"/v1/{token_network_address_hex}/suggest_partner"
     response = requests.get(url)
     assert response.status_code == 200

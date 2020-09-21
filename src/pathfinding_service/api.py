@@ -426,6 +426,40 @@ class InfoResource(PathfinderResource):
         return info, 200
 
 
+class InfoResource2(PathfinderResource):
+    version = pkg_resources.get_distribution("raiden-services").version
+    contracts_version = pkg_resources.get_distribution("raiden-contracts").version
+
+    def get(self) -> Tuple[dict, int]:
+        info = {
+            "price_info": str(self.api.service_fee),
+            "network_info": {
+                "chain_id": self.pathfinding_service.chain_id,
+                "token_network_registry_address": to_checksum_address(
+                    self.pathfinding_service.registry_address
+                ),
+                "user_deposit_address": to_checksum_address(
+                    self.pathfinding_service.user_deposit_contract.address
+                ),
+                "service_token_address": to_checksum_address(
+                    self.pathfinding_service.service_token_address
+                ),
+                "confirmed_block": {
+                    "number": str(self.pathfinding_service.blockchain_state.latest_committed_block)
+                },
+            },
+            "version": self.version,
+            "contracts_version": self.contracts_version,
+            "operator": self.api.operator,
+            "message": self.api.info_message,
+            "payment_address": to_checksum_address(self.pathfinding_service.address),
+            "UTC": datetime.utcnow().isoformat(),
+            "matrix_server": self.api.pathfinding_service.matrix_listener.base_url,
+            "matrix_room_id": self.api.pathfinding_service.matrix_listener.broadcast_room_id,
+        }
+        return info, 200
+
+
 class SuggestPartnerResource(PathfinderResource):
 
     cache: Dict[str, Tuple[list, datetime]] = {}
@@ -591,20 +625,21 @@ class PFSApi:
 
         resources: List[Tuple[str, Resource, Dict, str]] = [
             (
-                "/<token_network_address>/paths",
+                "/v1/<token_network_address>/paths",
                 PathsResource,
                 dict(debug_mode=debug_mode),
                 "paths",
             ),
-            ("/<token_network_address>/payment/iou", IOUResource, {}, "payments"),
-            ("/<token_network_address>/feedback", FeedbackResource, {}, "feedback"),
+            ("/v1/<token_network_address>/payment/iou", IOUResource, {}, "payments"),
+            ("/v1/<token_network_address>/feedback", FeedbackResource, {}, "feedback"),
             (
-                "/<token_network_address>/suggest_partner",
+                "/v1/<token_network_address>/suggest_partner",
                 SuggestPartnerResource,
                 {},
                 "suggest_partner",
             ),
-            ("/info", InfoResource, {}, "info"),
+            ("/v1/info", InfoResource, {}, "info"),
+            ("/v2/info", InfoResource2, {}, "info2"),
         ]
 
         if debug_mode:
@@ -612,19 +647,19 @@ class PFSApi:
             resources.extend(
                 [
                     (
-                        "/_debug/routes/<token_network_address>/<source_address>",
+                        "/v1/_debug/routes/<token_network_address>/<source_address>",
                         cast(Resource, DebugPathResource),
                         {},
                         "debug1",
                     ),
                     (
-                        "/_debug/routes/<token_network_address>/<source_address>/<target_address>",
+                        "/v1/_debug/routes/<token_network_address>/<source_address>/<target_address>",  # noqa
                         DebugPathResource,
                         {},
                         "debug2",
                     ),
-                    ("/_debug/ious/<source_address>", DebugIOUResource, {}, "debug3"),
-                    ("/_debug/stats", DebugStatsResource, {}, "debug4"),
+                    ("/v1/_debug/ious/<source_address>", DebugIOUResource, {}, "debug3"),
+                    ("/v1/_debug/stats", DebugStatsResource, {}, "debug4"),
                 ]
             )
 

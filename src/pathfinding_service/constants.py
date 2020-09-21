@@ -3,7 +3,7 @@ from datetime import timedelta
 
 from raiden.utils.typing import BlockTimeout
 
-API_PATH: str = "/api/v1"
+API_PATH: str = "/api"
 
 WEB3_PROVIDER_DEFAULT: str = "http://127.0.0.1:8545"
 
