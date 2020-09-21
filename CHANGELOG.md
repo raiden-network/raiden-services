@@ -1,9 +1,5 @@
 # Changelog
 
-### Unreleased
-
-* MS/PFS: Return price_info and block_number as strings, since uint256 are not a safe part of JSON
-
 ### 0.12.0 (2020-09-16)
 
 * MS/PFS: Add prometheus endpoints for accessing metrics (https://github.com/raiden-network/raiden-services/pull/836)
