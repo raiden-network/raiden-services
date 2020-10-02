@@ -6,6 +6,7 @@ from datetime import datetime
 from typing import Dict, Optional
 
 import click
+import gevent
 import structlog
 from eth_utils import to_canonical_address, to_checksum_address, to_hex
 from hexbytes import HexBytes
@@ -92,16 +93,15 @@ def checked_transact(
         f"\n\tSee {etherscan_url_for_txhash(web3.eth.chainId, transaction_hash)}"
     )
 
-    transaction_receipt = web3.eth.waitForTransactionReceipt(transaction_hash)
-
+    transaction_receipt = web3.eth.waitForTransactionReceipt(transaction_hash, poll_latency=1.0)
     if wait_confirmation_interval:
         while (
             "blockNumber" not in transaction_receipt
             or web3.eth.blockNumber
             < transaction_receipt["blockNumber"] + DEFAULT_NUMBER_OF_BLOCK_CONFIRMATIONS
         ):
-            time.sleep(5)
             transaction_receipt = web3.eth.waitForTransactionReceipt(transaction_hash)
+            gevent.sleep(1)
 
     was_successful = transaction_receipt["status"] == 1
 
