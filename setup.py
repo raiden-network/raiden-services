@@ -34,7 +34,7 @@ with open("README.md") as readme_file:
 
 setup(
     name="raiden-services",
-    version="0.12.0",
+    version="0.13.0",
     license="MIT",
     description=DESCRIPTION,
     long_description=README,
