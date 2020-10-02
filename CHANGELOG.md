@@ -1,6 +1,6 @@
 # Changelog
 
-### Unreleased
+### 0.13.0 (2020-10-02)
 
 * MS/PFS: Return `price_info` and `block_number` as strings in `/info` endpoint v2, since uint256 are not a safe part of JSON (https://github.com/raiden-network/raiden-services/pull/862)
 * Service Registry: Wait until transactions are confirmed (https://github.com/raiden-network/raiden-services/issues/855)
