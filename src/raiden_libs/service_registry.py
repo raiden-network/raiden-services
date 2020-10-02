@@ -88,8 +88,11 @@ def checked_transact(
     log.info(f"Starting: {task_name}")
     transaction_hash = function_call.transact({"from": sender_address})
 
+    confirmation_msg = ""
+    if wait_confirmation_interval:
+        confirmation_msg = " and waiting for confirmation"
     click.secho(
-        f"\nSending transaction: {task_name}"
+        f"\nSending transaction{confirmation_msg}: {task_name}"
         f"\n\tSee {etherscan_url_for_txhash(web3.eth.chainId, transaction_hash)}"
     )
 
