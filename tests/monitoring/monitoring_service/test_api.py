@@ -97,12 +97,12 @@ def test_get_info2(api_url: str, ms_api_sut: MSApi, monitoring_service_mock: Mon
 
 
 def test_prometheus_exposure(
-    api_url: str, ms_api_sut: MSApi, monitoring_service_mock: MonitoringService
+    base_url: str, ms_api_sut: MSApi, monitoring_service_mock: MonitoringService
 ):
 
     monitoring_service_mock.context.min_reward = 123
     ms_api_sut.operator = "John Doe"
-    url = api_url + "/metrics"
+    url = f"{base_url}/metrics"
 
     # call one of the metrics here, just to make sure that there is some output on the
     # API's '/metrics' prometheus endpoint. Create a new category label,
