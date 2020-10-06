@@ -602,7 +602,7 @@ class PFSApi:
         self.flask_app = DispatcherMiddleware(
             NotFound(),
             {
-                f"{API_PATH}/metrics": make_wsgi_app(registry=metrics.REGISTRY),
+                "/metrics": make_wsgi_app(registry=metrics.REGISTRY),
                 API_PATH: flask_app.wsgi_app,
             },
         )
