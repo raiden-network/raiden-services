@@ -22,8 +22,13 @@ from raiden_libs.constants import DEFAULT_API_HOST
 
 
 @pytest.fixture(scope="session")
-def api_url(free_port: int) -> str:
-    return "http://localhost:{}{}".format(free_port, API_PATH)
+def base_url(free_port: int) -> str:
+    return f"http://localhost:{free_port}"
+
+
+@pytest.fixture(scope="session")
+def api_url(base_url: str) -> str:
+    return f"{base_url}{API_PATH}"
 
 
 @pytest.fixture
