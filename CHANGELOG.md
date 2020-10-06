@@ -1,5 +1,9 @@
 # Changelog
 
+### 0.13.1 (2020-10-06)
+
+* Move metrics endpoint path outside the API ([#870](https://github.com/raiden-network/raiden-services/pull/870)) 
+
 ### 0.13.0 (2020-10-02)
 
 * MS/PFS: Return `price_info` and `block_number` as strings in `/info` endpoint v2, since uint256 are not a safe part of JSON (https://github.com/raiden-network/raiden-services/pull/862)
