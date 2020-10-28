@@ -317,7 +317,8 @@ def setup_sentry(enable_flask_integration: bool = False) -> None:
         integrations: List[Any] = [LoggingIntegration(level=logging.INFO, event_level=None)]
         if enable_flask_integration:
             integrations.append(FlaskIntegration())
-        sentry_sdk.init(
+        # See https://github.com/getsentry/sentry-python/issues/1081
+        sentry_sdk.init(  # pylint: disable=abstract-class-instantiated
             dsn=sentry_dsn,
             integrations=integrations,
             release=pkg_resources.get_distribution("raiden-services").version,
