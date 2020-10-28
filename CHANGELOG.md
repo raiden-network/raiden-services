@@ -1,5 +1,7 @@
 # Changelog
 
+* Add Python 3.9 support (https://github.com/raiden-network/raiden-services/pull/877)
+
 ### 0.15.3 (2021-05-12)
 * Fix a crash of the `service_registry` script on private chains
 
