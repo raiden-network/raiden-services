@@ -3,6 +3,7 @@ from datetime import timedelta
 
 from raiden.utils.typing import BlockTimeout
 
+PFS_START_TIMEOUT = 300  # in seconds
 API_PATH: str = "/api"
 
 WEB3_PROVIDER_DEFAULT: str = "http://127.0.0.1:8545"
