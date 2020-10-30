@@ -14,7 +14,7 @@ from web3 import Web3
 from web3.contract import Contract
 
 from pathfinding_service.api import PFSApi
-from pathfinding_service.constants import DEFAULT_INFO_MESSAGE, PFS_DISCLAIMER
+from pathfinding_service.constants import DEFAULT_INFO_MESSAGE, PFS_DISCLAIMER, PFS_START_TIMEOUT
 from pathfinding_service.service import PathfindingService
 from raiden.settings import DEFAULT_NUMBER_OF_BLOCK_CONFIRMATIONS
 from raiden.utils.typing import BlockNumber, BlockTimeout, TokenAmount
@@ -126,7 +126,7 @@ def main(  # pylint: disable=too-many-arguments,too-many-locals
         service.start()
         log.debug("Waiting for service to start before accepting API requests")
         try:
-            service.startup_finished.get(timeout=60)
+            service.startup_finished.get(timeout=PFS_START_TIMEOUT)
         except gevent.Timeout:
             raise Exception("PFS did not start within time.")
 
