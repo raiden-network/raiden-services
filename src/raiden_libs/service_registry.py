@@ -8,20 +8,23 @@ from typing import Dict, Optional
 import click
 import gevent
 import structlog
-from eth_utils import to_canonical_address, to_checksum_address, to_hex
+from eth_typing import HexStr
+from eth_utils import event_abi_to_log_topic, to_canonical_address, to_checksum_address, to_hex
 from hexbytes import HexBytes
 from web3 import Web3
 from web3.contract import Contract, ContractFunction
 from web3.logs import DISCARD
 from web3.middleware import construct_sign_and_send_raw_middleware
-from web3.types import TxReceipt
+from web3.types import FilterParams, TxReceipt
 
+from raiden.blockchain.filters import decode_event
 from raiden.settings import DEFAULT_NUMBER_OF_BLOCK_CONFIRMATIONS
 from raiden.utils.typing import Address, BlockNumber
 from raiden_contracts.constants import (
     CONTRACT_CUSTOM_TOKEN,
     CONTRACT_DEPOSIT,
     CONTRACT_SERVICE_REGISTRY,
+    EVENT_REGISTERED_SERVICE,
 )
 from raiden_libs.blockchain import get_web3_provider_info
 from raiden_libs.cli import blockchain_options, common_options, validate_address
@@ -360,7 +363,51 @@ def register_account(
     log.info("Updated infos", current_url=current_url)
 
 
-@blockchain_options(contracts=[CONTRACT_DEPOSIT, CONTRACT_SERVICE_REGISTRY])
+def find_deposit_contract(
+    web3: Web3,
+    service_address: Address,
+    service_registry_contract: Contract,
+    start_block: BlockNumber,
+) -> Address:
+    """
+    Return the address of the oldest deposit contract which is not withdrawn
+    """
+    # Get RegisteredService events for service_address
+    event_abi = dict(service_registry_contract.events[EVENT_REGISTERED_SERVICE]().abi)
+    topics = [
+        event_abi_to_log_topic(event_abi),
+        bytes([0] * 12) + service_address,
+    ]
+    filter_params = FilterParams(
+        {
+            "fromBlock": start_block,
+            "toBlock": "latest",
+            "address": service_registry_contract.address,
+            "topics": [HexStr("0x" + t.hex()) for t in topics],
+        }
+    )
+    raw_events = web3.eth.getLogs(filter_params)
+    deposits = [decode_event(service_registry_contract.abi, event)["args"] for event in raw_events]
+
+    # Find deposits that are not withdrawn, yet
+    deposits = [d for d in deposits if web3.eth.getCode(d["deposit_contract"])]
+    if not deposits:
+        click.echo("No deposits found!", err=True)
+        sys.exit(1)
+
+    # Inform user
+    print("Deposit found:")
+    for deposit_event in deposits:
+        valid_till = datetime.utcfromtimestamp(deposit_event["valid_till"]).isoformat()
+        amount = deposit_event["deposit_amount"]
+        print(f" * valid till {valid_till}, amount: {amount} REI ({amount / 1e18:.2f} RDN)")
+    if len(deposits) > 1:
+        print("I will withdraw the first (oldest) one. Run this script again for the next deposit")
+
+    return to_canonical_address(deposits[0]["deposit_contract"])
+
+
+@blockchain_options(contracts=[CONTRACT_SERVICE_REGISTRY])
 @cli.command("withdraw")
 @click.option(
     "--to",
@@ -384,13 +431,23 @@ def withdraw(
     web3.middleware_onion.add(construct_sign_and_send_raw_middleware(private_key))
 
     log.info("Using RPC endpoint", rpc_url=get_web3_provider_info(web3))
-    deposit_contract = contracts[CONTRACT_DEPOSIT]
     # `Deposit.service_registry` is not public, so we can't get the address from there.
     service_registry_contract = contracts[CONTRACT_SERVICE_REGISTRY]
 
+    # Find deposit contract address
+    caller_address = private_key_to_address(private_key)
+    deposit_contract_address = find_deposit_contract(
+        web3=web3,
+        service_address=caller_address,
+        service_registry_contract=service_registry_contract,
+        start_block=start_block,
+    )
+    deposit_contract = web3.eth.contract(
+        abi=CONTRACT_MANAGER.get_contract_abi(CONTRACT_DEPOSIT), address=deposit_contract_address
+    )
+
     # Check usage of correct key
     withdrawer = deposit_contract.functions.withdrawer().call()
-    caller_address = private_key_to_address(private_key)
     if to_canonical_address(withdrawer) != caller_address:
         log.error(
             "You must use the key used to deposit when withdrawing",
