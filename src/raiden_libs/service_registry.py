@@ -59,7 +59,7 @@ DISCLAIMER = textwrap.dedent(
         | assume all risk related thereto and hereby release, waive, discharge   |
         | and covenant not to hold liable Brainbot Labs Establishment or any of  |
         | its officers, employees or affiliates from and for any direct or       |
-        | indirect damage resulting from the the software or the use thereof.    |
+        | indirect damage resulting from the software or the use thereof.        |
         | Such to the extent as permissible by applicable laws and regulations.  |
         +------------------------------------------------------------------------+
     """
@@ -176,7 +176,7 @@ def register(
     )
 
 
-# Seperate function to make testing easier
+# Separate function to make testing easier
 def register_account(
     private_key: str,
     web3: Web3,
@@ -393,7 +393,7 @@ def withdraw(
     caller_address = private_key_to_address(private_key)
     if to_canonical_address(withdrawer) != caller_address:
         log.error(
-            "You must used the key used to deposit when withdrawing",
+            "You must use the key used to deposit when withdrawing",
             expected=withdrawer,
             actual=to_checksum_address(caller_address),
         )
