@@ -3,7 +3,7 @@ import sys
 import textwrap
 import time
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import click
 import gevent
@@ -363,12 +363,12 @@ def register_account(
     log.info("Updated infos", current_url=current_url)
 
 
-def find_deposit_contract(
+def find_deposits(
     web3: Web3,
     service_address: Address,
     service_registry_contract: Contract,
     start_block: BlockNumber,
-) -> Address:
+) -> List[Dict[str, Any]]:
     """
     Return the address of the oldest deposit contract which is not withdrawn
     """
@@ -387,10 +387,29 @@ def find_deposit_contract(
         }
     )
     raw_events = web3.eth.getLogs(filter_params)
-    deposits = [decode_event(service_registry_contract.abi, event)["args"] for event in raw_events]
+    events = [decode_event(service_registry_contract.abi, event) for event in raw_events]
 
-    # Find deposits that are not withdrawn, yet
-    deposits = [d for d in deposits if web3.eth.getCode(d["deposit_contract"])]
+    # Bring events into a pleasant form
+    return [
+        dict(
+            block_number=e["blockNumber"],
+            valid_till=datetime.utcfromtimestamp(e["args"]["valid_till"]).isoformat(" "),
+            amount=e["args"]["deposit_amount"],
+            deposit_contract=e["args"]["deposit_contract"],
+            withdrawn=not web3.eth.getCode(e["args"]["deposit_contract"]),
+        )
+        for e in events
+    ]
+
+
+def find_withdrawable_deposit(
+    web3: Web3,
+    service_address: Address,
+    service_registry_contract: Contract,
+    start_block: BlockNumber,
+) -> Address:
+    deposits = find_deposits(web3, service_address, service_registry_contract, start_block)
+    deposits = [d for d in deposits if not d["withdrawn"]]
     if not deposits:
         click.echo("No deposits found!", err=True)
         sys.exit(1)
@@ -398,8 +417,8 @@ def find_deposit_contract(
     # Inform user
     print("Deposit found:")
     for deposit_event in deposits:
-        valid_till = datetime.utcfromtimestamp(deposit_event["valid_till"]).isoformat()
-        amount = deposit_event["deposit_amount"]
+        valid_till = deposit_event["valid_till"]
+        amount = deposit_event["amount"]
         print(f" * valid till {valid_till}, amount: {amount} REI ({amount / 1e18:.2f} RDN)")
     if len(deposits) > 1:
         print("I will withdraw the first (oldest) one. Run this script again for the next deposit")
@@ -436,7 +455,7 @@ def withdraw(
 
     # Find deposit contract address
     caller_address = private_key_to_address(private_key)
-    deposit_contract_address = find_deposit_contract(
+    deposit_contract_address = find_withdrawable_deposit(
         web3=web3,
         service_address=caller_address,
         service_registry_contract=service_registry_contract,
@@ -474,6 +493,43 @@ def withdraw(
         task_name="withdraw",
         wait_confirmation_interval=False,
     )
+
+
+@blockchain_options(contracts=[CONTRACT_SERVICE_REGISTRY])
+@cli.command("info")
+@common_options("service_registry")
+def info(
+    private_key: str,
+    state_db: str,  # pylint: disable=unused-argument
+    web3: Web3,
+    contracts: Dict[str, Contract],
+    start_block: BlockNumber,  # pylint: disable=unused-argument
+) -> None:
+    """
+    Show information about current registration and deposits
+    """
+    log.info("Using RPC endpoint", rpc_url=get_web3_provider_info(web3))
+    service_registry_contract = contracts[CONTRACT_SERVICE_REGISTRY]
+    caller_address = private_key_to_address(private_key)
+
+    deposits = find_deposits(
+        web3=web3,
+        service_address=caller_address,
+        service_registry_contract=service_registry_contract,
+        start_block=start_block,
+    )
+    if not deposits:
+        print("No deposits were made from this account.")
+        return
+
+    print("Deposits:")
+    for dep in deposits:
+        print(f" * block {dep['block_number']}", end=", ")
+        print(f"amount: {dep['amount']} REI ({dep['amount'] / 1e18:.2f} RDN)", end=", ")
+        if dep["withdrawn"]:
+            print("WITHDRAWN")
+        else:
+            print("increased validity till " + dep["valid_till"])
 
 
 def main() -> None:
