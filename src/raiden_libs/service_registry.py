@@ -3,7 +3,8 @@ import sys
 import textwrap
 import time
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from math import floor, log10
+from typing import Any, Callable, Dict, List, Optional
 
 import click
 import gevent
@@ -179,6 +180,30 @@ def register(
     )
 
 
+def get_token_formatter(
+    token_contract: Contract, min_sig_figures: int = 3
+) -> Callable[[float], str]:
+    """
+    Return a function to nicely format token amounts.
+
+    It will round to full tokens according to the decimal definition in the
+    token contract, but it will show at least `min_sig_figures` significant
+    figures. This ensures that small token amount stay readable and won't get
+    rounded to zero.
+    """
+    symbol = token_contract.functions.symbol().call()
+    decimals = token_contract.functions.decimals().call()
+
+    def format_token_amount(amount: float) -> str:
+        if amount == 0:
+            return f"0 {symbol}"
+        amount /= 10 ** decimals
+        show_dec = max(-floor(log10(abs(amount)) + 1) + min_sig_figures, 0)
+        return ("{:." + str(show_dec) + "f} {}").format(amount, symbol)
+
+    return format_token_amount
+
+
 # Separate function to make testing easier
 def register_account(
     private_key: str,
@@ -232,13 +257,15 @@ def register_account(
     maybe_prompt("I have checked that the address is correct and want to continue")
 
     # Check current token balance
+    fmt_amount = get_token_formatter(deposit_token_contract)
     account_balance = deposit_token_contract.functions.balanceOf(service_address).call()
+    fmt_amount = get_token_formatter(deposit_token_contract)
     log.info("Current account balance", balance=account_balance)
     click.secho(
         "\nThe address of the token used is "
         f"{to_checksum_address(deposit_token_address)}"
         f"\n\tSee {etherscan_url_for_address(chain_id, deposit_token_address)}"
-        f"\nThe account balance of that token is {account_balance}"  # TODO: format nicely
+        f"\nThe account balance of that token is {fmt_amount(account_balance)}."
     )
     maybe_prompt("I have checked that the address and my balance are correct and want to continue")
 
@@ -261,7 +288,7 @@ def register_account(
         # Get required deposit
         required_deposit = service_registry_contract.functions.currentPrice().call()
         click.secho(
-            f"\nThe current required deposit is {required_deposit}"
+            f"\nThe current required deposit is fmt_amount({required_deposit})"
             "\n\tNote: The required deposit may change over time."
             # TODO: add link to high level description of the auction format
         )
@@ -408,6 +435,15 @@ def find_withdrawable_deposit(
     service_registry_contract: Contract,
     start_block: BlockNumber,
 ) -> Address:
+    # Get formatter for token amounts
+    deposit_token_address = service_registry_contract.functions.token().call()
+    deposit_token_contract = web3.eth.contract(
+        address=deposit_token_address,
+        abi=CONTRACT_MANAGER.get_contract_abi(CONTRACT_CUSTOM_TOKEN),
+    )
+    fmt_amount = get_token_formatter(deposit_token_contract)
+
+    # Find deposits
     deposits = find_deposits(web3, service_address, service_registry_contract, start_block)
     deposits = [d for d in deposits if not d["withdrawn"]]
     if not deposits:
@@ -419,7 +455,7 @@ def find_withdrawable_deposit(
     for deposit_event in deposits:
         valid_till = deposit_event["valid_till"]
         amount = deposit_event["amount"]
-        print(f" * valid till {valid_till}, amount: {amount} REI ({amount / 1e18:.2f} RDN)")
+        print(f" * valid till {valid_till}, amount: {fmt_amount(amount)}")
     if len(deposits) > 1:
         print("I will withdraw the first (oldest) one. Run this script again for the next deposit")
 
@@ -450,8 +486,8 @@ def withdraw(
     web3.middleware_onion.add(construct_sign_and_send_raw_middleware(private_key))
 
     log.info("Using RPC endpoint", rpc_url=get_web3_provider_info(web3))
-    # `Deposit.service_registry` is not public, so we can't get the address from there.
     service_registry_contract = contracts[CONTRACT_SERVICE_REGISTRY]
+    caller_address = private_key_to_address(private_key)
 
     # Find deposit contract address
     caller_address = private_key_to_address(private_key)
@@ -510,7 +546,13 @@ def info(
     """
     log.info("Using RPC endpoint", rpc_url=get_web3_provider_info(web3))
     service_registry_contract = contracts[CONTRACT_SERVICE_REGISTRY]
+    deposit_token_address = service_registry_contract.functions.token().call()
+    deposit_token_contract = web3.eth.contract(
+        address=deposit_token_address,
+        abi=CONTRACT_MANAGER.get_contract_abi(CONTRACT_CUSTOM_TOKEN),
+    )
     caller_address = private_key_to_address(private_key)
+    fmt_amount = get_token_formatter(deposit_token_contract)
 
     deposits = find_deposits(
         web3=web3,
@@ -525,7 +567,7 @@ def info(
     print("Deposits:")
     for dep in deposits:
         print(f" * block {dep['block_number']}", end=", ")
-        print(f"amount: {dep['amount']} REI ({dep['amount'] / 1e18:.2f} RDN)", end=", ")
+        print(f"amount: {fmt_amount(dep['amount'])}", end=", ")
         if dep["withdrawn"]:
             print("WITHDRAWN")
         else:
