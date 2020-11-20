@@ -18,6 +18,16 @@ def test_registration(
     get_private_key: Callable,
     wait_for_blocks: Callable,
 ) -> None:
+    """
+    Test a whole registration life cycle:
+
+    * register
+    * info
+    * extend
+    * info
+    * withdraw
+    * info
+    """
     (account,) = get_accounts(1)
     pk1 = get_private_key(account)
     addr1 = private_key_to_address(pk1)
@@ -31,6 +41,8 @@ def test_registration(
             gevent.idle()
 
     block_creator = gevent.spawn(create_blocks)
+
+    # register
     register_account(
         private_key=pk1,
         web3=web3,
@@ -45,6 +57,18 @@ def test_registration(
     assert service_registry.functions.hasValidRegistration(account).call() is True
     assert service_registry.functions.urls(account).call() == "http://test"
 
+    # extend registration
+    register_account(
+        private_key=pk1,
+        web3=web3,
+        contracts={CONTRACT_SERVICE_REGISTRY: service_registry},
+        start_block=BlockNumber(0),
+        service_url=None,
+        accept_disclaimer=True,
+        accept_all=True,
+        extend=True,
+    )
+
     # smoke test info command
     info(
         private_key=pk1,
@@ -53,10 +77,11 @@ def test_registration(
         start_block=BlockNumber(0),
     )
 
-    # now test withdraw
+    # wait until first deposit is free
     web3.testing.timeTravel(  # type: ignore
         web3.eth.getBlock("latest")["timestamp"] + DEFAULT_REGISTRATION_DURATION
     )
+    # now test withdraw
     withdraw(
         private_key=pk1,
         web3=web3,
