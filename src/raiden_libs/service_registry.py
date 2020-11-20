@@ -214,6 +214,106 @@ def get_token_formatter(
     return format_token_amount
 
 
+def send_registration_transaction(
+    web3: Web3,
+    service_registry_contract: Contract,
+    deposit_token_contract: Contract,
+    maybe_prompt: Callable,
+    account_balance: int,
+    service_address: Address,
+) -> None:
+    # Get required deposit
+    required_deposit = service_registry_contract.functions.currentPrice().call()
+    click.secho(
+        f"\nThe current required deposit is fmt_amount({required_deposit})"
+        "\n\tNote: The required deposit continuously decreases, but "
+        "\n\t      increases significantly after a deposit is made."
+    )
+    if web3.eth.chainId == 1:
+        click.secho("You don't have sufficient tokens", err=True)
+        sys.exit(1)
+    elif account_balance < required_deposit:
+        click.secho("You are operating on a testnet. Tokens will be minted as required.")
+    maybe_prompt(
+        "I have read the current deposit and understand that continuing will transfer tokens"
+    )
+
+    # Check if the approved value is different from zero, if so reset
+    # See https://github.com/raiden-network/raiden-services/issues/769
+    old_allowance = deposit_token_contract.functions.allowance(
+        service_address, service_registry_contract.address
+    ).call()
+
+    if old_allowance > 0:
+        log.info("Found old allowance, resetting to zero", old_allowance=old_allowance)
+        checked_transact(
+            web3=web3,
+            sender_address=service_address,
+            function_call=deposit_token_contract.functions.approve(
+                service_registry_contract.address, 0
+            ),
+            task_name="Resetting token allowance",
+        )
+
+    # Get required deposit
+    latest_deposit = service_registry_contract.functions.currentPrice().call()
+
+    # Check if required deposit increased, if so abort. Lower price is fine.
+    if latest_deposit > required_deposit:
+        # Not nice, but simple for now
+        click.secho("The required deposit increased, please restart the registration.")
+        sys.exit(1)
+
+    # mint tokens if necessary, but only on testnets
+    if account_balance < latest_deposit and web3.eth.chainId != 1:
+        checked_transact(
+            web3=web3,
+            sender_address=service_address,
+            function_call=deposit_token_contract.functions.mint(latest_deposit),
+            task_name="Minting new Test RDN tokens",
+        )
+
+        balance = deposit_token_contract.functions.balanceOf(service_address).call()
+        log.info(
+            "Updated account balance",
+            balance=balance,
+            desired_deposit=latest_deposit,
+        )
+
+    # Approve token transfer
+    checked_transact(
+        web3=web3,
+        sender_address=service_address,
+        function_call=deposit_token_contract.functions.approve(
+            service_registry_contract.address, latest_deposit
+        ),
+        task_name="Allowing token transfer for deposit",
+    )
+
+    # Deposit tokens
+    receipt = checked_transact(
+        web3=web3,
+        sender_address=service_address,
+        function_call=service_registry_contract.functions.deposit(latest_deposit),
+        task_name="Depositing to service registry",
+    )
+
+    events = service_registry_contract.events.RegisteredService().processReceipt(
+        receipt, errors=DISCARD
+    )
+    assert len(events) == 1
+    event_args = events[0]["args"]
+    valid_until = datetime.utcfromtimestamp(event_args["valid_till"])
+
+    click.secho("\nSuccessfully deposited to service registry", fg="green")
+    click.secho(
+        f"\n\tDeposit contract address: {to_checksum_address(event_args['deposit_contract'])}"
+        f"\n\t\tSee {etherscan_url_for_address(web3.eth.chainId, event_args['deposit_contract'])}"
+        f"\n\tDeposit amount: {event_args['deposit_amount']}"
+        f"\n\tRegistration valid until: {valid_until.isoformat(timespec='minutes')}"
+    )
+
+
 # Separate function to make testing easier
 def register_account(
     private_key: str,
@@ -223,6 +323,7 @@ def register_account(
     service_url: Optional[str],
     accept_disclaimer: bool,
     accept_all: bool,
+    extend: bool = False,
 ) -> None:
     click.secho(DISCLAIMER, fg="yellow")
     if not accept_disclaimer and not accept_all:
@@ -291,99 +392,31 @@ def register_account(
         current_url=current_url,
     )
 
-    # Register if not yet done
-    if not currently_registered:
+    # Register if not yet done or extension is requested
+    if extend and currently_registered:
+        log.info("Registration found. Preparing to extend registration.")
+        send_registration_transaction(
+            web3=web3,
+            service_registry_contract=service_registry_contract,
+            deposit_token_contract=deposit_token_contract,
+            maybe_prompt=maybe_prompt,
+            account_balance=account_balance,
+            service_address=service_address,
+        )
+    elif not currently_registered:
         log.info("Address not registered in ServiceRegistry")
-
-        # Get required deposit
-        required_deposit = service_registry_contract.functions.currentPrice().call()
-        click.secho(
-            f"\nThe current required deposit is fmt_amount({required_deposit})"
-            "\n\tNote: The required deposit continuously decreases, but "
-            "\n\t      increases significantly after a deposit is made."
-        )
-        if web3.eth.chainId == 1:
-            click.secho("You don't have sufficient tokens", err=True)
-            sys.exit(1)
-        elif account_balance < required_deposit:
-            click.secho("You are operating on a testnet. Tokens will be minted as required.")
-        maybe_prompt(
-            "I have read the current deposit and understand that continuing will transfer tokens"
-        )
-
-        # Check if the approved value is different from zero, if so reset
-        # See https://github.com/raiden-network/raiden-services/issues/769
-        old_allowance = deposit_token_contract.functions.allowance(
-            service_address, service_registry_contract.address
-        ).call()
-
-        if old_allowance > 0:
-            log.info("Found old allowance, resetting to zero", old_allowance=old_allowance)
-            checked_transact(
-                web3=web3,
-                sender_address=service_address,
-                function_call=deposit_token_contract.functions.approve(
-                    service_registry_contract.address, 0
-                ),
-                task_name="Resetting token allowance",
-            )
-
-        # Get required deposit
-        latest_deposit = service_registry_contract.functions.currentPrice().call()
-
-        # Check if required deposit increased, if so abort. Lower price is fine.
-        if latest_deposit > required_deposit:
-            # Not nice, but simple for now
-            click.secho("The required deposit increased, please restart the registration.")
-            sys.exit(1)
-
-        # mint tokens if necessary, but only on testnets
-        if account_balance < latest_deposit and web3.eth.chainId != 1:
-            checked_transact(
-                web3=web3,
-                sender_address=service_address,
-                function_call=deposit_token_contract.functions.mint(latest_deposit),
-                task_name="Minting new Test RDN tokens",
-            )
-
-            balance = deposit_token_contract.functions.balanceOf(service_address).call()
-            log.info(
-                "Updated account balance",
-                balance=balance,
-                desired_deposit=latest_deposit,
-            )
-
-        # Approve token transfer
-        checked_transact(
+        send_registration_transaction(
             web3=web3,
-            sender_address=service_address,
-            function_call=deposit_token_contract.functions.approve(
-                service_registry_contract.address, latest_deposit
-            ),
-            task_name="Allowing token transfer for deposit",
+            service_registry_contract=service_registry_contract,
+            deposit_token_contract=deposit_token_contract,
+            maybe_prompt=maybe_prompt,
+            account_balance=account_balance,
+            service_address=service_address,
         )
-
-        # Deposit tokens
-        receipt = checked_transact(
-            web3=web3,
-            sender_address=service_address,
-            function_call=service_registry_contract.functions.deposit(latest_deposit),
-            task_name="Depositing to service registry",
-        )
-
-        events = service_registry_contract.events.RegisteredService().processReceipt(
-            receipt, errors=DISCARD
-        )
-        assert len(events) == 1
-        event_args = events[0]["args"]
-        valid_until = datetime.utcfromtimestamp(event_args["valid_till"])
-
-        click.secho("\nSuccessfully deposited to service registry", fg="green")
-        click.secho(
-            f"\n\tDeposit contract address: {to_checksum_address(event_args['deposit_contract'])}"
-            f"\n\t\tSee {etherscan_url_for_address(chain_id, event_args['deposit_contract'])}"
-            f"\n\tDeposit amount: {event_args['deposit_amount']}"
-            f"\n\tRegistration valid until: {valid_until.isoformat(timespec='minutes')}"
+    else:
+        log.info(
+            "Already registered. If you want to extend your registration, "
+            "use the 'extend' command."
         )
 
     if service_url and service_url != current_url:
@@ -610,6 +643,48 @@ def info_cmd(
     Show information about current registration and deposits
     """
     info(private_key, web3, contracts, start_block)
+
+
+@blockchain_options(contracts=[CONTRACT_SERVICE_REGISTRY])
+@cli.command("extend")
+@click.option(
+    "--accept-disclaimer",
+    type=bool,
+    default=False,
+    help="Bypass the experimental software disclaimer prompt",
+    is_flag=True,
+)
+@click.option(
+    "--accept-all",
+    type=bool,
+    default=False,
+    help="Bypass all questions (Not recommended)",
+    is_flag=True,
+    hidden=True,
+)
+@common_options("service_registry")
+def extend_cmd(
+    private_key: str,
+    state_db: str,  # pylint: disable=unused-argument
+    web3: Web3,
+    contracts: Dict[str, Contract],
+    start_block: BlockNumber,
+    accept_disclaimer: bool,
+    accept_all: bool,
+) -> None:
+    """
+    Extend the duration of a service registration
+    """
+    register_account(
+        private_key=private_key,
+        web3=web3,
+        contracts=contracts,
+        start_block=start_block,
+        service_url=None,
+        accept_disclaimer=accept_disclaimer,
+        accept_all=accept_all,
+        extend=True,
+    )
 
 
 def main() -> None:
