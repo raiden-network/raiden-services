@@ -292,6 +292,11 @@ def register_account(
             "\n\tNote: The required deposit may change over time."
             # TODO: add link to high level description of the auction format
         )
+        if web3.eth.chainId == 1:
+            click.secho("You don't have sufficient tokens", err=True)
+            sys.exit(1)
+        elif account_balance < required_deposit:
+            click.secho("You are operating on a testnet. Tokens will be minted as required.")
         maybe_prompt(
             "I have read the current deposit and understand that continuing will transfer tokens"
         )
