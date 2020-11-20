@@ -2,7 +2,6 @@
 import subprocess
 import sys
 import textwrap
-import time
 from datetime import datetime
 from math import floor, log10
 from typing import Any, Callable, Dict, List, Optional
@@ -482,29 +481,13 @@ def find_withdrawable_deposit(
     return to_canonical_address(deposits[0]["deposit_contract"])
 
 
-@blockchain_options(contracts=[CONTRACT_SERVICE_REGISTRY])
-@cli.command("withdraw")
-@click.option(
-    "--to",
-    type=str,
-    callback=validate_address,
-    help="Target address for withdrawn tokens",
-)
-@common_options("service_registry")
 def withdraw(
     private_key: str,
-    state_db: str,  # pylint: disable=unused-argument
     web3: Web3,
     contracts: Dict[str, Contract],
-    start_block: BlockNumber,  # pylint: disable=unused-argument
+    start_block: BlockNumber,
     to: Optional[Address],
 ) -> None:
-    """
-    Withdraw tokens deposited to the ServiceRegistry.
-    """
-    # Add middleware to sign transactions by default
-    web3.middleware_onion.add(construct_sign_and_send_raw_middleware(private_key))
-
     log.info("Using RPC endpoint", rpc_url=get_web3_provider_info(web3))
     service_registry_contract = contracts[CONTRACT_SERVICE_REGISTRY]
     caller_address = private_key_to_address(private_key)
@@ -534,7 +517,7 @@ def withdraw(
     # Can we withdraw already?
     release_at = deposit_contract.functions.release_at().call()
     deprecated = service_registry_contract.functions.deprecated().call()
-    if time.time() < release_at and not deprecated:
+    if web3.eth.getBlock("latest")["timestamp"] < release_at and not deprecated:
         log.error(
             "Too early to withdraw",
             released_at_utc=datetime.utcfromtimestamp(release_at).isoformat(),
@@ -552,18 +535,37 @@ def withdraw(
 
 
 @blockchain_options(contracts=[CONTRACT_SERVICE_REGISTRY])
-@cli.command("info")
+@cli.command("withdraw")
+@click.option(
+    "--to",
+    type=str,
+    callback=validate_address,
+    help="Target address for withdrawn tokens",
+)
 @common_options("service_registry")
-def info(
+def withdraw_cmd(
     private_key: str,
     state_db: str,  # pylint: disable=unused-argument
     web3: Web3,
     contracts: Dict[str, Contract],
-    start_block: BlockNumber,  # pylint: disable=unused-argument
+    start_block: BlockNumber,
+    to: Optional[Address],
 ) -> None:
     """
-    Show information about current registration and deposits
+    Withdraw tokens deposited to the ServiceRegistry.
     """
+    # Add middleware to sign transactions by default
+    web3.middleware_onion.add(construct_sign_and_send_raw_middleware(private_key))
+
+    withdraw(private_key, web3, contracts, start_block, to)
+
+
+def info(
+    private_key: str,
+    web3: Web3,
+    contracts: Dict[str, Contract],
+    start_block: BlockNumber,
+) -> None:
     log.info("Using RPC endpoint", rpc_url=get_web3_provider_info(web3))
     service_registry_contract = contracts[CONTRACT_SERVICE_REGISTRY]
     deposit_token_address = service_registry_contract.functions.token().call()
@@ -592,6 +594,22 @@ def info(
             print("WITHDRAWN")
         else:
             print("increased validity till " + dep["valid_till"])
+
+
+@blockchain_options(contracts=[CONTRACT_SERVICE_REGISTRY])
+@cli.command("info")
+@common_options("service_registry")
+def info_cmd(
+    private_key: str,
+    state_db: str,  # pylint: disable=unused-argument
+    web3: Web3,
+    contracts: Dict[str, Contract],
+    start_block: BlockNumber,
+) -> None:
+    """
+    Show information about current registration and deposits
+    """
+    info(private_key, web3, contracts, start_block)
 
 
 def main() -> None:

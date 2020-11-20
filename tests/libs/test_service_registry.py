@@ -6,7 +6,9 @@ from web3.contract import Contract
 
 from raiden.utils.typing import BlockNumber
 from raiden_contracts.constants import CONTRACT_SERVICE_REGISTRY
-from raiden_libs.service_registry import register_account
+from raiden_contracts.tests.utils.constants import DEFAULT_REGISTRATION_DURATION
+from raiden_libs.service_registry import info, register_account, withdraw
+from src.raiden_libs.utils import private_key_to_address
 
 
 def test_registration(
@@ -18,6 +20,7 @@ def test_registration(
 ) -> None:
     (account,) = get_accounts(1)
     pk1 = get_private_key(account)
+    addr1 = private_key_to_address(pk1)
 
     assert service_registry.functions.hasValidRegistration(account).call() is False
     assert service_registry.functions.urls(account).call() == ""
@@ -38,8 +41,36 @@ def test_registration(
         accept_all=True,
     )
 
-    block_creator.kill()
-
     # check that registration worked
     assert service_registry.functions.hasValidRegistration(account).call() is True
     assert service_registry.functions.urls(account).call() == "http://test"
+
+    # smoke test info command
+    info(
+        private_key=pk1,
+        web3=web3,
+        contracts={CONTRACT_SERVICE_REGISTRY: service_registry},
+        start_block=BlockNumber(0),
+    )
+
+    # now test withdraw
+    web3.testing.timeTravel(  # type: ignore
+        web3.eth.getBlock("latest")["timestamp"] + DEFAULT_REGISTRATION_DURATION
+    )
+    withdraw(
+        private_key=pk1,
+        web3=web3,
+        contracts={CONTRACT_SERVICE_REGISTRY: service_registry},
+        start_block=BlockNumber(0),
+        to=addr1,
+    )
+
+    # smoke test info command again after withdraw
+    info(
+        private_key=pk1,
+        web3=web3,
+        contracts={CONTRACT_SERVICE_REGISTRY: service_registry},
+        start_block=BlockNumber(0),
+    )
+
+    block_creator.kill()
