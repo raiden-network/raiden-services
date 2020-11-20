@@ -41,14 +41,14 @@ from raiden.settings import (
 from raiden.storage.serialization.serializer import MessageSerializer
 from raiden.utils.cli import get_matrix_servers
 from raiden.utils.signer import LocalSigner
-from raiden.utils.typing import Address, ChainID, RoomID
+from raiden.utils.typing import Address, ChainID, PeerCapabilities, RoomID
 from raiden_contracts.utils.type_aliases import PrivateKey
 
 log = structlog.get_logger(__name__)
 
 
 def noop_reachability(  # pylint: disable=unused-argument
-    address: Address, reachability: AddressReachability
+    address: Address, reachability: AddressReachability, capabilities: PeerCapabilities
 ) -> None:
     """A reachability callback is required by the UserAddressManager."""
 
@@ -253,6 +253,10 @@ class MatrixListener(gevent.Greenlet):
     def _handle_matrix_sync(self, messages: MatrixSyncMessages) -> bool:
         all_messages: List[Message] = list()
         for room, room_messages in messages:
+            # Ignore toDevice messages
+            if not room:
+                continue
+
             for text in room_messages:
                 all_messages.extend(self._handle_message(room, text))
 
