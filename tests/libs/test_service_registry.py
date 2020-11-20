@@ -33,7 +33,7 @@ def test_registration(
         web3=web3,
         contracts={CONTRACT_SERVICE_REGISTRY: service_registry},
         start_block=BlockNumber(0),
-        service_url="test",
+        service_url="http://test",
         accept_disclaimer=True,
         accept_all=True,
     )
@@ -42,4 +42,4 @@ def test_registration(
 
     # check that registration worked
     assert service_registry.functions.hasValidRegistration(account).call() is True
-    assert service_registry.functions.urls(account).call() == "test"
+    assert service_registry.functions.urls(account).call() == "http://test"

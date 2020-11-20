@@ -1,4 +1,5 @@
 # pylint: disable=too-many-arguments,too-many-locals,too-many-statements
+import subprocess
 import sys
 import textwrap
 import time
@@ -68,6 +69,14 @@ DISCLAIMER = textwrap.dedent(
         +------------------------------------------------------------------------+
     """
 )
+
+
+def validate_url(_ctx: Any, _param: Any, value: Optional[str]) -> Optional[str]:
+    if value is None:
+        return None
+    if not (value.startswith("http://") or value.startswith("https://")):
+        raise click.BadParameter("URL needs to include http(s) protocol")
+    return value
 
 
 def etherscan_url_for_address(chain_id: int, address: Address) -> str:
@@ -151,7 +160,9 @@ def cli() -> None:
     is_flag=True,
     hidden=True,
 )
-@click.option("--service-url", type=str, help="URL for the services to register")
+@click.option(
+    "--service-url", type=str, help="URL for the services to register", callback=validate_url
+)
 @common_options("service_registry")
 def register(
     private_key: str,
@@ -159,7 +170,7 @@ def register(
     web3: Web3,
     contracts: Dict[str, Contract],
     start_block: BlockNumber,  # pylint: disable=unused-argument
-    service_url: str,
+    service_url: Optional[str],
     accept_disclaimer: bool,
     accept_all: bool,
 ) -> None:
@@ -210,7 +221,7 @@ def register_account(
     web3: Web3,
     contracts: Dict[str, Contract],
     start_block: BlockNumber,
-    service_url: str,
+    service_url: Optional[str],
     accept_disclaimer: bool,
     accept_all: bool,
 ) -> None:
@@ -376,10 +387,14 @@ def register_account(
             f"\n\tRegistration valid until: {valid_until.isoformat(timespec='minutes')}"
         )
 
-    # TODO: check that the address is pingable
-    #       Can we even do that without running in a circular dependency?
     if service_url and service_url != current_url:
-        click.secho(f"\nNew Url to be registered {service_url}")
+        click.secho(f'\nNew Url to be registered "{service_url}"')
+        hostname = service_url.split("//")[1]
+        reachable = not subprocess.run(
+            ["ping", "-c", "1", hostname], capture_output=True, check=False
+        ).returncode
+        if not reachable:
+            click.secho(f"`ping {hostname}` fails. Are you sure the URL is correct?", fg="yellow")
         maybe_prompt("I have checked the URL and it is correct")
 
         checked_transact(
