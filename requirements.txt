@@ -1,4 +1,4 @@
-raiden==1.1.1
+raiden==1.2.0
 
 sentry-sdk[flask]==0.19.4
 prometheus_client==0.9.0
