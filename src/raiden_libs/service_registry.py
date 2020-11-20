@@ -289,8 +289,8 @@ def register_account(
         required_deposit = service_registry_contract.functions.currentPrice().call()
         click.secho(
             f"\nThe current required deposit is fmt_amount({required_deposit})"
-            "\n\tNote: The required deposit may change over time."
-            # TODO: add link to high level description of the auction format
+            "\n\tNote: The required deposit continuously decreases, but "
+            "\n\t      increases significantly after a deposit is made."
         )
         if web3.eth.chainId == 1:
             click.secho("You don't have sufficient tokens", err=True)
