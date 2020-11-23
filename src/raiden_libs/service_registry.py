@@ -221,19 +221,25 @@ def send_registration_transaction(
     maybe_prompt: Callable,
     account_balance: int,
     service_address: Address,
+    fmt_amount: Callable[[float], str],
 ) -> None:
     # Get required deposit
     required_deposit = service_registry_contract.functions.currentPrice().call()
     click.secho(
-        f"\nThe current required deposit is fmt_amount({required_deposit})"
+        f"\nThe current required deposit is {fmt_amount(required_deposit)}"
         "\n\tNote: The required deposit continuously decreases, but "
         "\n\t      increases significantly after a deposit is made."
     )
-    if web3.eth.chainId == 1:
-        click.secho("You don't have sufficient tokens", err=True)
-        sys.exit(1)
-    elif account_balance < required_deposit:
-        click.secho("You are operating on a testnet. Tokens will be minted as required.")
+    if account_balance < required_deposit:
+        if web3.eth.chainId == 1:
+            click.secho(
+                f"You have {fmt_amount(account_balance)} but need {fmt_amount(required_deposit)}.",
+                err=True,
+            )
+            sys.exit(1)
+        else:
+            click.secho("You are operating on a testnet. Tokens will be minted as required.")
+
     maybe_prompt(
         "I have read the current deposit and understand that continuing will transfer tokens"
     )
@@ -370,7 +376,6 @@ def register_account(
     # Check current token balance
     fmt_amount = get_token_formatter(deposit_token_contract)
     account_balance = deposit_token_contract.functions.balanceOf(service_address).call()
-    fmt_amount = get_token_formatter(deposit_token_contract)
     log.info("Current account balance", balance=account_balance)
     click.secho(
         "\nThe address of the token used is "
@@ -402,6 +407,7 @@ def register_account(
             maybe_prompt=maybe_prompt,
             account_balance=account_balance,
             service_address=service_address,
+            fmt_amount=fmt_amount,
         )
     elif not currently_registered:
         log.info("Address not registered in ServiceRegistry")
@@ -412,6 +418,7 @@ def register_account(
             maybe_prompt=maybe_prompt,
             account_balance=account_balance,
             service_address=service_address,
+            fmt_amount=fmt_amount,
         )
     else:
         log.info(
