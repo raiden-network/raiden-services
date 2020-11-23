@@ -4,10 +4,6 @@ from unittest.mock import Mock, patch
 
 import pytest
 from eth_utils import decode_hex, to_checksum_address
-from tests.monitoring.monitoring_service.factories import (
-    DEFAULT_PARTICIPANT_OTHER,
-)
-from tests.utils import save_metrics_state
 
 from monitoring_service import metrics
 from monitoring_service.database import Database
@@ -50,11 +46,13 @@ from tests.monitoring.monitoring_service.factories import (
     DEFAULT_CHANNEL_IDENTIFIER,
     DEFAULT_PARTICIPANT1,
     DEFAULT_PARTICIPANT2,
+    DEFAULT_PARTICIPANT_OTHER,
     DEFAULT_SETTLE_TIMEOUT,
     DEFAULT_TOKEN_ADDRESS,
     DEFAULT_TOKEN_NETWORK_ADDRESS,
     create_signed_monitor_request,
 )
+from tests.utils import save_metrics_state
 
 
 @pytest.fixture(autouse=True)
