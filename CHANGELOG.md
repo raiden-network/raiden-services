@@ -1,4 +1,9 @@
 # Changelog
+### 0.13.2 (2020-11-25)
+* Improve registration script ([#890](https://github.com/raiden-network/raiden-services/pull/890)) to allow for extension.
+* Longer timeouts for first Matrix sync ([#878](https://github.com/raiden-network/raiden-services/pull/878)).
+* Adaptions for newer Matrix usage in Raiden.
+* Dependency updates.
 
 ### 0.13.1 (2020-10-06)
 
