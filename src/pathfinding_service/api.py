@@ -194,10 +194,14 @@ class PathsResource(PathfinderResource):
             )
 
         # Create a feedback token and store it to the DB
-        feedback_token = create_and_store_feedback_tokens(
-            pathfinding_service=self.pathfinding_service,
-            token_network_address=token_network.address,
-            routes=paths,
+        feedback_token = (
+            create_and_store_feedback_tokens(
+                pathfinding_service=self.pathfinding_service,
+                token_network_address=token_network.address,
+                routes=paths,
+            )
+            if paths
+            else None
         )
 
         return (
