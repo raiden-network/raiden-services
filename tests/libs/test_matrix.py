@@ -163,7 +163,7 @@ def test_rate_limiter():
     assert limiter.check_and_count(sender=sender, added_bytes=2)
 
 
-def test_matrix_lister_smoke_test(get_accounts, get_private_key):
+def test_matrix_listener_smoke_test(get_accounts, get_private_key):
     (c1,) = get_accounts(1)
     client_mock = Mock()
     client_mock.api.base_url = "http://example.com"
@@ -171,7 +171,7 @@ def test_matrix_lister_smoke_test(get_accounts, get_private_key):
 
     with patch.multiple(
         "raiden_libs.matrix",
-        make_client=Mock(return_value=client_mock),
+        make_multiple_clients=Mock(return_value=[client_mock]),
         join_broadcast_room=Mock(),
     ):
         listener = MatrixListener(
@@ -179,6 +179,30 @@ def test_matrix_lister_smoke_test(get_accounts, get_private_key):
             chain_id=ChainID(61),
             service_room_suffix="_service",
             message_received_callback=lambda _: None,
+        )
+        listener._run()  # pylint: disable=protected-access
+
+    assert listener.startup_finished.done()
+
+
+def test_matrix_multi_listener_smoke_test(get_accounts, get_private_key):
+    (c1,) = get_accounts(1)
+    client_mock = Mock()
+    client_mock.api.base_url = "http://example.com"
+    client_mock.user_id = "1"
+
+    with patch.multiple(
+        "raiden_libs.matrix",
+        make_multiple_clients=Mock(return_value=[client_mock]),
+        join_broadcast_room=Mock(),
+    ):
+        listener = MatrixListener(
+            private_key=get_private_key(c1),
+            chain_id=ChainID(61),
+            service_room_suffix="_service",
+            message_received_callback=lambda _: None,
+            servers=['http://example.com'],
+            server_local_presence_updates=True
         )
         listener._run()  # pylint: disable=protected-access
 

@@ -23,9 +23,10 @@ from raiden.network.transport.matrix.utils import (
     AddressReachability,
     DisplayNameCache,
     UserAddressManager,
+    MultiListenerUserAddressManager,
     join_broadcast_room,
     login,
-    make_client,
+    make_multiple_clients,
     make_room_alias,
     validate_userid_signature,
 )
@@ -137,6 +138,7 @@ class MatrixListener(gevent.Greenlet):
         service_room_suffix: str,
         message_received_callback: Callable[[Message], None],
         servers: Optional[List[str]] = None,
+        server_local_presence_updates = False  # FIXME typing Boolean
     ) -> None:
         super().__init__()
 
@@ -154,24 +156,46 @@ class MatrixListener(gevent.Greenlet):
                 else DEFAULT_MATRIX_KNOWN_SERVERS[Environment.DEVELOPMENT]
             )
 
-        self._client = make_client(
+
+        self._client, *self._other_clients = make_multiple_clients(
             handle_messages_callback=self._handle_matrix_sync,
             handle_member_join_callback=lambda room: None,
             servers=self.available_servers,
+            max_num_clients=len(self.available_servers) if server_local_presence_updates else 1,
             http_pool_maxsize=4,
             http_retry_timeout=40,
             http_retry_delay=matrix_http_retry_delay,
         )
+
         self.broadcast_room_id: Optional[RoomID] = None
         self._broadcast_room: Optional[Room] = None
         self._displayname_cache = DisplayNameCache()
         self.base_url = self._client.api.base_url
 
-        self.user_manager = UserAddressManager(
-            client=self._client,
-            displayname_cache=self._displayname_cache,
-            address_reachability_changed_callback=noop_reachability,
-        )
+        if server_local_presence_updates:
+            if len(self._other_clients) != max(len(self.available_servers) - 1, 0):
+                raise ConnectionError("Can't connect to all servers, this can cause missed presence updates.")
+
+            for client in self._other_clients:
+                # TODO HERE eventually remove everything not needed except for the presence listening on 
+                # all `other_clients` - we don't have to listen for the same broadcast messages 
+                # on multiple clients
+                pass
+
+            # other_clients can also be an empty list. Then we will only listen
+            # for presence update events on
+            self.user_manager = MultiListenerUserAddressManager(
+                client=self._client,
+                presence_listener_clients=self._other_clients,
+                displayname_cache=self._displayname_cache,
+                address_reachability_changed_callback=noop_reachability,
+            )
+        else:
+            self.user_manager = UserAddressManager(
+                client=self._client,
+                displayname_cache=self._displayname_cache,
+                address_reachability_changed_callback=noop_reachability,
+            )
 
         self.startup_finished = AsyncResult()
         self._rate_limiter = RateLimiter(
@@ -179,34 +203,58 @@ class MatrixListener(gevent.Greenlet):
             reset_interval=MATRIX_RATE_LIMIT_RESET_INTERVAL,
         )
 
-    def _run(self) -> None:  # pylint: disable=method-hidden
-        self._start_client()
 
-        self._client.start_listener_thread(
-            timeout_ms=DEFAULT_TRANSPORT_MATRIX_SYNC_TIMEOUT,
-            latency_ms=DEFAULT_TRANSPORT_MATRIX_SYNC_LATENCY,
-        )
-        assert self._client.sync_worker
-        # When the sync worker fails, waiting for startup_finished does not
-        # make any sense.
-        self._client.sync_worker.link(self.startup_finished)
+    def _run(self) -> None:  # pylint: disable=method-hidden
+        self._start_clients()
+
+        for client in self._all_clients:
+            client.start_listener_thread(
+                timeout_ms=DEFAULT_TRANSPORT_MATRIX_SYNC_TIMEOUT,
+                latency_ms=DEFAULT_TRANSPORT_MATRIX_SYNC_LATENCY,
+            )
+            # FIXME shutdown others? before assert?
+            assert client.sync_worker
+
+        for client in self._all_clients:
+            # If any of the sync workers fail, waiting for startup_finished does not
+            # make any sense
+            client.sync_worker.link_exception(self.startup_finished)
 
         def set_startup_finished() -> None:
-            self._client.processed.wait()
+            # This will notify the waiter that the startup finished for all clients (success)
+            # Waiting on "client.processed" waits until the next long-polling cycle is conducted
+            gevent.wait([client.processed for client in self._all_clients])
             self.startup_finished.set()
 
         startup_finished_greenlet = gevent.spawn(set_startup_finished)
+
         try:
-            self._client.sync_worker.get()
+            # block until any of the worker finished or raises
+            gevent.joinall({client.sync_worker for client in self._all_clients}, count=1, raise_error=True)
         finally:
-            self._client.stop_listener_thread()
+            # if any worker gets shut down, stop the listener threads of all other clients 
+            # as well
+            for client in self._all_clients:
+                # XXX (ML) call client.stop() on all clients!
+                # Before this commit, this was only stopping the listener thread.
+                # But here we want to properly stop all clients that were running normally
+                # TODO is this the correct way to handle this? Can we call stop() even though
+                # the worker of e.g. 1 thread already died?
+                client.stop()
             gevent.joinall({startup_finished_greenlet}, raise_error=True, timeout=0)
 
-    def _start_client(self) -> None:
+    @property
+    def _all_clients(self):
+        return [self._client] + self._other_clients
+
+    def _start_clients(self) -> None:
+        # FIXME this could be (somewhat) optimized concurrently
+        # (at least the login stage, and then the filter creation /registration stage)
         try:
             self.user_manager.start()
 
-            login(self._client, signer=LocalSigner(private_key=self.private_key))
+            for client in self._all_clients:
+                login(client, signer=LocalSigner(private_key=self.private_key))
         except (MatrixRequestError, ValueError):
             raise ConnectionError("Could not login/register to matrix.")
 
@@ -219,8 +267,10 @@ class MatrixListener(gevent.Greenlet):
             )
             self.broadcast_room_id = self._broadcast_room.room_id
 
-            sync_filter_id = self._client.create_sync_filter(rooms=[self._broadcast_room])
-            self._client.set_sync_filter_id(sync_filter_id)
+            for client in self._all_clients:
+                sync_filter_id = client.create_sync_filter(rooms=[self._broadcast_room])
+                # TODO Can we reuse the serverside filter across clients by setting the same filter-id?
+                client.set_sync_filter_id(sync_filter_id)
         except (MatrixRequestError, TransportError):
             raise ConnectionError("Could not join monitoring broadcasting room.")
 
