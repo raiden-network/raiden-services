@@ -11,7 +11,7 @@ import structlog
 
 from monitoring_service.constants import MS_DISCLAIMER
 from monitoring_service.database import SharedDatabase
-from raiden.utils.cli import NetworkChoiceType
+from raiden.utils.cli import ChainChoiceType
 from raiden_contracts.utils.type_aliases import PrivateKey
 from raiden_libs.cli import common_options, setup_sentry
 from raiden_libs.constants import CONFIRMATION_OF_UNDERSTANDING
@@ -23,7 +23,7 @@ log = structlog.get_logger(__name__)
 @click.command()
 @click.option(
     "--chain-id",
-    type=NetworkChoiceType(["mainnet", "ropsten", "rinkeby", "goerli", "kovan", "<CHAIN_ID>"]),
+    type=ChainChoiceType(["mainnet", "ropsten", "rinkeby", "goerli", "kovan", "<CHAIN_ID>"]),
     required=True,
     show_default=True,
     help=(
