@@ -1,5 +1,6 @@
 import sys
 from datetime import datetime, timedelta
+from functools import partial
 from typing import Callable, Dict, Iterable, List, Optional
 from urllib.parse import urlparse
 
@@ -7,6 +8,7 @@ import gevent
 import structlog
 from eth_utils import to_checksum_address
 from gevent.event import AsyncResult
+from gevent.pool import Pool
 from marshmallow import ValidationError
 from matrix_client.errors import MatrixRequestError
 from matrix_client.user import User
@@ -18,11 +20,14 @@ from monitoring_service.constants import (
 from raiden.constants import Environment
 from raiden.exceptions import SerializationError, TransportError
 from raiden.messages.abstract import Message, SignedMessage
-from raiden.network.transport.matrix.client import MatrixMessage, MatrixSyncMessages, Room
+from raiden.network.transport.matrix.client import (
+    GMatrixClient,
+    MatrixMessage,
+    MatrixSyncMessages,
+    Room,
+)
 from raiden.network.transport.matrix.utils import (
-    AddressReachability,
     DisplayNameCache,
-    UserAddressManager,
     join_broadcast_room,
     login,
     make_client,
@@ -41,16 +46,11 @@ from raiden.settings import (
 from raiden.storage.serialization.serializer import MessageSerializer
 from raiden.utils.cli import get_matrix_servers
 from raiden.utils.signer import LocalSigner
-from raiden.utils.typing import Address, ChainID, PeerCapabilities, RoomID
+from raiden.utils.typing import Address, ChainID, RoomID
 from raiden_contracts.utils.type_aliases import PrivateKey
+from raiden_libs.utils import MultiClientUserAddressManager
 
 log = structlog.get_logger(__name__)
-
-
-def noop_reachability(  # pylint: disable=unused-argument
-    address: Address, reachability: AddressReachability, capabilities: PeerCapabilities
-) -> None:
-    """A reachability callback is required by the UserAddressManager."""
 
 
 class RateLimiter:
@@ -145,14 +145,22 @@ class MatrixListener(gevent.Greenlet):
         self.service_room_suffix = service_room_suffix
         self.message_received_callback = message_received_callback
 
-        if servers:
-            self.available_servers = servers
-        else:
-            self.available_servers = get_matrix_servers(
+        try:
+            known_servers = get_matrix_servers(
                 DEFAULT_MATRIX_KNOWN_SERVERS[Environment.PRODUCTION]
                 if chain_id == 1
                 else DEFAULT_MATRIX_KNOWN_SERVERS[Environment.DEVELOPMENT]
             )
+
+        except RuntimeError as ex:
+            if servers is None:
+                raise ex
+            known_servers = []
+
+        if servers:
+            self.available_servers = servers
+        else:
+            self.available_servers = known_servers
 
         self._client = make_client(
             handle_messages_callback=self._handle_matrix_sync,
@@ -162,15 +170,32 @@ class MatrixListener(gevent.Greenlet):
             http_retry_timeout=40,
             http_retry_delay=matrix_http_retry_delay,
         )
+
         self.broadcast_room_id: Optional[RoomID] = None
         self._broadcast_room: Optional[Room] = None
         self._displayname_cache = DisplayNameCache()
         self.base_url = self._client.api.base_url
+        self.server_url_to_other_clients = {}
 
-        self.user_manager = UserAddressManager(
+        # try to create clients for other servers, TransportError if server not reachable
+        for server_url in [server for server in known_servers if server != self.base_url]:
+            try:
+                self.server_url_to_other_clients[server_url] = make_client(
+                    handle_messages_callback=lambda messages: True,
+                    handle_member_join_callback=lambda room: None,
+                    servers=[server_url],
+                    http_pool_maxsize=4,
+                    http_retry_timeout=40,
+                    http_retry_delay=matrix_http_retry_delay,
+                )
+                log.debug("Created client for other server", server_url=server_url)
+            except TransportError:
+                log.debug("Could not connect to other server", server_url=server_url)
+
+        self.user_manager = MultiClientUserAddressManager(
             client=self._client,
+            server_url_to_other_clients=self.server_url_to_other_clients,
             displayname_cache=self._displayname_cache,
-            address_reachability_changed_callback=noop_reachability,
         )
 
         self.startup_finished = AsyncResult()
@@ -179,17 +204,33 @@ class MatrixListener(gevent.Greenlet):
             reset_interval=MATRIX_RATE_LIMIT_RESET_INTERVAL,
         )
 
-    def _run(self) -> None:  # pylint: disable=method-hidden
-        self._start_client()
+    @property
+    def server_url_to_all_clients(self) -> Dict[str, GMatrixClient]:
+        return {**self.server_url_to_other_clients, self._client.api.base_url: self._client}
 
-        self._client.start_listener_thread(
-            timeout_ms=DEFAULT_TRANSPORT_MATRIX_SYNC_TIMEOUT,
-            latency_ms=DEFAULT_TRANSPORT_MATRIX_SYNC_LATENCY,
-        )
-        assert self._client.sync_worker
-        # When the sync worker fails, waiting for startup_finished does not
-        # make any sense.
-        self._client.sync_worker.link(self.startup_finished)
+    def _run(self) -> None:  # pylint: disable=method-hidden
+        self._start_clients()
+
+        def other_client_returns(other_client: GMatrixClient) -> None:
+            other_client.stop_listener_thread()
+            self.server_url_to_other_clients.pop(other_client.api.base_url)
+
+        for client in self.server_url_to_all_clients.values():
+            client.start_listener_thread(
+                timeout_ms=DEFAULT_TRANSPORT_MATRIX_SYNC_TIMEOUT,
+                latency_ms=DEFAULT_TRANSPORT_MATRIX_SYNC_LATENCY,
+            )
+
+            assert client.sync_worker
+
+            if client == self._client:
+                # When the sync worker fails, waiting for startup_finished does not
+                # make any sense.
+                client.sync_worker.link(self.startup_finished)
+            else:
+                # if sync worker of other client stops then remove it from
+                # other client dict so the main client will fetch presences as a fallback
+                client.sync_worker.link(partial(other_client_returns, client))
 
         def set_startup_finished() -> None:
             self._client.processed.wait()
@@ -197,32 +238,50 @@ class MatrixListener(gevent.Greenlet):
 
         startup_finished_greenlet = gevent.spawn(set_startup_finished)
         try:
+            assert self._client.sync_worker
             self._client.sync_worker.get()
         finally:
-            self._client.stop_listener_thread()
+            for client in self.server_url_to_all_clients.values():
+                client.stop_listener_thread()
             gevent.joinall({startup_finished_greenlet}, raise_error=True, timeout=0)
 
-    def _start_client(self) -> None:
-        try:
-            self.user_manager.start()
+    def _start_clients(self) -> None:
+        local_signer = LocalSigner(private_key=self.private_key)
+        self.user_manager.start()
+        room_alias_prefix = make_room_alias(self.chain_id, self.service_room_suffix)
+        server = urlparse(self._client.api.base_url).netloc
+        room_alias = f"#{room_alias_prefix}:{server}"
 
-            login(self._client, signer=LocalSigner(private_key=self.private_key))
-        except (MatrixRequestError, ValueError):
-            raise ConnectionError("Could not login/register to matrix.")
+        def _start_client(matrix_client: GMatrixClient) -> None:
+            exception_str = "Could not login/register to matrix."
 
-        try:
-            room_alias_prefix = make_room_alias(self.chain_id, self.service_room_suffix)
-            server = urlparse(self._client.api.base_url).netloc
-            room_alias = f"#{room_alias_prefix}:{server}"
-            self._broadcast_room = join_broadcast_room(
-                client=self._client, broadcast_room_alias=room_alias
-            )
-            self.broadcast_room_id = self._broadcast_room.room_id
+            try:
+                login(matrix_client, signer=local_signer)
+                exception_str = "Could not join broadcasting room."
+                broadcast_room = join_broadcast_room(
+                    client=matrix_client, broadcast_room_alias=room_alias
+                )
+                broadcast_room_id = broadcast_room.room_id
 
-            sync_filter_id = self._client.create_sync_filter(rooms=[self._broadcast_room])
-            self._client.set_sync_filter_id(sync_filter_id)
-        except (MatrixRequestError, TransportError):
-            raise ConnectionError("Could not join monitoring broadcasting room.")
+                if matrix_client == self._client:
+                    self._broadcast_room = broadcast_room
+                    self.broadcast_room_id = broadcast_room_id
+                    sync_filter_id = matrix_client.create_sync_filter(rooms=[broadcast_room])
+                else:
+                    sync_filter_id = matrix_client.create_sync_filter(not_rooms=[broadcast_room])
+                matrix_client.set_sync_filter_id(sync_filter_id)
+            except (MatrixRequestError, ValueError):
+                if matrix_client == self._client:
+                    raise ConnectionError(exception_str)
+                # drop the client if it was not able to login or join the broadcast room
+                self.server_url_to_other_clients.pop(matrix_client.api.base_url, None)
+
+        pool = Pool(size=len(self.server_url_to_all_clients))
+
+        for client in self.server_url_to_all_clients.values():
+            pool.apply_async(_start_client, args=(client,))
+
+        pool.join(raise_error=True)
 
     def follow_address_presence(self, address: Address, refresh: bool = False) -> None:
         self.user_manager.add_address(address)

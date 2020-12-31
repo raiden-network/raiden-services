@@ -4,18 +4,23 @@ import json
 import sys
 import time
 from datetime import datetime, timedelta, timezone
+from unittest import mock
 from unittest.mock import Mock, patch
+from uuid import uuid1
 
 import pytest
 from eth_utils import encode_hex, to_canonical_address
 
 from monitoring_service.states import HashedBalanceProof
 from raiden.messages.monitoring_service import RequestMonitoring
+from raiden.network.transport.matrix.utils import DisplayNameCache
 from raiden.storage.serialization.serializer import DictSerializer, MessageSerializer
 from raiden.utils.typing import (
     Address,
+    Any,
     ChainID,
     ChannelID,
+    Dict,
     MonitoringServiceAddress,
     Nonce,
     TokenAmount,
@@ -28,6 +33,7 @@ from raiden_libs.matrix import (
     deserialize_messages,
     matrix_http_retry_delay,
 )
+from raiden_libs.utils import MultiClientUserAddressManager
 from tests.pathfinding.test_fee_updates import (
     PRIVATE_KEY_1,
     PRIVATE_KEY_1_ADDRESS,
@@ -58,6 +64,20 @@ def request_monitoring_message(token_network, get_accounts, get_private_key) -> 
         reward_amount=TokenAmount(1),
         monitoring_service_contract_address=MonitoringServiceAddress(bytes([11] * 20)),
     )
+
+
+@pytest.fixture
+def presence_event(server_index: int) -> Dict[str, Any]:
+
+    return {
+        "content": {
+            "last_active_ago": 2478593,
+            "presence": "online",
+            "status_msg": "Making cupcakes",
+        },
+        "sender": f"@example:example0{server_index}.com",
+        "type": "m.presence",
+    }
 
 
 @pytest.mark.parametrize("message_data", ["", " \r\n ", "\n ", "@@@"])
@@ -163,7 +183,7 @@ def test_rate_limiter():
     assert limiter.check_and_count(sender=sender, added_bytes=2)
 
 
-def test_matrix_lister_smoke_test(get_accounts, get_private_key):
+def test_matrix_listener_smoke_test(get_accounts, get_private_key):
     (c1,) = get_accounts(1)
     client_mock = Mock()
     client_mock.api.base_url = "http://example.com"
@@ -183,3 +203,68 @@ def test_matrix_lister_smoke_test(get_accounts, get_private_key):
         listener._run()  # pylint: disable=protected-access
 
     assert listener.startup_finished.done()
+
+
+@pytest.mark.parametrize("server_index", [0, 1, 2, 3, 4])
+def test_filter_presences_by_client(presence_event, server_index):
+
+    server_urls = [f"https://example0{i}.com" for i in range(5)]
+
+    uuids_to_callbacks = {}
+    server_url_to_clients = {}
+    server_url_to_processed_presence = []
+
+    def _mock_add_presence_listener(listener):
+        uuid = uuid1()
+        uuids_to_callbacks[uuid] = listener
+        return uuid
+
+    def _mock_presence_listener(
+        self, event: Dict[str, Any], presence_update_id: int  # pylint: disable=unused-argument
+    ) -> None:
+        server_url_to_processed_presence.append(event)
+
+    for server_url in server_urls:
+        client = Mock()
+        client.api.base_url = server_url
+        client.add_presence_listener = _mock_add_presence_listener
+        server_url_to_clients[server_url] = client
+
+    main_client = server_url_to_clients.pop(server_urls[0])
+
+    with mock.patch.object(
+        MultiClientUserAddressManager, "_presence_listener", new=_mock_presence_listener
+    ):
+        uam = MultiClientUserAddressManager(
+            client=main_client,
+            server_url_to_other_clients=server_url_to_clients,
+            displayname_cache=DisplayNameCache(),
+        )
+        uam.start()
+
+        # call presence listener on all clients
+        for listener in uuids_to_callbacks.values():
+            listener(presence_event, 0)
+
+        # only the respective client should forward the presence to the uam
+        expected_presences = 1
+
+        assert len(server_url_to_processed_presence) == expected_presences
+
+        # drop the client of the last homeserver in the list
+        # and remove all listeners
+        uuid = uam._other_client_to_listener_id.pop(  # pylint: disable=protected-access
+            server_url_to_clients[server_urls[-1]]
+        )
+        uuids_to_callbacks.pop(uuid)
+        uam.server_url_to_other_clients.pop(server_urls[-1])
+
+        # only call the listener of the main client
+        # if the presence event comes from the server with the dropped client
+        # it should also consume the presence, otherwise not
+        uuids_to_callbacks[uam._listener_id](presence_event, 0)  # pylint: disable=protected-access
+
+        if server_index in [0, len(server_urls) - 1]:
+            expected_presences += 1
+
+        assert len(server_url_to_processed_presence) == expected_presences
