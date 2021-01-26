@@ -37,21 +37,13 @@ class MultiClientUserAddressManager(UserAddressManager):
     def __init__(
         self,
         client: GMatrixClient,
-        server_url_to_other_clients: Dict[str, GMatrixClient],
         displayname_cache: DisplayNameCache,
         _log_context: Optional[Dict[str, Any]] = None,
     ) -> None:
         super().__init__(client, displayname_cache, noop_reachability, _log_context=_log_context)
 
         # additional listener ids without the one from the main client
-        self.server_url_to_other_clients = server_url_to_other_clients
-        self._other_client_to_listener_id: Dict[GMatrixClient, Optional[UUID]] = {
-            client: None for client in self.server_url_to_other_clients.values()
-        }
-
-    @property
-    def server_url_to_all_clients(self) -> Dict[str, GMatrixClient]:
-        return {**self.server_url_to_other_clients, self._client.api.base_url: self._client}
+        self.server_url_to_listener_id: Dict[str, Optional[UUID]] = {}
 
     def start(self) -> None:
         """Start listening for presence updates.
@@ -59,22 +51,24 @@ class MultiClientUserAddressManager(UserAddressManager):
         Should be called before ``.login()`` is called on the underlying client."""
         assert self._listener_id is None, "UserAddressManager.start() called twice"
         self._stop_event.clear()
-        self._listener_id = self._client.add_presence_listener(
-            self._create_presence_listener(self._client)
+
+    def add_client(self, client: GMatrixClient) -> None:
+        server_url = client.api.base_url
+        self.server_url_to_listener_id[server_url] = client.add_presence_listener(
+            self._create_presence_listener(server_url)
         )
 
-        for client in self.server_url_to_other_clients.values():
-            self._other_client_to_listener_id[client] = self._client.add_presence_listener(
-                self._create_presence_listener(client)
-            )
+    def remove_client(self, client: GMatrixClient) -> None:
+        listener_id = self.server_url_to_listener_id.pop(client.api.base_url, None)
+        if listener_id is not None:
+            client.remove_presence_listener(listener_id)
 
     def stop(self) -> None:
-        for client, listener_id in self._other_client_to_listener_id.items():
-            client.remove_presence_listener(listener_id)
+        self.server_url_to_listener_id = {}
         super().stop()
 
     def _create_presence_listener(
-        self, client: GMatrixClient
+        self, client_server_url: str
     ) -> Callable[[Dict[str, Any], int], None]:
         def _filter_presence(event: Dict[str, Any], presence_update_id: int) -> None:
             """
@@ -84,20 +78,22 @@ class MultiClientUserAddressManager(UserAddressManager):
             exists. This is a fallback if the client could not connect to another server
             """
             sender_server = event["sender"].split(":")[-1]
-
+            receiver_server = urlparse(client_server_url).netloc
+            main_client_server = urlparse(self._client.api.base_url).netloc
             other_clients_servers = {
                 urlparse(server_url).netloc
-                for server_url in self.server_url_to_other_clients.keys()
+                for server_url in self.server_url_to_listener_id.keys()
+                if server_url != main_client_server
             }
 
             # if this comes from the main client's sync consume all presences of users
             # which do not have a client in other clients. If other client for user's
             # homeserver exists, presence will be consumed by other client's sync
-            if client == self._client:
+            if receiver_server == main_client_server:
                 if sender_server not in other_clients_servers:
                     self._presence_listener(event, presence_update_id)
 
-            elif sender_server == urlparse(client.api.base_url).netloc:
+            elif sender_server == receiver_server:
                 self._presence_listener(event, presence_update_id)
 
         return _filter_presence
