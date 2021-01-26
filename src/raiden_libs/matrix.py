@@ -144,18 +144,18 @@ class MatrixListener(gevent.Greenlet):
         self.message_received_callback = message_received_callback
         self._displayname_cache = DisplayNameCache()
         self.startup_finished = AsyncResult()
-        self.base_url = self._client.api.base_url
-        self.user_manager = MultiClientUserAddressManager(
-            client=self._client,
-            displayname_cache=self._displayname_cache,
-        )
         self._client_manager = ClientManager(
-            user_manager=self.user_manager,
             available_servers=servers,
             broadcast_room_alias_prefix=make_room_alias(chain_id, service_room_suffix),
             chain_id=self.chain_id,
             private_key=private_key,
             handle_matrix_sync=self._handle_matrix_sync,
+        )
+
+        self.base_url = self._client.api.base_url
+        self.user_manager = MultiClientUserAddressManager(
+            client=self._client,
+            displayname_cache=self._displayname_cache,
         )
 
         self._rate_limiter = RateLimiter(
@@ -182,7 +182,7 @@ class MatrixListener(gevent.Greenlet):
     def _run(self) -> None:  # pylint: disable=method-hidden
 
         self.user_manager.start()
-        self._client_manager.start()
+        self._client_manager.start(self.user_manager)
 
         def set_startup_finished() -> None:
             self._client.processed.wait()
@@ -293,14 +293,13 @@ class ClientManager:
     # pylint: disable=too-many-instance-attributes
     def __init__(
         self,
-        user_manager: MultiClientUserAddressManager,
         available_servers: Optional[List[str]],
         broadcast_room_alias_prefix: str,
         chain_id: ChainID,
         private_key: bytes,
         handle_matrix_sync: Callable[[MatrixSyncMessages], bool],
     ):
-        self.user_manager = user_manager
+        self.user_manager: Optional[MultiClientUserAddressManager] = None
         self.local_signer = LocalSigner(private_key=private_key)
         self.broadcast_room_alias_prefix = broadcast_room_alias_prefix
         self.chain_id = chain_id
@@ -345,8 +344,9 @@ class ClientManager:
             urlparse(self.main_client.api.base_url).netloc: self.main_client,
         }
 
-    def start(self) -> None:
+    def start(self, user_manager: MultiClientUserAddressManager) -> None:
         self.stop_event.clear()
+        self.user_manager = user_manager
         try:
             self._start_client(self.main_client.api.base_url)
         except (TransportError, ConnectionError):
@@ -364,6 +364,8 @@ class ClientManager:
             self.connect_client_workers.add(connect_worker)
 
     def stop(self) -> None:
+        assert self.user_manager, "Stop called before start"
+
         self.stop_event.set()
         for server_url, client in self.server_url_to_all_clients.items():
             self.server_url_to_other_clients.pop(server_url, None)
@@ -373,6 +375,7 @@ class ClientManager:
         gevent.joinall(self.connect_client_workers, raise_error=True)
 
     def connect_client_forever(self, server_url: str) -> None:
+        assert self.user_manager
         while not self.stop_event.is_set():
             stopped_client = self.server_url_to_other_clients.pop(server_url, None)
             if stopped_client is not None:
@@ -385,6 +388,7 @@ class ClientManager:
                 log.debug("Could not connect to server", server_url=server_url)
 
     def _start_client(self, server_url: str) -> GMatrixClient:
+        assert self.user_manager
         if self.stop_event.is_set():
             raise TransportError()
 
