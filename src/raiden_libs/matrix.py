@@ -412,7 +412,10 @@ class ClientManager:
         )
 
         assert client.sync_worker
-        self.user_manager.add_client(client)
+
+        # main client is already added upon MultiClientUserAddressManager.start()
+        if server_url != self.main_client.api.base_url:
+            self.user_manager.add_client(client)
         return client
 
     def _setup_client(self, matrix_client: GMatrixClient) -> None:

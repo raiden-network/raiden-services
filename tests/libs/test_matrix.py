@@ -219,6 +219,9 @@ def test_filter_presences_by_client(presence_event, server_index):
         uuids_to_callbacks[uuid] = listener
         return uuid
 
+    def _mock_remove_presence_listener(listener_id):
+        uuids_to_callbacks.pop(listener_id)
+
     def _mock_presence_listener(
         self, event: Dict[str, Any], presence_update_id: int  # pylint: disable=unused-argument
     ) -> None:
@@ -228,6 +231,7 @@ def test_filter_presences_by_client(presence_event, server_index):
         client = Mock()
         client.api.base_url = server_url
         client.add_presence_listener = _mock_add_presence_listener
+        client.remove_presence_listener = _mock_remove_presence_listener
         server_url_to_clients[server_url] = client
 
     main_client = server_url_to_clients.pop(server_urls[0])
@@ -237,10 +241,12 @@ def test_filter_presences_by_client(presence_event, server_index):
     ):
         uam = MultiClientUserAddressManager(
             client=main_client,
-            server_url_to_other_clients=server_url_to_clients,
             displayname_cache=DisplayNameCache(),
         )
         uam.start()
+
+        for client in server_url_to_clients.values():
+            uam.add_client(client)
 
         # call presence listener on all clients
         for listener in uuids_to_callbacks.values():
@@ -252,12 +258,9 @@ def test_filter_presences_by_client(presence_event, server_index):
         assert len(server_url_to_processed_presence) == expected_presences
 
         # drop the client of the last homeserver in the list
-        # and remove all listeners
-        uuid = uam._other_client_to_listener_id.pop(  # pylint: disable=protected-access
-            server_url_to_clients[server_urls[-1]]
-        )
-        uuids_to_callbacks.pop(uuid)
-        uam.server_url_to_other_clients.pop(server_urls[-1])
+        # and remove listener
+        client = server_url_to_clients[server_urls[-1]]
+        uam.remove_client(client)
 
         # only call the listener of the main client
         # if the presence event comes from the server with the dropped client

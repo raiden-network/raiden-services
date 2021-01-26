@@ -41,9 +41,7 @@ class MultiClientUserAddressManager(UserAddressManager):
         _log_context: Optional[Dict[str, Any]] = None,
     ) -> None:
         super().__init__(client, displayname_cache, noop_reachability, _log_context=_log_context)
-
-        # additional listener ids without the one from the main client
-        self.server_url_to_listener_id: Dict[str, Optional[UUID]] = {}
+        self.server_url_to_listener_id: Dict[str, UUID] = {}
 
     def start(self) -> None:
         """Start listening for presence updates.
@@ -51,12 +49,14 @@ class MultiClientUserAddressManager(UserAddressManager):
         Should be called before ``.login()`` is called on the underlying client."""
         assert self._listener_id is None, "UserAddressManager.start() called twice"
         self._stop_event.clear()
+        self._listener_id = self.add_client(self._client)
 
-    def add_client(self, client: GMatrixClient) -> None:
+    def add_client(self, client: GMatrixClient) -> UUID:
         server_url = client.api.base_url
         self.server_url_to_listener_id[server_url] = client.add_presence_listener(
             self._create_presence_listener(server_url)
         )
+        return self.server_url_to_listener_id[server_url]
 
     def remove_client(self, client: GMatrixClient) -> None:
         listener_id = self.server_url_to_listener_id.pop(client.api.base_url, None)
@@ -82,8 +82,8 @@ class MultiClientUserAddressManager(UserAddressManager):
             main_client_server = urlparse(self._client.api.base_url).netloc
             other_clients_servers = {
                 urlparse(server_url).netloc
-                for server_url in self.server_url_to_listener_id.keys()
-                if server_url != main_client_server
+                for server_url in self.server_url_to_listener_id
+                if server_url != self._client.api.base_url
             }
 
             # if this comes from the main client's sync consume all presences of users
