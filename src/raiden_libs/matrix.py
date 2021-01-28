@@ -381,8 +381,8 @@ class ClientManager:
             if stopped_client is not None:
                 self.user_manager.remove_client(stopped_client)
             try:
-                client_starter = gevent.spawn(self._start_client, server_url)
-                client = client_starter.get()
+                client = self._start_client(server_url)
+                assert client.sync_worker is not None
                 client.sync_worker.get()
             except (TransportError, ConnectionError):
                 log.debug("Could not connect to server", server_url=server_url)
@@ -411,11 +411,9 @@ class ClientManager:
         log.debug("Matrix login successful", server_url=server_url)
 
         client.start_listener_thread(
-            timeout_ms=DEFAULT_TRANSPORT_MATRIX_SYNC_TIMEOUT,
-            latency_ms=DEFAULT_TRANSPORT_MATRIX_SYNC_LATENCY,
+            DEFAULT_TRANSPORT_MATRIX_SYNC_TIMEOUT,
+            DEFAULT_TRANSPORT_MATRIX_SYNC_LATENCY,
         )
-
-        assert client.sync_worker
 
         # main client is already added upon MultiClientUserAddressManager.start()
         if server_url != self.main_client.api.base_url:

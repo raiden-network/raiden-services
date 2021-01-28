@@ -8,11 +8,14 @@ from unittest import mock
 from unittest.mock import Mock, patch
 from uuid import uuid1
 
+import gevent
 import pytest
 from eth_utils import encode_hex, to_canonical_address
+from gevent.event import AsyncResult
 
 from monitoring_service.states import HashedBalanceProof
 from raiden.messages.monitoring_service import RequestMonitoring
+from raiden.network.transport.matrix.client import GMatrixClient
 from raiden.network.transport.matrix.utils import DisplayNameCache
 from raiden.storage.serialization.serializer import DictSerializer, MessageSerializer
 from raiden.utils.typing import (
@@ -28,6 +31,7 @@ from raiden.utils.typing import (
 )
 from raiden_contracts.tests.utils import LOCKSROOT_OF_NO_LOCKS, deepcopy
 from raiden_libs.matrix import (
+    ClientManager,
     MatrixListener,
     RateLimiter,
     deserialize_messages,
@@ -271,3 +275,57 @@ def test_filter_presences_by_client(presence_event, server_index):
             expected_presences += 1
 
         assert len(server_url_to_processed_presence) == expected_presences
+
+
+def test_client_manager_start(get_accounts, get_private_key):
+    server_urls = [f"https://example0{i}.com" for i in range(5)]
+
+    (c1,) = get_accounts(1)
+    private_key = get_private_key(c1)
+    client_mock = Mock()
+    client_mock.api.base_url = "https://example00.com"
+    client_mock.user_id = "1"
+    client_mock.sync_worker = AsyncResult()
+    start_client_counter = 0
+
+    def mock_start_client(server_url: str):  # pylint: disable=unused-argument
+        nonlocal start_client_counter
+        client_mock.sync_worker = AsyncResult()
+        start_client_counter += 1
+        return client_mock
+
+    with patch.multiple(
+        "raiden_libs.matrix",
+        make_client=Mock(return_value=client_mock),
+        get_matrix_servers=Mock(return_value=server_urls),
+        login=Mock(),
+        join_broadcast_room=Mock(),
+    ):
+        client_manager = ClientManager(
+            available_servers=[f"https://example0{i}.com" for i in range(5)],
+            broadcast_room_alias_prefix="_service",
+            chain_id=ChainID(61),
+            private_key=private_key,
+            handle_matrix_sync=lambda s: True,
+        )
+
+        client_manager._start_client = mock_start_client  # pylint: disable=protected-access
+
+        assert client_manager.known_servers == server_urls
+
+        uam = MultiClientUserAddressManager(
+            client=client_manager.main_client,
+            displayname_cache=DisplayNameCache(),
+        )
+        uam.start()
+        client_manager.user_manager = uam
+        client_manager.stop_event.clear()
+
+        gevent.spawn(client_manager.connect_client_forever, client_mock.api.base_url)
+        gevent.sleep(2)
+        client_mock.sync_worker.set(True)
+        gevent.sleep(2)
+        client_manager.stop_event.set()
+        client_mock.sync_worker.set(True)
+
+        assert start_client_counter == 2
