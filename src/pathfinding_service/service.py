@@ -25,6 +25,7 @@ from pathfinding_service.typing import DeferableMessage
 from raiden.constants import PATH_FINDING_BROADCASTING_ROOM, UINT256_MAX
 from raiden.messages.abstract import Message
 from raiden.messages.path_finding_service import PFSCapacityUpdate, PFSFeeUpdate
+from raiden.network.transport.matrix import AddressReachability
 from raiden.utils.typing import BlockNumber, BlockTimeout, ChainID, TokenNetworkAddress
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
 from raiden_contracts.utils.type_aliases import PrivateKey
@@ -307,6 +308,18 @@ class PathfindingService(gevent.Greenlet):
 
                     if changed_channel:
                         self.database.upsert_channel(changed_channel)
+
+                        # If we receive a message from a sender that seems to be offline,
+                        # refresh the presence
+                        sender_presence = (
+                            self.matrix_listener.user_manager.get_address_reachability(
+                                message.sender
+                            )
+                        )
+                        if sender_presence != AddressReachability.REACHABLE:
+                            self.matrix_listener.follow_address_presence(
+                                message.sender, refresh=True
+                            )
 
             except DeferMessage as ex:
                 self.defer_message_until_channel_is_open(ex.deferred_message)
