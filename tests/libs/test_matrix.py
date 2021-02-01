@@ -15,7 +15,6 @@ from gevent.event import AsyncResult
 
 from monitoring_service.states import HashedBalanceProof
 from raiden.messages.monitoring_service import RequestMonitoring
-from raiden.network.transport.matrix.client import GMatrixClient
 from raiden.network.transport.matrix.utils import DisplayNameCache
 from raiden.storage.serialization.serializer import DictSerializer, MessageSerializer
 from raiden.utils.typing import (
