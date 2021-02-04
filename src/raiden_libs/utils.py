@@ -4,9 +4,13 @@ from uuid import UUID
 from coincurve import PrivateKey, PublicKey
 from eth_utils import keccak
 
-from raiden.network.transport.matrix import AddressReachability
+from raiden.network.transport.matrix import AddressReachability, UserPresence
 from raiden.network.transport.matrix.client import GMatrixClient
-from raiden.network.transport.matrix.utils import DisplayNameCache, UserAddressManager
+from raiden.network.transport.matrix.utils import (
+    DisplayNameCache,
+    UserAddressManager,
+    address_from_userid,
+)
 from raiden.utils.typing import Address, Any, Callable, Dict, Optional
 from raiden_contracts.utils.type_aliases import PrivateKey as PrivateKeyType
 
@@ -97,3 +101,60 @@ class MultiClientUserAddressManager(UserAddressManager):
                 self._presence_listener(event, presence_update_id)
 
         return _filter_presence
+
+    def _presence_listener(self, event: Dict[str, Any], presence_update_id: int) -> None:
+        """
+        Update cached user presence state from Matrix presence events.
+
+        Due to the possibility of nodes using accounts on multiple homeservers a composite
+        address state is synthesised from the cached individual user presence states.
+
+        This is a copy from the super class with a slight change.
+        Any user will automatically added to the whitelist whenever the PFS receives
+        a presence update. We do this since we can assume that the PFS needs to know
+        about all raiden users.
+        """
+        if self._stop_event.ready():
+            return
+
+        user_id = event["sender"]
+
+        if event["type"] != "m.presence" or user_id == self._user_id:
+            return
+
+        address = address_from_userid(user_id)
+
+        # Not a user we've whitelisted, skip. This needs to be on the top of
+        # the function so that we don't request the displayname of users that
+        # are not important for the node. The presence is updated for every
+        # user on the first sync, since every Raiden node is a member of a
+        # broadcast room. This can result in thousands requests to the Matrix
+        # server in the first sync which will lead to slow startup times and
+        # presence problems.
+        if address is None:
+            return
+
+        user = self._user_from_id(user_id, event["content"].get("displayname"))
+
+        if not user:
+            return
+
+        self._displayname_cache.warm_users([user])
+        # If for any reason we cannot resolve the displayname, then there was a server error.
+        # Any properly logged in user that joined a room, will have a displayname.
+        # A reason for not resolving it could be rate limiting by the other server.
+        if user.displayname is None:
+            new_state = UserPresence.SERVER_ERROR
+            self._set_user_presence(user_id, new_state, presence_update_id)
+            return
+
+        address = self._validate_userid_signature(user)
+        if not address:
+            return
+
+        self.add_userid_for_address(address, user_id)
+
+        new_state = UserPresence(event["content"]["presence"])
+
+        self._set_user_presence(user_id, new_state, presence_update_id)
+        self._maybe_address_reachability_changed(address)

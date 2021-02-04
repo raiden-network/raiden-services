@@ -196,22 +196,6 @@ class MatrixListener(gevent.Greenlet):
             self._client_manager.stop()
             gevent.joinall({startup_finished_greenlet}, raise_error=True, timeout=0)
 
-    def follow_address_presence(self, address: Address, refresh: bool = False) -> None:
-        self.user_manager.add_address(address)
-
-        if refresh:
-            self.user_manager.populate_userids_for_address(address)
-            self.user_manager.track_address_presence(
-                address=address, user_ids=self.user_manager.get_userids_for_address(address)
-            )
-
-        log.debug(
-            "Tracking address",
-            address=to_checksum_address(address),
-            current_presence=self.user_manager.get_address_reachability(address),
-            refresh=refresh,
-        )
-
     def _get_user_from_user_id(self, user_id: str) -> User:
         """Creates an User from an user_id, if none, or fetch a cached User """
         assert self._broadcast_room

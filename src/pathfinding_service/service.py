@@ -134,10 +134,6 @@ class PathfindingService(gevent.Greenlet):
             for cv in channel.views:
                 network_for_address[cv.token_network_address].add_channel_view(cv)
 
-            # Register channel participants for presence tracking
-            self.matrix_listener.follow_address_presence(channel.participant1)
-            self.matrix_listener.follow_address_presence(channel.participant2)
-
         return network_for_address
 
     def _run(self) -> None:  # pylint: disable=method-hidden
@@ -252,9 +248,6 @@ class PathfindingService(gevent.Greenlet):
             return
 
         log.info("Received ChannelOpened event", event_=event)
-
-        self.matrix_listener.follow_address_presence(event.participant1, refresh=True)
-        self.matrix_listener.follow_address_presence(event.participant2, refresh=True)
 
         channel = token_network.handle_channel_opened_event(
             channel_identifier=event.channel_identifier,
