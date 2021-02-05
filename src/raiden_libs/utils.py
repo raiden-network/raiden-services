@@ -124,13 +124,7 @@ class MultiClientUserAddressManager(UserAddressManager):
 
         address = address_from_userid(user_id)
 
-        # Not a user we've whitelisted, skip. This needs to be on the top of
-        # the function so that we don't request the displayname of users that
-        # are not important for the node. The presence is updated for every
-        # user on the first sync, since every Raiden node is a member of a
-        # broadcast room. This can result in thousands requests to the Matrix
-        # server in the first sync which will lead to slow startup times and
-        # presence problems.
+        # not a user authenticated by EthAuthProvider
         if address is None:
             return
 
