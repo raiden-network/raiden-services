@@ -27,8 +27,8 @@ install:
 	pip install -r requirements.txt
 
 install-dev:
-	pip install -U -r requirements-dev.txt
-	pip install -e .
+	pip install --use-deprecated=legacy-resolver -U -r requirements-dev.txt
+	pip install --use-deprecated=legacy-resolver -e .
 
 dist:
 	python3 setup.py sdist bdist_wheel
