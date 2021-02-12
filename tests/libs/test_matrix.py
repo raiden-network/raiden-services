@@ -303,7 +303,7 @@ def test_client_manager_start(get_accounts, get_private_key):
         client_manager = ClientManager(
             available_servers=[f"https://example0{i}.com" for i in range(5)],
             broadcast_room_alias_prefix="_service",
-            chain_id=ChainID(61),
+            chain_id=ChainID(1),
             private_key=private_key,
             handle_matrix_sync=lambda s: True,
         )

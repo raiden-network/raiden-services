@@ -16,7 +16,7 @@ from monitoring_service.constants import (
     MATRIX_RATE_LIMIT_ALLOWED_BYTES,
     MATRIX_RATE_LIMIT_RESET_INTERVAL,
 )
-from raiden.constants import Environment
+from raiden.constants import Environment, Networks
 from raiden.exceptions import SerializationError, TransportError
 from raiden.messages.abstract import Message, SignedMessage
 from raiden.network.transport.matrix.client import (
@@ -310,10 +310,21 @@ class ClientManager:
         self.stop_event.set()
 
         try:
-            self.known_servers = get_matrix_servers(
-                DEFAULT_MATRIX_KNOWN_SERVERS[Environment.PRODUCTION]
-                if chain_id == 1
-                else DEFAULT_MATRIX_KNOWN_SERVERS[Environment.DEVELOPMENT]
+            self.known_servers = (
+                get_matrix_servers(
+                    DEFAULT_MATRIX_KNOWN_SERVERS[Environment.PRODUCTION]
+                    if chain_id == 1
+                    else DEFAULT_MATRIX_KNOWN_SERVERS[Environment.DEVELOPMENT]
+                )
+                if chain_id
+                in [
+                    Networks.MAINNET.value,
+                    Networks.ROPSTEN.value,
+                    Networks.RINKEBY.value,
+                    Networks.GOERLI.value,
+                    Networks.KOVAN.value,
+                ]
+                else []
             )
 
         except RuntimeError as ex:
