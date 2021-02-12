@@ -16,7 +16,7 @@ from monitoring_service.constants import (
     MATRIX_RATE_LIMIT_ALLOWED_BYTES,
     MATRIX_RATE_LIMIT_RESET_INTERVAL,
 )
-from raiden.constants import DeviceIDs, Environment, Networks
+from raiden.constants import DeviceIDs, Environment, MatrixMessageType, Networks
 from raiden.exceptions import SerializationError, TransportError
 from raiden.messages.abstract import Message, SignedMessage
 from raiden.network.transport.matrix.client import (
@@ -212,9 +212,6 @@ class MatrixListener(gevent.Greenlet):
     def _handle_matrix_sync(self, messages: MatrixSyncMessages) -> bool:
         all_messages: List[Message] = list()
         for room, room_messages in messages:
-            # Ignore toDevice messages
-            if not room:
-                continue
 
             for text in room_messages:
                 all_messages.extend(self._handle_message(room, text))
@@ -226,14 +223,17 @@ class MatrixListener(gevent.Greenlet):
 
         return True
 
-    def _handle_message(self, room: Room, message: MatrixMessage) -> List[SignedMessage]:
+    def _handle_message(self, room: Optional[Room], message: MatrixMessage) -> List[SignedMessage]:
         """Handle a single Matrix message.
 
         The matrix message is expected to be a NDJSON, and each entry should be
         a valid JSON encoded Raiden message.
+
+        If `room` is None this means we are processing a `to_device` message
         """
         is_valid_type = (
-            message["type"] == "m.room.message" and message["content"]["msgtype"] == "m.text"
+            message["type"] == "m.room.message"
+            and message["content"]["msgtype"] == MatrixMessageType.TEXT.value
         )
         if not is_valid_type:
             return []
