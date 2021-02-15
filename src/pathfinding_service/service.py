@@ -22,7 +22,7 @@ from pathfinding_service.exceptions import (
 from pathfinding_service.model import IOU, TokenNetwork
 from pathfinding_service.model.channel import Channel
 from pathfinding_service.typing import DeferableMessage
-from raiden.constants import PATH_FINDING_BROADCASTING_ROOM, UINT256_MAX, DeviceIDs
+from raiden.constants import UINT256_MAX, DeviceIDs
 from raiden.messages.abstract import Message
 from raiden.messages.path_finding_service import PFSCapacityUpdate, PFSFeeUpdate
 from raiden.utils.typing import BlockNumber, BlockTimeout, ChainID, TokenNetworkAddress
@@ -101,7 +101,6 @@ class PathfindingService(gevent.Greenlet):
             private_key=private_key,
             chain_id=self.chain_id,
             device_id=DeviceIDs.PFS,
-            service_room_suffix=PATH_FINDING_BROADCASTING_ROOM,
             message_received_callback=self.handle_message,
             servers=matrix_servers,
         )

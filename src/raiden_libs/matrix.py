@@ -16,7 +16,13 @@ from monitoring_service.constants import (
     MATRIX_RATE_LIMIT_ALLOWED_BYTES,
     MATRIX_RATE_LIMIT_RESET_INTERVAL,
 )
-from raiden.constants import DeviceIDs, Environment, MatrixMessageType, Networks
+from raiden.constants import (
+    DISCOVERY_DEFAULT_ROOM,
+    DeviceIDs,
+    Environment,
+    MatrixMessageType,
+    Networks,
+)
 from raiden.exceptions import SerializationError, TransportError
 from raiden.messages.abstract import Message, SignedMessage
 from raiden.network.transport.matrix.client import (
@@ -134,7 +140,6 @@ class MatrixListener(gevent.Greenlet):
         private_key: PrivateKey,
         chain_id: ChainID,
         device_id: DeviceIDs,
-        service_room_suffix: str,
         message_received_callback: Callable[[Message], None],
         servers: Optional[List[str]] = None,
     ) -> None:
@@ -142,14 +147,13 @@ class MatrixListener(gevent.Greenlet):
 
         self.chain_id = chain_id
         self.device_id = device_id
-        self.service_room_suffix = service_room_suffix
         self.message_received_callback = message_received_callback
         self._displayname_cache = DisplayNameCache()
         self.startup_finished = AsyncResult()
         self._client_manager = ClientManager(
             available_servers=servers,
             device_id=self.device_id,
-            broadcast_room_alias_prefix=make_room_alias(chain_id, service_room_suffix),
+            broadcast_room_alias_prefix=make_room_alias(chain_id, DISCOVERY_DEFAULT_ROOM),
             chain_id=self.chain_id,
             private_key=private_key,
             handle_matrix_sync=self._handle_matrix_sync,
@@ -212,6 +216,10 @@ class MatrixListener(gevent.Greenlet):
     def _handle_matrix_sync(self, messages: MatrixSyncMessages) -> bool:
         all_messages: List[Message] = list()
         for room, room_messages in messages:
+            if room is not None:
+                # Ignore room messages
+                # This will only handle to-device messages
+                continue
 
             for text in room_messages:
                 all_messages.extend(self._handle_message(room, text))
@@ -290,10 +298,10 @@ class ClientManager:
         self.user_manager: Optional[MultiClientUserAddressManager] = None
         self.local_signer = LocalSigner(private_key=private_key)
         self.broadcast_room_alias_prefix = broadcast_room_alias_prefix
-        self.chain_id = chain_id
         self.device_id = device_id
         self.broadcast_room_id: Optional[RoomID] = None
         self.broadcast_room: Optional[Room] = None
+        self.chain_id = chain_id
         self.startup_finished = AsyncResult()
         self.stop_event = Event()
         self.stop_event.set()
@@ -440,9 +448,9 @@ class ClientManager:
             if matrix_client == self.main_client:
                 self.broadcast_room = broadcast_room
                 self.broadcast_room_id = broadcast_room_id
-                sync_filter_id = matrix_client.create_sync_filter(rooms=[broadcast_room])
-            else:
-                sync_filter_id = matrix_client.create_sync_filter(not_rooms=[broadcast_room])
+
+            # Don't listen for messages on the discovery room on all clients
+            sync_filter_id = matrix_client.create_sync_filter(not_rooms=[broadcast_room])
             matrix_client.set_sync_filter_id(sync_filter_id)
         except (MatrixRequestError, ValueError):
             raise ConnectionError(exception_str)
