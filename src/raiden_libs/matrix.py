@@ -16,7 +16,7 @@ from monitoring_service.constants import (
     MATRIX_RATE_LIMIT_ALLOWED_BYTES,
     MATRIX_RATE_LIMIT_RESET_INTERVAL,
 )
-from raiden.constants import Environment, Networks
+from raiden.constants import DeviceIDs, Environment, Networks
 from raiden.exceptions import SerializationError, TransportError
 from raiden.messages.abstract import Message, SignedMessage
 from raiden.network.transport.matrix.client import (
@@ -133,6 +133,7 @@ class MatrixListener(gevent.Greenlet):
         self,
         private_key: PrivateKey,
         chain_id: ChainID,
+        device_id: DeviceIDs,
         service_room_suffix: str,
         message_received_callback: Callable[[Message], None],
         servers: Optional[List[str]] = None,
@@ -140,12 +141,14 @@ class MatrixListener(gevent.Greenlet):
         super().__init__()
 
         self.chain_id = chain_id
+        self.device_id = device_id
         self.service_room_suffix = service_room_suffix
         self.message_received_callback = message_received_callback
         self._displayname_cache = DisplayNameCache()
         self.startup_finished = AsyncResult()
         self._client_manager = ClientManager(
             available_servers=servers,
+            device_id=self.device_id,
             broadcast_room_alias_prefix=make_room_alias(chain_id, service_room_suffix),
             chain_id=self.chain_id,
             private_key=private_key,
@@ -278,6 +281,7 @@ class ClientManager:
     def __init__(
         self,
         available_servers: Optional[List[str]],
+        device_id: DeviceIDs,
         broadcast_room_alias_prefix: str,
         chain_id: ChainID,
         private_key: bytes,
@@ -287,6 +291,7 @@ class ClientManager:
         self.local_signer = LocalSigner(private_key=private_key)
         self.broadcast_room_alias_prefix = broadcast_room_alias_prefix
         self.chain_id = chain_id
+        self.device_id = device_id
         self.broadcast_room_id: Optional[RoomID] = None
         self.broadcast_room: Optional[Room] = None
         self.startup_finished = AsyncResult()
@@ -419,7 +424,7 @@ class ClientManager:
         exception_str = "Could not login/register to matrix."
 
         try:
-            login(matrix_client, signer=self.local_signer)
+            login(matrix_client, signer=self.local_signer, device_id=self.device_id)
             exception_str = "Could not join broadcasting room."
             server = urlparse(matrix_client.api.base_url).netloc
             room_alias = f"#{self.broadcast_room_alias_prefix}:{server}"

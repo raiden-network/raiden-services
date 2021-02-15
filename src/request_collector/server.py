@@ -9,7 +9,7 @@ from sentry_sdk import configure_scope
 from monitoring_service.constants import CHANNEL_CLOSE_MARGIN
 from monitoring_service.database import SharedDatabase
 from monitoring_service.states import MonitorRequest
-from raiden.constants import MONITORING_BROADCASTING_ROOM
+from raiden.constants import MONITORING_BROADCASTING_ROOM, DeviceIDs
 from raiden.exceptions import InvalidSignature
 from raiden.messages.abstract import Message
 from raiden.messages.monitoring_service import RequestMonitoring
@@ -38,6 +38,7 @@ class RequestCollector(gevent.Greenlet):
         self.matrix_listener = MatrixListener(
             private_key=private_key,
             chain_id=self.chain_id,
+            device_id=DeviceIDs.MS,
             service_room_suffix=MONITORING_BROADCASTING_ROOM,
             message_received_callback=self.handle_message,
             servers=matrix_servers,
