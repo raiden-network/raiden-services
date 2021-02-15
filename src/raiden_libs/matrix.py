@@ -395,8 +395,11 @@ class ClientManager:
         if server_url == self.main_client.api.base_url:
             client = self.main_client
         else:
+            # Also handle messages on the other clients,
+            # since to-device communication to the PFS only happens via the local user
+            # on each homeserver
             client = make_client(
-                handle_messages_callback=lambda messages: True,
+                handle_messages_callback=self.main_client.handle_messages_callback,
                 handle_member_join_callback=lambda room: None,
                 servers=[server_url],
                 http_pool_maxsize=4,
