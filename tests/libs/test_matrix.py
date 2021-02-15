@@ -202,7 +202,6 @@ def test_matrix_listener_smoke_test(get_accounts, get_private_key):
             private_key=get_private_key(c1),
             chain_id=ChainID(61),
             device_id=DeviceIDs.PFS,
-            service_room_suffix="_service",
             message_received_callback=lambda _: None,
         )
         listener._run()  # pylint: disable=protected-access
