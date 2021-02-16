@@ -14,6 +14,7 @@ from eth_utils import encode_hex, to_canonical_address
 from gevent.event import AsyncResult
 
 from monitoring_service.states import HashedBalanceProof
+from raiden.constants import DeviceIDs
 from raiden.messages.monitoring_service import RequestMonitoring
 from raiden.network.transport.matrix.utils import DisplayNameCache
 from raiden.storage.serialization.serializer import DictSerializer, MessageSerializer
@@ -200,6 +201,7 @@ def test_matrix_listener_smoke_test(get_accounts, get_private_key):
         listener = MatrixListener(
             private_key=get_private_key(c1),
             chain_id=ChainID(61),
+            device_id=DeviceIDs.PFS,
             service_room_suffix="_service",
             message_received_callback=lambda _: None,
         )
@@ -304,6 +306,7 @@ def test_client_manager_start(get_accounts, get_private_key):
             available_servers=[f"https://example0{i}.com" for i in range(5)],
             broadcast_room_alias_prefix="_service",
             chain_id=ChainID(1),
+            device_id=DeviceIDs.PFS,
             private_key=private_key,
             handle_matrix_sync=lambda s: True,
         )
