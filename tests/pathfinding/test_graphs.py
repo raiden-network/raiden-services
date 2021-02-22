@@ -128,10 +128,8 @@ def test_routing_simple(
         reachability_state=reachability_state,
     )
     assert len(paths) == 1
-    assert paths[0].to_dict() == {
-        "path": [hex_addrs[0], hex_addrs[1], hex_addrs[4], hex_addrs[3]],
-        "estimated_fee": 0,
-    }
+    assert paths[0].to_dict()["path"] == [hex_addrs[0], hex_addrs[1], hex_addrs[4], hex_addrs[3]]
+    assert paths[0].to_dict()["estimated_fee"] == 0
 
     # Not connected.
     no_paths = token_network_model.get_paths(
@@ -197,10 +195,8 @@ def test_routing_result_order(
     )
     # 5 paths requested, but only 1 is available
     assert len(paths) == 1
-    assert paths[0].to_dict() == {
-        "path": [hex_addrs[0], hex_addrs[1], hex_addrs[2]],
-        "estimated_fee": 0,
-    }
+    assert paths[0].to_dict()["path"] == [hex_addrs[0], hex_addrs[1], hex_addrs[2]]
+    assert paths[0].to_dict()["estimated_fee"] == 0
 
 
 def addresses_to_indexes(path, addresses):

@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Dict, Set, Union
 
 from typing_extensions import Protocol
 
@@ -14,3 +14,5 @@ class AddressReachabilityProtocol(Protocol):
 
     def get_address_reachability(self, address: Address) -> AddressReachability:
         ...
+
+    _address_to_userids: Dict[Address, Set[str]]

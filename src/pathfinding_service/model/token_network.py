@@ -210,6 +210,10 @@ class Path:
         assert self.fees is not None
         return dict(
             path=[to_checksum_address(node) for node in self.nodes],
+            matrix_users=[
+                self.reachability_state._address_to_userids[node]  # pylint: disable=W0212
+                for node in self.nodes
+            ],
             estimated_fee=self.estimated_fee,
         )
 

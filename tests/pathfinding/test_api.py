@@ -78,7 +78,17 @@ def test_get_paths_via_debug_endpoint_a(
         assert response.status_code == 200
         paths = response.json()["result"]
         assert len(paths) == 1
-        assert paths == [{"path": [hex_addrs[0], hex_addrs[1], hex_addrs[2]], "estimated_fee": 0}]
+        assert paths == [
+            {
+                "path": [hex_addrs[0], hex_addrs[1], hex_addrs[2]],
+                "estimated_fee": 0,
+                "matrix_users": [
+                    hex_addrs[0] + "@homeserver",
+                    hex_addrs[1] + "@homeserver",
+                    hex_addrs[2] + "@homeserver",
+                ],
+            }
+        ]
 
     # now there must be a debug endpoint for that specific route
     url_debug = api_url + f"/v1/_debug/routes/{token_network_address}/{hex_addrs[0]}"
@@ -339,7 +349,17 @@ def test_get_paths(api_url: str, addresses: List[Address], token_network_model: 
     assert response.status_code == 200
     paths = response.json()["result"]
     assert len(paths) == 1
-    assert paths == [{"path": [hex_addrs[0], hex_addrs[1], hex_addrs[2]], "estimated_fee": 0}]
+    assert paths == [
+        {
+            "path": [hex_addrs[0], hex_addrs[1], hex_addrs[2]],
+            "matrix_users": [
+                hex_addrs[0] + "@homeserver",
+                hex_addrs[1] + "@homeserver",
+                hex_addrs[2] + "@homeserver",
+            ],
+            "estimated_fee": 0,
+        }
+    ]
 
     # check default value for num_path
     data = {"from": hex_addrs[0], "to": hex_addrs[2], "value": 10}
