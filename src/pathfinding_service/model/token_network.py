@@ -208,13 +208,11 @@ class Path:
 
     def to_dict(self) -> dict:
         assert self.fees is not None
+        user_id_of = self.reachability_state._address_to_userids  # pylint: disable=W0212
         try:
             return dict(
                 path=[to_checksum_address(node) for node in self.nodes],
-                matrix_users=[
-                    self.reachability_state._address_to_userids[node]  # pylint: disable=W0212
-                    for node in self.nodes
-                ],
+                matrix_users={to_checksum_address(node): user_id_of[node] for node in self.nodes},
                 estimated_fee=self.estimated_fee,
             )
         except KeyError:
