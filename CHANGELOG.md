@@ -1,4 +1,8 @@
 # Changelog
+### 0.14.0 (2021-02-23)
+* Change communication model to `toDevice` messages ([#918](https://github.com/raiden-network/raiden-services/pull/918))
+* Change the presence tracking model ([#912](https://github.com/raiden-network/raiden-services/pull/912))
+* Include user IDs in PFS route responses ([#929](https://github.com/raiden-network/raiden-services/pull/929), [#933](https://github.com/raiden-network/raiden-services/pull/933))
 ### 0.13.2 (2020-11-25)
 * Improve registration script ([#890](https://github.com/raiden-network/raiden-services/pull/890)) to allow for extension.
 * Longer timeouts for first Matrix sync ([#878](https://github.com/raiden-network/raiden-services/pull/878)).
