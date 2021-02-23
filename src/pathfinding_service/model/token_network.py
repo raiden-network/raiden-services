@@ -15,7 +15,7 @@ from pathfinding_service.constants import (
     DIVERSITY_PEN_DEFAULT,
     FEE_PEN_DEFAULT,
 )
-from pathfinding_service.exceptions import InvalidFeeUpdate
+from pathfinding_service.exceptions import InconsistentInternalState, InvalidFeeUpdate
 from pathfinding_service.model.channel import Channel, ChannelView, FeeSchedule
 from pathfinding_service.typing import AddressReachabilityProtocol
 from raiden.messages.path_finding_service import PFSCapacityUpdate, PFSFeeUpdate
@@ -32,7 +32,6 @@ from raiden.utils.typing import (
     TokenAmount,
     TokenNetworkAddress,
 )
-from src.pathfinding_service.exceptions import InconsistentInternalState
 
 log = structlog.get_logger(__name__)
 
