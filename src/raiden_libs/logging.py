@@ -34,7 +34,7 @@ def setup_logging(log_level: str, log_json: bool) -> None:
         processors = shared_processors + [structlog.dev.ConsoleRenderer()]
 
     structlog.configure(
-        processors=processors,
+        processors=processors,  # type: ignore
         context_class=dict,
         logger_factory=structlog.stdlib.LoggerFactory(),
         wrapper_class=structlog.stdlib.BoundLogger,
