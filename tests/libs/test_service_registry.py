@@ -8,7 +8,7 @@ from raiden.utils.typing import BlockNumber
 from raiden_contracts.constants import CONTRACT_SERVICE_REGISTRY
 from raiden_contracts.tests.utils.constants import DEFAULT_REGISTRATION_DURATION
 from raiden_libs.service_registry import info, register_account, withdraw
-from src.raiden_libs.utils import private_key_to_address
+from raiden_libs.utils import private_key_to_address
 
 
 def test_registration(
