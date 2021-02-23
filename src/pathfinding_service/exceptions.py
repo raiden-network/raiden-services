@@ -108,3 +108,9 @@ class NoRouteFound(ApiException):
     error_code = 2201
     http_code = 404
     msg = "No route between nodes found."
+
+
+class InconsistentInternalState(ApiException):
+    error_code = 2202
+    http_code = 500
+    msg = "The pathfinding service is temporarily in an inconsistent state. Please try again."
