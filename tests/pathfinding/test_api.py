@@ -82,11 +82,11 @@ def test_get_paths_via_debug_endpoint_a(
             {
                 "path": [hex_addrs[0], hex_addrs[1], hex_addrs[2]],
                 "estimated_fee": 0,
-                "matrix_users": [
-                    hex_addrs[0] + "@homeserver",
-                    hex_addrs[1] + "@homeserver",
-                    hex_addrs[2] + "@homeserver",
-                ],
+                "matrix_users": {
+                    hex_addrs[0]: hex_addrs[0] + "@homeserver",
+                    hex_addrs[1]: hex_addrs[1] + "@homeserver",
+                    hex_addrs[2]: hex_addrs[2] + "@homeserver",
+                },
             }
         ]
 
@@ -352,11 +352,11 @@ def test_get_paths(api_url: str, addresses: List[Address], token_network_model: 
     assert paths == [
         {
             "path": [hex_addrs[0], hex_addrs[1], hex_addrs[2]],
-            "matrix_users": [
-                hex_addrs[0] + "@homeserver",
-                hex_addrs[1] + "@homeserver",
-                hex_addrs[2] + "@homeserver",
-            ],
+            "matrix_users": {
+                hex_addrs[0]: hex_addrs[0] + "@homeserver",
+                hex_addrs[1]: hex_addrs[1] + "@homeserver",
+                hex_addrs[2]: hex_addrs[2] + "@homeserver",
+            },
             "estimated_fee": 0,
         }
     ]
