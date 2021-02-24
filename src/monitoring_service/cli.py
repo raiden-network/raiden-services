@@ -2,7 +2,7 @@ from gevent import monkey, config  # isort:skip # noqa
 
 # there were some issues with the 'thread' resolver, remove it from the options
 config.resolver = ["dnspython", "ares", "block"]  # noqa
-monkey.patch_all(subprocess=False, thread=False)  # isort:skip # noqa
+monkey.patch_all(subprocess=False)  # isort:skip # noqa
 
 from typing import Dict
 
