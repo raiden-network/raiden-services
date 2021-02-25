@@ -1,4 +1,8 @@
 # Changelog
+### 0.14.1 (2021-02-25)
+* Fix issues with DNS and logging ([#937](https://github.com/raiden-network/raiden-services/pull/937).
+* Pin `raiden` requirement to specific commit in absence of a recent release.
+
 ### 0.14.0 (2021-02-23)
 * Change communication model to `toDevice` messages ([#918](https://github.com/raiden-network/raiden-services/pull/918))
 * Change the presence tracking model ([#912](https://github.com/raiden-network/raiden-services/pull/912))
