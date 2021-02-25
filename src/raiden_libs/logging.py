@@ -14,6 +14,7 @@ def setup_logging(log_level: str, log_json: bool) -> None:
     """ Basic structlog setup """
 
     logging.basicConfig(level=log_level, stream=sys.stdout, format="%(message)s")
+    logging.logThreads = False
 
     logging.getLogger("web3").setLevel("INFO")
     logging.getLogger("urllib3").setLevel("INFO")

@@ -294,6 +294,7 @@ def connect_to_blockchain(
 
 
 def setup_sentry(enable_flask_integration: bool = False) -> None:
+    logging.logThreads = False
     sentry_dsn = os.environ.get("SENTRY_DSN")
     environment = os.environ.get("DEPLOY_ENV")
     if sentry_dsn is not None:
