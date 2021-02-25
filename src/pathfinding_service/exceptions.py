@@ -54,6 +54,11 @@ class UnsupportedChainID(ApiException):
     msg = "This service does not work on the given blockchain."
 
 
+class InvalidAddress(ApiException):
+    error_code = 2006
+    msg = "Invalid Ethereum address."
+
+
 # ### BadIOU 21xx ###
 
 
@@ -114,3 +119,9 @@ class InconsistentInternalState(ApiException):
     error_code = 2202
     http_code = 500
     msg = "The pathfinding service is temporarily in an inconsistent state. Please try again."
+
+
+class AddressNotOnline(ApiException):
+    error_code = 2203
+    http_code = 404
+    msg = "There is no user found online for given address."

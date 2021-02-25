@@ -19,6 +19,7 @@ from pathfinding_service.exceptions import InconsistentInternalState, InvalidFee
 from pathfinding_service.model.channel import Channel, ChannelView, FeeSchedule
 from pathfinding_service.typing import AddressReachabilityProtocol
 from raiden.messages.path_finding_service import PFSCapacityUpdate, PFSFeeUpdate
+from raiden.network.transport.matrix import UserPresence
 from raiden.network.transport.matrix.utils import AddressReachability
 from raiden.tests.utils.mediation_fees import get_amount_with_fees
 from raiden.utils.typing import (
@@ -78,8 +79,8 @@ class Path:
         self.value = value
         self.reachability_state = reachability_state
         self.fees = self._check_validity_and_calculate_fees()
-        self.is_valid = self.fees is not None
-
+        self.matrix_users = self._get_matrix_users() if self.fees is not None else None
+        self.is_valid = self.fees is not None and self.matrix_users is not None
         log.debug("Created Path object", nodes=nodes, is_valid=self.is_valid, fees=self.fees)
 
     def _calculate_fees(self) -> Optional[List[FeeAmount]]:
@@ -140,6 +141,32 @@ class Path:
 
         return fees
 
+    def _get_matrix_users(self) -> Optional[Dict[str, str]]:
+        # Check node reachabilities
+        user_ids: Dict[str, str] = {}
+        for node in self.nodes:
+            node_user_ids = self.reachability_state.get_userids_for_address(node)
+            checksummed_address = to_checksum_address(node)
+            for user_id in node_user_ids:
+                if self.reachability_state.get_userid_presence(user_id) in [
+                    UserPresence.ONLINE,
+                    UserPresence.UNAVAILABLE,
+                ]:
+                    user_ids[checksummed_address] = user_id
+                    # if a reachable user is found we arbitrarily choose
+                    # this user for the given address. There should not be another user online
+                    break
+
+            if checksummed_address not in user_ids:
+                log.debug(
+                    "Path invalid because of unavailable node",
+                    node=node,
+                    node_reachability=self.reachability_state.get_address_reachability(node),
+                )
+                return None
+
+        return user_ids
+
     def _check_validity_and_calculate_fees(self) -> Optional[List[FeeAmount]]:
         """Checks validity of this path and calculates fees if valid.
 
@@ -180,17 +207,6 @@ class Path:
                 )
                 return None
 
-        # Check node reachabilities
-        for node in self.nodes:
-            node_reachability = self.reachability_state.get_address_reachability(node)
-            if node_reachability != AddressReachability.REACHABLE:
-                log.debug(
-                    "Path invalid because of unavailable node",
-                    node=node,
-                    node_reachability=node_reachability,
-                )
-                return None
-
         # Calculate fees
         # This implicitely checks that the channels have sufficient capacity
         return self._calculate_fees()
@@ -207,12 +223,11 @@ class Path:
         return FeeAmount(0)
 
     def to_dict(self) -> dict:
-        assert self.fees is not None
-        user_id_of = self.reachability_state._address_to_userids  # pylint: disable=W0212
+        assert self.is_valid
         try:
             return dict(
                 path=[to_checksum_address(node) for node in self.nodes],
-                matrix_users={to_checksum_address(node): user_id_of[node] for node in self.nodes},
+                matrix_users=self.matrix_users,
                 estimated_fee=self.estimated_fee,
             )
         except KeyError:
