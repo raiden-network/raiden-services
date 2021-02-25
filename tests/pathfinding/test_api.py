@@ -17,6 +17,8 @@ from pathfinding_service.api import DEFAULT_MAX_PATHS, PFSApi, last_failed_reque
 from pathfinding_service.constants import DEFAULT_INFO_MESSAGE
 from pathfinding_service.model import IOU, TokenNetwork
 from pathfinding_service.model.feedback import FeedbackToken
+from raiden.network.transport.matrix import AddressReachability
+from raiden.tests.utils.factories import make_signer
 from raiden.utils.signer import LocalSigner
 from raiden.utils.typing import (
     Address,
@@ -33,6 +35,7 @@ from raiden_contracts.tests.utils import get_random_privkey
 from raiden_contracts.utils.type_aliases import PrivateKey
 from raiden_libs.utils import private_key_to_address
 from tests.pathfinding.test_database import db_has_feedback_for
+from tests.pathfinding.utils import get_user_id_from_address
 
 ID_12 = 12
 ID_123 = 123
@@ -83,9 +86,9 @@ def test_get_paths_via_debug_endpoint_a(
                 "path": [hex_addrs[0], hex_addrs[1], hex_addrs[2]],
                 "estimated_fee": 0,
                 "matrix_users": {
-                    hex_addrs[0]: hex_addrs[0] + "@homeserver",
-                    hex_addrs[1]: hex_addrs[1] + "@homeserver",
-                    hex_addrs[2]: hex_addrs[2] + "@homeserver",
+                    hex_addrs[0]: get_user_id_from_address(hex_addrs[0]),
+                    hex_addrs[1]: get_user_id_from_address(hex_addrs[1]),
+                    hex_addrs[2]: get_user_id_from_address(hex_addrs[2]),
                 },
             }
         ]
@@ -353,9 +356,9 @@ def test_get_paths(api_url: str, addresses: List[Address], token_network_model: 
         {
             "path": [hex_addrs[0], hex_addrs[1], hex_addrs[2]],
             "matrix_users": {
-                hex_addrs[0]: hex_addrs[0] + "@homeserver",
-                hex_addrs[1]: hex_addrs[1] + "@homeserver",
-                hex_addrs[2]: hex_addrs[2] + "@homeserver",
+                hex_addrs[0]: get_user_id_from_address(hex_addrs[0]),
+                hex_addrs[1]: get_user_id_from_address(hex_addrs[1]),
+                hex_addrs[2]: get_user_id_from_address(hex_addrs[2]),
             },
             "estimated_fee": 0,
         }
@@ -513,6 +516,22 @@ def test_get_info2(api_url: str, api_sut, pathfinding_service_mock):
     response_json = response.json()
     del response_json["UTC"]
     assert response_json == expected_response
+
+
+@pytest.mark.usefixtures("api_sut")
+def test_get_user(api_url: str, api_sut: PFSApi):
+    address = make_signer().address
+    checksummed_address = to_checksum_address(address)
+    url = f"{api_url}/v1/user/{checksummed_address}"
+    response = requests.get(url)
+    assert response.status_code == 404
+
+    user_manager = api_sut.pathfinding_service.matrix_listener.user_manager
+    user_manager.reachabilities[address] = AddressReachability.REACHABLE
+
+    response = requests.get(url)
+    assert response.status_code == 200
+    assert response.json()["user_id"] == get_user_id_from_address(address)
 
 
 #

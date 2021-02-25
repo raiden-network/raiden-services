@@ -1,8 +1,9 @@
-from typing import Dict, Set, Union
+from typing import Set, Union
 
 from typing_extensions import Protocol
 
 from raiden.messages.path_finding_service import PFSCapacityUpdate, PFSFeeUpdate
+from raiden.network.transport.matrix import UserPresence
 from raiden.network.transport.matrix.utils import AddressReachability
 from raiden.utils.typing import Address
 
@@ -15,4 +16,8 @@ class AddressReachabilityProtocol(Protocol):
     def get_address_reachability(self, address: Address) -> AddressReachability:
         ...
 
-    _address_to_userids: Dict[Address, Set[str]]
+    def get_userid_presence(self, user_id: str) -> UserPresence:
+        ...
+
+    def get_userids_for_address(self, address: Address) -> Set[str]:
+        ...

@@ -133,6 +133,7 @@ class PathsResource(PathfinderResource):
             value=path_req.value,
             reachability_state=self.pathfinding_service.matrix_listener.user_manager,
         )
+
         if error:
             # this is for assertion via the scenario player
             if self.debug_mode:
@@ -192,14 +193,12 @@ class PathsResource(PathfinderResource):
                 to=to_checksum_address(path_req.to),
                 value=path_req.value,
             )
-
         # Create a feedback token and store it to the DB
         feedback_token = create_and_store_feedback_tokens(
             pathfinding_service=self.pathfinding_service,
             token_network_address=token_network.address,
             routes=paths,
         )
-
         return (
             {"result": [p.to_dict() for p in paths], "feedback_token": feedback_token.uuid.hex},
             200,
@@ -459,6 +458,32 @@ class InfoResource2(PathfinderResource):
         return info, 200
 
 
+class UserResource(PathfinderResource):
+    def get(self, user_address: str) -> Tuple[Dict[str, str], int]:
+        address = self._validate_address_argument(user_address)
+        user_manager = self.pathfinding_service.matrix_listener.user_manager
+        user_ids = user_manager.get_userids_for_address(address)
+        for user_id in user_ids:
+            if user_manager.get_userid_presence(user_id) in [
+                UserPresence.ONLINE,
+                UserPresence.UNAVAILABLE,
+            ]:
+                return {"user_id": user_id}, 200
+
+        raise exceptions.AddressNotOnline(address=user_address)
+
+    @staticmethod
+    def _validate_address_argument(address: str) -> Address:
+
+        if not is_checksum_address(address):
+            raise exceptions.InvalidAddress(
+                msg="The address needs to be a valid checksummed Ethereum address",
+                address=address,
+            )
+
+        return to_canonical_address(address)
+
+
 class SuggestPartnerResource(PathfinderResource):
 
     cache: Dict[str, Tuple[list, datetime]] = {}
@@ -639,6 +664,7 @@ class PFSApi:
             ),
             ("/v1/info", InfoResource, {}, "info"),
             ("/v2/info", InfoResource2, {}, "info2"),
+            ("/v1/user/<user_address>", UserResource, {}, "user"),
         ]
 
         if debug_mode:
