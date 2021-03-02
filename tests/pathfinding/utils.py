@@ -6,7 +6,9 @@ from eth_utils import to_normalized_address
 
 from raiden.network.transport.matrix import AddressReachability, UserPresence
 from raiden.network.transport.matrix.utils import ReachabilityState, address_from_userid
-from raiden.utils.typing import Address, Dict
+from raiden.settings import CapabilitiesConfig
+from raiden.utils.capabilities import capconfig_to_dict
+from raiden.utils.typing import Address, Dict, PeerCapabilities
 
 
 def get_user_id_from_address(address: Union[str, bytes]):
@@ -43,3 +45,9 @@ class SimpleReachabilityContainer:  # pylint: disable=too-few-public-methods
     def get_userids_for_address(self, address: Address) -> Set[str]:
         """ Return all known user ids for the given ``address``. """
         return self._address_to_userids[address]
+
+    def get_address_capabilities(self, address: Address) -> PeerCapabilities:
+        """ Return the protocol capabilities for ``address``. """
+        if address in self.reachabilities:
+            return PeerCapabilities(capconfig_to_dict(CapabilitiesConfig()))
+        return PeerCapabilities({})

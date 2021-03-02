@@ -519,10 +519,10 @@ def test_get_info2(api_url: str, api_sut, pathfinding_service_mock):
 
 
 @pytest.mark.usefixtures("api_sut")
-def test_get_user(api_url: str, api_sut: PFSApi):
+def test_get_address_metadata(api_url: str, api_sut: PFSApi):
     address = make_signer().address
     checksummed_address = to_checksum_address(address)
-    url = f"{api_url}/v1/user/{checksummed_address}"
+    url = f"{api_url}/v1/address/{checksummed_address}/metadata"
     response = requests.get(url)
     assert response.status_code == 404
 

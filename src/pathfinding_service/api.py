@@ -1,7 +1,7 @@
 import collections
 from dataclasses import dataclass, field
 from datetime import MINYEAR, datetime
-from typing import Any, ClassVar, Dict, List, Optional, Tuple, Type, TypeVar, cast
+from typing import Any, ClassVar, Dict, List, Optional, Tuple, Type, TypeVar, Union, cast
 from uuid import UUID
 
 import marshmallow
@@ -44,6 +44,7 @@ from raiden.utils.typing import (
     Address,
     BlockNumber,
     PaymentAmount,
+    PeerCapabilities,
     Signature,
     TokenAmount,
     TokenNetworkAddress,
@@ -458,19 +459,21 @@ class InfoResource2(PathfinderResource):
         return info, 200
 
 
-class UserResource(PathfinderResource):
-    def get(self, user_address: str) -> Tuple[Dict[str, str], int]:
-        address = self._validate_address_argument(user_address)
+class AddressMetadataResource(PathfinderResource):
+    def get(self, checksummed_address: str) -> Tuple[Dict[str, Union[str, PeerCapabilities]], int]:
+        address = self._validate_address_argument(checksummed_address)
         user_manager = self.pathfinding_service.matrix_listener.user_manager
         user_ids = user_manager.get_userids_for_address(address)
+
         for user_id in user_ids:
             if user_manager.get_userid_presence(user_id) in [
                 UserPresence.ONLINE,
                 UserPresence.UNAVAILABLE,
             ]:
-                return {"user_id": user_id}, 200
+                capabilities = user_manager.get_address_capabilities(address)
+                return {"user_id": user_id, "capabilities": capabilities}, 200
 
-        raise exceptions.AddressNotOnline(address=user_address)
+        raise exceptions.AddressNotOnline(address=checksummed_address)
 
     @staticmethod
     def _validate_address_argument(address: str) -> Address:
@@ -664,7 +667,12 @@ class PFSApi:
             ),
             ("/v1/info", InfoResource, {}, "info"),
             ("/v2/info", InfoResource2, {}, "info2"),
-            ("/v1/user/<user_address>", UserResource, {}, "user"),
+            (
+                "/v1/address/<checksummed_address>/metadata",
+                AddressMetadataResource,
+                {},
+                "address_metadata",
+            ),
         ]
 
         if debug_mode:
