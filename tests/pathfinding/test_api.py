@@ -35,7 +35,7 @@ from raiden_contracts.tests.utils import get_random_privkey
 from raiden_contracts.utils.type_aliases import PrivateKey
 from raiden_libs.utils import private_key_to_address
 from tests.pathfinding.test_database import db_has_feedback_for
-from tests.pathfinding.utils import get_user_id_from_address
+from tests.pathfinding.utils import get_address_metadata, get_user_id_from_address
 
 ID_12 = 12
 ID_123 = 123
@@ -85,10 +85,10 @@ def test_get_paths_via_debug_endpoint_a(
             {
                 "path": [hex_addrs[0], hex_addrs[1], hex_addrs[2]],
                 "estimated_fee": 0,
-                "matrix_users": {
-                    hex_addrs[0]: get_user_id_from_address(hex_addrs[0]),
-                    hex_addrs[1]: get_user_id_from_address(hex_addrs[1]),
-                    hex_addrs[2]: get_user_id_from_address(hex_addrs[2]),
+                "address_metadata": {
+                    hex_addrs[0]: get_address_metadata(hex_addrs[0]),
+                    hex_addrs[1]: get_address_metadata(hex_addrs[1]),
+                    hex_addrs[2]: get_address_metadata(hex_addrs[2]),
                 },
             }
         ]
@@ -355,10 +355,10 @@ def test_get_paths(api_url: str, addresses: List[Address], token_network_model: 
     assert paths == [
         {
             "path": [hex_addrs[0], hex_addrs[1], hex_addrs[2]],
-            "matrix_users": {
-                hex_addrs[0]: get_user_id_from_address(hex_addrs[0]),
-                hex_addrs[1]: get_user_id_from_address(hex_addrs[1]),
-                hex_addrs[2]: get_user_id_from_address(hex_addrs[2]),
+            "address_metadata": {
+                hex_addrs[0]: get_address_metadata(hex_addrs[0]),
+                hex_addrs[1]: get_address_metadata(hex_addrs[1]),
+                hex_addrs[2]: get_address_metadata(hex_addrs[2]),
             },
             "estimated_fee": 0,
         }

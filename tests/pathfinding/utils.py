@@ -15,6 +15,13 @@ def get_user_id_from_address(address: Union[str, bytes]):
     return f"@{to_normalized_address(address)}:homeserver.com"
 
 
+def get_address_metadata(address: Union[str, bytes]):
+    return {
+        "user_id": get_user_id_from_address(address),
+        "capabilities": PeerCapabilities(capconfig_to_dict(CapabilitiesConfig())),
+    }
+
+
 class SimpleReachabilityContainer:  # pylint: disable=too-few-public-methods
     def __init__(self, reachabilities: Dict[Address, AddressReachability]) -> None:
         self.reachabilities = reachabilities
