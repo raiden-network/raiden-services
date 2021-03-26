@@ -1,5 +1,5 @@
 import pytest
-from eth_utils import decode_hex, to_canonical_address
+from eth_utils import to_canonical_address
 
 from pathfinding_service import exceptions
 from pathfinding_service.api import process_payment
@@ -10,7 +10,7 @@ from raiden_libs.constants import UDC_SECURITY_MARGIN_FACTOR_PFS
 
 def test_save_and_load_iou(pathfinding_service_mock, make_iou):
     pfs = pathfinding_service_mock
-    iou = make_iou(decode_hex(get_random_privkey()), pfs.address)
+    iou = make_iou(get_random_privkey(), pfs.address)
     pfs.database.upsert_iou(iou)
     stored_iou = pfs.database.get_iou(iou.sender, iou.expiration_block)
     assert stored_iou == iou

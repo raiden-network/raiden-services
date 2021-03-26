@@ -287,7 +287,7 @@ def test_get_paths_validation(
 
     # prepare iou for payment tests
     iou = make_iou(
-        PrivateKey(decode_hex(get_random_privkey())),
+        PrivateKey(get_random_privkey()),
         api_sut.pathfinding_service.address,
         one_to_n_address=api_sut.one_to_n_address,
     )
@@ -404,7 +404,7 @@ def test_payment_with_new_iou_rejected(  # pylint: disable=too-many-locals
 
     # test with payment
     api_sut.service_fee = 100
-    sender = PrivateKey(decode_hex(get_random_privkey()))
+    sender = PrivateKey(get_random_privkey())
     iou = make_iou(
         sender,
         api_sut.pathfinding_service.address,
@@ -538,7 +538,7 @@ def test_get_address_metadata(api_url: str, api_sut: PFSApi):
 # tests for /payment/iou endpoint
 #
 def test_get_iou(api_sut: PFSApi, api_url: str, token_network_model: TokenNetwork, make_iou):
-    privkey = PrivateKey(decode_hex(get_random_privkey()))
+    privkey = PrivateKey(get_random_privkey())
     sender = private_key_to_address(privkey)
     url = api_url + f"/v1/{to_checksum_address(token_network_model.address)}/payment/iou"
 
