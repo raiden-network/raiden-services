@@ -23,7 +23,7 @@ from web3.middleware import geth_poa_middleware, simple_cache_middleware
 from web3.types import Wei
 
 from pathfinding_service.middleware import http_retry_with_backoff_middleware
-from raiden.utils.cli import GasPriceChoiceType
+from raiden.utils.cli import EnumChoiceType, GasPriceChoiceType
 from raiden.utils.typing import Address, BlockNumber, ChainID
 from raiden_contracts.constants import (
     CONTRACT_DEPOSIT,
@@ -34,6 +34,7 @@ from raiden_contracts.constants import (
     CONTRACT_USER_DEPOSIT,
     CONTRACTS_VERSION,
 )
+from raiden_contracts.contract_manager import ContractDevEnvironment
 from raiden_contracts.utils.type_aliases import PrivateKey
 from raiden_libs.contract_info import CONTRACT_MANAGER, get_contract_addresses_and_start_block
 from raiden_libs.logging import setup_logging
@@ -197,6 +198,15 @@ def blockchain_options(contracts: List[str]) -> Callable:
             default="fast",
             show_default=True,
         ),
+        click.Option(
+            ["--development-environment"],
+            help=(
+                "Choose which set of services and transport servers should be used. "
+                "Change this only when you are developing Raiden itself."
+            ),
+            type=EnumChoiceType(ContractDevEnvironment),
+            default=ContractDevEnvironment.DEMO.value,
+        ),
     ]
 
     arg_for_contract = {
@@ -240,6 +250,7 @@ def blockchain_options(contracts: List[str]) -> Callable:
                 gas_price_strategy=params.pop("gas_price"),
                 used_contracts=contracts,
                 address_overwrites=address_overwrites,
+                development_environment=params.pop("development_environment"),
             )
             return callback(**params)
 
@@ -254,6 +265,7 @@ def connect_to_blockchain(
     gas_price_strategy: Callable[[Web3, Any], Wei],
     used_contracts: List[str],
     address_overwrites: Dict[str, Address],
+    development_environment: ContractDevEnvironment,
 ) -> Tuple[Web3, Dict[str, Contract], BlockNumber]:
     try:
         provider = HTTPProvider(eth_rpc)
@@ -283,7 +295,10 @@ def connect_to_blockchain(
     )
 
     addresses, start_block = get_contract_addresses_and_start_block(
-        chain_id=chain_id, contracts=used_contracts, address_overwrites=address_overwrites
+        chain_id=chain_id,
+        contracts=used_contracts,
+        address_overwrites=address_overwrites,
+        development_environment=development_environment,
     )
     contracts = {
         c: web3.eth.contract(abi=CONTRACT_MANAGER.get_contract_abi(c), address=address)
