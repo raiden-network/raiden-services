@@ -3,7 +3,7 @@ from typing import Optional
 from unittest.mock import Mock, patch
 
 import pytest
-from eth_utils import decode_hex, to_checksum_address
+from eth_utils import to_checksum_address
 
 from monitoring_service import metrics
 from monitoring_service.database import Database
@@ -869,12 +869,10 @@ def test_mr_with_unknown_signatures(context: Context):
         assert not context.monitoring_service_contract.functions.monitor.called
 
     assert_mr_is_ignored(
-        create_signed_monitor_request(closing_privkey=PrivateKey(decode_hex(get_random_privkey())))
+        create_signed_monitor_request(closing_privkey=PrivateKey(get_random_privkey()))
     )
     assert_mr_is_ignored(
-        create_signed_monitor_request(
-            nonclosing_privkey=PrivateKey(decode_hex(get_random_privkey()))
-        )
+        create_signed_monitor_request(nonclosing_privkey=PrivateKey(get_random_privkey()))
     )
 
 
