@@ -2,7 +2,7 @@ from collections import defaultdict
 from copy import copy
 from datetime import datetime, timedelta
 from itertools import islice
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
 import networkx as nx
 import structlog
@@ -30,6 +30,7 @@ from raiden.utils.typing import (
     FeeAmount,
     PaymentAmount,
     PaymentWithFeeAmount,
+    PeerCapabilities,
     TokenAmount,
     TokenNetworkAddress,
 )
@@ -79,8 +80,8 @@ class Path:
         self.value = value
         self.reachability_state = reachability_state
         self.fees = self._check_validity_and_calculate_fees()
-        self.matrix_users = self._get_matrix_users() if self.fees is not None else None
-        self.is_valid = self.fees is not None and self.matrix_users is not None
+        self.metadata = self._get_address_metadata() if self.fees is not None else None
+        self.is_valid = self.fees is not None and self.metadata is not None
         log.debug("Created Path object", nodes=nodes, is_valid=self.is_valid, fees=self.fees)
 
     def _calculate_fees(self) -> Optional[List[FeeAmount]]:
@@ -141,9 +142,11 @@ class Path:
 
         return fees
 
-    def _get_matrix_users(self) -> Optional[Dict[str, str]]:
+    def _get_address_metadata(
+        self,
+    ) -> Optional[Dict[str, Dict[str, Union[str, PeerCapabilities]]]]:
         # Check node reachabilities
-        user_ids: Dict[str, str] = {}
+        metadata: Dict[str, Dict[str, Union[str, PeerCapabilities]]] = {}
         for node in self.nodes:
             node_user_ids = self.reachability_state.get_userids_for_address(node)
             checksummed_address = to_checksum_address(node)
@@ -152,12 +155,16 @@ class Path:
                     UserPresence.ONLINE,
                     UserPresence.UNAVAILABLE,
                 ]:
-                    user_ids[checksummed_address] = user_id
+                    capabilities = self.reachability_state.get_address_capabilities(node)
+                    metadata[checksummed_address] = {
+                        "user_id": user_id,
+                        "capabilities": capabilities,
+                    }
                     # if a reachable user is found we arbitrarily choose
                     # this user for the given address. There should not be another user online
                     break
 
-            if checksummed_address not in user_ids:
+            if checksummed_address not in metadata:
                 log.debug(
                     "Path invalid because of unavailable node",
                     node=node,
@@ -165,7 +172,7 @@ class Path:
                 )
                 return None
 
-        return user_ids
+        return metadata
 
     def _check_validity_and_calculate_fees(self) -> Optional[List[FeeAmount]]:
         """Checks validity of this path and calculates fees if valid.
@@ -227,7 +234,7 @@ class Path:
         try:
             return dict(
                 path=[to_checksum_address(node) for node in self.nodes],
-                matrix_users=self.matrix_users,
+                address_metadata=self.metadata,
                 estimated_fee=self.estimated_fee,
             )
         except KeyError:
