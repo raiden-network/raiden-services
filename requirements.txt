@@ -1,3 +1,5 @@
+# remove the raiden-contracts line once raiden uses the latest contracts version
+git+https://github.com/raiden-network/raiden-contracts.git@5efc72267a76664ec6811a686b6b0b6e2d8e27ea
 git+https://github.com/raiden-network/raiden.git@98ceee5fddd2043b9f813d8780651aab4e356ece
 
 sentry-sdk[flask]==1.0.0
