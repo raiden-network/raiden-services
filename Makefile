@@ -24,10 +24,10 @@ test:
 	pytest-gevent -v tests -n 4
 
 install:
-	pip install -r requirements.txt
+	pip install --no-use-pep517 -r requirements.txt
 
 install-dev:
-	pip install --use-deprecated=legacy-resolver -U -r requirements-dev.txt
+	pip install --use-deprecated=legacy-resolver --no-use-pep517 -U -r requirements-dev.txt
 	pip install --use-deprecated=legacy-resolver -e .
 
 dist:
