@@ -88,6 +88,7 @@ services:
       - PFS_ETH_RPC=http://parity.goerli.ethnodes.brainbot.com:8545
       - PFS_STATE_DB=/state/pfs-goerli.db
       - PFS_ACCEPT_DISCLAIMER=${PFS_ACCEPT_DISCLAIMER}
+      - PFS_DEVELOPMENT_ENVIRONMENT=unstable
     labels:
       - "traefik.enable=true"
       - "traefik.frontend.rule=Host: pfs-goerli.services-${DEPLOY_ENV}.raiden.network"
@@ -102,6 +103,7 @@ services:
       - PFS_STATE_DB=/state/pfs-goerli-with-fee.db
       - PFS_ACCEPT_DISCLAIMER=${PFS_ACCEPT_DISCLAIMER}
       - PFS_SERVICE_FEE=100
+      - PFS_DEVELOPMENT_ENVIRONMENT=unstable
     labels:
       - "traefik.enable=true"
       - "traefik.frontend.rule=Host: pfs-goerli-with-fee.services-${DEPLOY_ENV}.raiden.network"
@@ -131,6 +133,7 @@ services:
       - MS_ETH_RPC=http://parity.goerli.ethnodes.brainbot.com:8545
       - MS_STATE_DB=/state/ms-goerli.db
       - MS_ACCEPT_DISCLAIMER=${MS_ACCEPT_DISCLAIMER}
+      - MS_DEVELOPMENT_ENVIRONMENT=unstable
 
   ms-goerli-backup:
     <<: *defaults
@@ -141,6 +144,7 @@ services:
       - MS_ACCEPT_DISCLAIMER=${MS_ACCEPT_DISCLAIMER}
       - MS_KEYSTORE_FILE=${MS_BACKUP_KEYSTORE_FILE}
       - MS_PASSWORD=${MS_BACKUP_PASSWORD}
+      - MS_DEVELOPMENT_ENVIRONMENT=unstable
 
   msrc-ropsten:
     <<: *defaults
@@ -235,6 +239,7 @@ services:
       - SR_REGISTER_SERVICE_URL=https://pfs-goerli-with-fee.services-${DEPLOY_ENV}.raiden.network
       - SR_REGISTER_ETH_RPC=http://parity.goerli.ethnodes.brainbot.com:8545
       - SR_REGISTER_ACCEPT_ALL=TRUE
+      - SR_REGISTER_DEVELOPMENT_ENVIRONMENT=unstable
     depends_on:
       - traefik
 
@@ -250,5 +255,6 @@ services:
       - SR_REGISTER_SERVICE_URL=""
       - SR_REGISTER_ETH_RPC=http://parity.goerli.ethnodes.brainbot.com:8545
       - SR_REGISTER_ACCEPT_ALL=TRUE
+      - SR_REGISTER_DEVELOPMENT_ENVIRONMENT=unstable
     depends_on:
       - traefik
