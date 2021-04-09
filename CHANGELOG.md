@@ -1,4 +1,8 @@
 # Changelog
+### 0.14.2 (2021-04-09)
+* Allow selection of unstable contracts env for Raiden development
+* Add endpoint to fetch address metadata
+
 ### 0.14.1 (2021-02-25)
 * Fix issues with DNS and logging ([#937](https://github.com/raiden-network/raiden-services/pull/937).
 * Pin `raiden` requirement to specific commit in absence of a recent release.
