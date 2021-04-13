@@ -230,7 +230,17 @@ def process_payment(  # pylint: disable=too-many-branches
     one_to_n_address: Address,
 ) -> None:
     if service_fee == 0:
+        if iou is not None:
+            log.debug(
+                "Discarding IOU, service fee is 0",
+                sender=to_checksum_address(iou.sender),
+                total_amount=iou.amount,
+                expiration_block=iou.expiration_block,
+            )
+        else:
+            log.debug("No IOU and service fee is 0")
         return
+
     if iou is None:
         raise exceptions.MissingIOU
 

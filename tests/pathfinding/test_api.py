@@ -52,7 +52,7 @@ def test_get_paths_via_debug_endpoint_with_debug_disabled(
     address_hex = to_checksum_address(addresses[0])
     url_debug = api_url + f"/v1/_debug/routes/{token_network_address_hex}/{address_hex}"
 
-    # now there must be a debug endpoint for that specific route
+    # now there must not be a debug endpoint for that specific route
     response_debug = requests.get(url_debug)
     assert response_debug.status_code == 404
 
