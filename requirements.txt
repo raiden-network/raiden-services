@@ -3,5 +3,5 @@ git+https://github.com/raiden-network/raiden-contracts.git@3d2ff0cb58fb0ea39a4d3
 git+https://github.com/raiden-network/raiden.git@98ceee5fddd2043b9f813d8780651aab4e356ece
 
 sentry-sdk[flask]==1.0.0
-prometheus_client==0.9.0
+prometheus_client==0.10.1
 networkx==2.5.1
