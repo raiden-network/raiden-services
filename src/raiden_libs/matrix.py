@@ -33,7 +33,6 @@ from raiden.network.transport.matrix.client import (
 )
 from raiden.network.transport.matrix.utils import (
     DisplayNameCache,
-    join_broadcast_room,
     login,
     make_client,
     make_room_alias,
@@ -440,9 +439,7 @@ class ClientManager:
             server = urlparse(matrix_client.api.base_url).netloc
             room_alias = f"#{self.broadcast_room_alias_prefix}:{server}"
 
-            broadcast_room = join_broadcast_room(
-                client=matrix_client, broadcast_room_alias=room_alias
-            )
+            broadcast_room = matrix_client.join_room(room_alias)
             broadcast_room_id = broadcast_room.room_id
 
             if matrix_client == self.main_client:
