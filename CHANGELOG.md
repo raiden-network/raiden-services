@@ -1,4 +1,7 @@
 # Changelog
+### 0.14.3 (2021-04-21)
+* Fix an uncaught error during connecting to matrix server
+
 ### 0.14.2 (2021-04-09)
 * Allow selection of unstable contracts env for Raiden development
 * Add endpoint to fetch address metadata
