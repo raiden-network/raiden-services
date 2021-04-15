@@ -196,7 +196,6 @@ def test_matrix_listener_smoke_test(get_accounts, get_private_key):
     with patch.multiple(
         "raiden_libs.matrix",
         make_client=Mock(return_value=client_mock),
-        join_broadcast_room=Mock(),
     ):
         listener = MatrixListener(
             private_key=get_private_key(c1),
@@ -299,7 +298,6 @@ def test_client_manager_start(get_accounts, get_private_key):
         make_client=Mock(return_value=client_mock),
         get_matrix_servers=Mock(return_value=server_urls),
         login=Mock(),
-        join_broadcast_room=Mock(),
     ):
         client_manager = ClientManager(
             available_servers=[f"https://example0{i}.com" for i in range(5)],
