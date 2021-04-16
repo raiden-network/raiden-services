@@ -89,6 +89,8 @@ def test_pfs_with_mocked_client(  # pylint: disable=too-many-arguments
             (clients[p1_index], clients[p2_index], p1_capacity),
             (clients[p2_index], clients[p1_index], p2_capacity),
         ]:
+            if amount == 0:
+                continue
             custom_token.functions.mint(amount).transact({"from": address})
             custom_token.functions.approve(token_network.address, amount).transact(
                 {"from": address}
