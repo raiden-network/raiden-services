@@ -355,7 +355,12 @@ class ClientManager:
         self.user_manager = user_manager
         try:
             self._start_client(self.main_client.api.base_url)
-        except (TransportError, ConnectionError, MatrixRequestError):
+        except (TransportError, ConnectionError, MatrixRequestError) as ex:
+            log.error(
+                "Could not connect to main client",
+                server_url=self.main_client.api.base_url,
+                exception=ex,
+            )
             return
 
         for server_url in [
