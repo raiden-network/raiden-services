@@ -301,7 +301,6 @@ class ClientManager:
         self.broadcast_room_id: Optional[RoomID] = None
         self.broadcast_room: Optional[Room] = None
         self.chain_id = chain_id
-        self.startup_finished = AsyncResult()
         self.stop_event = Event()
         self.stop_event.set()
 
@@ -356,10 +355,7 @@ class ClientManager:
         self.user_manager = user_manager
         try:
             self._start_client(self.main_client.api.base_url)
-        except (TransportError, ConnectionError):
-            # When the sync worker fails, waiting for startup_finished does not
-            # make any sense.
-            self.startup_finished.set()
+        except (TransportError, ConnectionError, MatrixRequestError):
             return
 
         for server_url in [
@@ -391,8 +387,20 @@ class ClientManager:
                 client = self._start_client(server_url)
                 assert client.sync_worker is not None
                 client.sync_worker.get()
-            except (TransportError, ConnectionError):
-                log.debug("Could not connect to server", server_url=server_url)
+            except (TransportError, ConnectionError) as ex:
+                log.error("Could not connect to server", server_url=server_url, exception=ex)
+            except MatrixRequestError as ex:
+                log.error(
+                    "A Matrix Error occurred during sync", server_url=server_url, exception=ex
+                )
+            except Exception as ex:
+                log.error(
+                    "An unhandled Exception occurred during sync. Restarting PFS.",
+                    server_url=server_url,
+                    exception=ex,
+                )
+                self.main_client.stop()
+                raise
 
     def _start_client(self, server_url: str) -> GMatrixClient:
         assert self.user_manager
