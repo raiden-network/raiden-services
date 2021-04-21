@@ -1,4 +1,7 @@
 # Changelog
+### 0.14.4 (2021-04-21)
+* Fix an error where the PFS would not reconnect to a homeserver if he becomes unavailable and returns 404
+
 ### 0.14.3 (2021-04-21)
 * Fix an uncaught error during connecting to matrix server
 
