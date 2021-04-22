@@ -34,6 +34,7 @@ from raiden.utils.typing import (
     TokenAmount,
     TokenNetworkAddress,
 )
+from raiden_libs.utils import MultiClientUserAddressManager
 
 log = structlog.get_logger(__name__)
 
@@ -74,15 +75,20 @@ class Path:
         nodes: List[Address],
         value: PaymentAmount,
         reachability_state: AddressReachabilityProtocol,
+        user_manager: MultiClientUserAddressManager,
     ):
         self.G = G
         self.nodes = nodes
         self.value = value
+        self._user_manager = user_manager
         self.reachability_state = reachability_state
         self.fees = self._check_validity_and_calculate_fees()
         self.metadata = self._get_address_metadata() if self.fees is not None else None
-        self.is_valid = self.fees is not None and self.metadata is not None
         log.debug("Created Path object", nodes=nodes, is_valid=self.is_valid, fees=self.fees)
+
+    @property
+    def is_valid(self) -> bool:
+        return self.fees is not None and self.metadata is not None
 
     def _calculate_fees(self) -> Optional[List[FeeAmount]]:
         """Calcluates fees backwards for this path.
@@ -148,17 +154,18 @@ class Path:
         # Check node reachabilities
         metadata: Dict[str, Dict[str, Union[str, PeerCapabilities]]] = {}
         for node in self.nodes:
-            node_user_ids = self.reachability_state.get_userids_for_address(node)
+            node_users = self._user_manager.get_users_from_address(node)
             checksummed_address = to_checksum_address(node)
-            for user_id in node_user_ids:
-                if self.reachability_state.get_userid_presence(user_id) in [
+            for user in node_users:
+                if self.reachability_state.get_userid_presence(user.user_id) in [
                     UserPresence.ONLINE,
                     UserPresence.UNAVAILABLE,
                 ]:
                     capabilities = self.reachability_state.get_address_capabilities(node)
                     metadata[checksummed_address] = {
-                        "user_id": user_id,
+                        "user_id": user.user_id,
                         "capabilities": capabilities,
+                        "displayname": user.displayname or user.get_display_name(),
                     }
                     # if a reachable user is found we arbitrarily choose
                     # this user for the given address. There should not be another user online
@@ -411,6 +418,7 @@ class TokenNetwork:
         visited: Dict[ChannelID, float],
         disallowed_paths: List[List[Address]],
         fee_penalty: float,
+        user_manager: MultiClientUserAddressManager,
     ) -> Optional[Path]:
         # update edge weights
         for node1, node2 in graph.edges():
@@ -432,7 +440,10 @@ class TokenNetwork:
             # skip duplicates and invalid paths
             path = next(
                 p
-                for p in (Path(self.G, nodes, value, reachability_state) for nodes in all_paths)
+                for p in (
+                    Path(self.G, nodes, value, reachability_state, user_manager)
+                    for nodes in all_paths
+                )
                 if p.is_valid and p.nodes not in disallowed_paths
             )
             return path
@@ -492,6 +503,7 @@ class TokenNetwork:
         target: Address,
         value: PaymentAmount,
         max_paths: int,
+        user_manager: MultiClientUserAddressManager,
         reachability_state: AddressReachabilityProtocol,
         diversity_penalty: float = DIVERSITY_PEN_DEFAULT,
         fee_penalty: float = FEE_PEN_DEFAULT,
@@ -531,6 +543,7 @@ class TokenNetwork:
                     visited=visited,
                     disallowed_paths=[p.nodes for p in paths],
                     fee_penalty=fee_penalty,
+                    user_manager=user_manager,
                 )
             except (NetworkXNoPath, NodeNotFound):
                 log.info(
