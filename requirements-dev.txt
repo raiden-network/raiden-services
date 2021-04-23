@@ -5,7 +5,7 @@ pip
 wheel>=0.30.0
 watchdog>=0.8.3
 
-flake8==3.8.4
+flake8==3.9.1
 flake8-bugbear==21.3.2
 flake8-tuple==0.4.1
 isort==5.7.0
@@ -17,11 +17,11 @@ pytest
 pytest-gevent
 pytest-runner
 pytest-cov
-pytest-structlog==0.3
+pytest-structlog==0.4
 pytest-xdist
 coverage>=4.5.4
 
-ipython==7.21.0
+ipython==7.22.0
 pdbpp
 
 eth-tester[py-evm]==0.5.0b4
