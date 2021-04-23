@@ -17,7 +17,7 @@ pytest
 pytest-gevent
 pytest-runner
 pytest-cov
-pytest-structlog==0.3
+pytest-structlog==0.4
 pytest-xdist
 coverage>=4.5.4
 
