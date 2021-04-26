@@ -6,13 +6,10 @@ from eth_utils import keccak
 
 from raiden.network.transport.matrix import AddressReachability, UserPresence
 from raiden.network.transport.matrix.client import GMatrixClient
-from raiden.network.transport.matrix.utils import (
-    DisplayNameCache,
-    UserAddressManager,
-    address_from_userid,
-)
+from raiden.network.transport.matrix.utils import DisplayNameCache, address_from_userid
 from raiden.utils.typing import Address, Any, Callable, Dict, Optional
 from raiden_contracts.utils.type_aliases import PrivateKey as PrivateKeyType
+from raiden_libs.user_address import UserAddressManager
 
 
 def camel_to_snake(input_str: str) -> str:
@@ -51,7 +48,7 @@ class MultiClientUserAddressManager(UserAddressManager):
         """Start listening for presence updates.
 
         Should be called before ``.login()`` is called on the underlying client."""
-        assert self._listener_id is None, "UserAddressManager.start() called twice"
+        assert self._listener_id is None, "UserAddressManager.start() called twice"  # type: ignore
         self._stop_event.clear()
         self._listener_id = self.add_client(self._client)
 

@@ -1,6 +1,6 @@
 # remove the raiden-contracts line once raiden uses the latest contracts version
 git+https://github.com/raiden-network/raiden-contracts.git@3d2ff0cb58fb0ea39a4d39f9b58e38d76e483e33
-git+https://github.com/raiden-network/raiden.git@98ceee5fddd2043b9f813d8780651aab4e356ece
+git+https://github.com/raiden-network/raiden.git@17ed126ad02db52bae055840908caa7b2fa1c272
 
 sentry-sdk[flask]==1.0.0
 prometheus_client==0.9.0

@@ -134,6 +134,7 @@ def test_first_allowed_monitoring(
 
     # Now we can try again. The first try mined a new block, so now we're one
     # block further and `monitor` should succeed.
+    wait_for_blocks(monitor_trigger.trigger_block_number - web3.eth.blockNumber)
     handle_event(monitor_trigger.event, monitoring_service.context)
     assert [e.event for e in query()] == [MonitoringServiceEvent.NEW_BALANCE_PROOF_RECEIVED]
 
