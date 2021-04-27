@@ -78,7 +78,7 @@ def start_profiler(output_dir: Optional[str]) -> Optional[Any]:
     os.makedirs(output_dir, exist_ok=True)
     now = datetime.datetime.now()
     stack_path = os.path.join(output_dir, f"{now:%Y%m%d_%H%M}_stack.data")
-    stack_stream = open(stack_path, "w")
+    stack_stream = open(stack_path, "w")  # pylint: disable=consider-using-with
     flame = FlameGraphCollector(stack_stream)
     return SignalSampler(flame)
 
