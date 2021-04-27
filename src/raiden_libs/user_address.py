@@ -22,7 +22,7 @@ from raiden.network.transport.matrix.utils import (
     address_from_userid,
     validate_userid_signature,
 )
-from raiden.utils.typing import Address, Any, FrozenSet, List, PeerCapabilities, Set, Union
+from raiden.utils.typing import Address, Any, FrozenSet, PeerCapabilities, Set, Union
 
 log = structlog.get_logger(__name__)
 
@@ -158,15 +158,12 @@ class UserAddressManager:
         if force or not self.get_userids_for_address(address):
             self.add_userids_for_address(
                 address,
-                (user.user_id for user in self.get_users_from_address(address)),
+                (
+                    user.user_id
+                    for user in self._client.search_user_directory(to_normalized_address(address))
+                    if self._validate_userid_signature(user)
+                ),
             )
-
-    def get_users_from_address(self, address: Address) -> List[User]:
-        return [
-            user
-            for user in self._client.search_user_directory(to_normalized_address(address))
-            if self._validate_userid_signature(user)
-        ]
 
     def track_address_presence(
         self, address: Address, user_ids: Optional[Union[Set[str], FrozenSet[str]]] = None

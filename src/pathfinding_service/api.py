@@ -176,7 +176,6 @@ class PathsResource(PathfinderResource):
             value=path_req.value,
             reachability_state=self.pathfinding_service.matrix_listener.user_manager,
             max_paths=path_req.max_paths,
-            user_manager=self.pathfinding_service.matrix_listener.user_manager,
             **optional_args,
         )
         # this is for assertion via the scenario player

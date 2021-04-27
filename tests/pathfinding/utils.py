@@ -23,14 +23,8 @@ def get_address_metadata(address: Union[str, bytes]):
     return {
         "user_id": get_user_id_from_address(address),
         "capabilities": PeerCapabilities(capconfig_to_dict(CapabilitiesConfig())),
-        "displayname": "test",
+        "displayname": None,
     }
-
-
-class SimpleUser:  # pylint: disable=too-few-public-methods
-    def __init__(self, user_id):
-        self.displayname = "test"
-        self.user_id = user_id
 
 
 class SimpleReachabilityContainer:  # pylint: disable=too-few-public-methods
@@ -70,6 +64,3 @@ class SimpleReachabilityContainer:  # pylint: disable=too-few-public-methods
         if address in self.reachabilities:
             return PeerCapabilities(capconfig_to_dict(CapabilitiesConfig()))
         return PeerCapabilities({})
-
-    def get_users_from_address(self, address):
-        return [SimpleUser(self.get_userids_for_address(address).pop())]

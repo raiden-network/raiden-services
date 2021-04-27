@@ -126,7 +126,6 @@ def test_routing_simple(
         value=PaymentAmount(10),
         max_paths=1,
         reachability_state=reachability_state,
-        user_manager=SimpleReachabilityContainer(dict()),
     )
     assert len(paths) == 1
     assert paths[0].to_dict()["path"] == [hex_addrs[0], hex_addrs[1], hex_addrs[4], hex_addrs[3]]
@@ -139,7 +138,6 @@ def test_routing_simple(
         value=PaymentAmount(10),
         max_paths=1,
         reachability_state=reachability_state,
-        user_manager=SimpleReachabilityContainer(dict()),
     )
     assert [] == no_paths
 
@@ -158,7 +156,6 @@ def test_capacity_check(
         value=PaymentAmount(35),
         max_paths=1,
         reachability_state=reachability_state,
-        user_manager=SimpleReachabilityContainer(dict()),
     )
     index_paths = [addresses_to_indexes(p.nodes, addresses) for p in paths]
     assert index_paths == [[4, 1, 0]]
@@ -176,7 +173,6 @@ def test_capacity_check(
         value=PaymentAmount(35),
         max_paths=1,
         reachability_state=reachability_state,
-        user_manager=SimpleReachabilityContainer(dict()),
         fee_penalty=0,
     )
     index_paths = [addresses_to_indexes(p.nodes, addresses) for p in paths]
@@ -196,7 +192,6 @@ def test_routing_result_order(
         value=PaymentAmount(10),
         max_paths=5,
         reachability_state=reachability_state,
-        user_manager=SimpleReachabilityContainer(dict()),
     )
     # 5 paths requested, but only 1 is available
     assert len(paths) == 1
@@ -226,7 +221,6 @@ def get_paths(  # pylint: disable=too-many-arguments
         value=value,
         max_paths=max_paths,
         reachability_state=reachability_state,
-        user_manager=SimpleReachabilityContainer(dict()),
     )
     index_paths = [addresses_to_indexes(p.nodes, addresses) for p in paths]
     return index_paths
@@ -428,7 +422,6 @@ def test_routing_benchmark(token_network_model: TokenNetwork):  # pylint: disabl
             value=value,
             max_paths=5,
             reachability_state=addresses_to_reachabilities,
-            user_manager=SimpleReachabilityContainer(dict()),
         )
 
         toc = time.time()

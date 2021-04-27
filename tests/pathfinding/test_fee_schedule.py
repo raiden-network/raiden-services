@@ -88,7 +88,6 @@ class TokenNetworkForTests(TokenNetwork):
             value=value,
             max_paths=max_paths,
             reachability_state=self.reachability_state,
-            user_manager=SimpleReachabilityContainer(dict()),
         )
         if not paths:
             return None
