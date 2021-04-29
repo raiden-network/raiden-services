@@ -8,7 +8,7 @@ PATCH_ARGS = dict(target="request_collector.cli", RequestCollector=DEFAULT)
 
 
 def test_success(default_cli_args):
-    """ Calling the request_collector with default args should succeed after heavy mocking """
+    """Calling the request_collector with default args should succeed after heavy mocking"""
     runner = CliRunner()
     with patch.multiple(**PATCH_ARGS):
         result = runner.invoke(
@@ -18,7 +18,7 @@ def test_success(default_cli_args):
 
 
 def test_wrong_password(default_cli_args):
-    """ Calling the request_collector with default args should succeed after heavy mocking """
+    """Calling the request_collector with default args should succeed after heavy mocking"""
     runner = CliRunner()
     with patch.multiple(**PATCH_ARGS):
         result = runner.invoke(
@@ -30,7 +30,7 @@ def test_wrong_password(default_cli_args):
 
 
 def test_shutdown(default_cli_args):
-    """ Clean shutdown after KeyboardInterrupt """
+    """Clean shutdown after KeyboardInterrupt"""
     runner = CliRunner()
     with patch.multiple(**PATCH_ARGS) as mocks:
         mocks["RequestCollector"].return_value.run.side_effect = KeyboardInterrupt
@@ -43,7 +43,7 @@ def test_shutdown(default_cli_args):
 
 
 def test_log_level(default_cli_args):
-    """ Setting of log level via command line switch """
+    """Setting of log level via command line switch"""
     runner = CliRunner()
     with patch.multiple(**PATCH_ARGS), patch("logging.basicConfig") as basic_config:
         for log_level in ("CRITICAL", "WARNING"):

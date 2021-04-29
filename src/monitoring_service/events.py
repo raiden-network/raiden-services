@@ -6,7 +6,7 @@ from raiden_libs.events import Event
 
 @dataclass(frozen=True)
 class ScheduledEvent(Event):
-    """ An event to be triggered a t a certain block number. """
+    """An event to be triggered a t a certain block number."""
 
     trigger_block_number: BlockNumber
     event: Event

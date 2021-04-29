@@ -116,7 +116,7 @@ def channel_descriptions_case_2() -> List:
 
 @pytest.fixture
 def channel_descriptions_case_3() -> List:
-    """ Creates a network partly overlapping paths from 0 to 8 """
+    """Creates a network partly overlapping paths from 0 to 8"""
 
     # Now initialize some channels in this network.
     # The tuples in channel_descriptions define the following:

@@ -101,5 +101,5 @@ def get_metrics_for_label(metric: Metric, enum: MetricsEnum) -> Metric:
 
 
 def report_error(error_category: ErrorCategory) -> None:
-    """ Convenience method to increase the error logged counter for a certain error category """
+    """Convenience method to increase the error logged counter for a certain error category"""
     get_metrics_for_label(ERRORS_LOGGED, error_category).inc()

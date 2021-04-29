@@ -72,7 +72,7 @@ def test_request_collector_doesnt_crash_with_invalid_messages(request_collector)
 def test_ignore_mr_for_closed_channel(
     request_collector, build_request_monitoring, ms_database, closing_block
 ):
-    """ MRs that come in >=10 blocks after the channel has been closed must be ignored."""
+    """MRs that come in >=10 blocks after the channel has been closed must be ignored."""
     request_monitoring = build_request_monitoring()
     ms_database.conn.execute("UPDATE blockchain SET latest_committed_block = ?", [100])
     ms_database.conn.execute(

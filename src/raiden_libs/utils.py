@@ -17,13 +17,13 @@ def camel_to_snake(input_str: str) -> str:
 
 
 def public_key_to_address(public_key: PublicKey) -> Address:
-    """ Converts a public key to an Ethereum address. """
+    """Converts a public key to an Ethereum address."""
     key_bytes = public_key.format(compressed=False)
     return Address(keccak(key_bytes[1:])[-20:])
 
 
 def private_key_to_address(private_key: PrivateKeyType) -> Address:
-    """ Converts a private key to an Ethereum address. """
+    """Converts a private key to an Ethereum address."""
     privkey = PrivateKey(private_key)
     return public_key_to_address(privkey.public_key)
 

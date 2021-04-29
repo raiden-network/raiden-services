@@ -208,13 +208,13 @@ class PathfindingService(gevent.Greenlet):
         self.matrix_listener.join()
 
     def follows_token_network(self, token_network_address: TokenNetworkAddress) -> bool:
-        """ Checks if a token network is followed by the pathfinding service. """
+        """Checks if a token network is followed by the pathfinding service."""
         return token_network_address in self.token_networks.keys()
 
     def get_token_network(
         self, token_network_address: TokenNetworkAddress
     ) -> Optional[TokenNetwork]:
-        """ Returns the `TokenNetwork` for the given address or `None` for unknown networks. """
+        """Returns the `TokenNetwork` for the given address or `None` for unknown networks."""
         return self.token_networks.get(token_network_address)
 
     def handle_event(self, event: Event) -> None:

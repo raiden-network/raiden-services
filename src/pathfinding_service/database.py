@@ -29,7 +29,7 @@ log = structlog.get_logger(__name__)
 
 
 class PFSDatabase(BaseDatabase):
-    """ Store data that needs to persist between PFS restarts """
+    """Store data that needs to persist between PFS restarts"""
 
     schema_filename = os.path.join(os.path.dirname(os.path.realpath(__file__)), "schema.sql")
 

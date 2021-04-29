@@ -53,7 +53,7 @@ def window(seq: Sequence, n: int = 2) -> Iterable[tuple]:
 
 
 def prune_graph(graph: DiGraph, reachability_state: AddressReachabilityProtocol) -> DiGraph:
-    """ Prunes the given `graph` of all channels where the participants are not  reachable. """
+    """Prunes the given `graph` of all channels where the participants are not  reachable."""
     pruned_graph = DiGraph()
     for p1, p2 in graph.edges:
         nodes_online = (
@@ -242,10 +242,10 @@ class Path:
 
 
 class TokenNetwork:
-    """ Manages a token network for pathfinding. """
+    """Manages a token network for pathfinding."""
 
     def __init__(self, token_network_address: TokenNetworkAddress):
-        """ Initializes a new TokenNetwork. """
+        """Initializes a new TokenNetwork."""
 
         self.address = token_network_address
         self.channel_id_to_addresses: Dict[ChannelID, Tuple[Address, Address]] = dict()
@@ -322,7 +322,7 @@ class TokenNetwork:
         updating_capacity_partner: TokenAmount,
         other_capacity_partner: TokenAmount,
     ) -> Channel:
-        """ Sends Capacity Update to PFS including the reveal timeout """
+        """Sends Capacity Update to PFS including the reveal timeout"""
         (channel_view_to_partner, channel_view_from_partner) = self.get_channel_views_for_partner(
             updating_participant=message.updating_participant,
             other_participant=message.other_participant,
@@ -446,7 +446,7 @@ class TokenNetwork:
         value: PaymentAmount,
         reachability_state: AddressReachabilityProtocol,
     ) -> Optional[str]:
-        """ Checks for basic problems with the path requests. Returns error message or `None` """
+        """Checks for basic problems with the path requests. Returns error message or `None`"""
 
         if reachability_state.get_address_reachability(source) != AddressReachability.REACHABLE:
             return "Source not online"
@@ -569,7 +569,7 @@ class TokenNetwork:
     def suggest_partner(
         self, reachability_state: AddressReachabilityProtocol, limit: int = 5
     ) -> List[Dict[str, Any]]:
-        """ Suggest good partners for Raiden nodes joining the token network """
+        """Suggest good partners for Raiden nodes joining the token network"""
 
         # centrality
         centrality_of_node = nx.algorithms.centrality.closeness_centrality(self.G)

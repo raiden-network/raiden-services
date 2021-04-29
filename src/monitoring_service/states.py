@@ -59,7 +59,7 @@ class Channel:
 
 @dataclass(init=False)
 class HashedBalanceProof:
-    """ A hashed balance proof with signature """
+    """A hashed balance proof with signature"""
 
     channel_identifier: ChannelID
     token_network_address: TokenNetworkAddress

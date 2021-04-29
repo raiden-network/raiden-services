@@ -35,7 +35,7 @@ EVENT_TYPE_ID_MAP = {v: k for k, v in EVENT_ID_TYPE_MAP.items()}
 
 
 class SharedDatabase(BaseDatabase):
-    """ DB shared by MS and request collector """
+    """DB shared by MS and request collector"""
 
     schema_filename = os.path.join(os.path.dirname(os.path.realpath(__file__)), "schema.sql")
 
@@ -248,7 +248,7 @@ class SharedDatabase(BaseDatabase):
     def channel_close_age(
         self, token_network_address: TokenNetworkAddress, channel_id: ChannelID
     ) -> Optional[int]:
-        """ How many blocks ago was the given channel closed? """
+        """How many blocks ago was the given channel closed?"""
         row = self.conn.execute(
             """
                 SELECT blockchain.latest_committed_block, channel.closing_block
@@ -263,7 +263,7 @@ class SharedDatabase(BaseDatabase):
 
 
 class Database(SharedDatabase):
-    """ Holds all MS state which can't be quickly regenerated after a crash/shutdown """
+    """Holds all MS state which can't be quickly regenerated after a crash/shutdown"""
 
     def __init__(
         self,

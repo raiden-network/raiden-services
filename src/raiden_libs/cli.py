@@ -69,7 +69,7 @@ def validate_address(
 
 
 def start_profiler(output_dir: Optional[str]) -> Optional[Any]:
-    """ Start and return a profiler is `output_dir` is not None """
+    """Start and return a profiler is `output_dir` is not None"""
     if not output_dir:
         return None
 

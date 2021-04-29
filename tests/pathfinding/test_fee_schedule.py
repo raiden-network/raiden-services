@@ -95,7 +95,7 @@ class TokenNetworkForTests(TokenNetwork):
 
 
 def test_fees_in_balanced_routing():  # pylint: disable=too-many-statements
-    """ Tests fee estimation in a network where both participants have funds in a channel. """
+    """Tests fee estimation in a network where both participants have funds in a channel."""
     tn = TokenNetworkForTests(
         channels=[dict(participant1=1, participant2=2), dict(participant1=2, participant2=3)]
     )
@@ -205,7 +205,7 @@ def test_fees_in_balanced_routing():  # pylint: disable=too-many-statements
 
 
 def test_fees_in_unbalanced_routing():  # pylint: disable=too-many-statements
-    """ Tests fee estimation in a network where only one participant has funds in a channel. """
+    """Tests fee estimation in a network where only one participant has funds in a channel."""
     tn = TokenNetworkForTests(
         channels=[
             dict(participant1=1, participant2=2, capacity1=1000, capacity2=0),
@@ -309,7 +309,7 @@ def test_fees_in_unbalanced_routing():  # pylint: disable=too-many-statements
 
 
 def test_regression_issue_554():
-    """ Regression test for https://github.com/raiden-network/raiden-services/issues/554 """
+    """Regression test for https://github.com/raiden-network/raiden-services/issues/554"""
     tn = TokenNetworkForTests(
         channels=[
             dict(participant1=1, participant2=2, capacity1=100, capacity2=0),
@@ -395,7 +395,7 @@ def test_compounding_fees(flat_fee_cli, prop_fee_cli, estimated_fee):
     ],
 )
 def test_fee_estimate(flat_fee, prop_fee_cli, max_lin_imbalance_fee, target_amount, expected_fee):
-    """ Tests the backwards fee calculation. """
+    """Tests the backwards fee calculation."""
     capacity = TA(10_000)
 
     prop_fee = ppm_fee_per_channel(ProportionalFeeAmount(prop_fee_cli))

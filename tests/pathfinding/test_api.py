@@ -388,7 +388,7 @@ def test_payment_with_new_iou_rejected(  # pylint: disable=too-many-locals
     token_network_model: TokenNetwork,
     make_iou: Callable,
 ):
-    """ Regression test for https://github.com/raiden-network/raiden-services/issues/624 """
+    """Regression test for https://github.com/raiden-network/raiden-services/issues/624"""
 
     initiator_address = to_checksum_address(addresses[0])
     target_address = to_checksum_address(addresses[1])

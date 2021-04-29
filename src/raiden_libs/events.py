@@ -14,7 +14,7 @@ from raiden.utils.typing import (
 
 @dataclass
 class Event:
-    """ Base class for events. """
+    """Base class for events."""
 
 
 @dataclass
@@ -79,6 +79,6 @@ class ReceiveMonitoringRewardClaimedEvent(Event):
 
 @dataclass
 class UpdatedHeadBlockEvent(Event):
-    """ Event triggered after updating the head block and all events. """
+    """Event triggered after updating the head block and all events."""
 
     head_block_number: BlockNumber
