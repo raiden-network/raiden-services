@@ -54,7 +54,7 @@ log = structlog.get_logger(__name__)
 def main(
     private_key: PrivateKey, state_db: str, matrix_server: List[str], accept_disclaimer: bool
 ) -> int:
-    """ The request collector for the monitoring service. """
+    """The request collector for the monitoring service."""
     log.info("Starting Raiden Monitoring Request Collector")
     click.secho(MS_DISCLAIMER, fg="yellow")
     if not accept_disclaimer:

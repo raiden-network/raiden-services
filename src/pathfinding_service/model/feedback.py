@@ -13,5 +13,5 @@ class FeedbackToken:
     creation_time: datetime = field(default_factory=datetime.utcnow)
 
     def is_valid(self) -> bool:
-        """ Checks if the token is valid."""
+        """Checks if the token is valid."""
         return self.creation_time + MAX_AGE_OF_FEEDBACK_REQUESTS > datetime.utcnow()

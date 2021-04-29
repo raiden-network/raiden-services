@@ -148,7 +148,7 @@ def test_capacity_check(
     reachability_state: SimpleReachabilityContainer,
     addresses: List[Address],
 ):
-    """ Test that the mediation fees are included in the capacity check """
+    """Test that the mediation fees are included in the capacity check"""
     # First get a path without mediation fees. This must return the shortest path: 4->1->0
     paths = token_network_model.get_paths(
         source=addresses[4],
@@ -232,7 +232,7 @@ def test_diversity_penalty(
     reachability_state: SimpleReachabilityContainer,
     addresses: List[Address],
 ):
-    """ Check changes in routing when increasing diversity penalty """
+    """Check changes in routing when increasing diversity penalty"""
 
     assert get_paths(
         token_network_model=token_network_model,

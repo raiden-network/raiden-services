@@ -257,7 +257,7 @@ def test_channels(pathfinding_service_mock):
 
 
 def test_channel_constraints(pathfinding_service_mock):
-    """ Regression test for https://github.com/raiden-network/raiden-services/issues/693"""
+    """Regression test for https://github.com/raiden-network/raiden-services/issues/693"""
 
     # Participants need to be ordered
     parts = sorted([make_address(), make_address()])

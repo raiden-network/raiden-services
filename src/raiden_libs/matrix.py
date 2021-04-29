@@ -203,7 +203,7 @@ class MatrixListener(gevent.Greenlet):
             gevent.joinall({startup_finished_greenlet}, raise_error=True, timeout=0)
 
     def _get_user_from_user_id(self, user_id: str) -> User:
-        """Creates an User from an user_id, if none, or fetch a cached User """
+        """Creates an User from an user_id, if none, or fetch a cached User"""
         assert self._broadcast_room
         if user_id in self._broadcast_room._members:  # pylint: disable=protected-access
             user: User = self._broadcast_room._members[user_id]  # pylint: disable=protected-access

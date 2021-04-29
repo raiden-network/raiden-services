@@ -97,7 +97,7 @@ def main(  # pylint: disable=too-many-arguments,too-many-locals
     matrix_server: List[str],
     accept_disclaimer: bool,
 ) -> int:
-    """ The Pathfinding service for the Raiden Network. """
+    """The Pathfinding service for the Raiden Network."""
     log.info("Starting Raiden Pathfinding Service")
     click.secho(PFS_DISCLAIMER, fg="yellow")
     if not accept_disclaimer:

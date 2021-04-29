@@ -29,7 +29,7 @@ def wait_for_blocks(web3):
 
 @pytest.fixture(scope="session")
 def contracts_manager():
-    """Overwrites the contracts_manager from raiden_contracts to use compiled contracts """
+    """Overwrites the contracts_manager from raiden_contracts to use compiled contracts"""
     return ContractManager(contracts_precompiled_path())
 
 

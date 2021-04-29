@@ -37,7 +37,7 @@ log = structlog.get_logger(__name__)
 
 
 def check_gas_reserve(web3: Web3, private_key: PrivateKey) -> None:
-    """ Check periodically for gas reserve in the account """
+    """Check periodically for gas reserve in the account"""
     gas_price = web3.eth.gasPrice
     gas_limit = gas_measurements()["MonitoringService.monitor"]
     estimated_required_balance = gas_limit * gas_price * DEFAULT_GAS_BUFFER_FACTOR

@@ -79,7 +79,7 @@ class UserAddressManager:
         self._listener_id = self._client.add_presence_listener(self._presence_listener)
 
     def stop(self) -> None:
-        """ Stop listening on presence updates. """
+        """Stop listening on presence updates."""
         assert self._listener_id is not None, "UserAddressManager.stop() called before start"
         self._stop_event.set()
         self._client.remove_presence_listener(self._listener_id)
@@ -89,17 +89,17 @@ class UserAddressManager:
 
     @property
     def known_addresses(self) -> Set[Address]:
-        """ Return all addresses we keep track of """
+        """Return all addresses we keep track of"""
         # This must return a copy of the current keys, because the container
         # may be modified while these values are used. Issue: #5240
         return set(self._address_to_userids)
 
     def is_address_known(self, address: Address) -> bool:
-        """ Is the given ``address`` reachability being monitored? """
+        """Is the given ``address`` reachability being monitored?"""
         return address in self._address_to_userids
 
     def add_address(self, address: Address) -> None:
-        """ Add ``address`` to the known addresses that are being observed for reachability. """
+        """Add ``address`` to the known addresses that are being observed for reachability."""
         # Since _address_to_userids is a defaultdict accessing the key creates the entry
         _ = self._address_to_userids[address]
 
@@ -118,27 +118,27 @@ class UserAddressManager:
         self._address_to_userids[address].update(user_ids)
 
     def get_userids_for_address(self, address: Address) -> Set[str]:
-        """ Return all known user ids for the given ``address``. """
+        """Return all known user ids for the given ``address``."""
         if not self.is_address_known(address):
             return set()
         return self._address_to_userids[address]
 
     def get_userid_presence(self, user_id: str) -> UserPresence:
-        """ Return the current presence state of ``user_id``. """
+        """Return the current presence state of ``user_id``."""
         return self._userid_to_presence.get(user_id, UserPresence.UNKNOWN)
 
     def get_address_reachability(self, address: Address) -> AddressReachability:
-        """ Return the current reachability state for ``address``. """
+        """Return the current reachability state for ``address``."""
         return self._address_to_reachabilitystate.get(
             address, UNKNOWN_REACHABILITY_STATE
         ).reachability
 
     def get_address_reachability_state(self, address: Address) -> ReachabilityState:
-        """ Return the current reachability state for ``address``. """
+        """Return the current reachability state for ``address``."""
         return self._address_to_reachabilitystate.get(address, UNKNOWN_REACHABILITY_STATE)
 
     def get_address_capabilities(self, address: Address) -> PeerCapabilities:
-        """ Return the protocol capabilities for ``address``. """
+        """Return the protocol capabilities for ``address``."""
         return self._address_to_capabilities.get(address, PeerCapabilities({}))
 
     def force_user_presence(self, user: User, presence: UserPresence) -> None:
@@ -204,7 +204,7 @@ class UserAddressManager:
         self._maybe_address_reachability_changed(address)
 
     def query_capabilities_for_user_id(self, user_id: str) -> PeerCapabilities:
-        """ This pulls the `avatar_url` for a given user/user_id and parses the capabilities.  """
+        """This pulls the `avatar_url` for a given user/user_id and parses the capabilities."""
         try:
             avatar_url = self._client.api.get_avatar_url(user_id)
             if avatar_url is not None:

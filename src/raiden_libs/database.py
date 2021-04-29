@@ -78,7 +78,7 @@ class BaseDatabase:
         sync_start_block: BlockNumber,
         **contract_addresses: Address,
     ) -> None:
-        """ Make sure that the db is initialized an matches the given settings """
+        """Make sure that the db is initialized an matches the given settings"""
         assert chain_id >= 0
         hex_addresses: Dict[str, str] = {
             con: to_checksum_address(addr) for con, addr in contract_addresses.items()

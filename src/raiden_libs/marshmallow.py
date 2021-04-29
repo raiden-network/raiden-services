@@ -5,7 +5,7 @@ from eth_utils import decode_hex, encode_hex, is_checksum_address, to_checksum_a
 
 
 class HexedBytes(marshmallow.fields.Field):
-    """ Use `bytes` in the dataclass, serialize to hex encoding"""
+    """Use `bytes` in the dataclass, serialize to hex encoding"""
 
     def _serialize(self, value: bytes, attr: Any, obj: Any, **kwargs: Any) -> str:
         return encode_hex(value)
@@ -15,7 +15,7 @@ class HexedBytes(marshmallow.fields.Field):
 
 
 class ChecksumAddress(marshmallow.fields.Field):
-    """ Use `bytes` in the dataclass, serialize to checksum address"""
+    """Use `bytes` in the dataclass, serialize to checksum address"""
 
     def _serialize(self, value: bytes, attr: Any, obj: Any, **kwargs: Any) -> str:
         return to_checksum_address(value)

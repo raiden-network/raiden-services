@@ -11,7 +11,7 @@ from raiden_libs.events import Event
 
 
 def setup_logging(log_level: str, log_json: bool) -> None:
-    """ Basic structlog setup """
+    """Basic structlog setup"""
 
     logging.basicConfig(level=log_level, stream=sys.stdout, format="%(message)s")
     logging.logThreads = False

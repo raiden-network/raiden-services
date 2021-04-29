@@ -101,7 +101,7 @@ def main(  # pylint: disable=too-many-arguments,too-many-locals
     debug_shell: bool,
     accept_disclaimer: bool,
 ) -> int:
-    """ The Monitoring service for the Raiden Network. """
+    """The Monitoring service for the Raiden Network."""
     log.info("Starting Raiden Monitoring Service")
     click.secho(MS_DISCLAIMER, fg="yellow")
     if not accept_disclaimer:

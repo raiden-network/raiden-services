@@ -49,7 +49,7 @@ def provider_mock(monkeypatch):
 
 
 def test_bad_eth_client(log, default_cli_args):
-    """ Giving a bad `eth-rpc` value should yield a concise error message """
+    """Giving a bad `eth-rpc` value should yield a concise error message"""
     runner = CliRunner()
     with patch("pathfinding_service.cli.PathfindingService"):
         result = runner.invoke(
@@ -66,7 +66,7 @@ def test_bad_eth_client(log, default_cli_args):
 
 @pytest.mark.usefixtures("provider_mock")
 def test_success(default_cli_args):
-    """ Calling the pathfinding_service with default args should succeed after heavy mocking """
+    """Calling the pathfinding_service with default args should succeed after heavy mocking"""
     runner = CliRunner()
     with patch.multiple(**PATCH_ARGS), patch.multiple(**PATCH_INFO_ARGS):  # type: ignore
         result = runner.invoke(main, default_cli_args, catch_exceptions=False)
@@ -74,7 +74,7 @@ def test_success(default_cli_args):
 
 
 def test_eth_rpc(default_cli_args, provider_mock):
-    """ The `eth-rpc` parameter must reach the `HTTPProvider` """
+    """The `eth-rpc` parameter must reach the `HTTPProvider`"""
     runner = CliRunner()
     eth_rpc = "example.com:1234"
     with patch.multiple(**PATCH_ARGS), patch.multiple(**PATCH_INFO_ARGS):  # type: ignore
@@ -103,7 +103,7 @@ def test_registry_address(default_cli_args):
 
 @pytest.mark.usefixtures("provider_mock")
 def test_confirmations(default_cli_args):
-    """ The `confirmations` parameter must reach the `PathfindingService` """
+    """The `confirmations` parameter must reach the `PathfindingService`"""
     runner = CliRunner()
     with patch.multiple(**PATCH_ARGS) as mocks, patch.multiple(**PATCH_INFO_ARGS):  # type: ignore
         confirmations = 77
@@ -118,7 +118,7 @@ def test_confirmations(default_cli_args):
 
 @pytest.mark.usefixtures("provider_mock")
 def test_shutdown(default_cli_args):
-    """ Clean shutdown after KeyboardInterrupt """
+    """Clean shutdown after KeyboardInterrupt"""
     runner = CliRunner()
     with patch.multiple(**PATCH_ARGS) as mocks, patch.multiple(**PATCH_INFO_ARGS):  # type: ignore
         mocks["PathfindingService"].return_value.get.side_effect = KeyboardInterrupt
@@ -131,7 +131,7 @@ def test_shutdown(default_cli_args):
 
 @pytest.mark.usefixtures("provider_mock")
 def test_log_level(default_cli_args):
-    """ Setting of log level via command line switch """
+    """Setting of log level via command line switch"""
     runner = CliRunner()
     with patch.multiple(**PATCH_ARGS), patch.multiple(**PATCH_INFO_ARGS), patch(  # type: ignore
         "logging.basicConfig"
