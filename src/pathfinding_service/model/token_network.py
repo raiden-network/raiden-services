@@ -155,10 +155,16 @@ class Path:
                     UserPresence.ONLINE,
                     UserPresence.UNAVAILABLE,
                 ]:
+                    displayname = (
+                        self.reachability_state._displayname_cache.userid_to_displayname.get(
+                            user_id, None
+                        )
+                    )
                     capabilities = self.reachability_state.get_address_capabilities(node)
                     metadata[checksummed_address] = {
                         "user_id": user_id,
                         "capabilities": capabilities,
+                        "displayname": displayname,
                     }
                     # if a reachable user is found we arbitrarily choose
                     # this user for the given address. There should not be another user online

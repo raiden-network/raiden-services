@@ -5,7 +5,11 @@ from unittest import mock
 from eth_utils import to_normalized_address
 
 from raiden.network.transport.matrix import AddressReachability, UserPresence
-from raiden.network.transport.matrix.utils import ReachabilityState, address_from_userid
+from raiden.network.transport.matrix.utils import (
+    DisplayNameCache,
+    ReachabilityState,
+    address_from_userid,
+)
 from raiden.settings import CapabilitiesConfig
 from raiden.utils.capabilities import capconfig_to_dict
 from raiden.utils.typing import Address, Dict, PeerCapabilities
@@ -19,6 +23,7 @@ def get_address_metadata(address: Union[str, bytes]):
     return {
         "user_id": get_user_id_from_address(address),
         "capabilities": PeerCapabilities(capconfig_to_dict(CapabilitiesConfig())),
+        "displayname": None,
     }
 
 
@@ -29,6 +34,7 @@ class SimpleReachabilityContainer:  # pylint: disable=too-few-public-methods
         self._userid_to_presence: dict = mock.MagicMock()
         self._address_to_userids: dict = mock.MagicMock()
         self._address_to_userids.__getitem__ = lambda self, key: {get_user_id_from_address(key)}
+        self._displayname_cache = DisplayNameCache()
 
     def get_address_reachability(self, address: Address) -> AddressReachability:
         return self.reachabilities.get(address, AddressReachability.UNKNOWN)
