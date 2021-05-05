@@ -22,7 +22,7 @@ from raiden.network.transport.matrix.utils import (
     address_from_userid,
     validate_userid_signature,
 )
-from raiden.utils.typing import Address, Any, FrozenSet, PeerCapabilities, Set, Union
+from raiden.utils.typing import Address, Any, FrozenSet, Set, Union
 
 log = structlog.get_logger(__name__)
 
@@ -137,9 +137,9 @@ class UserAddressManager:
         """Return the current reachability state for ``address``."""
         return self._address_to_reachabilitystate.get(address, UNKNOWN_REACHABILITY_STATE)
 
-    def get_address_capabilities(self, address: Address) -> PeerCapabilities:
+    def get_address_capabilities(self, address: Address) -> str:
         """Return the protocol capabilities for ``address``."""
-        return self._address_to_capabilities.get(address, PeerCapabilities({}))
+        return self._address_to_capabilities.get(address, "mxc://")
 
     def force_user_presence(self, user: User, presence: UserPresence) -> None:
         """Forcibly set the ``user`` presence to ``presence``.
@@ -203,18 +203,15 @@ class UserAddressManager:
 
         self._maybe_address_reachability_changed(address)
 
-    def query_capabilities_for_user_id(self, user_id: str) -> PeerCapabilities:
+    def query_capabilities_for_user_id(self, user_id: str) -> str:
         """This pulls the `avatar_url` for a given user/user_id and parses the capabilities."""
         try:
             avatar_url = self._client.api.get_avatar_url(user_id)
             if avatar_url is not None:
-                capabilities = self._capabilities_schema.load({"capabilities": avatar_url})[
-                    "capabilities"
-                ]
-                return PeerCapabilities(capabilities)
+                return avatar_url
         except MatrixRequestError:
             log.debug("Could not fetch capabilities", user_id=user_id)
-        return PeerCapabilities({})
+        return self._capabilities_schema.load({})["capabilities"]
 
     def get_reachability_from_matrix(self, user_ids: Iterable[str]) -> AddressReachability:
         """Get the current reachability without any side effects
@@ -327,7 +324,7 @@ class UserAddressManager:
     def _reset_state(self) -> None:
         self._address_to_userids: Dict[Address, Set[str]] = defaultdict(set)
         self._address_to_reachabilitystate: Dict[Address, ReachabilityState] = dict()
-        self._address_to_capabilities: Dict[Address, PeerCapabilities] = dict()
+        self._address_to_capabilities: Dict[Address, str] = dict()
         self._userid_to_presence: Dict[str, UserPresence] = dict()
         self._userid_to_presence_update_id: Dict[str, int] = dict()
 

@@ -530,8 +530,10 @@ def test_get_address_metadata(api_url: str, api_sut: PFSApi):
     user_manager.reachabilities[address] = AddressReachability.REACHABLE
 
     response = requests.get(url)
+    response_body = response.json()
     assert response.status_code == 200
-    assert response.json()["user_id"] == get_user_id_from_address(address)
+    assert response_body["user_id"] == get_user_id_from_address(address)
+    assert response_body["capabilities"].startswith("mxc://")
 
 
 #
