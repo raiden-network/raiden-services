@@ -12,8 +12,7 @@ from raiden.utils.typing import (
 )
 
 
-@dataclass
-class Event:
+class Event:  # pylint: disable=too-few-public-methods
     """Base class for events."""
 
 
