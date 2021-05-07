@@ -1,4 +1,7 @@
 # Changelog
+### 0.15.0 (2021-05-07)
+* Return displayname and capabilities in avatar_url format
+
 ### 0.14.4 (2021-04-21)
 * Fix an error where the PFS would not reconnect to a homeserver if he becomes unavailable and returns 404
 
@@ -10,7 +13,7 @@
 * Add endpoint to fetch address metadata
 
 ### 0.14.1 (2021-02-25)
-* Fix issues with DNS and logging ([#937](https://github.com/raiden-network/raiden-services/pull/937).
+* Fix issues with DNS and logging ([#937](https://github.com/raiden-network/raiden-services/pull/937)).
 * Pin `raiden` requirement to specific commit in absence of a recent release.
 
 ### 0.14.0 (2021-02-23)
