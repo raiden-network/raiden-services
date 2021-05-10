@@ -1,4 +1,5 @@
 # pylint: disable=redefined-outer-name
+import dataclasses
 from typing import Optional
 from unittest.mock import Mock, patch
 
@@ -622,7 +623,7 @@ def test_monitor_reward_claimed_event_handler(context: Context, log):
 
     assert log.has("Successfully claimed reward")
 
-    claim_event.ms_address = Address(bytes([3] * 20))
+    claim_event = dataclasses.replace(claim_event, ms_address=Address(bytes([3] * 20)))
     monitor_reward_claim_event_handler(claim_event, context)
 
     assert (

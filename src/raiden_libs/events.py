@@ -12,18 +12,19 @@ from raiden.utils.typing import (
 )
 
 
+@dataclass(frozen=True)
 class Event:  # pylint: disable=too-few-public-methods
     """Base class for events."""
 
 
-@dataclass
+@dataclass(frozen=True)
 class ReceiveTokenNetworkCreatedEvent(Event):
     token_address: TokenAddress
     token_network_address: TokenNetworkAddress
     block_number: BlockNumber
 
 
-@dataclass
+@dataclass(frozen=True)
 class ReceiveChannelOpenedEvent(Event):
     token_network_address: TokenNetworkAddress
     channel_identifier: ChannelID
@@ -33,7 +34,7 @@ class ReceiveChannelOpenedEvent(Event):
     block_number: BlockNumber
 
 
-@dataclass
+@dataclass(frozen=True)
 class ReceiveChannelClosedEvent(Event):
     token_network_address: TokenNetworkAddress
     channel_identifier: ChannelID
@@ -41,7 +42,7 @@ class ReceiveChannelClosedEvent(Event):
     block_number: BlockNumber
 
 
-@dataclass
+@dataclass(frozen=True)
 class ReceiveNonClosingBalanceProofUpdatedEvent(Event):
     token_network_address: TokenNetworkAddress
     channel_identifier: ChannelID
@@ -50,14 +51,14 @@ class ReceiveNonClosingBalanceProofUpdatedEvent(Event):
     block_number: BlockNumber
 
 
-@dataclass
+@dataclass(frozen=True)
 class ReceiveChannelSettledEvent(Event):
     token_network_address: TokenNetworkAddress
     channel_identifier: ChannelID
     block_number: BlockNumber
 
 
-@dataclass
+@dataclass(frozen=True)
 class ReceiveMonitoringNewBalanceProofEvent(Event):
     token_network_address: TokenNetworkAddress
     channel_identifier: ChannelID
@@ -68,7 +69,7 @@ class ReceiveMonitoringNewBalanceProofEvent(Event):
     block_number: BlockNumber
 
 
-@dataclass
+@dataclass(frozen=True)
 class ReceiveMonitoringRewardClaimedEvent(Event):
     ms_address: Address
     amount: TokenAmount
@@ -76,7 +77,7 @@ class ReceiveMonitoringRewardClaimedEvent(Event):
     block_number: BlockNumber
 
 
-@dataclass
+@dataclass(frozen=True)
 class UpdatedHeadBlockEvent(Event):
     """Event triggered after updating the head block and all events."""
 

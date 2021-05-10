@@ -1,3 +1,4 @@
+import dataclasses
 import os
 from datetime import datetime
 from typing import List
@@ -313,14 +314,16 @@ def test_token_channel_closed(pathfinding_service_mock, token_network_model):
     assert len(token_network_model.channel_id_to_addresses) == 1
 
     # Test proper token network address
-    close_event.token_network_address = token_network_model.address
+    close_event = dataclasses.replace(
+        close_event, token_network_address=token_network_model.address
+    )
 
     pathfinding_service_mock.handle_event(close_event)
     assert len(pathfinding_service_mock.token_networks) == 1
     assert len(token_network_model.channel_id_to_addresses) == 0
 
     # Test non-existent channel
-    close_event.channel_identifier = ChannelID(123)
+    close_event = dataclasses.replace(close_event, channel_identifier=ChannelID(123))
 
     pathfinding_service_mock.handle_event(close_event)
     assert len(pathfinding_service_mock.token_networks) == 1
