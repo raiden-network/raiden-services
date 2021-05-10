@@ -69,6 +69,7 @@ class UserAddressManager:
         self._log = None
         self._listener_id: Optional[UUID] = None
         self._capabilities_schema = CapabilitiesSchema()
+        self._last_seem_online: Dict[Address, Any] = {}
 
     def start(self) -> None:
         """Start listening for presence updates.
@@ -93,6 +94,9 @@ class UserAddressManager:
         # This must return a copy of the current keys, because the container
         # may be modified while these values are used. Issue: #5240
         return set(self._address_to_userids)
+
+    def last_seem_online(self, address: Address) -> Optional[str]:
+        return self._last_seem_online.get(address, None)
 
     def is_address_known(self, address: Address) -> bool:
         """Is the given ``address`` reachability being monitored?"""
@@ -266,6 +270,8 @@ class UserAddressManager:
         self._address_to_reachabilitystate[address] = ReachabilityState(
             new_address_reachability, now
         )
+        if new_presence == UserPresence.ONLINE:
+            self._last_seem_online[address] = str(now)
         self._address_to_capabilities[address] = capabilities
         self._address_reachability_changed_callback(address, new_address_reachability)
 
