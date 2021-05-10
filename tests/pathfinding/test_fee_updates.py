@@ -6,7 +6,7 @@ The Fee Updates show different correct and incorrect values to test all edge cas
 from datetime import datetime, timezone
 
 import pytest
-from eth_utils import decode_hex, to_canonical_address
+from eth_utils import to_canonical_address
 
 from pathfinding_service.exceptions import InvalidFeeUpdate
 from pathfinding_service.model import TokenNetwork
@@ -25,18 +25,14 @@ from raiden.utils.typing import (
     ProportionalFeeAmount,
     TokenNetworkAddress,
 )
-from raiden_libs.utils import private_key_to_address
-
-DEFAULT_TOKEN_NETWORK_ADDRESS = TokenNetworkAddress(
-    decode_hex("0x6e46B62a245D9EE7758B8DdCCDD1B85fF56B9Bc9")
+from tests.constants import (
+    DEFAULT_CHANNEL_ID,
+    DEFAULT_TOKEN_NETWORK_ADDRESS,
+    PRIVATE_KEY_1,
+    PRIVATE_KEY_1_ADDRESS,
+    PRIVATE_KEY_2_ADDRESS,
+    PRIVATE_KEY_3,
 )
-PRIVATE_KEY_1 = bytes([1] * 32)
-PRIVATE_KEY_1_ADDRESS = private_key_to_address(PRIVATE_KEY_1)
-PRIVATE_KEY_2 = bytes([2] * 32)
-PRIVATE_KEY_2_ADDRESS = private_key_to_address(PRIVATE_KEY_2)
-PRIVATE_KEY_3 = bytes([3] * 32)
-PRIVATE_KEY_3_ADDRESS = private_key_to_address(PRIVATE_KEY_3)
-DEFAULT_CHANNEL_ID = ChannelID(0)
 
 
 def setup_channel(service: PathfindingService) -> TokenNetwork:
