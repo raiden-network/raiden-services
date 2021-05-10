@@ -471,7 +471,9 @@ class AddressMetadataResource(PathfinderResource):
                 capabilities = user_manager.get_address_capabilities(address)
                 return {"user_id": user_id, "capabilities": capabilities}, 200
 
-        raise exceptions.AddressNotOnline(address=checksummed_address)
+        raise exceptions.AddressNotOnline(
+            address=checksummed_address, last_seem=user_manager.last_seem_online(address)
+        )
 
     @staticmethod
     def _validate_address_argument(address: str) -> Address:
