@@ -305,7 +305,6 @@ class ClientManager:
 
         self.main_client = make_client(
             handle_messages_callback=handle_matrix_sync,
-            handle_member_join_callback=lambda room: None,
             servers=self.available_servers,
             http_pool_maxsize=4,
             http_retry_timeout=40,
@@ -391,7 +390,6 @@ class ClientManager:
             # on each homeserver
             client = make_client(
                 handle_messages_callback=self.main_client.handle_messages_callback,
-                handle_member_join_callback=lambda room: None,
                 servers=[server_url],
                 http_pool_maxsize=4,
                 http_retry_timeout=40,
