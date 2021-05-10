@@ -1,4 +1,7 @@
 # Changelog
+### 0.15.1 (2021-05-10)
+* Do not join discovery room anymore
+
 ### 0.15.0 (2021-05-07)
 * Return displayname and capabilities in avatar_url format
 
