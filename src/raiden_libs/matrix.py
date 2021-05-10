@@ -16,13 +16,7 @@ from monitoring_service.constants import (
     MATRIX_RATE_LIMIT_ALLOWED_BYTES,
     MATRIX_RATE_LIMIT_RESET_INTERVAL,
 )
-from raiden.constants import (
-    DISCOVERY_DEFAULT_ROOM,
-    DeviceIDs,
-    Environment,
-    MatrixMessageType,
-    Networks,
-)
+from raiden.constants import DeviceIDs, Environment, MatrixMessageType, Networks
 from raiden.exceptions import SerializationError, TransportError
 from raiden.messages.abstract import Message, SignedMessage
 from raiden.network.transport.matrix.client import (
@@ -35,8 +29,7 @@ from raiden.network.transport.matrix.utils import (
     DisplayNameCache,
     login,
     make_client,
-    make_room_alias,
-    validate_userid_signature,
+    validate_user_id_signature,
 )
 from raiden.network.transport.utils import timeout_exponential_backoff
 from raiden.settings import (
@@ -50,7 +43,7 @@ from raiden.settings import (
 from raiden.storage.serialization.serializer import MessageSerializer
 from raiden.utils.cli import get_matrix_servers
 from raiden.utils.signer import LocalSigner
-from raiden.utils.typing import Address, ChainID, RoomID, Set
+from raiden.utils.typing import Address, ChainID, Set
 from raiden_contracts.utils.type_aliases import PrivateKey
 from raiden_libs.utils import MultiClientUserAddressManager
 
@@ -152,7 +145,6 @@ class MatrixListener(gevent.Greenlet):
         self._client_manager = ClientManager(
             available_servers=servers,
             device_id=self.device_id,
-            broadcast_room_alias_prefix=make_room_alias(chain_id, DISCOVERY_DEFAULT_ROOM),
             chain_id=self.chain_id,
             private_key=private_key,
             handle_matrix_sync=self._handle_matrix_sync,
@@ -168,14 +160,6 @@ class MatrixListener(gevent.Greenlet):
             allowed_bytes=MATRIX_RATE_LIMIT_ALLOWED_BYTES,
             reset_interval=MATRIX_RATE_LIMIT_RESET_INTERVAL,
         )
-
-    @property
-    def broadcast_room_id(self) -> Optional[RoomID]:
-        return self._client_manager.broadcast_room_id
-
-    @property
-    def _broadcast_room(self) -> Optional[Room]:
-        return self._client_manager.broadcast_room
 
     @property
     def _client(self) -> GMatrixClient:
@@ -201,16 +185,6 @@ class MatrixListener(gevent.Greenlet):
         finally:
             self._client_manager.stop()
             gevent.joinall({startup_finished_greenlet}, raise_error=True, timeout=0)
-
-    def _get_user_from_user_id(self, user_id: str) -> User:
-        """Creates an User from an user_id, if none, or fetch a cached User"""
-        assert self._broadcast_room
-        if user_id in self._broadcast_room._members:  # pylint: disable=protected-access
-            user: User = self._broadcast_room._members[user_id]  # pylint: disable=protected-access
-        else:
-            user = self._client.get_user(user_id)
-
-        return user
 
     def _handle_matrix_sync(self, messages: MatrixSyncMessages) -> bool:
         all_messages: List[Message] = list()
@@ -246,20 +220,21 @@ class MatrixListener(gevent.Greenlet):
             return []
 
         sender_id = message["sender"]
-        user = self._get_user_from_user_id(sender_id)
-        try:
-            self._displayname_cache.warm_users([user])
+        self._displayname_cache.warm_users([User(self._client.api, sender_id)])
         # handles the "Could not get 'display_name' for user" case
-        except TransportError as ex:
-            log.error("Could not warm display cache", peer_user=user.user_id, error=str(ex))
+
+        try:
+            displayname = self._displayname_cache.userid_to_displayname[sender_id]
+        except KeyError as ex:
+            log.error("Could not warm display cache", peer_user=sender_id, error=str(ex))
             return []
 
-        peer_address = validate_userid_signature(user)
+        peer_address = validate_user_id_signature(sender_id, displayname)
 
         if not peer_address:
             log.debug(
                 "Message from invalid user displayName signature",
-                peer_user=user.user_id,
+                peer_user=sender_id,
                 room=room,
             )
             return []
@@ -268,7 +243,7 @@ class MatrixListener(gevent.Greenlet):
         if not isinstance(data, str):
             log.warning(
                 "Received message body not a string",
-                peer_user=user.user_id,
+                peer_user=sender_id,
                 peer_address=to_checksum_address(peer_address),
                 room=room,
             )
@@ -289,17 +264,13 @@ class ClientManager:
         self,
         available_servers: Optional[List[str]],
         device_id: DeviceIDs,
-        broadcast_room_alias_prefix: str,
         chain_id: ChainID,
         private_key: bytes,
         handle_matrix_sync: Callable[[MatrixSyncMessages], bool],
     ):
         self.user_manager: Optional[MultiClientUserAddressManager] = None
         self.local_signer = LocalSigner(private_key=private_key)
-        self.broadcast_room_alias_prefix = broadcast_room_alias_prefix
         self.device_id = device_id
-        self.broadcast_room_id: Optional[RoomID] = None
-        self.broadcast_room: Optional[Room] = None
         self.chain_id = chain_id
         self.stop_event = Event()
         self.stop_event.set()
@@ -429,9 +400,12 @@ class ClientManager:
 
             self.server_url_to_other_clients[server_url] = client
             log.debug("Created client for other server", server_url=server_url)
+        try:
+            login(client, signer=self.local_signer, device_id=self.device_id)
+            log.debug("Matrix login successful", server_url=server_url)
 
-        self._setup_client(client)
-        log.debug("Matrix login successful", server_url=server_url)
+        except (MatrixRequestError, ValueError):
+            raise ConnectionError("Could not login/register to matrix.")
 
         client.start_listener_thread(
             DEFAULT_TRANSPORT_MATRIX_SYNC_TIMEOUT,
@@ -442,25 +416,3 @@ class ClientManager:
         if server_url != self.main_client.api.base_url:
             self.user_manager.add_client(client)
         return client
-
-    def _setup_client(self, matrix_client: GMatrixClient) -> None:
-        exception_str = "Could not login/register to matrix."
-
-        try:
-            login(matrix_client, signer=self.local_signer, device_id=self.device_id)
-            exception_str = "Could not join broadcasting room."
-            server = urlparse(matrix_client.api.base_url).netloc
-            room_alias = f"#{self.broadcast_room_alias_prefix}:{server}"
-
-            broadcast_room = matrix_client.join_room(room_alias)
-            broadcast_room_id = broadcast_room.room_id
-
-            if matrix_client == self.main_client:
-                self.broadcast_room = broadcast_room
-                self.broadcast_room_id = broadcast_room_id
-
-            # Don't listen for messages on the discovery room on all clients
-            sync_filter_id = matrix_client.create_sync_filter(not_rooms=[broadcast_room])
-            matrix_client.set_sync_filter_id(sync_filter_id)
-        except (MatrixRequestError, ValueError):
-            raise ConnectionError(exception_str)

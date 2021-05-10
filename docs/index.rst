@@ -134,9 +134,9 @@ Matrix room for monitoring request from Raiden nodes and validates and saves
 them to the monitoring services database.
 
 .. note::
-    The reason for this separation is security. Even when the broadcast room
-    and therefore the request collector are attacked, the monitoring service
-    continues to work and can safely monitor the user's channels.
+    The reason for this separation is security. Even when request collector
+    are attacked, the monitoring service continues to work and can safely
+    monitor the user's channels.
 
 The Monitoring service has some additional parameters which can be set.
 

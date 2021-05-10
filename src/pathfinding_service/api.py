@@ -420,7 +420,6 @@ class InfoResource(PathfinderResource):
             "payment_address": to_checksum_address(self.pathfinding_service.address),
             "UTC": datetime.utcnow().isoformat(),
             "matrix_server": self.api.pathfinding_service.matrix_listener.base_url,
-            "matrix_room_id": self.api.pathfinding_service.matrix_listener.broadcast_room_id,
         }
         return info, 200
 
@@ -454,7 +453,6 @@ class InfoResource2(PathfinderResource):
             "payment_address": to_checksum_address(self.pathfinding_service.address),
             "UTC": datetime.utcnow().isoformat(),
             "matrix_server": self.api.pathfinding_service.matrix_listener.base_url,
-            "matrix_room_id": self.api.pathfinding_service.matrix_listener.broadcast_room_id,
         }
         return info, 200
 
