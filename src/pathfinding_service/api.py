@@ -471,8 +471,9 @@ class AddressMetadataResource(PathfinderResource):
                 capabilities = user_manager.get_address_capabilities(address)
                 return {"user_id": user_id, "capabilities": capabilities}, 200
 
+        offline_since = datetime.now() - user_manager.seen_offline_at(address)
         raise exceptions.AddressNotOnline(
-            address=checksummed_address, last_seen=user_manager.last_seen_online(address)
+            address=checksummed_address, seen_offline_since=offline_since.seconds
         )
 
     @staticmethod

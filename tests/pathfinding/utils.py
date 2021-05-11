@@ -50,10 +50,10 @@ class SimpleReachabilityContainer:  # pylint: disable=too-few-public-methods
             self.times.get(address, datetime.utcnow()),
         )
 
-    def last_seen_online(self, address):
+    def seen_offline_at(self, address):
         if address and self.get_address_reachability(address) == AddressReachability.REACHABLE:
             return datetime.utcnow()
-        return str(datetime.utcnow() - timedelta(hours=1))
+        return datetime.utcnow() - timedelta(hours=1)
 
     def get_userid_presence(self, user_id: str) -> UserPresence:
         """Return the current presence state of ``user_id``."""
