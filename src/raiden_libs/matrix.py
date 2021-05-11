@@ -225,8 +225,8 @@ class MatrixListener(gevent.Greenlet):
 
         try:
             displayname = self._displayname_cache.userid_to_displayname[sender_id]
-        except KeyError as ex:
-            log.error("Could not warm display cache", peer_user=sender_id, error=str(ex))
+        except KeyError:
+            log.exception("Could not warm display cache", peer_user=sender_id)
             return []
 
         peer_address = validate_user_id_signature(sender_id, displayname)
@@ -325,11 +325,10 @@ class ClientManager:
         self.user_manager = user_manager
         try:
             self._start_client(self.main_client.api.base_url)
-        except (TransportError, ConnectionError, MatrixRequestError) as ex:
-            log.error(
+        except (TransportError, ConnectionError, MatrixRequestError):
+            log.exception(
                 "Could not connect to main client",
                 server_url=self.main_client.api.base_url,
-                exception=ex,
             )
             return
 
@@ -362,17 +361,17 @@ class ClientManager:
                 client = self._start_client(server_url)
                 assert client.sync_worker is not None
                 client.sync_worker.get()
-            except (TransportError, ConnectionError) as ex:
-                log.error("Could not connect to server", server_url=server_url, exception=ex)
-            except MatrixRequestError as ex:
-                log.error(
-                    "A Matrix Error occurred during sync", server_url=server_url, exception=ex
+            except (TransportError, ConnectionError):
+                log.exception("Could not connect to server", server_url=server_url)
+            except MatrixRequestError:
+                log.exception(
+                    "A Matrix Error occurred during sync",
+                    server_url=server_url,
                 )
-            except Exception as ex:
-                log.error(
+            except Exception:
+                log.exception(
                     "An unhandled Exception occurred during sync. Restarting PFS.",
                     server_url=server_url,
-                    exception=ex,
                 )
                 self.main_client.stop()
                 raise
