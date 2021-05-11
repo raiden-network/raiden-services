@@ -525,7 +525,7 @@ def test_get_offline_address_metadata(api_url: str):
     assert response.status_code == 404
 
     response_body = response.json()
-    assert response_body["error_details"]["last_seem"] is not None
+    assert response_body["error_details"]["last_seen"] is not None
 
 
 @pytest.mark.usefixtures("api_sut")

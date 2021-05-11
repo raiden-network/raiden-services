@@ -50,7 +50,7 @@ class SimpleReachabilityContainer:  # pylint: disable=too-few-public-methods
             self.times.get(address, datetime.utcnow()),
         )
 
-    def last_seem_online(self, address):
+    def last_seen_online(self, address):
         if address and self.get_address_reachability(address) == AddressReachability.REACHABLE:
             return datetime.utcnow()
         return str(datetime.utcnow() - timedelta(hours=1))
