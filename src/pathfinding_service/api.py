@@ -472,7 +472,7 @@ class AddressMetadataResource(PathfinderResource):
                 return {"user_id": user_id, "capabilities": capabilities}, 200
 
         raise exceptions.AddressNotOnline(
-            address=checksummed_address, last_seem=user_manager.last_seem_online(address)
+            address=checksummed_address, last_seen=user_manager.last_seen_online(address)
         )
 
     @staticmethod
