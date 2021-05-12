@@ -79,9 +79,13 @@ def validate_url(_ctx: Any, _param: Any, value: Optional[str]) -> Optional[str]:
 
 
 def etherscan_url_for_address(chain_id: int, address: Address) -> str:
+    checksum_address = to_checksum_address(address)
+    if chain_id not in CHAINID_TO_ETHERSCAN_PREFIX:
+        return checksum_address
+
     return (
         f"https://{CHAINID_TO_ETHERSCAN_PREFIX[chain_id]}etherscan.io"
-        f"/address/{to_checksum_address(address)}"
+        f"/address/{checksum_address}"
     )
 
 

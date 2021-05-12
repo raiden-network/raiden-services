@@ -1,4 +1,8 @@
 # Changelog
+
+### 0.15.3 (2021-05-12)
+* Fix a crash of the `service_registry` script on private chains
+
 ### 0.15.2 (2021-05-12)
 * Add `seen_offline_since` to address_metadata endpoint if node is offline. Returns time in seconds.
 
