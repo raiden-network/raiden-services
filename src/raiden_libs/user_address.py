@@ -69,7 +69,8 @@ class UserAddressManager:
         self._log = None
         self._listener_id: Optional[UUID] = None
         self._capabilities_schema = CapabilitiesSchema()
-        self._first_seen_offline: Dict[Address, Any] = {}
+        self._first_seen_offline: Dict[Address, datetime] = {}
+        self._service_started_at = datetime.now()
 
     def start(self) -> None:
         """Start listening for presence updates.
@@ -96,7 +97,7 @@ class UserAddressManager:
         return set(self._address_to_userids)
 
     def seen_offline_at(self, address: Address) -> datetime:
-        return self._first_seen_offline.get(address, datetime.fromtimestamp(0))
+        return self._first_seen_offline.get(address, self._service_started_at)
 
     def is_address_known(self, address: Address) -> bool:
         """Is the given ``address`` reachability being monitored?"""
