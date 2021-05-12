@@ -1,4 +1,7 @@
 # Changelog
+### 0.15.2 (2021-05-12)
+* Add `offline_since` to address_metadata endpoint if node is offline. Returns time in seconds.
+
 ### 0.15.1 (2021-05-10)
 * Do not join discovery room anymore
 
