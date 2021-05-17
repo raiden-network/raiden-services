@@ -90,6 +90,9 @@ def etherscan_url_for_address(chain_id: int, address: Address) -> str:
 
 
 def etherscan_url_for_txhash(chain_id: int, tx_hash: HexBytes) -> str:
+    if chain_id not in CHAINID_TO_ETHERSCAN_PREFIX:
+        return tx_hash.hex()
+
     return f"https://{CHAINID_TO_ETHERSCAN_PREFIX[chain_id]}etherscan.io/tx/{tx_hash.hex()}"
 
 
