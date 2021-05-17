@@ -41,6 +41,10 @@ class SimpleReachabilityContainer:  # pylint: disable=too-few-public-methods
         self._address_to_userids.__getitem__ = lambda self, key: {get_user_id_from_address(key)}
         self._displayname_cache = DisplayNameCache()
 
+    @property
+    def known_addresses(self) -> Set[Address]:
+        return set(self.reachabilities.keys())
+
     def get_address_reachability(self, address: Address) -> AddressReachability:
         return self.reachabilities.get(address, AddressReachability.UNKNOWN)
 

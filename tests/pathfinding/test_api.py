@@ -18,7 +18,7 @@ from pathfinding_service.constants import DEFAULT_INFO_MESSAGE
 from pathfinding_service.model import IOU, TokenNetwork
 from pathfinding_service.model.feedback import FeedbackToken
 from raiden.network.transport.matrix import AddressReachability
-from raiden.tests.utils.factories import make_signer
+from raiden.tests.utils.factories import make_address, make_signer
 from raiden.utils.signer import LocalSigner
 from raiden.utils.typing import (
     Address,
@@ -722,3 +722,16 @@ def test_suggest_partner_api(api_url: str, token_network_model: TokenNetwork):
     url = api_url + f"/v1/{token_network_address_hex}/suggest_partner"
     response = requests.get(url)
     assert response.status_code == 200
+
+
+@pytest.mark.usefixtures("api_sut")
+def test_online_addresses(api_url: str, reachability_state):
+    online_addr = make_address()
+    reachability_state.reachabilities = {
+        online_addr: AddressReachability.REACHABLE,
+        make_address(): AddressReachability.UNREACHABLE,
+    }
+    url = api_url + "/v1/online_addresses"
+    response = requests.get(url)
+    assert response.status_code == 200
+    assert response.json() == [to_checksum_address(online_addr)]
