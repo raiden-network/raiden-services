@@ -1,5 +1,9 @@
 # Changelog
 
+### 0.15.4 (2021-05-17)
+* Add displayname to address metadata (https://github.com/raiden-network/raiden-services/pull/1009)
+* Add end endpoint to retrieve all online addresses (https://github.com/raiden-network/raiden-services/pull/1010)
+* Fix a crash of the `service_registry` script on private chains
 * Add Python 3.9 support (https://github.com/raiden-network/raiden-services/pull/877)
 
 ### 0.15.3 (2021-05-12)
@@ -40,7 +44,7 @@
 
 ### 0.13.1 (2020-10-06)
 
-* Move metrics endpoint path outside the API ([#870](https://github.com/raiden-network/raiden-services/pull/870)) 
+* Move metrics endpoint path outside the API ([#870](https://github.com/raiden-network/raiden-services/pull/870))
 
 ### 0.13.0 (2020-10-02)
 
