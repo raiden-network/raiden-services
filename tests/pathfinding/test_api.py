@@ -540,6 +540,7 @@ def test_get_address_metadata(api_url: str, api_sut: PFSApi):
     response = requests.get(url)
     response_body = response.json()
     assert response.status_code == 200
+    assert response_body["displayname"] is None
     assert response_body["user_id"] == get_user_id_from_address(address)
     assert response_body["capabilities"].startswith("mxc://")
 
