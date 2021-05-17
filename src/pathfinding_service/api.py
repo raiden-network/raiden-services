@@ -23,6 +23,7 @@ from web3 import Web3
 from werkzeug.exceptions import NotFound
 from werkzeug.middleware.dispatcher import DispatcherMiddleware
 
+import raiden.utils.typing as raiden_typing
 from pathfinding_service import exceptions, metrics
 from pathfinding_service.constants import (
     API_PATH,
@@ -38,7 +39,7 @@ from pathfinding_service.model.feedback import FeedbackToken
 from pathfinding_service.model.token_network import Path, TokenNetwork
 from pathfinding_service.service import PathfindingService
 from raiden.exceptions import InvalidSignature
-from raiden.network.transport.matrix.utils import UserPresence
+from raiden.network.transport.matrix.utils import AddressReachability, UserPresence
 from raiden.utils.signer import recover
 from raiden.utils.typing import (
     Address,
@@ -517,6 +518,18 @@ class SuggestPartnerResource(PathfinderResource):
         return suggestions, 200
 
 
+class OnlineAddressesResource(PathfinderResource):
+    def get(self) -> Tuple[List[raiden_typing.ChecksumAddress], int]:
+        user_manager = self.pathfinding_service.matrix_listener.user_manager
+        online_addresses = [
+            to_checksum_address(address)
+            for address in user_manager.known_addresses
+            if user_manager.get_address_reachability(address) == AddressReachability.REACHABLE
+        ]
+
+        return online_addresses, 200
+
+
 class DebugPathResource(PathfinderResource):
     def get(  # pylint: disable=no-self-use
         self,
@@ -673,6 +686,7 @@ class PFSApi:
                 {},
                 "suggest_partner",
             ),
+            ("/v1/online_addresses", OnlineAddressesResource, {}, "online_addresses"),
             ("/v1/info", InfoResource, {}, "info"),
             ("/v2/info", InfoResource2, {}, "info2"),
             (
