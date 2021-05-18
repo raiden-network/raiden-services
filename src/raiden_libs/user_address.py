@@ -70,7 +70,7 @@ class UserAddressManager:
         self._listener_id: Optional[UUID] = None
         self._capabilities_schema = CapabilitiesSchema()
         self._first_seen_offline: Dict[Address, datetime] = {}
-        self._service_started_at = datetime.now()
+        self._service_started_at = datetime.utcnow()
 
     def start(self) -> None:
         """Start listening for presence updates.
@@ -257,7 +257,7 @@ class UserAddressManager:
         # for capabilities, we get the "first" uid that showed the `new_presence`
         present_uid = presence_to_uid[new_presence].pop()
         capabilities = self.query_capabilities_for_user_id(present_uid)
-        now = datetime.now()
+        now = datetime.utcnow()
 
         self.log.debug(
             "Changing address reachability state",

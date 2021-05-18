@@ -479,7 +479,7 @@ class AddressMetadataResource(PathfinderResource):
                     "displayname": displayname,
                 }, 200
 
-        offline_since = datetime.now() - user_manager.seen_offline_at(address)
+        offline_since = datetime.utcnow() - user_manager.seen_offline_at(address)
         raise exceptions.AddressNotOnline(
             address=checksummed_address, seen_offline_since=offline_since.total_seconds()
         )

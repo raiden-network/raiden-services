@@ -76,7 +76,7 @@ def start_profiler(output_dir: Optional[str]) -> Optional[Any]:
     from raiden.utils.profiling.sampler import FlameGraphCollector, SignalSampler
 
     os.makedirs(output_dir, exist_ok=True)
-    now = datetime.datetime.now()
+    now = datetime.datetime.utcnow()
     stack_path = os.path.join(output_dir, f"{now:%Y%m%d_%H%M}_stack.data")
     stack_stream = open(stack_path, "w")  # pylint: disable=consider-using-with
     flame = FlameGraphCollector(stack_stream)
