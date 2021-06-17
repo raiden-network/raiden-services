@@ -1,3 +1,4 @@
+import os
 import sys
 from datetime import datetime, timedelta
 from typing import Callable, Dict, Iterable, List, Optional
@@ -276,12 +277,15 @@ class ClientManager:
         self.stop_event.set()
 
         try:
+            matrix_known_servers_url = os.environ.get(
+                "URL_KNOWN_FEDERATION_SERVERS",
+                DEFAULT_MATRIX_KNOWN_SERVERS[Environment.PRODUCTION]
+                if chain_id == 1
+                else DEFAULT_MATRIX_KNOWN_SERVERS[Environment.DEVELOPMENT],
+            )
+
             self.known_servers = (
-                get_matrix_servers(
-                    DEFAULT_MATRIX_KNOWN_SERVERS[Environment.PRODUCTION]
-                    if chain_id == 1
-                    else DEFAULT_MATRIX_KNOWN_SERVERS[Environment.DEVELOPMENT]
-                )
+                get_matrix_servers(matrix_known_servers_url)
                 if chain_id
                 in [
                     Networks.MAINNET.value,
