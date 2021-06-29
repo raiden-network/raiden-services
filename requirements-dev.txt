@@ -10,7 +10,7 @@ flake8-bugbear==21.4.3
 flake8-tuple==0.4.1
 isort==5.8.0
 mypy==0.812
-black==21.5b2
+black==21.6b0
 pylint==2.8.2
 
 pytest
@@ -21,7 +21,7 @@ pytest-structlog==0.4
 pytest-xdist
 coverage>=4.5.4
 
-ipython==7.22.0
+ipython==7.25.0
 pdbpp
 
 eth-tester[py-evm]==0.5.0b4
