@@ -29,3 +29,7 @@ eth-tester[py-evm]==0.5.0b4
 # Release
 bump2version
 twine
+
+# mypy types
+types-setuptools
+types-requests
