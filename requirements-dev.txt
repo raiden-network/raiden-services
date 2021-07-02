@@ -11,7 +11,7 @@ flake8-tuple==0.4.1
 isort==5.9.2
 mypy==0.910
 black==21.6b0
-pylint==2.8.2
+pylint==2.9.3
 
 pytest
 pytest-gevent
