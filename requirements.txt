@@ -1,4 +1,4 @@
-git+https://github.com/raiden-network/raiden.git@9e4ac56117314bc4630e8bf68da2424c01989025
+raiden==3.0.0rc6
 
 sentry-sdk[flask]==1.4.3
 prometheus_client==0.11.0
