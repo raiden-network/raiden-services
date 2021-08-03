@@ -301,11 +301,8 @@ class TokenNetwork:
             )
         self.G.add_edge(channel_view.participant1, channel_view.participant2, view=channel_view)
 
-    def handle_channel_closed_event(self, channel_identifier: ChannelID) -> None:
-        """Close a channel. This doesn't mean that the channel is settled yet, but it cannot
-        transfer any more.
-
-        Corresponds to the ChannelClosed event."""
+    def handle_channel_removed_event(self, channel_identifier: ChannelID) -> None:
+        """Remove a channel from the token network."""
 
         # we need to unregister the channel_id here
         participant1, participant2 = self.channel_id_to_addresses.pop(channel_identifier)
