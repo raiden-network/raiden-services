@@ -26,7 +26,7 @@ def test_tn_idempotency_of_channel_openings(
     assert len(token_network_model.channel_id_to_addresses) == 1
 
     # now close the channel
-    token_network_model.handle_channel_closed_event(channel_identifier=ChannelID(1))
+    token_network_model.handle_channel_removed_event(channel_identifier=ChannelID(1))
 
     # there should be no channels
     assert len(token_network_model.channel_id_to_addresses) == 0
@@ -52,7 +52,7 @@ def test_tn_multiple_channels_for_two_participants_opened(
     assert len(token_network_model.channel_id_to_addresses) == 2
 
     # now close one channel
-    token_network_model.handle_channel_closed_event(channel_identifier=ChannelID(1))
+    token_network_model.handle_channel_removed_event(channel_identifier=ChannelID(1))
 
     # there should be one channel left
     assert len(token_network_model.channel_id_to_addresses) == 1

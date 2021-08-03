@@ -35,6 +35,7 @@ from raiden_contracts.utils.type_aliases import PrivateKey
 from raiden_libs.events import (
     ReceiveChannelClosedEvent,
     ReceiveChannelOpenedEvent,
+    ReceiveChannelSettledEvent,
     ReceiveTokenNetworkCreatedEvent,
     UpdatedHeadBlockEvent,
 )
@@ -326,6 +327,39 @@ def test_token_channel_closed(pathfinding_service_mock, token_network_model):
     close_event = dataclasses.replace(close_event, channel_identifier=ChannelID(123))
 
     pathfinding_service_mock.handle_event(close_event)
+    assert len(pathfinding_service_mock.token_networks) == 1
+    assert len(token_network_model.channel_id_to_addresses) == 0
+
+
+def test_token_channel_coop_settled(pathfinding_service_mock, token_network_model):
+    setup_channel(pathfinding_service_mock, token_network_model)
+
+    token_network_address = make_token_network_address()
+
+    # Test invalid token network address
+    settle_event = ReceiveChannelSettledEvent(
+        token_network_address=token_network_address,
+        channel_identifier=ChannelID(1),
+        block_number=BlockNumber(2),
+    )
+
+    pathfinding_service_mock.handle_event(settle_event)
+    assert len(pathfinding_service_mock.token_networks) == 1
+    assert len(token_network_model.channel_id_to_addresses) == 1
+
+    # Test proper token network address
+    settle_event = dataclasses.replace(
+        settle_event, token_network_address=token_network_model.address
+    )
+
+    pathfinding_service_mock.handle_event(settle_event)
+    assert len(pathfinding_service_mock.token_networks) == 1
+    assert len(token_network_model.channel_id_to_addresses) == 0
+
+    # Test non-existent channel
+    settle_event = dataclasses.replace(settle_event, channel_identifier=ChannelID(123))
+
+    pathfinding_service_mock.handle_event(settle_event)
     assert len(pathfinding_service_mock.token_networks) == 1
     assert len(token_network_model.channel_id_to_addresses) == 0
 

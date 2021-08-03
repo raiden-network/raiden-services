@@ -2,7 +2,7 @@ import collections
 import sys
 import time
 from dataclasses import asdict
-from typing import Dict, Iterator, List, Optional
+from typing import Dict, Iterator, List, Optional, Union
 
 import gevent
 import sentry_sdk
@@ -34,6 +34,7 @@ from raiden_libs.events import (
     Event,
     ReceiveChannelClosedEvent,
     ReceiveChannelOpenedEvent,
+    ReceiveChannelSettledEvent,
     ReceiveTokenNetworkCreatedEvent,
     UpdatedHeadBlockEvent,
 )
@@ -225,8 +226,8 @@ class PathfindingService(gevent.Greenlet):
                     self.handle_token_network_created(event)
                 elif isinstance(event, ReceiveChannelOpenedEvent):
                     self.handle_channel_opened(event)
-                elif isinstance(event, ReceiveChannelClosedEvent):
-                    self.handle_channel_closed(event)
+                elif isinstance(event, (ReceiveChannelClosedEvent, ReceiveChannelSettledEvent)):
+                    self.handle_channel_removed(event)
                 elif isinstance(event, UpdatedHeadBlockEvent):
                     # TODO: Store blockhash here as well
                     self.blockchain_state.latest_committed_block = event.head_block_number
@@ -265,21 +266,29 @@ class PathfindingService(gevent.Greenlet):
                 log.debug("Processing deferred message", message=message)
                 self.handle_message(message)
 
-    def handle_channel_closed(self, event: ReceiveChannelClosedEvent) -> None:
+    def handle_channel_removed(
+        self, event: Union[ReceiveChannelClosedEvent, ReceiveChannelSettledEvent]
+    ) -> None:
         token_network = self.get_token_network(event.token_network_address)
         if token_network is None:
             return
 
-        log.info("Received ChannelClosed event", event_=event)
+        is_settled_event = isinstance(event, ReceiveChannelSettledEvent)
+        event_name = "ChannelSettled" if is_settled_event else "ChannelClosed"
+        log.info(f"Received {event_name} event", event_=event)
 
         channel_deleted = self.database.delete_channel(
             event.token_network_address, event.channel_identifier
         )
         if channel_deleted:
-            token_network.handle_channel_closed_event(event.channel_identifier)
+            token_network.handle_channel_removed_event(event.channel_identifier)
         else:
-            log.error(
-                "Received ChannelClosed event for unknown channel",
+            # If a ChannelSettled event is received at this point, it is unclear if the channel
+            # is not found because the channel was settled non-cooperativly or because of some
+            # error. As the former is more likely, we lower the log level.
+            log_func = log.info if is_settled_event else log.error
+            log_func(
+                f"Received {event_name} event for unknown channel",
                 token_network_address=event.token_network_address,
                 channel_identifier=event.channel_identifier,
             )
