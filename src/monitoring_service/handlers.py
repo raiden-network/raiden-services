@@ -59,7 +59,7 @@ class Context:
         return BlockNumber(self.get_latest_unconfirmed_block() - self.required_confirmations)
 
     def get_latest_unconfirmed_block(self) -> BlockNumber:
-        return self.web3.eth.blockNumber
+        return self.web3.eth.block_number
 
 
 def token_network_created_handler(event: Event, context: Context) -> None:
@@ -479,7 +479,7 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
         )
         return
 
-    latest_block = context.web3.eth.blockNumber
+    latest_block = context.web3.eth.block_number
     last_confirmed_block = context.latest_confirmed_block
     user_address = monitor_request.non_closing_signer
     user_deposit = get_pessimistic_udc_balance(
@@ -537,7 +537,7 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
         first_allowed = BlockNumber(
             _first_allowed_block_to_monitor(event.token_network_address, channel, context)
         )
-        failed_at = context.web3.eth.blockNumber
+        failed_at = context.web3.eth.block_number
         log.error(
             "Sending tx failed",
             exc_info=True,

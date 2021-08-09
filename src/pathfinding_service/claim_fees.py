@@ -46,7 +46,7 @@ def main(
     expires_within: BlockNumber,
 ) -> None:
     pfs_address = private_key_to_address(private_key)
-    chain_id = ChainID(web3.eth.chainId)
+    chain_id = ChainID(web3.eth.chain_id)
     database = PFSDatabase(
         filename=state_db, chain_id=chain_id, pfs_address=pfs_address, sync_start_block=start_block
     )
@@ -55,8 +55,8 @@ def main(
     ious = list(
         get_claimable_ious(
             database,
-            expires_after=web3.eth.blockNumber,
-            expires_before=BlockNumber(web3.eth.blockNumber + expires_within),
+            expires_after=web3.eth.block_number,
+            expires_before=BlockNumber(web3.eth.block_number + expires_within),
             claim_cost_rdn=claim_cost_rdn,
         )
     )
@@ -120,7 +120,7 @@ def claim_ious(
     while unchecked_txs:
         for tx_hash, iou in unchecked_txs:
             try:
-                receipt = web3.eth.getTransactionReceipt(tx_hash)
+                receipt = web3.eth.get_transaction_receipt(tx_hash)
             except TransactionNotFound:
                 continue
 

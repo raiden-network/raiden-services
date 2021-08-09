@@ -25,7 +25,7 @@ def create_tnr_contract_events_query(web3: Web3, contract_address: Address):
             web3=web3,
             contract_addresses=[contract_address],
             from_block=BlockNumber(0),
-            to_block=web3.eth.blockNumber,
+            to_block=web3.eth.block_number,
         )
 
     return query_callback
@@ -63,7 +63,7 @@ def test_limit_inclusivity_in_query_blockchain_events(
 
     # mine some more blocks
     wait_for_blocks(5)
-    current_block_number = web3.eth.blockNumber
+    current_block_number = web3.eth.block_number
     assert current_block_number > registry_event_block
 
     # test to_block is inclusive
@@ -96,7 +96,7 @@ def test_limit_inclusivity_in_query_blockchain_events(
 def test_get_pessimistic_udc_balance(user_deposit_contract, web3, deposit_to_udc, get_accounts):
     (address,) = get_accounts(1)
     deposit_to_udc(address, 10)
-    deposit_block = web3.eth.blockNumber
+    deposit_block = web3.eth.block_number
     web3.testing.mine(5)
 
     def deposit(from_offset, to_offset):

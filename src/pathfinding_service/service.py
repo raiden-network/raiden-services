@@ -73,7 +73,7 @@ class PathfindingService(gevent.Greenlet):
         self.registry_address = contracts[CONTRACT_TOKEN_NETWORK_REGISTRY].address
         self.user_deposit_contract = contracts[CONTRACT_USER_DEPOSIT]
         self.service_token_address = self.user_deposit_contract.functions.token().call()
-        self.chain_id = ChainID(web3.eth.chainId)
+        self.chain_id = ChainID(web3.eth.chain_id)
         self.address = private_key_to_address(private_key)
         self.required_confirmations = required_confirmations
         self._poll_interval = poll_interval
@@ -157,7 +157,7 @@ class PathfindingService(gevent.Greenlet):
         )
         while not self._is_running.is_set():
             self._process_new_blocks(
-                BlockNumber(self.web3.eth.blockNumber - self.required_confirmations)
+                BlockNumber(self.web3.eth.block_number - self.required_confirmations)
             )
 
             # Let tests waiting for this event know that we're done with processing

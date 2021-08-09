@@ -271,7 +271,7 @@ def connect_to_blockchain(
         provider = HTTPProvider(eth_rpc)
         web3 = Web3(provider)
         # Will throw ConnectionError on bad Ethereum client
-        chain_id = ChainID(web3.eth.chainId)
+        chain_id = ChainID(web3.eth.chain_id)
     except requests.exceptions.ConnectionError:
         log.error(
             "Can not connect to the Ethereum client. Please check that it is running and that "

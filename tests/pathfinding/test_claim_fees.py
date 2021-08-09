@@ -90,7 +90,7 @@ def test_claim_fees(  # pylint: disable=too-many-locals
         dict(sender=accounts[4], amount=99),  # too low amount
         dict(sender=accounts[5], expiration_block=1000, amount=104),  # does not expire, yet
         dict(
-            sender=accounts[6], expiration_block=web3.eth.blockNumber - 1, amount=104
+            sender=accounts[6], expiration_block=web3.eth.block_number - 1, amount=104
         ),  # already expired
     ]
 
@@ -119,7 +119,7 @@ def test_claim_fees(  # pylint: disable=too-many-locals
     claimable_ious = list(
         get_claimable_ious(
             database=pfs.database,
-            expires_after=web3.eth.blockNumber,
+            expires_after=web3.eth.block_number,
             expires_before=BlockNumber(1000),
             claim_cost_rdn=TokenAmount(100),
         )

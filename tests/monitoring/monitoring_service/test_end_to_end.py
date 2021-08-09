@@ -25,7 +25,7 @@ def create_ms_contract_events_query(web3: Web3, contract_address: Address) -> Ca
             web3=web3,
             contract_addresses=[contract_address],
             from_block=BlockNumber(0),
-            to_block=web3.eth.blockNumber,
+            to_block=web3.eth.block_number,
         )
 
     return f
@@ -79,7 +79,7 @@ def test_first_allowed_monitoring(
         priv_key=get_private_key(c2),
         **shared_bp_args,
     )
-    monitoring_service._process_new_blocks(web3.eth.blockNumber)
+    monitoring_service._process_new_blocks(web3.eth.block_number)
     assert len(monitoring_service.context.database.get_token_network_addresses()) > 0
 
     # c1 asks MS to monitor the channel
@@ -105,9 +105,9 @@ def test_first_allowed_monitoring(
         balance_proof_c1.get_counter_signature(get_private_key(c2)),
     ).transact({"from": c2})
 
-    monitoring_service._process_new_blocks(web3.eth.blockNumber)
+    monitoring_service._process_new_blocks(web3.eth.block_number)
     triggered_events = monitoring_service.database.get_scheduled_events(
-        max_trigger_block=BlockNumber(web3.eth.blockNumber + 10)
+        max_trigger_block=BlockNumber(web3.eth.block_number + 10)
     )
     assert len(triggered_events) == 1
 
@@ -123,7 +123,7 @@ def test_first_allowed_monitoring(
     # This should be only one block before, but we trigger one block too late
     # to work around parity's gas estimation. See
     # https://github.com/raiden-network/raiden-services/pull/728
-    wait_for_blocks(monitor_trigger.trigger_block_number - web3.eth.blockNumber - 2)
+    wait_for_blocks(monitor_trigger.trigger_block_number - web3.eth.block_number - 2)
     handle_event(monitor_trigger.event, monitoring_service.context)
     assert [e.event for e in query()] == []
 
@@ -134,7 +134,7 @@ def test_first_allowed_monitoring(
 
     # Now we can try again. The first try mined a new block, so now we're one
     # block further and `monitor` should succeed.
-    wait_for_blocks(monitor_trigger.trigger_block_number - web3.eth.blockNumber)
+    wait_for_blocks(monitor_trigger.trigger_block_number - web3.eth.block_number)
     handle_event(monitor_trigger.event, monitoring_service.context)
     assert [e.event for e in query()] == [MonitoringServiceEvent.NEW_BALANCE_PROOF_RECEIVED]
 
