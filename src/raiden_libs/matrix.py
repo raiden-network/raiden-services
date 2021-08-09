@@ -20,12 +20,7 @@ from monitoring_service.constants import (
 from raiden.constants import DeviceIDs, Environment, MatrixMessageType, Networks
 from raiden.exceptions import SerializationError, TransportError
 from raiden.messages.abstract import Message, SignedMessage
-from raiden.network.transport.matrix.client import (
-    GMatrixClient,
-    MatrixMessage,
-    MatrixSyncMessages,
-    Room,
-)
+from raiden.network.transport.matrix.client import GMatrixClient, MatrixMessage
 from raiden.network.transport.matrix.utils import (
     DisplayNameCache,
     login,
@@ -187,31 +182,23 @@ class MatrixListener(gevent.Greenlet):
             self._client_manager.stop()
             gevent.joinall({startup_finished_greenlet}, raise_error=True, timeout=0)
 
-    def _handle_matrix_sync(self, messages: MatrixSyncMessages) -> bool:
+    def _handle_matrix_sync(self, messages: List[MatrixMessage]) -> bool:
         all_messages: List[Message] = list()
-        for room, room_messages in messages:
-            if room is not None:
-                # Ignore room messages
-                # This will only handle to-device messages
-                continue
-
-            for text in room_messages:
-                all_messages.extend(self._handle_message(room, text))
+        for message in messages:
+            all_messages.extend(self._handle_message(message))
 
         log.debug("Incoming messages", messages=all_messages)
 
-        for message in all_messages:
-            self.message_received_callback(message)
+        for signed_message in all_messages:
+            self.message_received_callback(signed_message)
 
         return True
 
-    def _handle_message(self, room: Optional[Room], message: MatrixMessage) -> List[SignedMessage]:
+    def _handle_message(self, message: MatrixMessage) -> List[SignedMessage]:
         """Handle a single Matrix message.
 
         The matrix message is expected to be a NDJSON, and each entry should be
         a valid JSON encoded Raiden message.
-
-        If `room` is None this means we are processing a `to_device` message
         """
         is_valid_type = (
             message["type"] == "m.room.message"
@@ -236,7 +223,6 @@ class MatrixListener(gevent.Greenlet):
             log.debug(
                 "Message from invalid user displayName signature",
                 peer_user=sender_id,
-                room=room,
             )
             return []
 
@@ -246,7 +232,6 @@ class MatrixListener(gevent.Greenlet):
                 "Received message body not a string",
                 peer_user=sender_id,
                 peer_address=to_checksum_address(peer_address),
-                room=room,
             )
             return []
 
@@ -267,7 +252,7 @@ class ClientManager:
         device_id: DeviceIDs,
         chain_id: ChainID,
         private_key: bytes,
-        handle_matrix_sync: Callable[[MatrixSyncMessages], bool],
+        handle_matrix_sync: Callable[[List[MatrixMessage]], bool],
     ):
         self.user_manager: Optional[MultiClientUserAddressManager] = None
         self.local_signer = LocalSigner(private_key=private_key)
