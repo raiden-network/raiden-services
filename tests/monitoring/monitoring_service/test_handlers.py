@@ -195,7 +195,7 @@ def test_channel_opened_event_handler_adds_channel(context: Context):
 
 def test_channel_closed_event_handler_closes_existing_channel(context: Context):
     context = setup_state_with_open_channel(context)
-    context.web3.eth.blockNumber = BlockNumber(60)
+    context.web3.eth.block_number = BlockNumber(60)
     event = ReceiveChannelClosedEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
@@ -213,7 +213,7 @@ def test_channel_closed_event_handler_closes_existing_channel(context: Context):
 
 def test_channel_closed_event_handler_idempotency(context: Context):
     context = setup_state_with_open_channel(context)
-    context.web3.eth.blockNumber = BlockNumber(60)
+    context.web3.eth.block_number = BlockNumber(60)
 
     event = ReceiveChannelClosedEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
@@ -235,7 +235,7 @@ def test_channel_closed_event_handler_idempotency(context: Context):
 
 def test_channel_closed_event_handler_ignores_existing_channel_after_timeout(context: Context):
     context = setup_state_with_open_channel(context)
-    context.web3.eth.blockNumber = BlockNumber(200)
+    context.web3.eth.block_number = BlockNumber(200)
 
     event = ReceiveChannelClosedEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,

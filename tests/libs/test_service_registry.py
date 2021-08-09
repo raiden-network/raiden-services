@@ -79,7 +79,7 @@ def test_registration(
 
     # wait until first deposit is free
     web3.testing.timeTravel(  # type: ignore
-        web3.eth.getBlock("latest")["timestamp"] + DEFAULT_REGISTRATION_DURATION
+        web3.eth.get_block("latest")["timestamp"] + DEFAULT_REGISTRATION_DURATION
     )
     # now test withdraw
     withdraw(

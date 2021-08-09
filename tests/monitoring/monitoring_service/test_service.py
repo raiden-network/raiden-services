@@ -22,9 +22,9 @@ def test_check_pending_transactions(
     monitoring_service.database.add_waiting_transaction(waiting_tx_hash=make_transaction_hash())
 
     for tx_status in (0, 1):
-        tx_receipt = {"blockNumber": web3.eth.blockNumber, "status": tx_status}
+        tx_receipt = {"blockNumber": web3.eth.block_number, "status": tx_status}
         with patch.object(
-            web3.eth, "getTransactionReceipt", Mock(return_value=tx_receipt)
+            web3.eth, "get_transaction_receipt", Mock(return_value=tx_receipt)
         ), patch.object(monitoring_service.database, "remove_waiting_transaction") as remove_mock:
             for should_call in (False, False, False, True):
                 monitoring_service._check_pending_transactions()  # pylint: disable=protected-access # noqa

@@ -38,11 +38,11 @@ log = structlog.get_logger(__name__)
 
 def check_gas_reserve(web3: Web3, private_key: PrivateKey) -> None:
     """Check periodically for gas reserve in the account"""
-    gas_price = web3.eth.gasPrice
+    gas_price = web3.eth.gas_price
     gas_limit = gas_measurements()["MonitoringService.monitor"]
     estimated_required_balance = gas_limit * gas_price * DEFAULT_GAS_BUFFER_FACTOR
     estimated_required_balance_eth = Web3.fromWei(estimated_required_balance, "ether")
-    current_balance = web3.eth.getBalance(private_key_to_address(private_key))
+    current_balance = web3.eth.get_balance(private_key_to_address(private_key))
     if current_balance < estimated_required_balance:
         log.error(
             "Your account's balance is below the estimated gas reserve of "
@@ -98,7 +98,7 @@ class MonitoringService:
         min_reward: int = 0,
     ):
         self.web3 = web3
-        self.chain_id = ChainID(web3.eth.chainId)
+        self.chain_id = ChainID(web3.eth.chain_id)
         self.private_key = private_key
         self.address = private_key_to_address(private_key)
         self.poll_interval = poll_interval
@@ -199,7 +199,7 @@ class MonitoringService:
         """
         for tx_hash in self.context.database.get_waiting_transactions():
             try:
-                receipt = self.web3.eth.getTransactionReceipt(Hash32(tx_hash))
+                receipt = self.web3.eth.get_transaction_receipt(Hash32(tx_hash))
             except TransactionNotFound:
                 continue
 
@@ -208,7 +208,7 @@ class MonitoringService:
                 continue
 
             confirmation_block = tx_block + self.context.required_confirmations
-            if self.web3.eth.blockNumber < confirmation_block:
+            if self.web3.eth.block_number < confirmation_block:
                 continue
 
             self.context.database.remove_waiting_transaction(tx_hash)

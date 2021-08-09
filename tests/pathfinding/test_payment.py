@@ -38,7 +38,7 @@ def test_process_payment_errors(
         )
 
     # expires too early
-    iou = make_iou(privkey, pfs.address, expiration_block=web3.eth.blockNumber + 5)
+    iou = make_iou(privkey, pfs.address, expiration_block=web3.eth.block_number + 5)
     with pytest.raises(exceptions.IOUExpiredTooEarly):
         test_payment(iou)
 
@@ -110,7 +110,7 @@ def test_process_payment(
         process_payment(iou, pfs, service_fee, one_to_n_address)
     assert tb.value.error_details["required_deposit"] == 2 * UDC_SECURITY_MARGIN_FACTOR_PFS
     assert tb.value.error_details["seen_deposit"] == 1 * UDC_SECURITY_MARGIN_FACTOR_PFS
-    assert tb.value.error_details["block_number"] == web3.eth.blockNumber
+    assert tb.value.error_details["block_number"] == web3.eth.block_number
 
     # With the higher amount and enough deposit, it works again!
     deposit_to_udc(sender, round(2 * UDC_SECURITY_MARGIN_FACTOR_PFS))

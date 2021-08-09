@@ -112,17 +112,17 @@ def checked_transact(
         confirmation_msg = " and waiting for confirmation"
     click.secho(
         f"\nSending transaction{confirmation_msg}: {task_name}"
-        f"\n\tSee {etherscan_url_for_txhash(web3.eth.chainId, transaction_hash)}"
+        f"\n\tSee {etherscan_url_for_txhash(web3.eth.chain_id, transaction_hash)}"
     )
 
-    transaction_receipt = web3.eth.waitForTransactionReceipt(transaction_hash, poll_latency=1.0)
+    transaction_receipt = web3.eth.wait_for_transaction_receipt(transaction_hash, poll_latency=1.0)
     if wait_confirmation_interval:
         while (
             "blockNumber" not in transaction_receipt
-            or web3.eth.blockNumber
+            or web3.eth.block_number
             < transaction_receipt["blockNumber"] + DEFAULT_NUMBER_OF_BLOCK_CONFIRMATIONS
         ):
-            transaction_receipt = web3.eth.waitForTransactionReceipt(transaction_hash)
+            transaction_receipt = web3.eth.wait_for_transaction_receipt(transaction_hash)
             gevent.sleep(1)
 
     was_successful = transaction_receipt["status"] == 1
@@ -238,7 +238,7 @@ def send_registration_transaction(
         "\n\t      increases significantly after a deposit is made."
     )
     if account_balance < required_deposit:
-        if web3.eth.chainId == 1:
+        if web3.eth.chain_id == 1:
             click.secho(
                 f"You have {fmt_amount(account_balance)} but need {fmt_amount(required_deposit)}.",
                 err=True,
@@ -278,7 +278,7 @@ def send_registration_transaction(
         sys.exit(1)
 
     # mint tokens if necessary, but only on testnets
-    if account_balance < latest_deposit and web3.eth.chainId != 1:
+    if account_balance < latest_deposit and web3.eth.chain_id != 1:
         checked_transact(
             web3=web3,
             sender_address=service_address,
@@ -321,7 +321,7 @@ def send_registration_transaction(
     click.secho("\nSuccessfully deposited to service registry", fg="green")
     click.secho(
         f"\n\tDeposit contract address: {to_checksum_address(event_args['deposit_contract'])}"
-        f"\n\t\tSee {etherscan_url_for_address(web3.eth.chainId, event_args['deposit_contract'])}"
+        f"\n\t\tSee {etherscan_url_for_address(web3.eth.chain_id, event_args['deposit_contract'])}"
         f"\n\tDeposit amount: {event_args['deposit_amount']}"
         f"\n\tRegistration valid until: {valid_until.isoformat(timespec='minutes')}"
     )
@@ -346,7 +346,7 @@ def register_account(
         if not accept_all:
             click.confirm(query, abort=True)
 
-    chain_id = web3.eth.chainId
+    chain_id = web3.eth.chain_id
     log.info("Using RPC endpoint", rpc_url=get_web3_provider_info(web3))
     hex_addresses = {
         name: to_checksum_address(contract.address) for name, contract in contracts.items()
@@ -479,7 +479,7 @@ def find_deposits(
             "topics": [HexStr("0x" + t.hex()) for t in topics],
         }
     )
-    raw_events = web3.eth.getLogs(filter_params)
+    raw_events = web3.eth.get_logs(filter_params)
     events = [decode_event(service_registry_contract.abi, event) for event in raw_events]
 
     # Bring events into a pleasant form
@@ -489,7 +489,7 @@ def find_deposits(
             valid_till=datetime.utcfromtimestamp(e["args"]["valid_till"]).isoformat(" "),
             amount=e["args"]["deposit_amount"],
             deposit_contract=e["args"]["deposit_contract"],
-            withdrawn=not web3.eth.getCode(e["args"]["deposit_contract"]),
+            withdrawn=not web3.eth.get_code(e["args"]["deposit_contract"]),
         )
         for e in events
     ]
@@ -564,7 +564,7 @@ def withdraw(
     # Can we withdraw already?
     release_at = deposit_contract.functions.release_at().call()
     deprecated = service_registry_contract.functions.deprecated().call()
-    if web3.eth.getBlock("latest")["timestamp"] < release_at and not deprecated:
+    if web3.eth.get_block("latest")["timestamp"] < release_at and not deprecated:
         log.error(
             "Too early to withdraw",
             released_at_utc=datetime.utcfromtimestamp(release_at).isoformat(),

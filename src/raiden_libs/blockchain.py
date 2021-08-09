@@ -108,7 +108,7 @@ def query_blockchain_events(
         {"fromBlock": from_block, "toBlock": to_block, "address": contract_addresses}
     )
 
-    events = web3.eth.getLogs(filter_params)
+    events = web3.eth.get_logs(filter_params)
 
     return [decode_event(web3.codec, log_entry) for log_entry in events]
 
