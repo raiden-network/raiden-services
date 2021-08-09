@@ -18,11 +18,10 @@ from monitoring_service.states import (
     MonitorRequest,
     OnChainUpdateStatus,
 )
-from raiden.utils.typing import Address, BlockNumber, TokenNetworkAddress, TransactionHash
-from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK, ChannelState
+from raiden.utils.typing import BlockNumber, TokenNetworkAddress, TransactionHash
+from raiden_contracts.constants import ChannelState
 from raiden_libs.blockchain import get_pessimistic_udc_balance
 from raiden_libs.constants import UDC_SECURITY_MARGIN_FACTOR_MS
-from raiden_libs.contract_info import CONTRACT_MANAGER
 from raiden_libs.events import (
     Event,
     ReceiveChannelClosedEvent,
@@ -95,27 +94,13 @@ def channel_opened_event_handler(event: Event, context: Context) -> None:
 def _first_allowed_block_to_monitor(
     token_network_address: TokenNetworkAddress, channel: Channel, context: Context
 ) -> BlockNumber:
-    # Get token_network_contract
-    abi = CONTRACT_MANAGER.get_contract_abi(CONTRACT_TOKEN_NETWORK)
-    token_network_contract = context.web3.eth.contract(
-        abi=abi, address=Address(token_network_address)
-    )
-
-    # Use the same assumptions as the MS contract, which can't get the real
-    # channel timeout and close block.
-    settle_block_number, _ = token_network_contract.functions.getChannelInfo(
-        channel.identifier, channel.participant1, channel.participant2
-    ).call()
-    assumed_settle_timeout = token_network_contract.functions.settlement_timeout_min().call()
-    assumed_close_block = settle_block_number - assumed_settle_timeout
-
-    # Call smart contract to use its firstBlockAllowedToMonitor calculation
+    # Call smart contract to use its `firstBlockAllowedToMonitor` calculation
     return BlockNumber(
-        context.monitoring_service_contract.functions.firstBlockAllowedToMonitor(
-            closed_at_block=assumed_close_block,
-            settle_timeout=assumed_settle_timeout,
-            participant1=channel.participant1,
-            participant2=channel.participant2,
+        context.monitoring_service_contract.functions.firstBlockAllowedToMonitorChannel(
+            token_network=token_network_address,
+            channel_identifier=channel.identifier,
+            closing_participant=channel.participant1,
+            non_closing_participant=channel.participant2,
             monitoring_service_address=context.ms_state.address,
         ).call()
     )
@@ -154,8 +139,8 @@ def channel_closed_event_handler(event: Event, context: Context) -> None:
         # Unfortunately, parity does the gas estimation on the current block
         # instead of the next one, so we have to wait for the first allowed
         # block to be finished to send the transaction successfully on parity.
-        trigger_block = BlockNumber(
-            _first_allowed_block_to_monitor(event.token_network_address, channel, context)
+        trigger_block = _first_allowed_block_to_monitor(
+            event.token_network_address, channel, context
         )
 
         triggered_event = ActionMonitoringTriggeredEvent(
@@ -534,8 +519,8 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
             )
         )
     except Exception as exc:  # pylint: disable=broad-except
-        first_allowed = BlockNumber(
-            _first_allowed_block_to_monitor(event.token_network_address, channel, context)
+        first_allowed = _first_allowed_block_to_monitor(
+            event.token_network_address, channel, context
         )
         failed_at = context.web3.eth.block_number
         log.error(
