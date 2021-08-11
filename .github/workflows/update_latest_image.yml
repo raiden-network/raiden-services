@@ -1,0 +1,24 @@
+name: Update `latest` image
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  push_to_registry:
+    name: Update `latest` image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v2
+
+      - name: Log in to Docker Hub
+        run: |
+          docker login --username $DOCKER_USERNAME --password $DOCKER_TOKEN
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          tags: raidennetwork/raiden-services:latest
