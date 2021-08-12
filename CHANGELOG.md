@@ -1,5 +1,11 @@
 # Changelog
 
+### 0.16.0 (2021-08-12)
+* Update to contracts 0.39.0 (https://github.com/raiden-network/raiden-services/pull/1052)
+* Handle channels closed by cooperative settlement (https://github.com/raiden-network/raiden-services/issues/1040)
+* Simplify MS code by using new contract interface (https://github.com/raiden-network/raiden-services/issues/807)
+* Fix PFS handling of certain environment variables (https://github.com/raiden-network/raiden-services/issues/1023)
+
 ### 0.15.4 (2021-05-17)
 * Add displayname to address metadata (https://github.com/raiden-network/raiden-services/pull/1009)
 * Add end endpoint to retrieve all online addresses (https://github.com/raiden-network/raiden-services/pull/1010)
