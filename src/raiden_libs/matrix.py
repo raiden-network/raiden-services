@@ -76,7 +76,7 @@ class RateLimiter:
 def deserialize_messages(
     data: str, peer_address: Address, rate_limiter: Optional[RateLimiter] = None
 ) -> List[SignedMessage]:
-    messages: List[SignedMessage] = list()
+    messages: List[SignedMessage] = []
 
     if rate_limiter:
         rate_limiter.reset_if_it_is_time()
@@ -183,7 +183,7 @@ class MatrixListener(gevent.Greenlet):
             gevent.joinall({startup_finished_greenlet}, raise_error=True, timeout=0)
 
     def _handle_matrix_sync(self, messages: List[MatrixMessage]) -> bool:
-        all_messages: List[Message] = list()
+        all_messages: List[Message] = []
         for message in messages:
             all_messages.extend(self._handle_message(message))
 

@@ -39,7 +39,7 @@ def keystore_file(tmp_path) -> str:
 
     account = Account.create()
     keystore_json = Account.encrypt(private_key=account.key, password=KEYSTORE_PASSWORD)
-    with open(filename, "w") as f:
+    with open(filename, mode="w", encoding="utf-8") as f:
         json.dump(keystore_json, f)
 
     return filename

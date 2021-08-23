@@ -47,7 +47,7 @@ def test_edge_weight(addresses):
     # no penalty
     assert (
         TokenNetwork.edge_weight(
-            visited=dict(), view=view, view_from_partner=view_partner, amount=amount, fee_penalty=0
+            visited={}, view=view, view_from_partner=view_partner, amount=amount, fee_penalty=0
         )
         == 1
     )
@@ -68,7 +68,7 @@ def test_edge_weight(addresses):
     view.fee_schedule_sender.flat = FeeAmount(int(0.03e18))
     assert (
         TokenNetwork.edge_weight(
-            visited=dict(),
+            visited={},
             view=view,
             view_from_partner=view_partner,
             amount=amount,
@@ -82,7 +82,7 @@ def test_edge_weight(addresses):
     view.fee_schedule_sender.proportional = ProportionalFeeAmount(int(0.01e6))
     assert (
         TokenNetwork.edge_weight(
-            visited=dict(),
+            visited={},
             view=view,
             view_from_partner=view_partner,
             amount=amount,
@@ -95,7 +95,7 @@ def test_edge_weight(addresses):
     view_partner.capacity = TokenAmount(0)
     assert (
         TokenNetwork.edge_weight(
-            visited=dict(),
+            visited={},
             view=view,
             view_from_partner=view_partner,
             amount=amount,

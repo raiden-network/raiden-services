@@ -43,7 +43,7 @@ log = structlog.get_logger(__name__)
 
 
 def _open_keystore(keystore_file: str, password: str) -> PrivateKey:
-    with open(keystore_file, "r") as keystore:
+    with open(keystore_file, mode="r", encoding="utf-8") as keystore:
         try:
             private_key = bytes(
                 Account.decrypt(keyfile_json=json.load(keystore), password=password)
@@ -78,7 +78,9 @@ def start_profiler(output_dir: Optional[str]) -> Optional[Any]:
     os.makedirs(output_dir, exist_ok=True)
     now = datetime.datetime.utcnow()
     stack_path = os.path.join(output_dir, f"{now:%Y%m%d_%H%M}_stack.data")
-    stack_stream = open(stack_path, "w")  # pylint: disable=consider-using-with
+    stack_stream = open(  # pylint: disable=consider-using-with
+        stack_path, mode="w", encoding="utf-8"
+    )
     flame = FlameGraphCollector(stack_stream)
     return SignalSampler(flame)
 

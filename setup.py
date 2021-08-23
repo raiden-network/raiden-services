@@ -15,7 +15,7 @@ DESCRIPTION = "Raiden Services contain additional tools for the Raiden Network."
 def read_requirements(path: str) -> List[str]:
     assert os.path.isfile(path)
     ret = []
-    with open(path) as requirements:
+    with open(path, encoding="utf-8") as requirements:
         for line in requirements.readlines():
             line = line.strip()
             if line and line[0] in ("#", "-"):
@@ -28,7 +28,7 @@ def read_requirements(path: str) -> List[str]:
     return ret
 
 
-with open("README.md") as readme_file:
+with open("README.md", encoding="utf-8") as readme_file:
     README = readme_file.read()
 
 
