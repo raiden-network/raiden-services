@@ -120,7 +120,7 @@ def test_path_without_capacity(token_network_model: TokenNetwork, addresses: Lis
         G=token_network_model.G,
         nodes=[addresses[0], addresses[1], addresses[2]],
         value=PaymentAmount(10),
-        reachability_state=SimpleReachabilityContainer(dict()),
+        reachability_state=SimpleReachabilityContainer({}),
     )
     assert not path.is_valid
 

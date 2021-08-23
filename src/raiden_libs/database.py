@@ -93,7 +93,7 @@ class BaseDatabase:
             self._check_settings(settings, hex_addresses)
         else:
             # create db schema
-            with open(self.schema_filename) as schema_file:
+            with open(self.schema_filename, encoding="utf-8") as schema_file:
                 self.conn.executescript(schema_file.read())
             update_stmt = "UPDATE blockchain SET {}".format(
                 ",".join(

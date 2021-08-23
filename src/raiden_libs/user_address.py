@@ -330,10 +330,10 @@ class UserAddressManager:
 
     def _reset_state(self) -> None:
         self._address_to_userids: Dict[Address, Set[str]] = defaultdict(set)
-        self._address_to_reachabilitystate: Dict[Address, ReachabilityState] = dict()
-        self._address_to_capabilities: Dict[Address, str] = dict()
-        self._userid_to_presence: Dict[str, UserPresence] = dict()
-        self._userid_to_presence_update_id: Dict[str, int] = dict()
+        self._address_to_reachabilitystate: Dict[Address, ReachabilityState] = {}
+        self._address_to_capabilities: Dict[Address, str] = {}
+        self._userid_to_presence: Dict[str, UserPresence] = {}
+        self._userid_to_presence_update_id: Dict[str, int] = {}
 
     @property
     def _user_id(self) -> str:

@@ -254,7 +254,7 @@ class TokenNetwork:
         """Initializes a new TokenNetwork."""
 
         self.address = token_network_address
-        self.channel_id_to_addresses: Dict[ChannelID, Tuple[Address, Address]] = dict()
+        self.channel_id_to_addresses: Dict[ChannelID, Tuple[Address, Address]] = {}
         self.G = DiGraph()
 
     def __repr__(self) -> str:
