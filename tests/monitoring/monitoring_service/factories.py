@@ -24,7 +24,7 @@ from raiden.utils.typing import (
 from raiden_contracts.constants import ChannelState
 from raiden_contracts.utils.type_aliases import PrivateKey
 from raiden_libs.utils import private_key_to_address
-from tests.constants import TEST_MSC_ADDRESS
+from tests.constants import TEST_CHAIN_ID, TEST_MSC_ADDRESS
 
 DEFAULT_TOKEN_NETWORK_ADDRESS = TokenNetworkAddress(bytes([1] * 20))
 DEFAULT_TOKEN_ADDRESS = TokenAddress(bytes([9] * 20))
@@ -40,7 +40,7 @@ DEFAULT_SETTLE_TIMEOUT = BlockTimeout(100)
 
 
 def create_signed_monitor_request(
-    chain_id: ChainID = ChainID(61),
+    chain_id: ChainID = TEST_CHAIN_ID,
     nonce: Nonce = Nonce(5),
     reward_amount: TokenAmount = DEFAULT_REWARD_AMOUNT,
     closing_privkey: PrivateKey = DEFAULT_PRIVATE_KEY1,

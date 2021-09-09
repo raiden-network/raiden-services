@@ -13,7 +13,7 @@ from monitoring_service.states import HashedBalanceProof
 from pathfinding_service.constants import DEFAULT_REVEAL_TIMEOUT
 from pathfinding_service.model import ChannelView
 from pathfinding_service.service import PathfindingService
-from raiden.utils.typing import BlockNumber, BlockTimeout, ChainID, Nonce, TokenNetworkAddress
+from raiden.utils.typing import BlockNumber, BlockTimeout, Nonce, TokenNetworkAddress
 from raiden_contracts.constants import (
     CONTRACT_TOKEN_NETWORK_REGISTRY,
     CONTRACT_USER_DEPOSIT,
@@ -21,6 +21,7 @@ from raiden_contracts.constants import (
     TEST_SETTLE_TIMEOUT_MIN,
 )
 from raiden_contracts.utils.type_aliases import PrivateKey
+from tests.constants import TEST_CHAIN_ID
 
 
 def test_pfs_with_mocked_client(  # pylint: disable=too-many-arguments
@@ -142,7 +143,7 @@ def test_pfs_with_mocked_client(  # pylint: disable=too-many-arguments
             priv_key=get_private_key(clients[p2_index]),
             channel_identifier=channel_id,
             token_network_address=TokenNetworkAddress(to_canonical_address(token_network.address)),
-            chain_id=ChainID(61),
+            chain_id=TEST_CHAIN_ID,
             additional_hash="0x%064x" % 0,
             locked_amount=0,
             locksroot=encode_hex(LOCKSROOT_OF_NO_LOCKS),
