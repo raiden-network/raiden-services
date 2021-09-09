@@ -9,13 +9,7 @@ from web3 import Web3
 
 from monitoring_service.database import Database
 from monitoring_service.service import MonitoringService
-from raiden.utils.typing import (
-    Address,
-    BlockNumber,
-    BlockTimeout,
-    ChainID,
-    MonitoringServiceAddress,
-)
+from raiden.utils.typing import Address, BlockNumber, BlockTimeout, MonitoringServiceAddress
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
     CONTRACT_SERVICE_REGISTRY,
@@ -23,7 +17,7 @@ from raiden_contracts.constants import (
     CONTRACT_USER_DEPOSIT,
 )
 from request_collector.server import RequestCollector
-from tests.constants import TEST_MSC_ADDRESS
+from tests.constants import TEST_CHAIN_ID, TEST_MSC_ADDRESS
 
 log = logging.getLogger(__name__)
 
@@ -52,7 +46,7 @@ def default_cli_args_ms(default_cli_args) -> List[str]:
 def ms_database() -> Database:
     return Database(
         filename=":memory:",
-        chain_id=ChainID(61),
+        chain_id=TEST_CHAIN_ID,
         msc_address=TEST_MSC_ADDRESS,
         registry_address=Address(bytes([3] * 20)),
         receiver=Address(bytes([4] * 20)),
@@ -87,6 +81,7 @@ def monitoring_service(  # pylint: disable=too-many-arguments
     # We need a shared db between MS and RC so the MS can use MR saved by the RC
     ms.context.database = ms_database
     ms.database = ms_database
+    ms.chain_id = TEST_CHAIN_ID  # workaround for https://github.com/ethereum/web3.py/issues/1677
     return ms
 
 

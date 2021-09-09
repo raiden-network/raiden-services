@@ -7,7 +7,7 @@ from raiden.utils.typing import ChannelID, Nonce, TokenAmount, TokenNetworkAddre
 from raiden_contracts.tests.utils.address import get_random_privkey
 from raiden_contracts.utils.type_aliases import ChainID, PrivateKey
 from raiden_libs.utils import private_key_to_address
-from tests.constants import TEST_MSC_ADDRESS
+from tests.constants import TEST_CHAIN_ID, TEST_MSC_ADDRESS
 
 
 @pytest.fixture
@@ -16,7 +16,7 @@ def build_request_monitoring():
     non_closing_address = private_key_to_address(non_closing_privkey)
 
     def f(
-        chain_id: ChainID = ChainID(61),
+        chain_id: ChainID = TEST_CHAIN_ID,
         amount: TokenAmount = TokenAmount(50),
         nonce: Nonce = Nonce(1),
         channel_id: ChannelID = ChannelID(1),
