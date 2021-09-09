@@ -1,5 +1,9 @@
 # Changelog
 
+### 0.17.0 (2021-09-09)
+* Update to contracts 0.40.0rc (https://github.com/raiden-network/raiden-services/pull/1062)
+* Update to raiden dependency to [latest develop](https://github.com/raiden-network/raiden/commit/9e4ac56117314bc4630e8bf68da2424c01989025) (https://github.com/raiden-network/raiden-services/pull/1062)
+
 ### 0.16.0 (2021-08-12)
 * Update to contracts 0.39.0 (https://github.com/raiden-network/raiden-services/pull/1052)
 * Handle channels closed by cooperative settlement (https://github.com/raiden-network/raiden-services/issues/1040)
