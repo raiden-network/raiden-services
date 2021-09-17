@@ -1,17 +1,19 @@
 # pylint: disable=too-many-arguments,too-many-locals,too-many-statements
-import subprocess
 import sys
 import textwrap
 from datetime import datetime
 from math import floor, log10
 from typing import Any, Callable, Dict, List, Optional
+from urllib.parse import urljoin, urlparse
 
 import click
 import gevent
+import requests
 import structlog
 from eth_typing import HexStr
 from eth_utils import event_abi_to_log_topic, to_canonical_address, to_checksum_address, to_hex
 from hexbytes import HexBytes
+from requests import RequestException
 from web3 import Web3
 from web3.contract import Contract, ContractFunction
 from web3.logs import DISCARD
@@ -435,12 +437,18 @@ def register_account(
 
     if service_url and service_url != current_url:
         click.secho(f'\nNew Url to be registered "{service_url}"')
-        hostname = service_url.split("//")[1]
-        reachable = not subprocess.run(
-            ["ping", "-c", "1", hostname], capture_output=True, check=False
-        ).returncode
+        try:
+            response = requests.get(urljoin(service_url, "/api/v2/info"), timeout=2)
+            reachable = 199 < response.status_code < 300
+        except RequestException:
+            reachable = False
         if not reachable:
-            click.secho(f"`ping {hostname}` fails. Are you sure the URL is correct?", fg="yellow")
+            hostname = urlparse(service_url).netloc
+            click.secho(
+                f"The PFS at `{hostname}` doesn't appear to respond. "
+                f"Are you sure the URL is correct?",
+                fg="yellow",
+            )
         maybe_prompt("I have checked the URL and it is correct")
 
         checked_transact(
