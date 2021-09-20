@@ -1,5 +1,8 @@
 # Changelog
 
+### 0.17.1 (2021-09-20)
+* Fix service URL registration when `ping` is not installed (https://github.com/raiden-network/raiden-services/issues/1065)
+
 ### 0.17.0 (2021-09-09)
 * Update to contracts 0.40.0rc (https://github.com/raiden-network/raiden-services/pull/1062)
 * Update to raiden dependency to [latest develop](https://github.com/raiden-network/raiden/commit/9e4ac56117314bc4630e8bf68da2424c01989025) (https://github.com/raiden-network/raiden-services/pull/1062)
