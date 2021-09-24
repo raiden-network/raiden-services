@@ -4,7 +4,7 @@ from typing import Callable, Generator, List
 from unittest.mock import Mock, patch
 
 import pytest
-from eth_utils import decode_hex, to_canonical_address, to_checksum_address
+from eth_utils import decode_hex, to_canonical_address
 from web3 import Web3
 from web3.contract import Contract
 
@@ -27,6 +27,7 @@ from raiden.utils.typing import (
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
 from raiden_contracts.utils.type_aliases import PrivateKey
 from raiden_libs.utils import private_key_to_address
+from src.utils import to_checksum_address
 
 from ...libs.mocks.web3 import Web3Mock
 from ..utils import SimpleReachabilityContainer

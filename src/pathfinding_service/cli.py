@@ -7,7 +7,7 @@ from typing import Dict, List
 import click
 import gevent
 import structlog
-from eth_utils import to_canonical_address, to_checksum_address
+from eth_utils import to_canonical_address
 from web3 import Web3
 from web3.contract import Contract
 
@@ -30,6 +30,7 @@ from raiden_libs.constants import (
     DEFAULT_API_PORT_PFS,
     DEFAULT_POLL_INTERVALL,
 )
+from utils import to_checksum_address
 
 log = structlog.get_logger(__name__)
 

@@ -4,13 +4,7 @@ from uuid import uuid4
 import pkg_resources
 import pytest
 import requests
-from eth_utils import (
-    decode_hex,
-    encode_hex,
-    to_canonical_address,
-    to_checksum_address,
-    to_normalized_address,
-)
+from eth_utils import decode_hex, encode_hex, to_canonical_address, to_normalized_address
 
 from pathfinding_service import exceptions
 from pathfinding_service.api import DEFAULT_MAX_PATHS, PFSApi, last_failed_requests
@@ -34,6 +28,7 @@ from raiden.utils.typing import (
 from raiden_contracts.tests.utils import get_random_privkey
 from raiden_contracts.utils.type_aliases import PrivateKey
 from raiden_libs.utils import private_key_to_address
+from src.utils import to_checksum_address
 from tests.pathfinding.test_database import db_has_feedback_for
 from tests.pathfinding.utils import get_address_metadata, get_user_id_from_address
 

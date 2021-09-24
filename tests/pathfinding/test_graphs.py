@@ -5,7 +5,7 @@ from datetime import timedelta
 from typing import List
 
 import pytest
-from eth_utils import to_canonical_address, to_checksum_address
+from eth_utils import to_canonical_address
 
 from pathfinding_service.constants import DIVERSITY_PEN_DEFAULT
 from pathfinding_service.model import ChannelView, TokenNetwork
@@ -21,6 +21,7 @@ from raiden.utils.typing import (
     TokenAmount,
     TokenNetworkAddress,
 )
+from src.utils import to_checksum_address
 from tests.pathfinding.utils import SimpleReachabilityContainer
 
 

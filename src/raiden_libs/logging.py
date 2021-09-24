@@ -4,10 +4,11 @@ from dataclasses import asdict
 from typing import Any, Dict
 
 import structlog
-from eth_utils import to_checksum_address, to_hex
+from eth_utils import to_hex
 
 from raiden.messages.abstract import Message
 from raiden_libs.events import Event
+from utils import to_checksum_address
 
 
 def setup_logging(log_level: str, log_json: bool) -> None:

@@ -3,7 +3,7 @@ import sqlite3
 from typing import List, Optional, Union
 
 import structlog
-from eth_utils import decode_hex, encode_hex, to_canonical_address, to_checksum_address, to_hex
+from eth_utils import decode_hex, encode_hex, to_canonical_address, to_hex
 
 from monitoring_service.events import (
     ActionClaimRewardTriggeredEvent,
@@ -26,6 +26,7 @@ from raiden.utils.typing import (
     TransactionHash,
 )
 from raiden_libs.database import BaseDatabase, hex256
+from utils import to_checksum_address
 
 SubEvent = Union[ActionMonitoringTriggeredEvent, ActionClaimRewardTriggeredEvent]
 

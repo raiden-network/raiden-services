@@ -3,7 +3,6 @@ from typing import List, Optional, Tuple, cast
 
 import pkg_resources
 import structlog
-from eth_utils import to_checksum_address
 from flask import Flask
 from flask_restful import Resource
 from gevent.pywsgi import WSGIServer
@@ -15,6 +14,7 @@ from monitoring_service import metrics
 from monitoring_service.constants import API_PATH, DEFAULT_INFO_MESSAGE
 from monitoring_service.service import MonitoringService
 from raiden_libs.api import ApiWithErrorHandler
+from utils import to_checksum_address
 
 log = structlog.get_logger(__name__)
 

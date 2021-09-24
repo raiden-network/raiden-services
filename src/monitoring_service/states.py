@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from typing import Iterable, Optional
 
 from eth_typing.evm import HexAddress
-from eth_utils import decode_hex, encode_hex, to_checksum_address
+from eth_utils import decode_hex, encode_hex
 from web3 import Web3
 
 from raiden.constants import EMPTY_SIGNATURE
@@ -27,6 +27,7 @@ from raiden_contracts.constants import ChannelState, MessageTypeId
 from raiden_contracts.utils.proofs import pack_balance_proof, pack_reward_proof
 from raiden_contracts.utils.type_aliases import PrivateKey
 from raiden_libs.states import BlockchainState
+from utils import to_checksum_address
 
 
 @dataclass

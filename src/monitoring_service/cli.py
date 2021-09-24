@@ -6,7 +6,6 @@ from typing import Dict
 
 import click
 import structlog
-from eth_utils import to_checksum_address
 from web3 import Web3
 from web3.contract import Contract
 
@@ -31,6 +30,7 @@ from raiden_libs.constants import (
     DEFAULT_API_PORT_MS,
     DEFAULT_POLL_INTERVALL,
 )
+from utils import to_checksum_address
 
 log = structlog.get_logger(__name__)
 
