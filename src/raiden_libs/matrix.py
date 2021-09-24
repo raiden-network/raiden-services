@@ -6,7 +6,6 @@ from urllib.parse import urlparse
 
 import gevent
 import structlog
-from eth_utils import to_checksum_address
 from gevent.event import AsyncResult, Event
 from gevent.greenlet import Greenlet
 from marshmallow import ValidationError
@@ -38,6 +37,7 @@ from raiden.settings import (
 )
 from raiden.storage.serialization.serializer import MessageSerializer
 from raiden.utils.cli import get_matrix_servers
+from raiden.utils.formatting import to_checksum_address
 from raiden.utils.signer import LocalSigner
 from raiden.utils.typing import Address, ChainID, Set
 from raiden_contracts.utils.type_aliases import PrivateKey

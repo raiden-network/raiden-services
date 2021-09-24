@@ -3,8 +3,6 @@ from datetime import datetime
 from typing import List
 from uuid import uuid4
 
-from eth_utils import to_checksum_address
-
 from pathfinding_service.database import PFSDatabase
 from pathfinding_service.model.channel import Channel
 from pathfinding_service.model.feedback import FeedbackToken
@@ -17,6 +15,7 @@ from raiden.tests.utils.factories import (
 )
 from raiden.transfer.identifiers import CanonicalIdentifier
 from raiden.transfer.mediated_transfer.mediation_fee import FeeScheduleState
+from raiden.utils.formatting import to_checksum_address
 from raiden.utils.signer import LocalSigner
 from raiden.utils.typing import (
     Address,

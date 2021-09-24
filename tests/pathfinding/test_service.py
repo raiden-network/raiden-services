@@ -5,7 +5,6 @@ from typing import List
 from unittest.mock import Mock, patch
 
 import pytest
-from eth_utils import to_checksum_address
 
 from pathfinding_service import metrics
 from pathfinding_service.model.token_network import PFSFeeUpdate
@@ -15,6 +14,7 @@ from raiden.messages.synchronization import Processed
 from raiden.tests.utils.factories import make_privkey_address, make_token_network_address
 from raiden.transfer.identifiers import CanonicalIdentifier
 from raiden.transfer.mediated_transfer.mediation_fee import FeeScheduleState
+from raiden.utils.formatting import to_checksum_address
 from raiden.utils.signer import LocalSigner
 from raiden.utils.typing import (
     Address,

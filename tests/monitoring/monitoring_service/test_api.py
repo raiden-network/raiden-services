@@ -1,11 +1,11 @@
 import pkg_resources
 import requests
-from eth_utils import to_checksum_address
 
 from monitoring_service import metrics
 from monitoring_service.api import MSApi
 from monitoring_service.constants import DEFAULT_INFO_MESSAGE
 from monitoring_service.service import MonitoringService
+from raiden.utils.formatting import to_checksum_address
 
 
 def test_get_info(api_url: str, ms_api_sut: MSApi, monitoring_service_mock: MonitoringService):

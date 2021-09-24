@@ -2,12 +2,12 @@
 from unittest.mock import Mock, patch
 
 import pytest
-from eth_utils import to_checksum_address
 
 from monitoring_service.constants import CHANNEL_CLOSE_MARGIN
 from monitoring_service.database import Database
 from monitoring_service.states import Channel
 from raiden.storage.serialization.serializer import DictSerializer
+from raiden.utils.formatting import to_checksum_address
 from raiden.utils.typing import Address
 
 

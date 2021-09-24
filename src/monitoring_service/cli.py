@@ -6,7 +6,6 @@ from typing import Dict
 
 import click
 import structlog
-from eth_utils import to_checksum_address
 from web3 import Web3
 from web3.contract import Contract
 
@@ -107,9 +106,7 @@ def main(  # pylint: disable=too-many-arguments,too-many-locals
     if not accept_disclaimer:
         click.confirm(CONFIRMATION_OF_UNDERSTANDING, abort=True)
     log.info("Using RPC endpoint", rpc_url=get_web3_provider_info(web3))
-    hex_addresses = {
-        name: to_checksum_address(contract.address) for name, contract in contracts.items()
-    }
+    hex_addresses = {name: contract.address for name, contract in contracts.items()}
     log.info("Contract information", addresses=hex_addresses, start_block=start_block)
 
     task = None

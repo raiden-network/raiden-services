@@ -4,7 +4,6 @@ from typing import Optional
 from unittest.mock import Mock, patch
 
 import pytest
-from eth_utils import to_checksum_address
 
 from monitoring_service import metrics
 from monitoring_service.database import Database
@@ -27,6 +26,7 @@ from monitoring_service.handlers import (
     updated_head_block_event_handler,
 )
 from monitoring_service.states import OnChainUpdateStatus
+from raiden.utils.formatting import to_checksum_address
 from raiden.utils.typing import Address, BlockNumber, BlockTimeout, ChannelID, Nonce, TokenAmount
 from raiden_contracts.constants import ChannelState
 from raiden_contracts.tests.utils import get_random_privkey
