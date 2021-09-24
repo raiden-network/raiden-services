@@ -11,7 +11,7 @@ import gevent
 import requests
 import structlog
 from eth_typing import HexStr
-from eth_utils import event_abi_to_log_topic, to_canonical_address, to_checksum_address, to_hex
+from eth_utils import event_abi_to_log_topic, to_canonical_address, to_hex
 from hexbytes import HexBytes
 from requests import RequestException
 from web3 import Web3
@@ -34,6 +34,7 @@ from raiden_libs.cli import blockchain_options, common_options, validate_address
 from raiden_libs.constants import CONFIRMATION_OF_UNDERSTANDING
 from raiden_libs.contract_info import CONTRACT_MANAGER
 from raiden_libs.utils import private_key_to_address
+from utils import to_checksum_address
 
 log = structlog.get_logger(__name__)
 

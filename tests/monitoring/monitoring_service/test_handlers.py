@@ -4,7 +4,6 @@ from typing import Optional
 from unittest.mock import Mock, patch
 
 import pytest
-from eth_utils import to_checksum_address
 
 from monitoring_service import metrics
 from monitoring_service.database import Database
@@ -42,6 +41,7 @@ from raiden_libs.events import (
     ReceiveNonClosingBalanceProofUpdatedEvent,
     ReceiveTokenNetworkCreatedEvent,
 )
+from src.utils import to_checksum_address
 from tests.libs.mocks.web3 import Web3Mock
 from tests.monitoring.monitoring_service.factories import (
     DEFAULT_CHANNEL_IDENTIFIER,

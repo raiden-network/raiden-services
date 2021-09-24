@@ -2,7 +2,7 @@ import os
 from typing import List
 from unittest.mock import Mock
 
-from eth_utils import encode_hex, to_canonical_address, to_checksum_address
+from eth_utils import encode_hex, to_canonical_address
 
 from monitoring_service.events import ActionMonitoringTriggeredEvent
 from monitoring_service.service import MonitoringService
@@ -27,6 +27,7 @@ from raiden_contracts.tests.utils import get_random_address, get_random_privkey
 from raiden_contracts.utils.type_aliases import PrivateKey
 from raiden_libs.events import ReceiveChannelOpenedEvent, UpdatedHeadBlockEvent
 from raiden_libs.states import BlockchainState
+from src.utils import to_checksum_address
 from tests.constants import TEST_MSC_ADDRESS
 
 from ...libs.mocks.web3 import ContractMock, Web3Mock

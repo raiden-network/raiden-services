@@ -6,7 +6,6 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
 import networkx as nx
 import structlog
-from eth_utils import to_checksum_address
 from networkx import DiGraph
 from networkx.exception import NetworkXNoPath, NodeNotFound
 
@@ -34,6 +33,7 @@ from raiden.utils.typing import (
     TokenAmount,
     TokenNetworkAddress,
 )
+from utils import to_checksum_address
 
 log = structlog.get_logger(__name__)
 

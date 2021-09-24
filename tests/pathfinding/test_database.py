@@ -3,8 +3,6 @@ from datetime import datetime
 from typing import List
 from uuid import uuid4
 
-from eth_utils import to_checksum_address
-
 from pathfinding_service.database import PFSDatabase
 from pathfinding_service.model.channel import Channel
 from pathfinding_service.model.feedback import FeedbackToken
@@ -27,6 +25,7 @@ from raiden.utils.typing import (
     TokenAmount,
     TokenNetworkAddress,
 )
+from src.utils import to_checksum_address
 
 
 def db_has_feedback_for(database: PFSDatabase, token: FeedbackToken, route: List[Address]) -> bool:

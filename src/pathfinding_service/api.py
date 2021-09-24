@@ -7,12 +7,7 @@ from uuid import UUID
 import marshmallow
 import pkg_resources
 import structlog
-from eth_utils import (
-    is_checksum_address,
-    is_same_address,
-    to_canonical_address,
-    to_checksum_address,
-)
+from eth_utils import is_checksum_address, is_same_address, to_canonical_address
 from flask import Flask, Response, request
 from flask_restful import Resource
 from gevent.pywsgi import WSGIServer
@@ -55,6 +50,7 @@ from raiden_libs.blockchain import get_pessimistic_udc_balance
 from raiden_libs.constants import UDC_SECURITY_MARGIN_FACTOR_PFS
 from raiden_libs.exceptions import ApiException
 from raiden_libs.marshmallow import ChecksumAddress, HexedBytes
+from utils import to_checksum_address
 
 log = structlog.get_logger(__name__)
 T = TypeVar("T")

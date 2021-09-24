@@ -3,7 +3,6 @@ from datetime import datetime
 from typing import ClassVar, Tuple, Type
 
 import marshmallow
-from eth_utils import to_checksum_address
 from marshmallow.fields import NaiveDateTime
 from marshmallow_dataclass import add_schema
 
@@ -20,6 +19,7 @@ from raiden.utils.typing import (
     TokenNetworkAddress,
 )
 from raiden_libs.marshmallow import ChecksumAddress
+from utils import to_checksum_address
 
 
 @dataclass

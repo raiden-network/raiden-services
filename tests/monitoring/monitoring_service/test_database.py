@@ -1,7 +1,5 @@
 import random
 
-from eth_utils import to_checksum_address
-
 from monitoring_service.database import Database
 from monitoring_service.events import ActionMonitoringTriggeredEvent, ScheduledEvent
 from monitoring_service.service import MonitoringService
@@ -16,6 +14,7 @@ from raiden.utils.typing import (
     TransactionHash,
 )
 from raiden_libs.database import hex256
+from src.utils import to_checksum_address
 from tests.monitoring.monitoring_service.factories import (
     DEFAULT_TOKEN_NETWORK_ADDRESS,
     create_channel,

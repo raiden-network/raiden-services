@@ -4,7 +4,7 @@ from typing import Callable, Dict, Iterable, Optional
 from uuid import UUID
 
 import structlog
-from eth_utils import to_checksum_address, to_normalized_address
+from eth_utils import to_normalized_address
 from gevent.event import Event
 from matrix_client.errors import MatrixRequestError
 from matrix_client.user import User
@@ -23,6 +23,7 @@ from raiden.network.transport.matrix.utils import (
     validate_userid_signature,
 )
 from raiden.utils.typing import Address, Any, FrozenSet, Set, Union
+from utils import to_checksum_address
 
 log = structlog.get_logger(__name__)
 

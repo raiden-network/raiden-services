@@ -5,7 +5,7 @@ from typing import Dict, Iterator, List, Optional, Tuple
 from uuid import UUID
 
 import structlog
-from eth_utils import to_canonical_address, to_checksum_address
+from eth_utils import to_canonical_address
 
 from pathfinding_service.model import IOU
 from pathfinding_service.model.channel import Channel
@@ -24,6 +24,7 @@ from raiden.utils.typing import (
     TokenNetworkAddress,
 )
 from raiden_libs.database import BaseDatabase, hex256
+from utils import to_checksum_address
 
 log = structlog.get_logger(__name__)
 

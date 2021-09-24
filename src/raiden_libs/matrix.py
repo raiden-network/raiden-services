@@ -6,7 +6,6 @@ from urllib.parse import urlparse
 
 import gevent
 import structlog
-from eth_utils import to_checksum_address
 from gevent.event import AsyncResult, Event
 from gevent.greenlet import Greenlet
 from marshmallow import ValidationError
@@ -42,6 +41,7 @@ from raiden.utils.signer import LocalSigner
 from raiden.utils.typing import Address, ChainID, Set
 from raiden_contracts.utils.type_aliases import PrivateKey
 from raiden_libs.utils import MultiClientUserAddressManager
+from utils import to_checksum_address
 
 log = structlog.get_logger(__name__)
 

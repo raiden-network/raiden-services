@@ -5,7 +5,6 @@ from typing import List
 from unittest.mock import Mock, patch
 
 import pytest
-from eth_utils import to_checksum_address
 
 from pathfinding_service import metrics
 from pathfinding_service.model.token_network import PFSFeeUpdate
@@ -41,6 +40,7 @@ from raiden_libs.events import (
 )
 from raiden_libs.logging import format_to_hex
 from raiden_libs.states import BlockchainState
+from src.utils import to_checksum_address
 from tests.utils import save_metrics_state
 
 from ..libs.mocks.web3 import ContractMock, Web3Mock

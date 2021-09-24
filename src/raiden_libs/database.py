@@ -4,10 +4,11 @@ import sys
 from typing import Any, Dict, List
 
 import structlog
-from eth_utils import to_canonical_address, to_checksum_address
+from eth_utils import to_canonical_address
 
 from raiden.utils.typing import Address, BlockNumber, ChainID, TokenNetworkAddress
 from raiden_libs.states import BlockchainState
+from utils import to_checksum_address
 
 log = structlog.get_logger(__name__)
 
