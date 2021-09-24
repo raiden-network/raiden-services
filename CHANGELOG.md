@@ -1,5 +1,8 @@
 # Changelog
 
+### 0.18.0 (2021-09-24)
+* Add cache to `to_address_checksum` function
+
 ### 0.17.1 (2021-09-20)
 * Fix service URL registration when `ping` is not installed (https://github.com/raiden-network/raiden-services/issues/1065)
 
