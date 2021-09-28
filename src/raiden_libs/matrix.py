@@ -41,7 +41,8 @@ from raiden.utils.signer import LocalSigner
 from raiden.utils.typing import Address, ChainID, Set
 from raiden_contracts.utils.type_aliases import PrivateKey
 from raiden_libs.utils import MultiClientUserAddressManager
-from utils import to_checksum_address
+from raiden_libs.user_address import MultiClientUserAddressManager
+from raiden_libs.utils import to_checksum_address
 
 log = structlog.get_logger(__name__)
 

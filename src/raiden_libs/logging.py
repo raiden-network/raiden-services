@@ -8,7 +8,7 @@ from eth_utils import to_hex
 
 from raiden.messages.abstract import Message
 from raiden_libs.events import Event
-from utils import to_checksum_address
+from raiden_libs.utils import to_checksum_address
 
 
 def setup_logging(log_level: str, log_json: bool) -> None:
