@@ -37,7 +37,7 @@ from raiden_libs.matrix import (
     deserialize_messages,
     matrix_http_retry_delay,
 )
-from raiden_libs.utils import MultiClientUserAddressManager
+from raiden_libs.user_address import MultiClientUserAddressManager
 from tests.pathfinding.test_fee_updates import (
     PRIVATE_KEY_1,
     PRIVATE_KEY_1_ADDRESS,

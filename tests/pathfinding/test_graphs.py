@@ -21,7 +21,7 @@ from raiden.utils.typing import (
     TokenAmount,
     TokenNetworkAddress,
 )
-from src.utils import to_checksum_address
+from raiden_libs.utils import to_checksum_address
 from tests.pathfinding.utils import SimpleReachabilityContainer
 
 

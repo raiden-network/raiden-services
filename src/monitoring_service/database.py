@@ -26,7 +26,7 @@ from raiden.utils.typing import (
     TransactionHash,
 )
 from raiden_libs.database import BaseDatabase, hex256
-from utils import to_checksum_address
+from raiden_libs.utils import to_checksum_address
 
 SubEvent = Union[ActionMonitoringTriggeredEvent, ActionClaimRewardTriggeredEvent]
 

@@ -41,7 +41,7 @@ from raiden_libs.events import (
     ReceiveNonClosingBalanceProofUpdatedEvent,
     ReceiveTokenNetworkCreatedEvent,
 )
-from src.utils import to_checksum_address
+from raiden_libs.utils import to_checksum_address
 from tests.libs.mocks.web3 import Web3Mock
 from tests.monitoring.monitoring_service.factories import (
     DEFAULT_CHANNEL_IDENTIFIER,

@@ -8,7 +8,7 @@ from monitoring_service.database import Database
 from monitoring_service.states import Channel
 from raiden.storage.serialization.serializer import DictSerializer
 from raiden.utils.typing import Address
-from src.utils import to_checksum_address
+from raiden_libs.utils import to_checksum_address
 
 
 def test_invalid_request(ms_database, build_request_monitoring, request_collector):

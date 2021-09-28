@@ -14,7 +14,7 @@ from monitoring_service import metrics
 from monitoring_service.constants import API_PATH, DEFAULT_INFO_MESSAGE
 from monitoring_service.service import MonitoringService
 from raiden_libs.api import ApiWithErrorHandler
-from utils import to_checksum_address
+from raiden_libs.utils import to_checksum_address
 
 log = structlog.get_logger(__name__)
 

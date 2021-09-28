@@ -40,7 +40,7 @@ from raiden_libs.events import (
 )
 from raiden_libs.logging import format_to_hex
 from raiden_libs.states import BlockchainState
-from src.utils import to_checksum_address
+from raiden_libs.utils import to_checksum_address
 from tests.utils import save_metrics_state
 
 from ..libs.mocks.web3 import ContractMock, Web3Mock

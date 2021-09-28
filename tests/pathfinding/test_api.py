@@ -27,8 +27,7 @@ from raiden.utils.typing import (
 )
 from raiden_contracts.tests.utils import get_random_privkey
 from raiden_contracts.utils.type_aliases import PrivateKey
-from raiden_libs.utils import private_key_to_address
-from src.utils import to_checksum_address
+from raiden_libs.utils import private_key_to_address, to_checksum_address
 from tests.pathfinding.test_database import db_has_feedback_for
 from tests.pathfinding.utils import get_address_metadata, get_user_id_from_address
 

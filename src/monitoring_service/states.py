@@ -27,7 +27,7 @@ from raiden_contracts.constants import ChannelState, MessageTypeId
 from raiden_contracts.utils.proofs import pack_balance_proof, pack_reward_proof
 from raiden_contracts.utils.type_aliases import PrivateKey
 from raiden_libs.states import BlockchainState
-from utils import to_checksum_address
+from raiden_libs.utils import to_checksum_address
 
 
 @dataclass

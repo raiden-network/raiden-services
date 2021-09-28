@@ -30,7 +30,7 @@ from raiden_libs.constants import (
     DEFAULT_API_PORT_MS,
     DEFAULT_POLL_INTERVALL,
 )
-from utils import to_checksum_address
+from raiden_libs.utils import to_checksum_address
 
 log = structlog.get_logger(__name__)
 

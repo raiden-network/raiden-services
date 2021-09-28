@@ -50,7 +50,7 @@ from raiden_libs.blockchain import get_pessimistic_udc_balance
 from raiden_libs.constants import UDC_SECURITY_MARGIN_FACTOR_PFS
 from raiden_libs.exceptions import ApiException
 from raiden_libs.marshmallow import ChecksumAddress, HexedBytes
-from utils import to_checksum_address
+from raiden_libs.utils import to_checksum_address
 
 log = structlog.get_logger(__name__)
 T = TypeVar("T")

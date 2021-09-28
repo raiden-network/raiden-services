@@ -26,8 +26,7 @@ from raiden.utils.typing import (
 )
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
 from raiden_contracts.utils.type_aliases import PrivateKey
-from raiden_libs.utils import private_key_to_address
-from src.utils import to_checksum_address
+from raiden_libs.utils import private_key_to_address, to_checksum_address
 
 from ...libs.mocks.web3 import Web3Mock
 from ..utils import SimpleReachabilityContainer

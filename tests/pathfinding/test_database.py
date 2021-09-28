@@ -25,7 +25,7 @@ from raiden.utils.typing import (
     TokenAmount,
     TokenNetworkAddress,
 )
-from src.utils import to_checksum_address
+from raiden_libs.utils import to_checksum_address
 
 
 def db_has_feedback_for(database: PFSDatabase, token: FeedbackToken, route: List[Address]) -> bool:

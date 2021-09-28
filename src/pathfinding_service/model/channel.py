@@ -19,7 +19,7 @@ from raiden.utils.typing import (
     TokenNetworkAddress,
 )
 from raiden_libs.marshmallow import ChecksumAddress
-from utils import to_checksum_address
+from raiden_libs.utils import to_checksum_address
 
 
 @dataclass

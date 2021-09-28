@@ -18,7 +18,7 @@ from raiden_contracts.constants import (
 )
 from raiden_contracts.utils.type_aliases import PrivateKey
 from raiden_libs.constants import DEFAULT_API_HOST
-from src.utils import to_checksum_address
+from raiden_libs.utils import to_checksum_address
 from tests.libs.mocks.web3 import Web3Mock
 
 

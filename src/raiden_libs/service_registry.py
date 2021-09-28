@@ -33,8 +33,7 @@ from raiden_libs.blockchain import get_web3_provider_info
 from raiden_libs.cli import blockchain_options, common_options, validate_address
 from raiden_libs.constants import CONFIRMATION_OF_UNDERSTANDING
 from raiden_libs.contract_info import CONTRACT_MANAGER
-from raiden_libs.utils import private_key_to_address
-from utils import to_checksum_address
+from raiden_libs.utils import private_key_to_address, to_checksum_address
 
 log = structlog.get_logger(__name__)
 
