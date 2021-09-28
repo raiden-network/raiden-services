@@ -1,6 +1,8 @@
-from gevent import monkey  # isort:skip # noqa
+from gevent import monkey
 
-monkey.patch_all(subprocess=False, thread=False)  # isort:skip # noqa
+monkey.patch_all(subprocess=False, thread=False)
+
+# isort: split
 
 from typing import Dict, List
 
@@ -8,14 +10,18 @@ import click
 import gevent
 import structlog
 from eth_utils import to_canonical_address
-from web3 import Web3
+from jaeger_client import Config
+from opentracing.scope_managers.gevent import GeventScopeManager
+from requests_opentracing import SessionTracing
+from web3 import HTTPProvider, Web3
+from web3._utils.request import cache_session
 from web3.contract import Contract
 
 from pathfinding_service.api import PFSApi
 from pathfinding_service.constants import DEFAULT_INFO_MESSAGE, PFS_DISCLAIMER, PFS_START_TIMEOUT
 from pathfinding_service.service import PathfindingService
 from raiden.settings import DEFAULT_NUMBER_OF_BLOCK_CONFIRMATIONS
-from raiden.utils.typing import BlockNumber, BlockTimeout, TokenAmount
+from raiden.utils.typing import MYPY_ANNOTATION, BlockNumber, BlockTimeout, TokenAmount
 from raiden_contracts.constants import (
     CONTRACT_ONE_TO_N,
     CONTRACT_TOKEN_NETWORK_REGISTRY,
@@ -60,7 +66,6 @@ log = structlog.get_logger(__name__)
     type=click.IntRange(min=0),
     help="Number of block confirmations to wait for",
 )
-@click.option("--enable-debug", default=False, is_flag=True, hidden=True)
 @click.option("--operator", default="John Doe", type=str, help="Name of the service operator")
 @click.option(
     "--info-message",
@@ -81,6 +86,10 @@ log = structlog.get_logger(__name__)
     help="Bypass the experimental software disclaimer prompt",
     is_flag=True,
 )
+@click.option("--enable-debug", is_flag=True, hidden=True)
+@click.option("--enable-tracing", is_flag=True, hidden=True)
+@click.option("--tracing-sampler", default="const", hidden=True)
+@click.option("--tracing-param", default="1", hidden=True)
 @common_options("raiden-pathfinding-service")
 def main(  # pylint: disable=too-many-arguments,too-many-locals
     private_key: PrivateKey,
@@ -97,6 +106,9 @@ def main(  # pylint: disable=too-many-arguments,too-many-locals
     enable_debug: bool,
     matrix_server: List[str],
     accept_disclaimer: bool,
+    enable_tracing: bool,
+    tracing_sampler: str,
+    tracing_param: str,
 ) -> int:
     """The Pathfinding service for the Raiden Network."""
     log.info("Starting Raiden Pathfinding Service")
@@ -108,6 +120,24 @@ def main(  # pylint: disable=too-many-arguments,too-many-locals
         name: to_checksum_address(contract.address) for name, contract in contracts.items()
     }
     log.info("Contract information", addresses=hex_addresses, start_block=start_block)
+
+    if enable_tracing:
+        tracing_config = Config(
+            config={"sampler": {"type": tracing_sampler, "param": tracing_param}, "logging": True},
+            service_name="pfs",
+            scope_manager=GeventScopeManager(),
+            validate=True,
+        )
+        # Tracer is stored in `opentracing.tracer`
+        tracing_config.initialize_tracer()
+
+        assert isinstance(web3.provider, HTTPProvider), MYPY_ANNOTATION
+        assert web3.provider.endpoint_uri is not None, MYPY_ANNOTATION
+        # Set `Web3` requests Session to use `SessionTracing`
+        cache_session(
+            web3.provider.endpoint_uri,
+            SessionTracing(propagate=False, span_tags={"target": "ethnode"}),
+        )
 
     service = None
     api = None
@@ -121,6 +151,7 @@ def main(  # pylint: disable=too-many-arguments,too-many-locals
             poll_interval=DEFAULT_POLL_INTERVALL,
             db_filename=state_db,
             matrix_servers=matrix_server,
+            enable_tracing=enable_tracing,
         )
         service.start()
         log.debug("Waiting for service to start before accepting API requests")
@@ -137,6 +168,7 @@ def main(  # pylint: disable=too-many-arguments,too-many-locals
             one_to_n_address=to_canonical_address(contracts[CONTRACT_ONE_TO_N].address),
             operator=operator,
             info_message=info_message,
+            enable_tracing=enable_tracing,
         )
         api.run(host=host, port=port)
 

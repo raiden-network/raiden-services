@@ -1,6 +1,8 @@
-from gevent import monkey  # isort:skip # noqa
+from gevent import monkey
 
-monkey.patch_all(subprocess=False, thread=False)  # isort:skip # noqa
+monkey.patch_all(subprocess=False, thread=False)
+
+# isort: split
 
 from typing import Dict
 

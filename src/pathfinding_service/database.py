@@ -41,16 +41,18 @@ class PFSDatabase(BaseDatabase):
         pfs_address: Address,
         sync_start_block: BlockNumber = BlockNumber(0),
         allow_create: bool = False,
+        enable_tracing: bool = False,
         **contract_addresses: Address,
     ):
-        super().__init__(filename, allow_create=allow_create)
+        super().__init__(filename, allow_create=allow_create, enable_tracing=enable_tracing)
         self.pfs_address = pfs_address
 
         # Keep the journal around and skip inode updates.
         # References:
         # https://sqlite.org/atomiccommit.html#_persistent_rollback_journals
         # https://sqlite.org/pragma.html#pragma_journal_mode
-        self.conn.execute("PRAGMA journal_mode=PERSIST")
+        with self._cursor() as cursor:
+            cursor.execute("PRAGMA journal_mode=PERSIST")
 
         self._setup(
             chain_id=chain_id,
@@ -77,32 +79,35 @@ class PFSDatabase(BaseDatabase):
         token_network_address: TokenNetworkAddress,
         channel_id: int,
     ) -> Tuple[TokenAmount, TokenAmount]:
-        capacity_list = self.conn.execute(
-            """
-            SELECT updating_capacity, other_capacity
-            FROM capacity_update WHERE updating_participant=?
-            AND token_network_address=?
-            AND channel_id=?
-        """,
-            [
-                to_checksum_address(updating_participant),
-                to_checksum_address(token_network_address),
-                hex256(channel_id),
-            ],
-        )
-        try:
-            return next(capacity_list)
-        except StopIteration:
-            return TokenAmount(0), TokenAmount(0)
+        with self._cursor() as cursor:
+            capacity_list = cursor.execute(
+                """
+                SELECT updating_capacity, other_capacity
+                FROM capacity_update WHERE updating_participant=?
+                AND token_network_address=?
+                AND channel_id=?
+            """,
+                [
+                    to_checksum_address(updating_participant),
+                    to_checksum_address(token_network_address),
+                    hex256(channel_id),
+                ],
+            )
+            try:
+                return next(capacity_list)
+            except StopIteration:
+                return TokenAmount(0), TokenAmount(0)
 
     def get_latest_committed_block(self) -> BlockNumber:
-        return self.conn.execute("SELECT latest_committed_block FROM blockchain").fetchone()[0]
+        with self._cursor() as cursor:
+            return cursor.execute("SELECT latest_committed_block FROM blockchain").fetchone()[0]
 
     def update_lastest_committed_block(self, latest_committed_block: BlockNumber) -> None:
         log.info("Updating latest_committed_block", latest_committed_block=latest_committed_block)
-        self.conn.execute(
-            "UPDATE blockchain SET latest_committed_block = ?", [latest_committed_block]
-        )
+        with self._cursor() as cursor:
+            cursor.execute(
+                "UPDATE blockchain SET latest_committed_block = ?", [latest_committed_block]
+            )
 
     def upsert_iou(self, iou: IOU) -> None:
         iou_dict = IOU.Schema(exclude=["receiver", "chain_id"]).dump(iou)
@@ -145,10 +150,11 @@ class PFSDatabase(BaseDatabase):
             query += " AND amount >= ?"
             args.append(hex256(amount_at_least))
 
-        for row in self.conn.execute(query, args):
-            iou_dict = dict(zip(row.keys(), row))
-            iou_dict["receiver"] = to_checksum_address(self.pfs_address)
-            yield IOU.Schema().load(iou_dict)
+        with self._cursor() as cursor:
+            for row in cursor.execute(query, args):
+                iou_dict = dict(zip(row.keys(), row))
+                iou_dict["receiver"] = to_checksum_address(self.pfs_address)
+                yield IOU.Schema().load(iou_dict)
 
     def get_nof_claimed_ious(self) -> int:
         query = """
@@ -156,9 +162,10 @@ class PFSDatabase(BaseDatabase):
             FROM iou
             where claimed
         """
-        result = self.conn.execute(query)
-        nof_claimed_ious = result.fetchone()
-        assert result.fetchone() is None
+        with self._cursor() as cursor:
+            result = cursor.execute(query)
+            nof_claimed_ious = result.fetchone()
+            assert result.fetchone() is None
         return nof_claimed_ious["COUNT(*)"]
 
     def get_iou(
@@ -190,11 +197,12 @@ class PFSDatabase(BaseDatabase):
         self.upsert("channel", channel_dict)
 
     def get_channels(self) -> Iterator[Channel]:
-        for row in self.conn.execute("SELECT * FROM channel"):
-            channel_dict = dict(zip(row.keys(), row))
-            channel_dict["fee_schedule1"] = json.loads(channel_dict["fee_schedule1"])
-            channel_dict["fee_schedule2"] = json.loads(channel_dict["fee_schedule2"])
-            yield Channel.Schema().load(channel_dict)
+        with self._cursor() as cursor:
+            for row in cursor.execute("SELECT * FROM channel"):
+                channel_dict = dict(zip(row.keys(), row))
+                channel_dict["fee_schedule1"] = json.loads(channel_dict["fee_schedule1"])
+                channel_dict["fee_schedule2"] = json.loads(channel_dict["fee_schedule2"])
+                yield Channel.Schema().load(channel_dict)
 
     def delete_channel(
         self, token_network_address: TokenNetworkAddress, channel_id: ChannelID
@@ -207,19 +215,21 @@ class PFSDatabase(BaseDatabase):
 
         Returns: `True` if the channel was deleted, `False` if it did not exist
         """
-        cursor = self.conn.execute(
-            "DELETE FROM channel WHERE token_network_address = ? AND channel_id = ?",
-            [to_checksum_address(token_network_address), hex256(channel_id)],
-        )
-        assert cursor.rowcount <= 1, "Did delete more than one channel"
+        with self._cursor() as cursor:
+            cursor.execute(
+                "DELETE FROM channel WHERE token_network_address = ? AND channel_id = ?",
+                [to_checksum_address(token_network_address), hex256(channel_id)],
+            )
+            assert cursor.rowcount <= 1, "Did delete more than one channel"
 
-        return cursor.rowcount == 1
+            return cursor.rowcount == 1
 
     def get_token_networks(self) -> Iterator[TokenNetwork]:
-        for row in self.conn.execute("SELECT address FROM token_network"):
-            yield TokenNetwork(
-                token_network_address=TokenNetworkAddress(to_canonical_address(row[0]))
-            )
+        with self._cursor() as cursor:
+            for row in cursor.execute("SELECT address FROM token_network"):
+                yield TokenNetwork(
+                    token_network_address=TokenNetworkAddress(to_canonical_address(row[0]))
+                )
 
     def prepare_feedback(
         self, token: FeedbackToken, route: List[Address], estimated_fee: FeeAmount
@@ -245,20 +255,21 @@ class PFSDatabase(BaseDatabase):
             successful=successful,
             feedback_time=datetime.utcnow(),
         )
-        updated_rows = self.conn.execute(
-            """
-            UPDATE feedback
-            SET
-                successful = :successful,
-                feedback_time = :feedback_time
-            WHERE
-                token_id = :token_id AND
-                token_network_address = :token_network_address AND
-                route = :route AND
-                successful IS NULL;
-        """,
-            token_dict,
-        ).rowcount
+        with self._cursor() as cursor:
+            updated_rows = cursor.execute(
+                """
+                UPDATE feedback
+                SET
+                    successful = :successful,
+                    feedback_time = :feedback_time
+                WHERE
+                    token_id = :token_id AND
+                    token_network_address = :token_network_address AND
+                    route = :route AND
+                    successful IS NULL;
+            """,
+                token_dict,
+            ).rowcount
 
         return updated_rows
 
@@ -289,23 +300,29 @@ class PFSDatabase(BaseDatabase):
                 {where_clause}
         """
 
-        for row in self.conn.execute(sql, filters):
-            route = dict(zip(row.keys(), row))
-            route["route"] = json.loads(route["route"])
-            yield route
+        with self._cursor() as cursor:
+            for row in cursor.execute(sql, filters):
+                route = dict(zip(row.keys(), row))
+                route["route"] = json.loads(route["route"])
+                yield route
 
     def get_feedback_token(
         self, token_id: UUID, token_network_address: TokenNetworkAddress, route: List[Address]
     ) -> Optional[FeedbackToken]:
         hexed_route = [to_checksum_address(e) for e in route]
-        token = self.conn.execute(
-            """SELECT * FROM feedback WHERE
-                token_id = ? AND
-                token_network_address = ? AND
-                route = ?;
-            """,
-            [token_id.hex, to_checksum_address(token_network_address), json.dumps(hexed_route)],
-        ).fetchone()
+        with self._cursor() as cursor:
+            token = cursor.execute(
+                """SELECT * FROM feedback WHERE
+                    token_id = ? AND
+                    token_network_address = ? AND
+                    route = ?;
+                """,
+                [
+                    token_id.hex,
+                    to_checksum_address(token_network_address),
+                    json.dumps(hexed_route),
+                ],
+            ).fetchone()
 
         if token:
             return FeedbackToken(
@@ -327,7 +344,8 @@ class PFSDatabase(BaseDatabase):
         elif only_successful:
             where_clause = "WHERE successful"
 
-        return self.conn.execute(f"SELECT COUNT(*) FROM feedback {where_clause};").fetchone()[0]
+        with self._cursor() as cursor:
+            return cursor.execute(f"SELECT COUNT(*) FROM feedback {where_clause};").fetchone()[0]
 
     def insert_waiting_message(self, message: DeferableMessage) -> None:
         self.insert(
@@ -346,17 +364,19 @@ class PFSDatabase(BaseDatabase):
     ) -> Iterator[DeferableMessage]:
         """Return all waiting messages for the given channel and delete them from the db"""
         # Return messages
-        for row in self.conn.execute(
-            """
-            SELECT message FROM waiting_message
-            WHERE token_network_address = ? AND channel_id = ?
-            """,
-            [to_checksum_address(token_network_address), hex256(channel_id)],
-        ):
-            yield JSONSerializer.deserialize(row["message"])
+        with self._cursor() as cursor:
+            for row in cursor.execute(
+                """
+                SELECT message FROM waiting_message
+                WHERE token_network_address = ? AND channel_id = ?
+                """,
+                [to_checksum_address(token_network_address), hex256(channel_id)],
+            ):
+                yield JSONSerializer.deserialize(row["message"])
 
-        # Delete returned messages
-        self.conn.execute(
-            "DELETE FROM waiting_message WHERE token_network_address = ? AND channel_id = ?",
-            [to_checksum_address(token_network_address), hex256(channel_id)],
-        )
+        with self._cursor() as cursor:
+            # Delete returned messages
+            cursor.execute(
+                "DELETE FROM waiting_message WHERE token_network_address = ? AND channel_id = ?",
+                [to_checksum_address(token_network_address), hex256(channel_id)],
+            )

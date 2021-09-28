@@ -67,6 +67,7 @@ class PathfindingService(gevent.Greenlet):
         required_confirmations: BlockTimeout,
         poll_interval: float,
         matrix_servers: Optional[List[str]] = None,
+        enable_tracing: bool = False,
     ):
         super().__init__()
 
@@ -79,6 +80,7 @@ class PathfindingService(gevent.Greenlet):
         self.required_confirmations = required_confirmations
         self._poll_interval = poll_interval
         self._is_running = gevent.event.Event()
+        self._enable_tracing = enable_tracing
 
         log.info("PFS payment address", address=self.address)
 
@@ -90,6 +92,7 @@ class PathfindingService(gevent.Greenlet):
             chain_id=self.chain_id,
             user_deposit_contract_address=to_canonical_address(self.user_deposit_contract.address),
             allow_create=True,
+            enable_tracing=enable_tracing,
         )
 
         self.blockchain_state = BlockchainState(
@@ -104,6 +107,7 @@ class PathfindingService(gevent.Greenlet):
             device_id=DeviceIDs.PFS,
             message_received_callback=self.handle_message,
             servers=matrix_servers,
+            enable_tracing=enable_tracing,
         )
 
         self.token_networks = self._load_token_networks()
