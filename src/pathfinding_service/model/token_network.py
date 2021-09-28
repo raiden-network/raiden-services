@@ -5,6 +5,7 @@ from itertools import islice
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
 import networkx as nx
+import opentracing
 import structlog
 from networkx import DiGraph
 from networkx.exception import NetworkXNoPath, NodeNotFound
@@ -54,15 +55,17 @@ def window(seq: Sequence, n: int = 2) -> Iterable[tuple]:
 
 def prune_graph(graph: DiGraph, reachability_state: AddressReachabilityProtocol) -> DiGraph:
     """Prunes the given `graph` of all channels where the participants are not  reachable."""
-    pruned_graph = DiGraph()
-    for p1, p2 in graph.edges:
-        nodes_online = (
-            reachability_state.get_address_reachability(p1) == AddressReachability.REACHABLE
-            and reachability_state.get_address_reachability(p2) == AddressReachability.REACHABLE
-        )
-        if nodes_online:
-            pruned_graph.add_edge(p1, p2, view=graph[p1][p2]["view"])
-            pruned_graph.add_edge(p2, p1, view=graph[p2][p1]["view"])
+    with opentracing.tracer.start_span("prune_graph"):
+        pruned_graph = DiGraph()
+        for p1, p2 in graph.edges:
+            nodes_online = (
+                reachability_state.get_address_reachability(p1) == AddressReachability.REACHABLE
+                and reachability_state.get_address_reachability(p2)
+                == AddressReachability.REACHABLE
+            )
+            if nodes_online:
+                pruned_graph.add_edge(p1, p2, view=graph[p1][p2]["view"])
+                pruned_graph.add_edge(p2, p1, view=graph[p2][p1]["view"])
 
     return pruned_graph
 
@@ -415,32 +418,37 @@ class TokenNetwork:
         disallowed_paths: List[List[Address]],
         fee_penalty: float,
     ) -> Optional[Path]:
-        # update edge weights
-        for node1, node2 in graph.edges():
-            edge = graph[node1][node2]
-            backwards_edge = graph[node2][node1]
-            edge["weight"] = self.edge_weight(
-                visited=visited,
-                view=edge["view"],
-                view_from_partner=backwards_edge["view"],
-                amount=value,
-                fee_penalty=fee_penalty,
-            )
+        with opentracing.tracer.start_span("update_weights"):
+            # update edge weights
+            for node1, node2 in graph.edges():
+                edge = graph[node1][node2]
+                backwards_edge = graph[node2][node1]
+                edge["weight"] = self.edge_weight(
+                    visited=visited,
+                    view=edge["view"],
+                    view_from_partner=backwards_edge["view"],
+                    amount=value,
+                    fee_penalty=fee_penalty,
+                )
 
-        # find next path
-        all_paths: Iterable[List[Address]] = nx.shortest_simple_paths(
-            G=graph, source=source, target=target, weight="weight"
-        )
-        try:
-            # skip duplicates and invalid paths
-            path = next(
-                p
-                for p in (Path(self.G, nodes, value, reachability_state) for nodes in all_paths)
-                if p.is_valid and p.nodes not in disallowed_paths
+        with opentracing.tracer.start_span("find_paths"):
+            # find next path
+            all_paths: Iterable[List[Address]] = nx.shortest_simple_paths(
+                G=graph, source=source, target=target, weight="weight"
             )
-            return path
-        except StopIteration:
-            return None
+        with opentracing.tracer.start_span("deduplicate_paths"):
+            try:
+                # skip duplicates and invalid paths
+                path = next(
+                    p
+                    for p in (
+                        Path(self.G, nodes, value, reachability_state) for nodes in all_paths
+                    )
+                    if p.is_valid and p.nodes not in disallowed_paths
+                )
+                return path
+            except StopIteration:
+                return None
 
     def check_path_request_errors(
         self,
@@ -451,43 +459,54 @@ class TokenNetwork:
     ) -> Optional[str]:
         """Checks for basic problems with the path requests. Returns error message or `None`"""
 
-        if reachability_state.get_address_reachability(source) != AddressReachability.REACHABLE:
-            return "Source not online"
+        with opentracing.tracer.start_span("check_path_request_errors"):
+            if (
+                reachability_state.get_address_reachability(source)
+                is not AddressReachability.REACHABLE
+            ):
+                return "Source not online"
 
-        if reachability_state.get_address_reachability(target) != AddressReachability.REACHABLE:
-            return "Target not online"
+            if (
+                reachability_state.get_address_reachability(target)
+                is not AddressReachability.REACHABLE
+            ):
+                return "Target not online"
 
-        if not any(self.G.edges(source)):
-            return "No channel from source"
-        if not any(self.G.edges(target)):
-            return "No channel to target"
+            if not any(self.G.edges(source)):
+                return "No channel from source"
+            if not any(self.G.edges(target)):
+                return "No channel to target"
 
-        source_capacities = [view.capacity for _, _, view in self.G.out_edges(source, data="view")]
-        if max(source_capacities) < value:
-            debug_capacities = [
-                (to_checksum_address(a), to_checksum_address(b), view.capacity)
-                for a, b, view in self.G.out_edges(source, data="view")
+            source_capacities = [
+                view.capacity for _, _, view in self.G.out_edges(source, data="view")
             ]
-            log.debug("Insufficient capacities", capacities=debug_capacities)
-            message = (
-                f"Source does not have a channel with sufficient capacity "
-                f"(current capacities: {source_capacities} < requested amount: "
-                f" {value})"
-            )
-            return message
-        target_capacities = [view.capacity for _, _, view in self.G.in_edges(target, data="view")]
-        if max(target_capacities) < value:
-            return "Target does not have a channel with sufficient capacity (%s < %s)" % (
-                target_capacities,
-                value,
-            )
+            if max(source_capacities) < value:
+                debug_capacities = [
+                    (to_checksum_address(a), to_checksum_address(b), view.capacity)
+                    for a, b, view in self.G.out_edges(source, data="view")
+                ]
+                log.debug("Insufficient capacities", capacities=debug_capacities)
+                message = (
+                    f"Source does not have a channel with sufficient capacity "
+                    f"(current capacities: {source_capacities} < requested amount: "
+                    f" {value})"
+                )
+                return message
+            target_capacities = [
+                view.capacity for _, _, view in self.G.in_edges(target, data="view")
+            ]
+            if max(target_capacities) < value:
+                return "Target does not have a channel with sufficient capacity (%s < %s)" % (
+                    target_capacities,
+                    value,
+                )
 
-        try:
-            next(nx.shortest_simple_paths(G=self.G, source=source, target=target))
-        except NetworkXNoPath:
-            return "No route from source to target"
+            try:
+                next(nx.shortest_simple_paths(G=self.G, source=source, target=target))
+            except NetworkXNoPath:
+                return "No route from source to target"
 
-        return None
+            return None
 
     def get_paths(  # pylint: disable=too-many-arguments, too-many-locals
         self,
@@ -574,8 +593,9 @@ class TokenNetwork:
     ) -> List[Dict[str, Any]]:
         """Suggest good partners for Raiden nodes joining the token network"""
 
-        # centrality
-        centrality_of_node = nx.algorithms.centrality.closeness_centrality(self.G)
+        with opentracing.tracer.start_span("find_centrality"):
+            # centrality
+            centrality_of_node = nx.algorithms.centrality.closeness_centrality(self.G)
 
         # uptime, only include online nodes
         uptime_of_node = {}

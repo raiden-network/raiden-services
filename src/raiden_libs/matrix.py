@@ -40,7 +40,7 @@ from raiden.utils.cli import get_matrix_servers
 from raiden.utils.signer import LocalSigner
 from raiden.utils.typing import Address, ChainID, Set
 from raiden_contracts.utils.type_aliases import PrivateKey
-from raiden_libs.utils import MultiClientUserAddressManager
+from raiden_libs.tracing import matrix_client_enable_requests_tracing
 from raiden_libs.user_address import MultiClientUserAddressManager
 from raiden_libs.utils import to_checksum_address
 
@@ -131,6 +131,7 @@ class MatrixListener(gevent.Greenlet):
         device_id: DeviceIDs,
         message_received_callback: Callable[[Message], None],
         servers: Optional[List[str]] = None,
+        enable_tracing: bool = False,
     ) -> None:
         super().__init__()
 
@@ -145,6 +146,7 @@ class MatrixListener(gevent.Greenlet):
             chain_id=self.chain_id,
             private_key=private_key,
             handle_matrix_sync=self._handle_matrix_sync,
+            enable_tracing=enable_tracing,
         )
 
         self.base_url = self._client.api.base_url
@@ -254,6 +256,7 @@ class ClientManager:
         chain_id: ChainID,
         private_key: bytes,
         handle_matrix_sync: Callable[[List[MatrixMessage]], bool],
+        enable_tracing: bool = False,
     ):
         self.user_manager: Optional[MultiClientUserAddressManager] = None
         self.local_signer = LocalSigner(private_key=private_key)
@@ -261,6 +264,7 @@ class ClientManager:
         self.chain_id = chain_id
         self.stop_event = Event()
         self.stop_event.set()
+        self._enable_tracing = enable_tracing
 
         try:
             matrix_known_servers_url = os.environ.get(
@@ -300,6 +304,8 @@ class ClientManager:
             http_retry_timeout=40,
             http_retry_delay=matrix_http_retry_delay,
         )
+        if enable_tracing:
+            matrix_client_enable_requests_tracing(self.main_client)
         self.server_url_to_other_clients: Dict[str, GMatrixClient] = {}
         self.connect_client_workers: Set[Greenlet] = set()
 
@@ -384,6 +390,8 @@ class ClientManager:
                 http_retry_timeout=40,
                 http_retry_delay=matrix_http_retry_delay,
             )
+            if self._enable_tracing:
+                matrix_client_enable_requests_tracing(client)
 
             self.server_url_to_other_clients[server_url] = client
             log.debug("Created client for other server", server_url=server_url)

@@ -5,10 +5,12 @@ from typing import Any, ClassVar, Dict, List, Optional, Tuple, Type, TypeVar, Un
 from uuid import UUID
 
 import marshmallow
+import opentracing
 import pkg_resources
 import structlog
 from eth_utils import is_checksum_address, is_same_address, to_canonical_address
 from flask import Flask, Response, request
+from flask_opentracing import FlaskTracing
 from flask_restful import Resource
 from gevent.pywsgi import WSGIServer
 from marshmallow import fields
@@ -208,15 +210,16 @@ def create_and_store_feedback_tokens(
     token_network_address: TokenNetworkAddress,
     routes: List[Path],
 ) -> FeedbackToken:
-    feedback_token = FeedbackToken(token_network_address=token_network_address)
+    with opentracing.tracer.start_span("store_feedback_token"):
+        feedback_token = FeedbackToken(token_network_address=token_network_address)
 
-    # TODO: use executemany here
-    for route in routes:
-        pathfinding_service.database.prepare_feedback(
-            token=feedback_token, route=route.nodes, estimated_fee=route.estimated_fee
-        )
+        # TODO: use executemany here
+        for route in routes:
+            pathfinding_service.database.prepare_feedback(
+                token=feedback_token, route=route.nodes, estimated_fee=route.estimated_fee
+            )
 
-    return feedback_token
+        return feedback_token
 
 
 def process_payment(  # pylint: disable=too-many-branches
@@ -436,6 +439,9 @@ class InfoResource2(PathfinderResource):
     contracts_version = pkg_resources.get_distribution("raiden-contracts").version
 
     def get(self) -> Tuple[dict, int]:
+
+        _ = self.pathfinding_service.web3.eth.block_number
+
         info = {
             "price_info": str(self.api.service_fee),
             "network_info": {
@@ -639,7 +645,7 @@ class DebugStatsResource(PathfinderResource):
 
 
 class PFSApi:
-    # pylint: disable=too-many-instance-attributes
+    # pylint: disable=too-many-instance-attributes,too-many-arguments
     # Nine is reasonable in this case.
 
     def __init__(
@@ -650,8 +656,12 @@ class PFSApi:
         info_message: str = DEFAULT_INFO_MESSAGE,
         service_fee: TokenAmount = TokenAmount(0),
         debug_mode: bool = False,
+        enable_tracing: bool = False,
     ) -> None:
         flask_app = Flask(__name__)
+
+        if enable_tracing:
+            FlaskTracing(opentracing.tracer, trace_all_requests=True, app=flask_app)
 
         self.flask_app = DispatcherMiddleware(
             NotFound(),
@@ -727,7 +737,7 @@ class PFSApi:
         for endpoint_url, resource, kwargs, endpoint in resources:
             kwargs.update({"pathfinding_service": pathfinding_service, "api": self})
             self.api.add_resource(
-                resource, endpoint_url, resource_class_kwargs=kwargs, endpoint=endpoint
+                resource, endpoint_url, resource_class_kwargs=kwargs, endpoint=f"rest-{endpoint}"
             )
 
     def run(self, host: str, port: int) -> None:

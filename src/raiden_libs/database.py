@@ -1,9 +1,12 @@
 import os
 import sqlite3
 import sys
-from typing import Any, Dict, List
+from contextlib import closing, contextmanager
+from sqlite3 import Cursor
+from typing import Any, ContextManager, Dict, List
 
 import structlog
+from dbapi_opentracing import ConnectionTracing
 from eth_utils import to_canonical_address
 
 from raiden.utils.typing import Address, BlockNumber, ChainID, TokenNetworkAddress
@@ -51,7 +54,7 @@ class BaseDatabase:
 
     schema_filename: str
 
-    def __init__(self, filename: str, allow_create: bool = False):
+    def __init__(self, filename: str, allow_create: bool = False, enable_tracing: bool = False):
         log.info("Opening database", filename=filename)
         if filename == ":memory:":
             self.conn = sqlite3.connect(
@@ -72,6 +75,14 @@ class BaseDatabase:
         self.conn.row_factory = sqlite3.Row
         self.conn.execute("PRAGMA foreign_keys = ON")
 
+        if enable_tracing:
+            self.conn = ConnectionTracing(self.conn)
+
+    @contextmanager
+    def _cursor(self) -> ContextManager[Cursor]:
+        with closing(self.conn.cursor()) as cursor:
+            yield cursor
+
     def _setup(
         self,
         chain_id: ChainID,
@@ -85,9 +96,10 @@ class BaseDatabase:
             con: to_checksum_address(addr) for con, addr in contract_addresses.items()
         }
 
-        initialized = self.conn.execute(
-            "SELECT name FROM sqlite_master WHERE type='table' AND name='blockchain'"
-        ).fetchone()
+        with self._cursor() as cursor:
+            initialized = cursor.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='blockchain'"
+            ).fetchone()
         settings = dict(chain_id=chain_id, receiver=to_checksum_address(receiver), **hex_addresses)
 
         if initialized:
@@ -95,7 +107,8 @@ class BaseDatabase:
         else:
             # create db schema
             with open(self.schema_filename, encoding="utf-8") as schema_file:
-                self.conn.executescript(schema_file.read())
+                with self._cursor() as cursor:
+                    cursor.executescript(schema_file.read())
             update_stmt = "UPDATE blockchain SET {}".format(
                 ",".join(
                     f"{key} = :{key}"
@@ -103,21 +116,23 @@ class BaseDatabase:
                     + list(hex_addresses)
                 )
             )
-            self.conn.execute(
-                update_stmt, dict(latest_committed_block=sync_start_block, **settings)
-            )
+            with self._cursor() as cursor:
+                cursor.execute(
+                    update_stmt, dict(latest_committed_block=sync_start_block, **settings)
+                )
 
     def _check_settings(
         self, new_settings: Dict[str, Any], contract_addresses: Dict[str, str]
     ) -> None:
-        old_settings = self.conn.execute(
-            f"""
-            SELECT chain_id,
-                   {''.join(colname + ',' for colname in contract_addresses)}
-                   receiver
-            FROM blockchain
-        """
-        ).fetchone()
+        with self._cursor() as cursor:
+            old_settings = cursor.execute(
+                f"""
+                SELECT chain_id,
+                       {''.join(colname + ',' for colname in contract_addresses)}
+                       receiver
+                FROM blockchain
+            """
+            ).fetchone()
         for key, val in new_settings.items():
             old = old_settings[key]
             if old != val:
@@ -134,15 +149,17 @@ class BaseDatabase:
     ) -> sqlite3.Cursor:
         cols = ", ".join(fields_by_colname.keys())
         values = ", ".join(":" + col_name for col_name in fields_by_colname)
-        return self.conn.execute(
-            f"{keyword} INTO {table_name}({cols}) VALUES ({values})", fields_by_colname
-        )
+        with self._cursor() as cursor:
+            return cursor.execute(
+                f"{keyword} INTO {table_name}({cols}) VALUES ({values})", fields_by_colname
+            )
 
     def upsert(self, table_name: str, fields_by_colname: Dict[str, Any]) -> sqlite3.Cursor:
         return self.insert(table_name, fields_by_colname, keyword="INSERT OR REPLACE")
 
     def get_blockchain_state(self) -> BlockchainState:
-        blockchain = self.conn.execute("SELECT * FROM blockchain").fetchone()
+        with self._cursor() as cursor:
+            blockchain = cursor.execute("SELECT * FROM blockchain").fetchone()
         latest_committed_block = blockchain["latest_committed_block"]
 
         return BlockchainState(
@@ -153,18 +170,21 @@ class BaseDatabase:
         )
 
     def update_latest_committed_block(self, latest_committed_block: BlockNumber) -> None:
-        self.conn.execute(
-            "UPDATE blockchain SET latest_committed_block = ?", [latest_committed_block]
-        )
+        with self._cursor() as cursor:
+            cursor.execute(
+                "UPDATE blockchain SET latest_committed_block = ?", [latest_committed_block]
+            )
 
     def upsert_token_network(self, token_network_address: TokenNetworkAddress) -> None:
-        self.conn.execute(
-            "INSERT OR REPLACE INTO token_network VALUES (?)",
-            [to_checksum_address(token_network_address)],
-        )
+        with self._cursor() as cursor:
+            cursor.execute(
+                "INSERT OR REPLACE INTO token_network VALUES (?)",
+                [to_checksum_address(token_network_address)],
+            )
 
     def get_token_network_addresses(self) -> List[TokenNetworkAddress]:
-        return [
-            TokenNetworkAddress(to_canonical_address(row[0]))
-            for row in self.conn.execute("SELECT address FROM token_network")
-        ]
+        with self._cursor() as cursor:
+            return [
+                TokenNetworkAddress(to_canonical_address(row[0]))
+                for row in cursor.execute("SELECT address FROM token_network")
+            ]
