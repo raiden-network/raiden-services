@@ -94,35 +94,13 @@ class Path:
         """
         total = PaymentWithFeeAmount(self.value)
         fees: List[FeeAmount] = []
-        for prev_node, mediator, next_node in reversed(list(window(self.nodes, 3))):
-            view_in: ChannelView = self.G[prev_node][mediator]["view"]
-            view_out: ChannelView = self.G[mediator][next_node]["view"]
+        with opentracing.tracer.start_span("calculate_fees"):
+            for prev_node, mediator, next_node in reversed(list(window(self.nodes, 3))):
+                view_in: ChannelView = self.G[prev_node][mediator]["view"]
+                view_out: ChannelView = self.G[mediator][next_node]["view"]
 
-            log.debug(
-                "Fee calculation",
-                amount=total,
-                view_out=view_out,
-                view_in=view_in,
-                amount_without_fees=total,
-                balance_in=view_in.capacity_partner,
-                balance_out=view_out.capacity,
-                schedule_in=view_in.fee_schedule_receiver,
-                schedule_out=view_out.fee_schedule_sender,
-                receivable_amount=view_in.capacity,
-            )
-
-            amount_with_fees = get_amount_with_fees(
-                amount_without_fees=total,
-                balance_in=Balance(view_in.capacity_partner),
-                balance_out=Balance(view_out.capacity),
-                schedule_in=view_in.fee_schedule_receiver,
-                schedule_out=view_out.fee_schedule_sender,
-                receivable_amount=view_in.capacity,
-            )
-
-            if amount_with_fees is None:
-                log.warning(
-                    "Invalid path because of invalid fee calculation",
+                log.debug(
+                    "Fee calculation",
                     amount=total,
                     view_out=view_out,
                     view_in=view_in,
@@ -133,12 +111,35 @@ class Path:
                     schedule_out=view_out.fee_schedule_sender,
                     receivable_amount=view_in.capacity,
                 )
-                return None
 
-            fee = PaymentWithFeeAmount(amount_with_fees - total)
-            total += fee  # type: ignore
+                amount_with_fees = get_amount_with_fees(
+                    amount_without_fees=total,
+                    balance_in=Balance(view_in.capacity_partner),
+                    balance_out=Balance(view_out.capacity),
+                    schedule_in=view_in.fee_schedule_receiver,
+                    schedule_out=view_out.fee_schedule_sender,
+                    receivable_amount=view_in.capacity,
+                )
 
-            fees.append(FeeAmount(fee))
+                if amount_with_fees is None:
+                    log.warning(
+                        "Invalid path because of invalid fee calculation",
+                        amount=total,
+                        view_out=view_out,
+                        view_in=view_in,
+                        amount_without_fees=total,
+                        balance_in=view_in.capacity_partner,
+                        balance_out=view_out.capacity,
+                        schedule_in=view_in.fee_schedule_receiver,
+                        schedule_out=view_out.fee_schedule_sender,
+                        receivable_amount=view_in.capacity,
+                    )
+                    return None
+
+                fee = PaymentWithFeeAmount(amount_with_fees - total)
+                total += fee  # type: ignore
+
+                fees.append(FeeAmount(fee))
 
         # The hop to the target does not incur mediation fees
         fees.append(FeeAmount(0))

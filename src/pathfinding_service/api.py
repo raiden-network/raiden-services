@@ -346,9 +346,10 @@ class IOUResource(PathfinderResource):
         if iou_request.timestamp < datetime.utcnow() - MAX_AGE_OF_IOU_REQUESTS:
             raise exceptions.RequestOutdated
 
-        last_iou = self.pathfinding_service.database.get_iou(
-            sender=iou_request.sender, claimed=False
-        )
+        with opentracing.tracer.start_span("fetch_iou"):
+            last_iou = self.pathfinding_service.database.get_iou(
+                sender=iou_request.sender, claimed=False
+            )
         if last_iou:
             last_iou = IOU.Schema(exclude=["claimed"]).dump(last_iou)
             return {"last_iou": last_iou}, 200
@@ -478,19 +479,20 @@ class AddressMetadataResource(PathfinderResource):
         user_ids = user_manager.get_userids_for_address(address)
 
         for user_id in user_ids:
-            if user_manager.get_userid_presence(user_id) in [
-                UserPresence.ONLINE,
-                UserPresence.UNAVAILABLE,
-            ]:
-                displayname = user_manager._displayname_cache.userid_to_displayname.get(
-                    user_id, None
-                )
-                capabilities = user_manager.get_address_capabilities(address)
-                return {
-                    "user_id": user_id,
-                    "capabilities": capabilities,
-                    "displayname": displayname,
-                }, 200
+            with opentracing.tracer.start_span("get_userid_presence"):
+                if user_manager.get_userid_presence(user_id) in [
+                    UserPresence.ONLINE,
+                    UserPresence.UNAVAILABLE,
+                ]:
+                    displayname = user_manager._displayname_cache.userid_to_displayname.get(
+                        user_id, None
+                    )
+                    capabilities = user_manager.get_address_capabilities(address)
+                    return {
+                        "user_id": user_id,
+                        "capabilities": capabilities,
+                        "displayname": displayname,
+                    }, 200
 
         offline_since = datetime.utcnow() - user_manager.seen_offline_at(address)
         raise exceptions.AddressNotOnline(
