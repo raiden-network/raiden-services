@@ -3,7 +3,7 @@ import sqlite3
 import sys
 from contextlib import closing, contextmanager
 from sqlite3 import Cursor
-from typing import Any, ContextManager, Dict, List
+from typing import Any, Dict, Generator, List
 
 import structlog
 from dbapi_opentracing import ConnectionTracing
@@ -79,7 +79,7 @@ class BaseDatabase:
             self.conn = ConnectionTracing(self.conn)
 
     @contextmanager
-    def _cursor(self) -> ContextManager[Cursor]:
+    def _cursor(self) -> Generator[Cursor, None, None]:
         with closing(self.conn.cursor()) as cursor:
             yield cursor
 

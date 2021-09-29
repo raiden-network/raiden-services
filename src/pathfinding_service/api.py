@@ -119,12 +119,13 @@ class PathsResource(PathfinderResource):
     def post(self, token_network_address: str) -> Tuple[dict, int]:
         token_network = self._validate_token_network_argument(token_network_address)
         path_req = self._parse_post(PathRequest)
-        process_payment(
-            iou=path_req.iou,
-            pathfinding_service=self.pathfinding_service,
-            service_fee=self.api.service_fee,
-            one_to_n_address=self.api.one_to_n_address,
-        )
+        with opentracing.tracer.start_span("process_payment"):
+            process_payment(
+                iou=path_req.iou,
+                pathfinding_service=self.pathfinding_service,
+                service_fee=self.api.service_fee,
+                one_to_n_address=self.api.one_to_n_address,
+            )
 
         # check for common error cases to provide clear error messages
         error = token_network.check_path_request_errors(
