@@ -41,6 +41,7 @@ from raiden_libs.events import (
 from raiden_libs.matrix import MatrixListener
 from raiden_libs.states import BlockchainState
 from raiden_libs.utils import private_key_to_address
+from src.raiden_libs.events import ReceiveUDCBalanceReducedEvent
 
 log = structlog.get_logger(__name__)
 
@@ -233,6 +234,10 @@ class PathfindingService(gevent.Greenlet):
                     self.handle_channel_opened(event)
                 elif isinstance(event, (ReceiveChannelClosedEvent, ReceiveChannelSettledEvent)):
                     self.handle_channel_removed(event)
+                elif isinstance(event, ReceiveUDCBalanceReducedEvent):
+                    self.database.upsert_udc_balance(
+                        event.owner, latest_balance_reduction_at=event.block_number
+                    )
                 elif isinstance(event, UpdatedHeadBlockEvent):
                     # TODO: Store blockhash here as well
                     self.blockchain_state.latest_committed_block = event.head_block_number
