@@ -3,13 +3,14 @@ import sqlite3
 import sys
 from contextlib import closing, contextmanager
 from sqlite3 import Cursor
-from typing import Any, Dict, Generator, List
+from typing import Any, Dict, Generator, List, Optional, Tuple
 
 import structlog
 from dbapi_opentracing import ConnectionTracing
 from eth_utils import to_canonical_address
 
 from raiden.utils.typing import Address, BlockNumber, ChainID, TokenNetworkAddress
+from raiden_contracts.utils.type_aliases import TokenAmount
 from raiden_libs.states import BlockchainState
 from raiden_libs.utils import to_checksum_address
 
@@ -188,3 +189,42 @@ class BaseDatabase:
                 TokenNetworkAddress(to_canonical_address(row[0]))
                 for row in cursor.execute("SELECT address FROM token_network")
             ]
+
+    def get_udc_balance(
+        self, address: Address
+    ) -> Tuple[Optional[TokenAmount], Optional[BlockNumber], Optional[BlockNumber]]:
+        with self._cursor() as cursor:
+            row = cursor.execute(
+                """
+                    SELECT
+                        latest_confirmed_balance,
+                        balance_confirmed_at,
+                        latest_balance_reduction_at
+                    FROM udc_balance
+                    WHERE user_address = ?
+                    """,
+                [address],
+            ).fetchone()
+            if not row:
+                row = None, None, None
+            return row
+
+    def upsert_udc_balance(
+        self,
+        address: Address,
+        latest_confirmed_balance: Optional[TokenAmount] = None,
+        balance_confirmed_at: Optional[BlockNumber] = None,
+        latest_balance_reduction_at: Optional[BlockNumber] = None,
+    ) -> None:
+        changes = {}
+        if latest_confirmed_balance is not None:
+            assert balance_confirmed_at is not None
+            changes.update(
+                dict(
+                    latest_confirmed_balance=latest_confirmed_balance,
+                    balance_confirmed_at=balance_confirmed_at,
+                )
+            )
+        if latest_balance_reduction_at is not None:
+            changes["latest_balance_reduction_at"] = latest_balance_reduction_at
+        self.upsert("udc_balance", dict(user_address=to_checksum_address(address), **changes))

@@ -52,6 +52,14 @@ CREATE TABLE iou (
 CREATE UNIQUE INDEX one_active_session_per_sender
     ON iou(sender) WHERE NOT claimed;
 
+CREATE TABLE udc_balance (
+    user_address char(42) PRIMARY KEY,
+    latest_confirmed_balance HEX_INT,
+    balance_confirmed_at INT,
+    latest_balance_reduction_at INT,  -- unconfirmed!
+    CHECK ((latest_confirmed_balance IS NULL) IS (balance_confirmed_at IS NULL))
+);
+
 CREATE TABLE capacity_update (
     updating_participant CHAR(42) NOT NULL,
     token_network_address CHAR(42) NOT NULL,

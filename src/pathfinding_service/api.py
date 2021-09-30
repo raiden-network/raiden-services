@@ -290,8 +290,8 @@ def process_payment(  # pylint: disable=too-many-branches
     udc_balance = get_pessimistic_udc_balance(
         udc=udc,
         address=iou.sender,
-        from_block=BlockNumber(latest_block - pathfinding_service.required_confirmations),
-        to_block=latest_block,
+        confirmed_block=BlockNumber(latest_block - pathfinding_service.required_confirmations),
+        database=pathfinding_service.database,
     )
     required_deposit = round(expected_amount * UDC_SECURITY_MARGIN_FACTOR_PFS)
     if udc_balance < required_deposit:

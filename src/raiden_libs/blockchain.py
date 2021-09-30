@@ -41,6 +41,7 @@ from raiden_libs.events import (
     UpdatedHeadBlockEvent,
 )
 from raiden_libs.states import BlockchainState
+from src.raiden_libs.database import BaseDatabase
 
 log = structlog.get_logger(__name__)
 
@@ -274,19 +275,55 @@ def get_monitoring_blockchain_events(
 
 
 def get_pessimistic_udc_balance(
-    udc: Contract, address: Address, from_block: BlockNumber, to_block: BlockNumber
+    udc: Contract,
+    address: Address,
+    database: BaseDatabase,
+    confirmed_block: BlockNumber,
 ) -> TokenAmount:
     """Get the effective UDC balance using the block with the lowest result.
 
-    Blocks between the latest confirmed block and the latest block should be
-    considered. For performance reasons, only the bounds of that range are
-    checked. This is acceptable, since the effectiveBalance calculation already
-    guards against withdraws by the user.
+    We trust neither the latest confirmed balance (the balance might have been
+    reduced since then) nor the balance after the latest reduction. The minimum
+    of these two values is pessimistic enough to be considered safe.
     """
-    return min(
-        udc.functions.effectiveBalance(address).call(block_identifier=BlockNumber(block))
-        for block in [from_block, to_block + 1]
-    )
+
+    for row in database.conn.execute("SELECT * FROM sqlite_master"):
+        print(dict(row))
+    (
+        latest_confirmed_balance,
+        balance_confirmed_at,
+        latest_balance_reduction_at,
+    ) = database.get_udc_balance(address)
+
+    if latest_balance_reduction_at is not None and latest_balance_reduction_at >= (
+        balance_confirmed_at or 0
+    ):
+        # The balance has been reduced since we last updated it. We need to update it!
+        balance_after_reduction = udc.functions.effectiveBalance(address).call(
+            block_identifier=latest_balance_reduction_at
+        )
+        if latest_balance_reduction_at <= confirmed_block:
+            # The balance after the latest reduction is already confirmed
+            latest_confirmed_balance = balance_after_reduction
+            balance_confirmed_at = latest_balance_reduction_at
+        else:
+            latest_confirmed_balance = udc.functions.effectiveBalance(address).call(
+                block_identifier=confirmed_block
+            )
+            balance_confirmed_at = confirmed_block
+        database.upsert_udc_balance(address, latest_confirmed_balance, balance_confirmed_at)
+        return min(balance_after_reduction, latest_confirmed_balance)
+
+    if latest_confirmed_balance is None:
+        # We never updated the balance, let's get the current confirmed balance
+        latest_confirmed_balance = udc.functions.effectiveBalance(address).call(
+            block_identifier=confirmed_block
+        )
+        balance_confirmed_at = confirmed_block
+        database.upsert_udc_balance(address, latest_confirmed_balance, balance_confirmed_at)
+
+    # The cached balance is still up to date
+    return latest_confirmed_balance
 
 
 def get_blockchain_events_adaptive(

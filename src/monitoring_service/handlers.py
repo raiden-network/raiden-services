@@ -464,14 +464,13 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
         )
         return
 
-    latest_block = context.web3.eth.block_number
     last_confirmed_block = context.latest_confirmed_block
     user_address = monitor_request.non_closing_signer
     user_deposit = get_pessimistic_udc_balance(
         udc=context.user_deposit_contract,
         address=user_address,
-        from_block=last_confirmed_block,
-        to_block=latest_block,
+        confirmed_block=last_confirmed_block,
+        database=context.database,
     )
     if monitor_request.reward_amount < context.min_reward:
         log.info(
