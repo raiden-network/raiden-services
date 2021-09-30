@@ -99,6 +99,7 @@ class PathfindingService(gevent.Greenlet):
             latest_committed_block=self.database.get_latest_committed_block(),
             token_network_registry_address=to_canonical_address(self.registry_address),
             chain_id=self.chain_id,
+            user_deposit_contract_address=contracts[CONTRACT_USER_DEPOSIT].address,
         )
 
         self.matrix_listener = MatrixListener(

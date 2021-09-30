@@ -11,7 +11,6 @@ from eth_utils import to_canonical_address
 
 from raiden.utils.typing import Address, BlockNumber, ChainID, TokenNetworkAddress
 from raiden_contracts.utils.type_aliases import TokenAmount
-from raiden_libs.states import BlockchainState
 from raiden_libs.utils import to_checksum_address
 
 log = structlog.get_logger(__name__)
@@ -157,18 +156,6 @@ class BaseDatabase:
 
     def upsert(self, table_name: str, fields_by_colname: Dict[str, Any]) -> sqlite3.Cursor:
         return self.insert(table_name, fields_by_colname, keyword="INSERT OR REPLACE")
-
-    def get_blockchain_state(self) -> BlockchainState:
-        with self._cursor() as cursor:
-            blockchain = cursor.execute("SELECT * FROM blockchain").fetchone()
-        latest_committed_block = blockchain["latest_committed_block"]
-
-        return BlockchainState(
-            chain_id=blockchain["chain_id"],
-            token_network_registry_address=blockchain["token_network_registry_address"],
-            monitor_contract_address=blockchain["monitor_contract_address"],
-            latest_committed_block=latest_committed_block,
-        )
 
     def update_latest_committed_block(self, latest_committed_block: BlockNumber) -> None:
         with self._cursor() as cursor:

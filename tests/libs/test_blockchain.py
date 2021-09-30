@@ -1,4 +1,4 @@
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import eth_tester
 import pytest
@@ -138,6 +138,7 @@ def test_get_blockchain_events_returns_early_for_invalid_interval(
                 token_network_registry_contract.address
             ),
             latest_committed_block=BlockNumber(4),
+            user_deposit_contract_address=Mock(),
         ),
         from_block=BlockNumber(10),
         to_block=BlockNumber(5),
@@ -155,6 +156,7 @@ def test_get_blockchain_events_adaptive_reduces_block_interval_after_timeout(
             token_network_registry_contract.address
         ),
         latest_committed_block=BlockNumber(4),
+        user_deposit_contract_address=Mock(),
     )
 
     assert chain_state.current_event_filter_interval == DEFAULT_FILTER_INTERVAL

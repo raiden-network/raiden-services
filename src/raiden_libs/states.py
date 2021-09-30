@@ -10,5 +10,6 @@ class BlockchainState:
     chain_id: ChainID
     token_network_registry_address: Address
     latest_committed_block: BlockNumber
+    user_deposit_contract_address: Address
     monitor_contract_address: Optional[Address] = None
     current_event_filter_interval: BlockTimeout = DEFAULT_FILTER_INTERVAL

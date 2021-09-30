@@ -27,6 +27,7 @@ from raiden.utils.typing import (
 )
 from raiden_libs.database import BaseDatabase, hex256
 from raiden_libs.utils import to_checksum_address
+from src.raiden_libs.states import BlockchainState
 
 SubEvent = Union[ActionMonitoringTriggeredEvent, ActionClaimRewardTriggeredEvent]
 
@@ -237,11 +238,18 @@ class SharedDatabase(BaseDatabase):
             "DELETE FROM waiting_transactions WHERE transaction_hash = ?", [encode_hex(tx_hash)]
         )
 
-    def load_state(self) -> MonitoringServiceState:
-        """Load MS state from db or return a new empty state if not saved one is present"""
+    def load_state(self, user_deposit_contract_address: Address) -> MonitoringServiceState:
+        """Load MS state from db or return a new empty state if no saved one is present"""
         blockchain = self.conn.execute("SELECT * FROM blockchain").fetchone()
+
         ms_state = MonitoringServiceState(
-            blockchain_state=self.get_blockchain_state(),
+            blockchain_state=BlockchainState(
+                chain_id=blockchain["chain_id"],
+                token_network_registry_address=blockchain["token_network_registry_address"],
+                latest_committed_block=blockchain["latest_committed_block"],
+                user_deposit_contract_address=user_deposit_contract_address,
+                monitor_contract_address=blockchain["monitor_contract_address"],
+            ),
             address=to_canonical_address(blockchain["receiver"]),
         )
         return ms_state

@@ -129,7 +129,7 @@ def get_scheduled_claim_event(database: Database) -> Optional[ScheduledEvent]:
 @pytest.fixture
 def context(ms_database: Database):
     return Context(
-        ms_state=ms_database.load_state(),
+        ms_state=ms_database.load_state(user_deposit_contract_address=Mock()),
         database=ms_database,
         web3=Web3Mock(),
         monitoring_service_contract=Mock(),

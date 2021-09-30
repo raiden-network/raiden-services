@@ -33,7 +33,7 @@ class RequestCollector(gevent.Greenlet):
         self.private_key = private_key
         self.state_db = state_db
 
-        state = self.state_db.load_state()
+        state = self.state_db.load_state(user_deposit_contract_address=None)
         self.chain_id = state.blockchain_state.chain_id
         self.matrix_listener = MatrixListener(
             private_key=private_key,

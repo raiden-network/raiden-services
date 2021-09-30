@@ -78,6 +78,13 @@ class ReceiveMonitoringRewardClaimedEvent(Event):
 
 
 @dataclass(frozen=True)
+class ReceiveUDCBalanceReducedEvent(Event):
+    owner: Address
+    new_balance: TokenAmount
+    block_number: BlockNumber
+
+
+@dataclass(frozen=True)
 class UpdatedHeadBlockEvent(Event):
     """Event triggered after updating the head block and all events."""
 

@@ -120,7 +120,9 @@ class MonitoringService:
             ),
             sync_start_block=sync_start_block,
         )
-        ms_state = self.database.load_state()
+        ms_state = self.database.load_state(
+            user_deposit_contract_address=user_deposit_contract.address
+        )
 
         self.context = Context(
             ms_state=ms_state,

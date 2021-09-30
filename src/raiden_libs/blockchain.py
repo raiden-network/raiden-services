@@ -27,6 +27,7 @@ from raiden_contracts.constants import (
     CONTRACT_TOKEN_NETWORK_REGISTRY,
     ChannelEvent,
     MonitoringServiceEvent,
+    UserDepositEvent,
 )
 from raiden_libs.contract_info import CONTRACT_MANAGER
 from raiden_libs.events import (
@@ -42,6 +43,7 @@ from raiden_libs.events import (
 )
 from raiden_libs.states import BlockchainState
 from src.raiden_libs.database import BaseDatabase
+from src.raiden_libs.events import ReceiveUDCBalanceReducedEvent
 
 log = structlog.get_logger(__name__)
 
@@ -219,6 +221,24 @@ def get_blockchain_events(
         to_block=to_block,
     )
     events.extend(monitoring_events)
+
+    # fetch BalanceReduced events from UDC (even unconfirmed ones). When we
+    # receive one of them, we stop trusting out cached balance for the user.
+    udc_events = query_blockchain_events(
+        web3=web3,
+        contract_addresses=[chain_state.user_deposit_contract_address],
+        from_block=from_block,
+        to_block=to_block,
+    )
+    events.extend(
+        [
+            ReceiveUDCBalanceReducedEvent(
+                event["args"]["owner"], event["args"]["newBalance"], event["blockNumber"]
+            )
+            for event in udc_events
+            if event["name"] == UserDepositEvent.BALANCE_REDUCED
+        ]
+    )
 
     # commit new block number
     events.append(UpdatedHeadBlockEvent(head_block_number=to_block))
