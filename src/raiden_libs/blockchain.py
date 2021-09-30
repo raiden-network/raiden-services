@@ -278,11 +278,14 @@ def get_pessimistic_udc_balance(
 ) -> TokenAmount:
     """Get the effective UDC balance using the block with the lowest result.
 
-    Blocks between the latest confirmed block and the latest block are considered.
+    Blocks between the latest confirmed block and the latest block should be
+    considered. For performance reasons, only the bounds of that range are
+    checked. This is acceptable, since the effectiveBalance calculation already
+    guards against withdraws by the user.
     """
     return min(
         udc.functions.effectiveBalance(address).call(block_identifier=BlockNumber(block))
-        for block in range(from_block, to_block + 1)
+        for block in [from_block, to_block + 1]
     )
 
 
