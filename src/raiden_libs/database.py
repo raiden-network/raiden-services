@@ -190,7 +190,7 @@ class BaseDatabase:
                     FROM udc_balance
                     WHERE user_address = ?
                     """,
-                [address],
+                [to_checksum_address(address)],
             ).fetchone()
             if not row:
                 row = None, None, None
