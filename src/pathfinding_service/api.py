@@ -262,6 +262,7 @@ def process_payment(  # pylint: disable=too-many-branches
         raise exceptions.InvalidSignature
 
     # Compare with known IOU
+    latest_block = pathfinding_service.blockchain_state.latest_committed_block
     active_iou = pathfinding_service.database.get_iou(sender=iou.sender, claimed=False)
     if active_iou:
         if active_iou.expiration_block != iou.expiration_block:
@@ -275,7 +276,7 @@ def process_payment(  # pylint: disable=too-many-branches
         if claimed_iou:
             raise exceptions.IOUAlreadyClaimed
 
-        min_expiry = pathfinding_service.web3.eth.block_number + MIN_IOU_EXPIRY
+        min_expiry = latest_block + MIN_IOU_EXPIRY
         if iou.expiration_block < min_expiry:
             raise exceptions.IOUExpiredTooEarly(min_expiry=min_expiry)
         expected_amount = service_fee
@@ -286,7 +287,6 @@ def process_payment(  # pylint: disable=too-many-branches
 
     # Check client's deposit in UserDeposit contract
     udc = pathfinding_service.user_deposit_contract
-    latest_block = pathfinding_service.web3.eth.block_number
     udc_balance = get_pessimistic_udc_balance(
         udc=udc,
         address=iou.sender,

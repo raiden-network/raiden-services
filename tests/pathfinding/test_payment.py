@@ -1,8 +1,8 @@
 import pytest
 from eth_utils import to_canonical_address
 
+import pathfinding_service.api
 from pathfinding_service import exceptions
-from pathfinding_service.api import process_payment
 from raiden.utils.typing import Address, TokenAmount
 from raiden_contracts.tests.utils import get_random_privkey
 from raiden_libs.constants import UDC_SECURITY_MARGIN_FACTOR_PFS
@@ -30,7 +30,9 @@ def test_process_payment_errors(
     privkey = get_private_key(sender)
 
     def test_payment(iou, service_fee=TokenAmount(1)):
-        process_payment(
+        # IOU check reads the block number from here, so it has to be up to date
+        pfs.blockchain_state.latest_committed_block = web3.eth.block_number
+        pathfinding_service.api.process_payment(
             iou=iou,
             pathfinding_service=pfs,
             service_fee=service_fee,
@@ -94,8 +96,14 @@ def test_process_payment(
     web3.testing.mine(pathfinding_service_web3_mock.required_confirmations)
     one_to_n_address = to_canonical_address(one_to_n_contract.address)
 
+    def process_payment(*args, **kwargs):
+        # IOU check reads the block number from here, so it has to be up to date
+        pfs.blockchain_state.latest_committed_block = web3.eth.block_number
+        pathfinding_service.api.process_payment(*args, **kwargs)
+
     # Make payment
     iou = make_iou(privkey, pfs.address, amount=1)
+    pfs.blockchain_state.latest_committed_block = web3.eth.block_number
     process_payment(iou, pfs, service_fee, one_to_n_address)
 
     # The same payment can't be reused
@@ -106,6 +114,7 @@ def test_process_payment(
     # deposit. But we set the deposit one token too low.
     deposit_to_udc(sender, round(2 * UDC_SECURITY_MARGIN_FACTOR_PFS) - 1)
     iou = make_iou(privkey, pfs.address, amount=2)
+    pfs.blockchain_state.latest_committed_block = web3.eth.block_number
     with pytest.raises(exceptions.DepositTooLow) as tb:
         process_payment(iou, pfs, service_fee, one_to_n_address)
     assert tb.value.error_details["required_deposit"] == 2 * UDC_SECURITY_MARGIN_FACTOR_PFS
@@ -116,6 +125,7 @@ def test_process_payment(
     deposit_to_udc(sender, round(2 * UDC_SECURITY_MARGIN_FACTOR_PFS))
     web3.testing.mine(pathfinding_service_web3_mock.required_confirmations)
     iou = make_iou(privkey, pfs.address, amount=2)
+    pfs.blockchain_state.latest_committed_block = web3.eth.block_number
     process_payment(iou, pfs, service_fee, one_to_n_address)
 
     # Make sure the client does not create new sessions unnecessarily
