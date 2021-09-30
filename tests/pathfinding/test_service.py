@@ -41,6 +41,7 @@ from raiden_libs.events import (
 from raiden_libs.logging import format_to_hex
 from raiden_libs.states import BlockchainState
 from raiden_libs.utils import to_checksum_address
+from src.raiden_libs.events import ReceiveUDCBalanceReducedEvent
 from tests.utils import save_metrics_state
 
 from ..libs.mocks.web3 import ContractMock, Web3Mock
@@ -491,3 +492,17 @@ def test_logging_processor():
     assert (  # pylint: disable=unsubscriptable-object
         message_log["message"]["type_name"] == "PFSFeeUpdate"
     )
+
+
+def test_receive_udc_balance_reduced_event(pathfinding_service_mock):
+    address = Address(bytes([7] * 20))
+    balance_reduced_event = ReceiveUDCBalanceReducedEvent(
+        owner=address,
+        new_balance=TokenAmount(100),
+        block_number=BlockNumber(20),
+    )
+    pathfinding_service_mock.handle_event(balance_reduced_event)
+    (_, _, latest_balance_reduction_at) = pathfinding_service_mock.database.get_udc_balance(
+        address
+    )
+    assert latest_balance_reduction_at == 20
