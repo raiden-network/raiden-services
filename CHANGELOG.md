@@ -1,5 +1,14 @@
 # Changelog
 
+### 0.18.3 (2021-10-04)
+* Fix upper bound for UDC balance check (https://github.com/raiden-network/raiden-services/pull/1090)
+
+### 0.18.2 (2021-10-01)
+* Optimize path request (https://github.com/raiden-network/raiden-services/issues/1086)
+
+### 0.18.1 (2021-09-29)
+* Add Jaeger Open Tracing support (https://github.com/raiden-network/raiden-services/pull/1082)
+
 ### 0.18.0 (2021-09-24)
 * Add cache to `to_address_checksum` function
 
