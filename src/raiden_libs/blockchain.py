@@ -285,7 +285,7 @@ def get_pessimistic_udc_balance(
     """
     return min(
         udc.functions.effectiveBalance(address).call(block_identifier=BlockNumber(block))
-        for block in [from_block, to_block + 1]
+        for block in (from_block, to_block)
     )
 
 
