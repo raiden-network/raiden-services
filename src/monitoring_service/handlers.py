@@ -464,14 +464,11 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
         )
         return
 
-    latest_block = context.web3.eth.block_number
-    last_confirmed_block = context.latest_confirmed_block
-    user_address = monitor_request.non_closing_signer
     user_deposit = get_pessimistic_udc_balance(
         udc=context.user_deposit_contract,
-        address=user_address,
-        from_block=last_confirmed_block,
-        to_block=latest_block,
+        address=monitor_request.non_closing_signer,
+        from_block=context.latest_confirmed_block,
+        to_block=context.get_latest_unconfirmed_block(),
     )
     if monitor_request.reward_amount < context.min_reward:
         log.info(
@@ -488,7 +485,9 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
             min_reward=context.min_reward,
         )
         context.database.upsert_scheduled_event(
-            ScheduledEvent(trigger_block_number=BlockNumber(last_confirmed_block + 1), event=event)
+            ScheduledEvent(
+                trigger_block_number=BlockNumber(context.latest_confirmed_block + 1), event=event
+            )
         )
         return
 
