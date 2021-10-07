@@ -122,9 +122,7 @@ def parse_token_network_event(event: dict) -> Optional[Event]:
 
     # `DeprecationSwitch` isn't used currently, but needs to be checked so we can have
     # `channel_identifier` in `common_infos`
-    # FIXME: use value from ChannelEvent as soon as PR is merged
-    # https://github.com/raiden-network/raiden-contracts/pull/1389
-    if event_name == "DeprecationSwitch":
+    if event_name == ChannelEvent.DEPRECATED:
         return None
 
     common_infos = dict(
