@@ -1,4 +1,4 @@
-FROM python:3.7
+FROM python:3.9
 
 LABEL Name=raiden-services Version=0.18.3 Maintainer="Raiden Network Team <contact@raiden.network>"
 EXPOSE 6000
