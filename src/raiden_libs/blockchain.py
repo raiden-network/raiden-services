@@ -104,6 +104,10 @@ def query_blockchain_events(
     Returns:
         All matching events
     """
+    # Return early if no contracts are queried
+    if not contract_addresses:
+        return []
+
     filter_params = FilterParams(
         {"fromBlock": from_block, "toBlock": to_block, "address": contract_addresses}
     )
