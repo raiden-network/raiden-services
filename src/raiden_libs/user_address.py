@@ -132,9 +132,7 @@ class UserAddressManager:
 
     def get_userids_for_address(self, address: Address) -> Set[str]:
         """Return all known user ids for the given ``address``."""
-        if not self.is_address_known(address):
-            return set()
-        return self._address_to_userids[address]
+        return self._address_to_userids.get(address, set())
 
     def get_userid_presence(self, user_id: str) -> UserPresence:
         """Return the current presence state of ``user_id``."""
@@ -193,7 +191,7 @@ class UserAddressManager:
             self.get_address_reachability_state(address).reachability
             != AddressReachability.UNKNOWN
         )
-        no_new_user_ids = user_ids.issubset(self._address_to_userids[address])
+        no_new_user_ids = user_ids.issubset(self._address_to_userids.get(address, set()))
         if state_known and no_new_user_ids:
             return
 
@@ -245,7 +243,7 @@ class UserAddressManager:
         # these users and uses the "best" presence. IOW, if there is at least one
         # Matrix user that is reachable, then the Raiden node is considered
         # reachable.
-        userids = self._address_to_userids[address].copy()
+        userids: Set[str] = self._address_to_userids.get(address, set()).copy()
         presence_to_uid = defaultdict(list)
         for uid in userids:
             presence_to_uid[self._userid_to_presence.get(uid)].append(uid)
