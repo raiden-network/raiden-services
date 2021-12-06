@@ -1,5 +1,12 @@
 # Changelog
 
+### 1.0.0 (2021-12-08)
+* Update contracts to 0.40.0 (https://github.com/raiden-network/raiden-services/pull/1121)
+* Fix a bug when whitelisting users in Matrix (https://github.com/raiden-network/raiden-services/pull/1110)
+* Don't query events if no contract addresses are given (https://github.com/raiden-network/raiden-services/pull/1093)
+* Update docker images to Python 3.9 (https://github.com/raiden-network/raiden-services/pull/1093)
+* Display approximate cost during service registration (https://github.com/raiden-network/raiden-services/pull/1125)
+
 ### 0.18.3 (2021-10-04)
 * Fix upper bound for UDC balance check (https://github.com/raiden-network/raiden-services/pull/1090)
 
