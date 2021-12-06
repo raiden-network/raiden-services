@@ -158,7 +158,7 @@ def user_addr_mgr(dummy_matrix_client, address_reachability_callback, user_prese
     )
 
     def fetch_user_presence(user_id):
-        if user_id in address_manager._userid_to_presence.keys():
+        if user_id in address_manager._userid_to_presence:
             return address_manager.get_userid_presence(user_id)
         presence = UserPresence(dummy_matrix_client.get_user_presence(user_id))
         address_manager._userid_to_presence[user_id] = presence
