@@ -93,6 +93,9 @@ disable=
         # tracked in https://github.com/raiden-network/raiden-services/issues/982
         duplicate-code,
 
+        # tracked in https://github.com/raiden-network/raiden-services/issues/1123
+        consider-using-f-string,
+
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
 # multiple time (only on the command line, not in the configuration file where
