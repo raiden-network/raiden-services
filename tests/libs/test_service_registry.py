@@ -32,6 +32,12 @@ def test_registration(
     pk1 = get_private_key(account)
     addr1 = private_key_to_address(pk1)
 
+    # Add s simple gas price strategy, this is needed for the price estimate
+    def fixed_gas_price_strategy(_web3, _transaction_params):
+        return 1
+
+    web3.eth.set_gas_price_strategy(fixed_gas_price_strategy)
+
     assert service_registry.functions.hasValidRegistration(account).call() is False
     assert service_registry.functions.urls(account).call() == ""
 

@@ -118,14 +118,17 @@ def checked_transact(
         f"\n\tSee {etherscan_url_for_txhash(web3.eth.chain_id, transaction_hash)}"
     )
 
-    transaction_receipt = web3.eth.wait_for_transaction_receipt(transaction_hash, poll_latency=1.0)
+    timeout = 60 * 10  # 10mins
+    transaction_receipt = web3.eth.wait_for_transaction_receipt(transaction_hash, timeout, 1.0)
     if wait_confirmation_interval:
         while (
             "blockNumber" not in transaction_receipt
             or web3.eth.block_number
             < transaction_receipt["blockNumber"] + DEFAULT_NUMBER_OF_BLOCK_CONFIRMATIONS
         ):
-            transaction_receipt = web3.eth.wait_for_transaction_receipt(transaction_hash)
+            transaction_receipt = web3.eth.wait_for_transaction_receipt(
+                transaction_hash, timeout, 1.0
+            )
             gevent.sleep(1)
 
     was_successful = transaction_receipt["status"] == 1
@@ -236,7 +239,8 @@ def get_approximate_registration_cost(web3: Web3) -> int:
         + gas_costs["ServiceRegistry.setURL"]
     )
 
-    gas_price = web3.eth.generate_gas_price() or 1
+    gas_price = web3.eth.generate_gas_price()
+    assert gas_price is not None, "No gas price strategy set"
 
     return gas_cost * gas_price
 
