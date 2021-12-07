@@ -29,6 +29,7 @@ from raiden_contracts.constants import (
     CONTRACT_SERVICE_REGISTRY,
     EVENT_REGISTERED_SERVICE,
 )
+from raiden_contracts.contract_manager import gas_measurements
 from raiden_libs.blockchain import get_web3_provider_info
 from raiden_libs.cli import blockchain_options, common_options, validate_address
 from raiden_libs.constants import CONFIRMATION_OF_UNDERSTANDING
@@ -200,7 +201,7 @@ def register(
 
 
 def get_token_formatter(
-    token_contract: Contract, min_sig_figures: int = 3
+    token_contract: Optional[Contract], min_sig_figures: int = 3
 ) -> Callable[[float], str]:
     """
     Return a function to nicely format token amounts.
@@ -210,8 +211,12 @@ def get_token_formatter(
     figures. This ensures that small token amount stay readable and won't get
     rounded to zero.
     """
-    symbol = token_contract.functions.symbol().call()
-    decimals = token_contract.functions.decimals().call()
+    symbol = "ETH"
+    decimals = 18
+
+    if token_contract is not None:
+        symbol = token_contract.functions.symbol().call()
+        decimals = token_contract.functions.decimals().call()
 
     def format_token_amount(amount: float) -> str:
         if amount == 0:
@@ -223,6 +228,19 @@ def get_token_formatter(
     return format_token_amount
 
 
+def get_approximate_registration_cost(web3: Web3) -> int:
+    gas_costs = gas_measurements()
+    gas_cost = (
+        gas_costs["CustomToken.approve"]
+        + gas_costs["ServiceRegistry.deposit"]
+        + gas_costs["ServiceRegistry.setURL"]
+    )
+
+    gas_price = web3.eth.generate_gas_price() or 1
+
+    return gas_cost * gas_price
+
+
 def send_registration_transaction(
     web3: Web3,
     service_registry_contract: Contract,
@@ -232,6 +250,14 @@ def send_registration_transaction(
     service_address: Address,
     fmt_amount: Callable[[float], str],
 ) -> None:
+    eth_formatter = get_token_formatter(None)
+    estimated_cost = get_approximate_registration_cost(web3)
+    click.secho(
+        "\nThe registration process requires on-chain transactions. "
+        f"Those will cost around {eth_formatter(estimated_cost)} with current gas prices."
+    )
+    maybe_prompt("I understand that continuing will result in on-chain transactions being send")
+
     # Get required deposit
     required_deposit = service_registry_contract.functions.currentPrice().call()
     click.secho(
