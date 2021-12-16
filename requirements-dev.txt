@@ -9,7 +9,7 @@ flake8==3.9.2
 flake8-bugbear==21.11.29
 flake8-tuple==0.4.1
 isort==5.10.1
-mypy==0.910
+mypy==0.920
 black==21.12b0
 pylint==2.12.2
 
