@@ -135,7 +135,6 @@ def parse_token_network_event(event: dict) -> Optional[Event]:
         return ReceiveChannelOpenedEvent(
             participant1=to_canonical_address(event["args"]["participant1"]),
             participant2=to_canonical_address(event["args"]["participant2"]),
-            settle_timeout=event["args"]["settle_timeout"],
             **common_infos,
         )
     if event_name == ChannelEvent.CLOSED:
@@ -193,6 +192,7 @@ def get_blockchain_events(
                 token_address=TokenAddress(
                     to_canonical_address(event_dict["args"]["token_address"])
                 ),
+                settle_timeout=event_dict["args"]["settle_timeout"],
                 block_number=event_dict["blockNumber"],
             )
         )

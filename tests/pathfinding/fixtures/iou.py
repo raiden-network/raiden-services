@@ -18,7 +18,7 @@ def make_iou(one_to_n_contract: Contract):
         sender_priv_key: PrivateKey,
         receiver: Address,
         amount=1,
-        expiration_block=MIN_IOU_EXPIRY + 100,
+        claimable_until=1000000000 * 15 + MIN_IOU_EXPIRY,
         one_to_n_address: Address = one_to_n_contract_address,
         chain_id: ChainID = ChainID(61),
     ) -> IOU:
@@ -27,7 +27,7 @@ def make_iou(one_to_n_contract: Contract):
             "sender": to_checksum_address(private_key_to_address(sender_priv_key)),
             "receiver": receiver_hex,
             "amount": amount,
-            "expiration_block": expiration_block,
+            "claimable_until": claimable_until,
             "one_to_n_address": to_checksum_address(one_to_n_address),
             "chain_id": chain_id,
         }

@@ -1,4 +1,4 @@
-# pylint: disable=redefined-outer-name
+# pylint: disable=redefined-outer-name,too-many-lines
 import dataclasses
 from typing import Optional
 from unittest.mock import Mock, patch
@@ -26,7 +26,7 @@ from monitoring_service.handlers import (
     updated_head_block_event_handler,
 )
 from monitoring_service.states import OnChainUpdateStatus
-from raiden.utils.typing import Address, BlockNumber, BlockTimeout, ChannelID, Nonce, TokenAmount
+from raiden.utils.typing import Address, BlockNumber, ChannelID, Nonce, TokenAmount
 from raiden_contracts.constants import ChannelState
 from raiden_contracts.tests.utils import get_random_privkey
 from raiden_contracts.utils.type_aliases import PrivateKey
@@ -42,13 +42,13 @@ from raiden_libs.events import (
     ReceiveTokenNetworkCreatedEvent,
 )
 from raiden_libs.utils import to_checksum_address
+from tests.constants import DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT
 from tests.libs.mocks.web3 import Web3Mock
 from tests.monitoring.monitoring_service.factories import (
     DEFAULT_CHANNEL_IDENTIFIER,
     DEFAULT_PARTICIPANT1,
     DEFAULT_PARTICIPANT2,
     DEFAULT_PARTICIPANT_OTHER,
-    DEFAULT_SETTLE_TIMEOUT,
     DEFAULT_TOKEN_ADDRESS,
     DEFAULT_TOKEN_NETWORK_ADDRESS,
     create_signed_monitor_request,
@@ -59,7 +59,7 @@ from tests.utils import save_metrics_state
 @pytest.fixture(autouse=True)
 def mock_first_allowed_block(monkeypatch):
     monkeypatch.setattr(
-        "monitoring_service.handlers._first_allowed_block_to_monitor", Mock(return_value=1)
+        "monitoring_service.handlers._first_allowed_timestamp_to_monitor", Mock(return_value=1)
     )
 
 
@@ -85,12 +85,14 @@ def setup_state_with_open_channel(context: Context) -> Context:
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
         participant1=DEFAULT_PARTICIPANT1,
         participant2=DEFAULT_PARTICIPANT2,
-        settle_timeout=DEFAULT_SETTLE_TIMEOUT,
         block_number=BlockNumber(42),
     )
     assert context.database.channel_count() == 0
 
     channel_opened_event_handler(event, context)
+    context.web3.eth.get_block = lambda x: Mock(
+        timestamp=context.web3.eth.block_number * 15 if x == "latest" else x * 15
+    )
 
     return context
 
@@ -108,12 +110,15 @@ def setup_state_with_closed_channel(context: Context) -> Context:
 
     assert context.database.channel_count() == 1
     assert_channel_state(context, ChannelState.CLOSED)
+    context.web3.eth.get_block = lambda x: Mock(
+        timestamp=context.web3.eth.block_number * 15 if x == "latest" else x * 15
+    )
 
     return context
 
 
 def get_scheduled_claim_event(database: Database) -> Optional[ScheduledEvent]:
-    events = database.get_scheduled_events(max_trigger_block=BlockNumber(999_999))
+    events = database.get_scheduled_events(max_trigger_timestamp=999_999 * 15)
 
     filtered_events = [
         event for event in events if isinstance(event.event, ActionClaimRewardTriggeredEvent)
@@ -162,6 +167,7 @@ def test_token_network_created_handlers_add_network(context: Context):
     event = ReceiveTokenNetworkCreatedEvent(
         token_address=DEFAULT_TOKEN_ADDRESS,
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
+        settle_timeout=DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT,
         block_number=BlockNumber(12),
     )
 
@@ -182,7 +188,6 @@ def test_channel_opened_event_handler_adds_channel(context: Context):
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
         participant1=DEFAULT_PARTICIPANT1,
         participant2=DEFAULT_PARTICIPANT2,
-        settle_timeout=BlockTimeout(100),
         block_number=BlockNumber(42),
     )
 
@@ -196,6 +201,18 @@ def test_channel_opened_event_handler_adds_channel(context: Context):
 def test_channel_closed_event_handler_closes_existing_channel(context: Context):
     context = setup_state_with_open_channel(context)
     context.web3.eth.block_number = BlockNumber(60)
+
+    event = ReceiveChannelClosedEvent(
+        token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
+        channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
+        closing_participant=DEFAULT_PARTICIPANT2,
+        block_number=BlockNumber(152),
+    )
+
+    channel_closed_event_handler(event, context)
+
+    assert context.database.channel_count() == 1
+    assert_channel_state(context, ChannelState.CLOSED)
     event = ReceiveChannelClosedEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
@@ -219,7 +236,7 @@ def test_channel_closed_event_handler_idempotency(context: Context):
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
         closing_participant=DEFAULT_PARTICIPANT2,
-        block_number=BlockNumber(52),
+        block_number=BlockNumber(62),
     )
     channel_closed_event_handler(event, context)
 
@@ -301,7 +318,7 @@ def test_channel_closed_event_handler_trigger_action_monitor_event_with_monitor_
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
         closing_participant=DEFAULT_PARTICIPANT2,
-        block_number=BlockNumber(52),
+        block_number=BlockNumber(152),
     )
 
     channel_closed_event_handler(event, context)
@@ -317,7 +334,7 @@ def test_channel_closed_event_handler_trigger_action_monitor_event_without_monit
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
         closing_participant=DEFAULT_PARTICIPANT2,
-        block_number=BlockNumber(52),
+        block_number=BlockNumber(152),
     )
 
     channel_closed_event_handler(event, context)
@@ -520,9 +537,12 @@ def test_monitor_new_balance_proof_event_handler_sets_update_status(context: Con
     assert channel.update_status.nonce == 2
     assert channel.update_status.update_sender_address == bytes([4] * 20)
 
+    # closing block + 1 * avg. time per block
+    expected_trigger_timestamp = (52 + 1) * 15
+
     scheduled_claim_event = get_scheduled_claim_event(context.database)
     assert scheduled_claim_event is not None
-    assert scheduled_claim_event.trigger_block_number == 52 + 100 + 1
+    assert scheduled_claim_event.trigger_block_timestamp == expected_trigger_timestamp
 
     new_balance_event2 = ReceiveMonitoringNewBalanceProofEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
@@ -547,7 +567,7 @@ def test_monitor_new_balance_proof_event_handler_sets_update_status(context: Con
 
     scheduled_claim_event = get_scheduled_claim_event(context.database)
     assert scheduled_claim_event is not None
-    assert scheduled_claim_event.trigger_block_number == 52 + 100 + 1
+    assert scheduled_claim_event.trigger_block_timestamp == expected_trigger_timestamp
 
 
 def test_monitor_new_balance_proof_event_handler_idempotency(context: Context):
@@ -558,7 +578,7 @@ def test_monitor_new_balance_proof_event_handler_idempotency(context: Context):
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
         reward_amount=TokenAmount(1),
         nonce=Nonce(2),
-        ms_address=Address(bytes([3] * 20)),
+        ms_address=Address(context.ms_state.address),
         raiden_node_address=DEFAULT_PARTICIPANT2,
         block_number=BlockNumber(23),
     )
@@ -579,7 +599,7 @@ def test_monitor_new_balance_proof_event_handler_idempotency(context: Context):
     assert channel
     assert channel.update_status is not None
     assert channel.update_status.nonce == 2
-    assert channel.update_status.update_sender_address == bytes([3] * 20)
+    assert channel.update_status.update_sender_address == context.ms_state.address
 
     monitor_new_balance_proof_event_handler(new_balance_event, context)
 
@@ -591,7 +611,7 @@ def test_monitor_new_balance_proof_event_handler_idempotency(context: Context):
     assert channel
     assert channel.update_status is not None
     assert channel.update_status.nonce == 2
-    assert channel.update_status.update_sender_address == bytes([3] * 20)
+    assert channel.update_status.update_sender_address == context.ms_state.address
 
 
 def test_monitor_reward_claimed_event_handler(context: Context, log):
@@ -697,7 +717,7 @@ def test_action_monitoring_rescheduling_when_user_lacks_funds(context: Context):
         non_closing_participant=DEFAULT_PARTICIPANT2,
     )
     scheduled_events_before = context.database.get_scheduled_events(
-        max_trigger_block=BlockNumber(10000)
+        max_trigger_timestamp=10000 * 15
     )
 
     # Try to call monitor when the user has insufficient funds
@@ -708,7 +728,7 @@ def test_action_monitoring_rescheduling_when_user_lacks_funds(context: Context):
     # Now the event must have been rescheduled
     # TODO: check that the event is rescheduled to trigger at the right block
     scheduled_events_after = context.database.get_scheduled_events(
-        max_trigger_block=BlockNumber(10000)
+        max_trigger_timestamp=10000 * 15
     )
     new_events = set(scheduled_events_after) - set(scheduled_events_before)
     assert len(new_events) == 1

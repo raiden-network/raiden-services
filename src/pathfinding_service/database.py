@@ -6,6 +6,7 @@ from uuid import UUID
 
 import structlog
 from eth_utils import to_canonical_address
+from web3.types import Timestamp
 
 from pathfinding_service.model import IOU
 from pathfinding_service.model.channel import Channel
@@ -112,14 +113,14 @@ class PFSDatabase(BaseDatabase):
     def upsert_iou(self, iou: IOU) -> None:
         iou_dict = IOU.Schema(exclude=["receiver", "chain_id"]).dump(iou)
         iou_dict["one_to_n_address"] = to_checksum_address(iou_dict["one_to_n_address"])
-        for key in ("amount", "expiration_block"):
+        for key in ("amount", "claimable_until"):
             iou_dict[key] = hex256(int(iou_dict[key]))
         self.upsert("iou", iou_dict)
 
     def get_ious(
         self,
         sender: Optional[Address] = None,
-        expiration_block: Optional[BlockNumber] = None,
+        claimable_until: Optional[Timestamp] = None,
         claimed: Optional[bool] = None,
         expires_after: Optional[BlockNumber] = None,
         expires_before: Optional[BlockNumber] = None,
@@ -134,17 +135,17 @@ class PFSDatabase(BaseDatabase):
         if sender is not None:
             query += " AND sender = ?"
             args.append(to_checksum_address(sender))
-        if expiration_block is not None:
-            query += " AND expiration_block = ?"
-            args.append(hex256(expiration_block))
+        if claimable_until is not None:
+            query += " AND claimable_until = ?"
+            args.append(hex256(claimable_until))
         if claimed is not None:
             query += " AND claimed = ?"
             args.append(claimed)
         if expires_before is not None:
-            query += " AND expiration_block < ?"
+            query += " AND claimable_until < ?"
             args.append(hex256(expires_before))
         if expires_after is not None:
-            query += " AND expiration_block > ?"
+            query += " AND claimable_until > ?"
             args.append(hex256(expires_after))
         if amount_at_least is not None:
             query += " AND amount >= ?"
@@ -171,11 +172,11 @@ class PFSDatabase(BaseDatabase):
     def get_iou(
         self,
         sender: Address,
-        expiration_block: Optional[BlockNumber] = None,
+        claimable_until: Optional[Timestamp] = None,
         claimed: Optional[bool] = None,
     ) -> Optional[IOU]:
         try:
-            return next(self.get_ious(sender, expiration_block, claimed))
+            return next(self.get_ious(sender, claimable_until, claimed))
         except StopIteration:
             return None
 
@@ -183,7 +184,6 @@ class PFSDatabase(BaseDatabase):
         channel_dict = Channel.Schema().dump(channel)
         for key in (
             "channel_id",
-            "settle_timeout",
             "capacity1",
             "reveal_timeout1",
             "update_nonce1",
@@ -226,9 +226,9 @@ class PFSDatabase(BaseDatabase):
 
     def get_token_networks(self) -> Iterator[TokenNetwork]:
         with self._cursor() as cursor:
-            for row in cursor.execute("SELECT address FROM token_network"):
+            for row in cursor.execute("SELECT address, settle_timeout FROM token_network"):
                 yield TokenNetwork(
-                    token_network_address=TokenNetworkAddress(to_canonical_address(row[0]))
+                    token_network_address=TokenNetworkAddress(to_canonical_address(row[0])), settle_timeout=row[1]
                 )
 
     def prepare_feedback(

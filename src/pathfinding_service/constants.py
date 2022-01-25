@@ -19,8 +19,8 @@ DEFAULT_SETTLE_TO_REVEAL_TIMEOUT_RATIO = 2
 
 DEFAULT_INFO_MESSAGE = "This is your favorite PFS."
 
-# When a new IOU session is started, this is the minimum number of blocks
-# between the current block and `expiration_block`.
+# When a new IOU session is started, this is the minimum number of seconds
+# between the current block and `expiration_timestamp`.
 MIN_IOU_EXPIRY: int = 7 * 24 * 60 * 4
 
 MAX_AGE_OF_IOU_REQUESTS: timedelta = timedelta(hours=1)

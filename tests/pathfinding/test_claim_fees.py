@@ -34,7 +34,7 @@ def test_metrics_iou(  # pylint: disable=too-many-locals
         sender=account,
         receiver=pfs.address,
         amount=TokenAmount(100),
-        expiration_block=BlockNumber(100),
+        claimable_until=100 * 15,
         signature=Signature(bytes([1] * 64)),
         chain_id=ChainID(61),
         one_to_n_address=to_canonical_address(one_to_n_contract.address),
@@ -88,9 +88,13 @@ def test_claim_fees(  # pylint: disable=too-many-locals
         dict(sender=accounts[3], amount=103, deposit=99),  # insufficient deposit
         dict(sender=accounts[4], amount=104, claimed=True),  # already claimed
         dict(sender=accounts[4], amount=99),  # too low amount
-        dict(sender=accounts[5], expiration_block=1000, amount=104),  # does not expire, yet
+        dict(sender=accounts[5], claimable_until=1000 * 15, amount=104),  # does not expire, yet
         dict(
-            sender=accounts[6], expiration_block=web3.eth.block_number - 1, amount=104
+            sender=accounts[6],
+            claimable_until=web3.eth.get_block(
+                web3.eth.block_number - 1
+            ).timestamp,  # type: ignore
+            amount=104,
         ),  # already expired
     ]
 
@@ -102,7 +106,7 @@ def test_claim_fees(  # pylint: disable=too-many-locals
             sender=iou_dict["sender"],
             receiver=pfs.address,
             amount=TokenAmount(iou_dict["amount"]),
-            expiration_block=BlockNumber(iou_dict.get("expiration_block", 100)),
+            claimable_until=iou_dict.get("claimable_until", 100 * 15),
             signature=Signature(bytes([1] * 64)),  # dummy, replaced below
             chain_id=ChainID(61),
             one_to_n_address=to_canonical_address(one_to_n_contract.address),
@@ -144,7 +148,7 @@ def test_claim_fees(  # pylint: disable=too-many-locals
     for iou in ious:
         expected_claimed = iou in claimable_with_enough_deposit
 
-        iou_in_db = pfs.database.get_iou(sender=iou.sender, expiration_block=iou.expiration_block)
+        iou_in_db = pfs.database.get_iou(sender=iou.sender, claimable_until=iou.claimable_until)
         assert iou_in_db
         assert iou_in_db.claimed == expected_claimed
 

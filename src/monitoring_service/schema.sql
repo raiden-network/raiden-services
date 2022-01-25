@@ -9,7 +9,8 @@ INSERT INTO blockchain DEFAULT VALUES;
 
 
 CREATE TABLE token_network (
-    address                 CHAR(42) PRIMARY KEY
+    address                 CHAR(42) PRIMARY KEY,
+    settle_timeout          INT
 );
 
 
@@ -18,7 +19,6 @@ CREATE TABLE channel (
     identifier              HEX_INT  NOT NULL,
     participant1            CHAR(42) NOT NULL,
     participant2            CHAR(42) NOT NULL,
-    settle_timeout          HEX_INT  NOT NULL,
     -- see raiden_contracts.constants.ChannelState for value meaning
     state                   INT NOT NULL CHECK (state >= 0 AND state <= 4),
     closing_block           HEX_INT,
@@ -68,14 +68,14 @@ CREATE TABLE waiting_transactions (
 );
 
 CREATE TABLE scheduled_events (
-    trigger_block_number    HEX_INT     NOT NULL,
+    trigger_block_timestamp    HEX_INT     NOT NULL,
     event_type              INT NOT NULL CHECK (event_type >= 0 AND event_type <=1),
 
     token_network_address   CHAR(42)    NOT NULL,
     channel_identifier      HEX_INT     NOT NULL,
     non_closing_participant CHAR(42)    NOT NULL,
 
-    PRIMARY KEY (trigger_block_number, event_type, token_network_address, channel_identifier, non_closing_participant),
+    PRIMARY KEY (trigger_block_timestamp, event_type, token_network_address, channel_identifier, non_closing_participant),
     FOREIGN KEY (token_network_address)
         REFERENCES token_network(address)
 );

@@ -180,7 +180,7 @@ class MonitoringService:
         a chain reorg.
         """
         triggered_events = self.context.database.get_scheduled_events(
-            max_trigger_block=self.context.get_latest_unconfirmed_block()
+            max_trigger_timestamp=self.context.latest_timestamp
         )
         for scheduled_event in triggered_events:
             event = scheduled_event.event

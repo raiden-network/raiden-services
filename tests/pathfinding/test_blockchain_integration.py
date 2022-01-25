@@ -18,7 +18,6 @@ from raiden_contracts.constants import (
     CONTRACT_TOKEN_NETWORK_REGISTRY,
     CONTRACT_USER_DEPOSIT,
     LOCKSROOT_OF_NO_LOCKS,
-    TEST_SETTLE_TIMEOUT_MIN,
 )
 from raiden_contracts.utils.type_aliases import PrivateKey
 from tests.constants import TEST_CHAIN_ID
@@ -79,8 +78,7 @@ def test_pfs_with_mocked_client(  # pylint: disable=too-many-arguments
         p2_capacity,
         _p2_fee,
         _p2_reveal_timeout,
-        _p2_reachability,
-        _settle_timeout,
+        _p2_reachability
     ) in channel_descriptions_case_1:
         # order is important here because we check order later
         channel_id = create_channel(clients[p1_index], clients[p2_index])[0]
@@ -114,8 +112,6 @@ def test_pfs_with_mocked_client(  # pylint: disable=too-many-arguments
         p1_address, p2_address = token_network_model.channel_id_to_addresses[channel_identifier]
         view1: ChannelView = graph[p1_address][p2_address]["view"]
         view2: ChannelView = graph[p2_address][p1_address]["view"]
-        assert view1.settle_timeout == TEST_SETTLE_TIMEOUT_MIN
-        assert view2.settle_timeout == TEST_SETTLE_TIMEOUT_MIN
         assert view1.reveal_timeout == DEFAULT_REVEAL_TIMEOUT
         assert view2.reveal_timeout == DEFAULT_REVEAL_TIMEOUT
 
@@ -133,7 +129,6 @@ def test_pfs_with_mocked_client(  # pylint: disable=too-many-arguments
             _p2_fee,
             _p2_reveal_timeout,
             _p2_reachability,
-            _settle_timeout,
         ),
     ) in enumerate(channel_descriptions_case_1):
         channel_id = channel_identifiers[index]

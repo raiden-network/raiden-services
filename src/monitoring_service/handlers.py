@@ -18,7 +18,7 @@ from monitoring_service.states import (
     MonitorRequest,
     OnChainUpdateStatus,
 )
-from raiden.utils.typing import BlockNumber, TokenNetworkAddress, TransactionHash
+from raiden.utils.typing import BlockNumber, TokenNetworkAddress, TransactionHash, Timestamp
 from raiden_contracts.constants import ChannelState
 from raiden_libs.blockchain import get_pessimistic_udc_balance
 from raiden_libs.constants import UDC_SECURITY_MARGIN_FACTOR_MS
@@ -57,8 +57,15 @@ class Context:
     def latest_confirmed_block(self) -> BlockNumber:
         return BlockNumber(self.get_latest_unconfirmed_block() - self.required_confirmations)
 
+    @property
+    def latest_timestamp(self) -> int:
+        return self.web3.eth.get_block("latest").timestamp  # type: ignore
+
     def get_latest_unconfirmed_block(self) -> BlockNumber:
         return self.web3.eth.block_number
+
+    def get_timestamp(self, block_number: BlockNumber) -> int:
+        return self.web3.eth.get_block(block_number).timestamp  # type: ignore
 
 
 def token_network_created_handler(event: Event, context: Context) -> None:
@@ -69,7 +76,7 @@ def token_network_created_handler(event: Event, context: Context) -> None:
         token_address=event.token_address,
         token_network=event,
     )
-    context.database.upsert_token_network(event.token_network_address)
+    context.database.upsert_token_network(event.token_network_address, event.settle_timeout)
 
 
 def channel_opened_event_handler(event: Event, context: Context) -> None:
@@ -86,17 +93,16 @@ def channel_opened_event_handler(event: Event, context: Context) -> None:
             identifier=event.channel_identifier,
             participant1=event.participant1,
             participant2=event.participant2,
-            settle_timeout=event.settle_timeout,
         )
     )
 
 
-def _first_allowed_block_to_monitor(
+def _first_allowed_timestamp_to_monitor(
     token_network_address: TokenNetworkAddress, channel: Channel, context: Context
-) -> BlockNumber:
-    # Call smart contract to use its `firstBlockAllowedToMonitor` calculation
-    return BlockNumber(
-        context.monitoring_service_contract.functions.firstBlockAllowedToMonitorChannel(
+) -> Timestamp:
+    # Call smart contract to use its `firstTimestampAllowedToMonitor` calculation
+    return Timestamp(
+        context.monitoring_service_contract.functions.firstTimestampAllowedToMonitorChannel(
             token_network=token_network_address,
             channel_identifier=channel.identifier,
             closing_participant=channel.participant1,
@@ -121,8 +127,9 @@ def channel_closed_event_handler(event: Event, context: Context) -> None:
 
     # Check if the settle timeout is already over.
     # This is important when starting up the MS.
-    settle_period_end_block = event.block_number + channel.settle_timeout
-    settle_period_over = settle_period_end_block < context.latest_confirmed_block
+    settle_period_end_timestamp = context.get_timestamp(event.block_number) + context.database.get_token_network_settle_timeout(event.token_network_address)
+    settle_period_over = settle_period_end_timestamp < context.latest_timestamp
+
     if not settle_period_over:
         # Trigger the monitoring action event handler, this will check if a
         # valid MR is available.
@@ -139,7 +146,7 @@ def channel_closed_event_handler(event: Event, context: Context) -> None:
         # Unfortunately, parity does the gas estimation on the current block
         # instead of the next one, so we have to wait for the first allowed
         # block to be finished to send the transaction successfully on parity.
-        trigger_block = _first_allowed_block_to_monitor(
+        trigger_block_timestamp = _first_allowed_timestamp_to_monitor(
             event.token_network_address, channel, context
         )
 
@@ -154,21 +161,21 @@ def channel_closed_event_handler(event: Event, context: Context) -> None:
             token_network_address=event.token_network_address,
             identifier=channel.identifier,
             scheduled_event=triggered_event,
-            trigger_block=trigger_block,
+            trigger_block_timestamp=trigger_block_timestamp,
         )
 
         # Add scheduled event if it not exists yet. If the event is already
         # scheduled (e.g. after a restart) the DB takes care that it is only
         # stored once.
         context.database.upsert_scheduled_event(
-            ScheduledEvent(trigger_block_number=trigger_block, event=triggered_event)
+            ScheduledEvent(trigger_block_timestamp=trigger_block_timestamp, event=triggered_event)
         )
     else:
         log.warning(
             "Settle period timeout is in the past, skipping",
             token_network_address=event.token_network_address,
             identifier=channel.identifier,
-            settle_period_end_block=settle_period_end_block,
+            settle_period_end_timestamp=settle_period_end_timestamp,
             latest_committed_block=context.latest_committed_block,
             latest_confirmed_block=context.latest_confirmed_block,
         )
@@ -339,6 +346,7 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context) -> N
 
         context.database.upsert_channel(channel)
 
+    # breakpoint()
     # check if this was our update, if so schedule the call of
     # `claimReward` it will be checked there that our update was the latest one
     if event.ms_address == context.ms_state.address:
@@ -349,7 +357,7 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context) -> N
         # Unfortunately, parity does the gas estimation on the current block
         # instead of the next one, so we have to wait for the first allowed
         # block to be finished to send the transaction successfully on parity.
-        trigger_block = BlockNumber(channel.closing_block + channel.settle_timeout + 1)
+        trigger_block_timestamp = (channel.closing_block + 1) * 15
 
         # trigger the claim reward action by an event
         triggered_event = ActionClaimRewardTriggeredEvent(
@@ -363,16 +371,15 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context) -> N
             token_network_address=event.token_network_address,
             identifier=channel.identifier,
             scheduled_event=triggered_event,
-            trigger_block=trigger_block,
+            trigger_block_timestamp=trigger_block_timestamp,
             closing_block=channel.closing_block,
-            settle_timeout=channel.settle_timeout,
         )
 
         # Add scheduled event if it not exists yet
         # If the event is already scheduled (e.g. after a restart) the DB takes care that
         # it is only stored once
         context.database.upsert_scheduled_event(
-            ScheduledEvent(trigger_block_number=trigger_block, event=triggered_event)
+            ScheduledEvent(trigger_block_timestamp=trigger_block_timestamp, event=triggered_event)
         )
 
 
@@ -485,9 +492,7 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
             min_reward=context.min_reward,
         )
         context.database.upsert_scheduled_event(
-            ScheduledEvent(
-                trigger_block_number=BlockNumber(context.latest_confirmed_block + 1), event=event
-            )
+            ScheduledEvent(trigger_block_timestamp=context.latest_timestamp, event=event)
         )
         return
 
@@ -518,7 +523,7 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
             )
         )
     except Exception as exc:  # pylint: disable=broad-except
-        first_allowed = _first_allowed_block_to_monitor(
+        first_allowed = _first_allowed_timestamp_to_monitor(
             event.token_network_address, channel, context
         )
         failed_at = context.web3.eth.block_number

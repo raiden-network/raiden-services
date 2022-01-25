@@ -13,7 +13,6 @@ from pathfinding_service.model.channel import Channel
 from raiden.network.transport.matrix import AddressReachability
 from raiden.utils.typing import (
     Address,
-    BlockTimeout,
     ChannelID,
     FeeAmount,
     PaymentAmount,
@@ -32,7 +31,6 @@ def test_edge_weight(addresses):
     participant2 = addresses[1]
     capacity = TokenAmount(int(20 * 1e18))
     capacity_partner = TokenAmount(int(10 * 1e18))
-    settle_timeout = BlockTimeout(15)
     channel = Channel(
         token_network_address=TokenNetworkAddress(bytes([1])),
         channel_id=channel_id,
@@ -40,7 +38,6 @@ def test_edge_weight(addresses):
         participant2=participant2,
         capacity1=capacity,
         capacity2=capacity_partner,
-        settle_timeout=settle_timeout,
     )
     view, view_partner = channel.views
     amount = PaymentAmount(int(1e18))  # one RDN

@@ -10,7 +10,6 @@ from raiden.tests.utils.factories import (
     make_channel_identifier,
     make_transaction_hash,
 )
-from raiden.utils.typing import BlockNumber
 from tests.monitoring.monitoring_service.factories import DEFAULT_TOKEN_NETWORK_ADDRESS
 from tests.monitoring.monitoring_service.test_handlers import create_default_token_network
 
@@ -46,14 +45,14 @@ def test_trigger_scheduled_events(monitoring_service: MonitoringService):
 
     current_confirmed_block = monitoring_service.context.latest_confirmed_block
     # Trigger the event on a currently unconfirmed block
-    trigger_block = BlockNumber(current_confirmed_block + 1)
+    trigger_block_timestamp = (current_confirmed_block + 1) * 15
 
-    assert len(monitoring_service.database.get_scheduled_events(trigger_block)) == 0
+    assert len(monitoring_service.database.get_scheduled_events(trigger_block_timestamp)) == 0
     monitoring_service.context.database.upsert_scheduled_event(
-        ScheduledEvent(trigger_block_number=trigger_block, event=triggered_event)
+        ScheduledEvent(trigger_block_timestamp=trigger_block_timestamp, event=triggered_event)
     )
-    assert len(monitoring_service.database.get_scheduled_events(trigger_block)) == 1
+    assert len(monitoring_service.database.get_scheduled_events(trigger_block_timestamp)) == 1
 
     # Now run `_trigger_scheduled_events` and see if the event is removed
     monitoring_service._trigger_scheduled_events()  # pylint: disable=protected-access
-    assert len(monitoring_service.database.get_scheduled_events(trigger_block)) == 0
+    assert len(monitoring_service.database.get_scheduled_events(trigger_block_timestamp)) == 0

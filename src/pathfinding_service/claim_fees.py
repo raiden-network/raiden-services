@@ -105,7 +105,7 @@ def claim_ious(
             sender=iou.sender,
             receiver=iou.receiver,
             amount=iou.amount,
-            expiration_block=iou.expiration_block,
+            claimable_until=iou.claimable_until,
             signature=iou.signature,
         )
         transferrable = claim.call()

@@ -6,15 +6,10 @@ from monitoring_service.service import MonitoringService
 from monitoring_service.states import Channel, OnChainUpdateStatus
 from raiden.constants import UINT256_MAX
 from raiden.tests.utils.factories import make_token_network_address
-from raiden.utils.typing import (
-    Address,
-    BlockNumber,
-    ChannelID,
-    TokenNetworkAddress,
-    TransactionHash,
-)
+from raiden.utils.typing import Address, ChannelID, TokenNetworkAddress, TransactionHash
 from raiden_libs.database import hex256
 from raiden_libs.utils import to_checksum_address
+from tests.constants import DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT
 from tests.monitoring.monitoring_service.factories import (
     DEFAULT_TOKEN_NETWORK_ADDRESS,
     create_channel,
@@ -26,12 +21,12 @@ def test_scheduled_events(ms_database: Database):
     # Add token network used as foreign key
     token_network_address = TokenNetworkAddress(bytes([1] * 20))
     ms_database.conn.execute(
-        "INSERT INTO token_network(address) VALUES (?)",
-        [to_checksum_address(token_network_address)],
+        "INSERT INTO token_network (address, settle_timeout) VALUES (?, ?)",
+        [to_checksum_address(token_network_address, DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT)],
     )
 
     event1 = ScheduledEvent(
-        trigger_block_number=BlockNumber(23),
+        trigger_block_timestamp=23 * 15,
         event=ActionMonitoringTriggeredEvent(
             token_network_address=token_network_address,
             channel_identifier=ChannelID(1),
@@ -44,7 +39,7 @@ def test_scheduled_events(ms_database: Database):
     assert ms_database.scheduled_event_count() == 1
 
     event2 = ScheduledEvent(
-        trigger_block_number=BlockNumber(24),
+        trigger_block_timestamp=24 * 15,
         event=ActionMonitoringTriggeredEvent(
             token_network_address=token_network_address,
             channel_identifier=ChannelID(1),
@@ -55,21 +50,21 @@ def test_scheduled_events(ms_database: Database):
     ms_database.upsert_scheduled_event(event2)
     assert ms_database.scheduled_event_count() == 2
 
-    assert len(ms_database.get_scheduled_events(BlockNumber(22))) == 0
-    assert len(ms_database.get_scheduled_events(BlockNumber(23))) == 1
-    assert len(ms_database.get_scheduled_events(BlockNumber(24))) == 2
+    assert len(ms_database.get_scheduled_events(22 * 15)) == 0
+    assert len(ms_database.get_scheduled_events(23 * 15)) == 1
+    assert len(ms_database.get_scheduled_events(24 * 15)) == 2
 
     ms_database.upsert_scheduled_event(event1)
     assert ms_database.scheduled_event_count() == 2
 
-    assert len(ms_database.get_scheduled_events(BlockNumber(22))) == 0
-    assert len(ms_database.get_scheduled_events(BlockNumber(23))) == 1
-    assert len(ms_database.get_scheduled_events(BlockNumber(24))) == 2
+    assert len(ms_database.get_scheduled_events(22 * 15)) == 0
+    assert len(ms_database.get_scheduled_events(23 * 15)) == 1
+    assert len(ms_database.get_scheduled_events(24 * 15)) == 2
 
     ms_database.remove_scheduled_event(event2)
-    assert len(ms_database.get_scheduled_events(BlockNumber(22))) == 0
-    assert len(ms_database.get_scheduled_events(BlockNumber(23))) == 1
-    assert len(ms_database.get_scheduled_events(BlockNumber(24))) == 1
+    assert len(ms_database.get_scheduled_events(22 * 15)) == 0
+    assert len(ms_database.get_scheduled_events(23 * 15)) == 1
+    assert len(ms_database.get_scheduled_events(24 * 15)) == 1
 
 
 def test_waiting_transactions(ms_database: Database):
@@ -100,8 +95,8 @@ def test_save_and_load_monitor_request(ms_database: Database):
 
 def test_save_and_load_channel(ms_database: Database):
     ms_database.conn.execute(
-        "INSERT INTO token_network (address) VALUES (?)",
-        [to_checksum_address(DEFAULT_TOKEN_NETWORK_ADDRESS)],
+        "INSERT INTO token_network (address, settle_timeout) VALUES (?, ?)",
+        [to_checksum_address(DEFAULT_TOKEN_NETWORK_ADDRESS), DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT],
     )
     for update_status in [
         None,
@@ -119,12 +114,12 @@ def test_save_and_load_channel(ms_database: Database):
 
 def test_saveing_multiple_channel(ms_database: Database):
     ms_database.conn.execute(
-        "INSERT INTO token_network (address) VALUES (?)",
-        [to_checksum_address(DEFAULT_TOKEN_NETWORK_ADDRESS)],
+        "INSERT INTO token_network (address, settle_timeout) VALUES (?, ?)",
+        [to_checksum_address(DEFAULT_TOKEN_NETWORK_ADDRESS), DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT],
     )
     tn_address2 = make_token_network_address()
     ms_database.conn.execute(
-        "INSERT INTO token_network (address) VALUES (?)", [to_checksum_address(tn_address2)]
+        "INSERT INTO token_network (address, settle_timeout) VALUES (?, ?)", [to_checksum_address(tn_address2), DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT]
     )
 
     channel1 = create_channel()
@@ -164,7 +159,7 @@ def test_purge_old_monitor_requests(
     # Channel 1 exists in the db
     token_network_address = req_mons[0].balance_proof.token_network_address
     ms_database.conn.execute(
-        "INSERT INTO token_network VALUES (?)", [to_checksum_address(token_network_address)]
+        "INSERT INTO token_network VALUES (?, ?)", [to_checksum_address(token_network_address), DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT]
     )
     ms_database.upsert_channel(
         Channel(
@@ -172,7 +167,6 @@ def test_purge_old_monitor_requests(
             token_network_address=token_network_address,
             participant1=Address(b"1" * 20),
             participant2=Address(b"2" * 20),
-            settle_timeout=10,
         )
     )
 

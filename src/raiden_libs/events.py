@@ -3,12 +3,12 @@ from dataclasses import dataclass
 from raiden.utils.typing import (
     Address,
     BlockNumber,
-    BlockTimeout,
     ChannelID,
     Nonce,
     TokenAddress,
     TokenAmount,
     TokenNetworkAddress,
+    Timestamp
 )
 
 
@@ -21,6 +21,7 @@ class Event:  # pylint: disable=too-few-public-methods
 class ReceiveTokenNetworkCreatedEvent(Event):
     token_address: TokenAddress
     token_network_address: TokenNetworkAddress
+    settle_timeout: Timestamp
     block_number: BlockNumber
 
 
@@ -30,7 +31,6 @@ class ReceiveChannelOpenedEvent(Event):
     channel_identifier: ChannelID
     participant1: Address
     participant2: Address
-    settle_timeout: BlockTimeout
     block_number: BlockNumber
 
 

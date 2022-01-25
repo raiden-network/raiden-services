@@ -78,7 +78,7 @@ class WrongIOURecipient(BadIOU):
 
 class IOUExpiredTooEarly(BadIOU):
     error_code = 2103
-    msg = "Please use a higher `expiration_block`."
+    msg = "Please use a higher `claimable_until`."
 
 
 class InsufficientServicePayment(BadIOU):
@@ -88,7 +88,7 @@ class InsufficientServicePayment(BadIOU):
 
 class IOUAlreadyClaimed(BadIOU):
     error_code = 2105
-    msg = "The IOU is already claimed. Please start new session with different `expiration_block`."
+    msg = "The IOU is already claimed. Please start new session with different `claimable_until`."
 
 
 class UseThisIOU(BadIOU):

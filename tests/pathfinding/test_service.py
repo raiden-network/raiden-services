@@ -41,6 +41,7 @@ from raiden_libs.events import (
 from raiden_libs.logging import format_to_hex
 from raiden_libs.states import BlockchainState
 from raiden_libs.utils import to_checksum_address
+from tests.constants import DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT
 from tests.utils import save_metrics_state
 
 from ..libs.mocks.web3 import ContractMock, Web3Mock
@@ -63,6 +64,7 @@ def test_prometheus_event_handling_no_exceptions(pathfinding_service_mock_empty)
         ReceiveTokenNetworkCreatedEvent(
             token_address=token_address,
             token_network_address=token_network_address,
+            settle_timeout=DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT,
             block_number=BlockNumber(1),
         ),
         ReceiveChannelOpenedEvent(
@@ -70,7 +72,6 @@ def test_prometheus_event_handling_no_exceptions(pathfinding_service_mock_empty)
             channel_identifier=channel_id,
             participant1=p1,
             participant2=p2,
-            settle_timeout=BlockTimeout(10),
             block_number=BlockNumber(2),
         ),
     ]
@@ -101,6 +102,7 @@ def test_prometheus_event_handling_raise_exception(pathfinding_service_mock_empt
     event = ReceiveTokenNetworkCreatedEvent(
         token_address=TokenAddress(bytes([1] * 20)),
         token_network_address=TokenNetworkAddress(bytes([2] * 20)),
+        settle_timeout=DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT,
         block_number=BlockNumber(1),
     )
 
@@ -133,6 +135,7 @@ def test_save_and_load_token_networks(pathfinding_service_mock_empty):
         ReceiveTokenNetworkCreatedEvent(
             token_address=token_address,
             token_network_address=token_network_address,
+            settle_timeout=DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT,
             block_number=BlockNumber(1),
         ),
         ReceiveChannelOpenedEvent(
@@ -140,7 +143,6 @@ def test_save_and_load_token_networks(pathfinding_service_mock_empty):
             channel_identifier=channel_id,
             participant1=p1,
             participant2=p2,
-            settle_timeout=BlockTimeout(2 ** 65),  # larger than max_uint64 to check hex storage
             block_number=BlockNumber(2),
         ),
     ]
@@ -175,6 +177,7 @@ def test_crash(tmpdir, mockchain):  # pylint: disable=too-many-locals
             ReceiveTokenNetworkCreatedEvent(
                 token_address=token_address,
                 token_network_address=token_network_address,
+                settle_timeout=DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT,
                 block_number=BlockNumber(1),
             )
         ],
@@ -185,7 +188,6 @@ def test_crash(tmpdir, mockchain):  # pylint: disable=too-many-locals
                 channel_identifier=channel_id,
                 participant1=p1,
                 participant2=p2,
-                settle_timeout=BlockTimeout(1000),
                 block_number=BlockNumber(3),
             )
         ],
@@ -247,6 +249,7 @@ def test_token_network_created(pathfinding_service_mock):
     network_event = ReceiveTokenNetworkCreatedEvent(
         token_address=token_address,
         token_network_address=token_network_address,
+        settle_timeout=DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT,
         block_number=BlockNumber(1),
     )
 
@@ -269,7 +272,6 @@ def setup_channel(pathfinding_service_mock, token_network_model):
         channel_identifier=ChannelID(1),
         participant1=PARTICIPANT1,
         participant2=PARTICIPANT2,
-        settle_timeout=BlockTimeout(20),
         block_number=BlockNumber(1),
     )
     assert len(pathfinding_service_mock.token_networks) == 1
@@ -288,7 +290,6 @@ def test_token_channel_opened(pathfinding_service_mock, token_network_model):
         channel_identifier=ChannelID(1),
         participant1=PARTICIPANT1,
         participant2=PARTICIPANT2,
-        settle_timeout=BlockTimeout(20),
         block_number=BlockNumber(1),
     )
 
@@ -457,6 +458,7 @@ def test_logging_processor():
     event = ReceiveTokenNetworkCreatedEvent(
         token_address=address,
         token_network_address=TokenNetworkAddress(address2),
+        settle_timeout=DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT,
         block_number=BlockNumber(1),
     )
     event_log = format_to_hex(_logger=logger, _log_method=log_method, event_dict=dict(event=event))

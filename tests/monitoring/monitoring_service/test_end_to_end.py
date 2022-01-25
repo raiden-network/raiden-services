@@ -55,7 +55,7 @@ def test_first_allowed_monitoring(
     assert service_registry.functions.hasValidRegistration(monitoring_service.address).call()
 
     # each client does a transfer
-    channel_id = create_channel(c1, c2, settle_timeout=10)[0]
+    channel_id = create_channel(c1, c2)[0]
 
     shared_bp_args = dict(
         channel_identifier=channel_id,
@@ -107,7 +107,7 @@ def test_first_allowed_monitoring(
 
     monitoring_service._process_new_blocks(web3.eth.block_number)
     triggered_events = monitoring_service.database.get_scheduled_events(
-        max_trigger_block=BlockNumber(web3.eth.block_number + 10)
+        max_trigger_timestamp=((web3.eth.block_number + 10) * 15)
     )
     assert len(triggered_events) == 1
 
@@ -123,7 +123,7 @@ def test_first_allowed_monitoring(
     # This should be only one block before, but we trigger one block too late
     # to work around parity's gas estimation. See
     # https://github.com/raiden-network/raiden-services/pull/728
-    wait_for_blocks(monitor_trigger.trigger_block_number - web3.eth.block_number - 2)
+    wait_for_blocks(monitor_trigger.trigger_block_timestamp / 15 - web3.eth.block_number - 2)
     handle_event(monitor_trigger.event, monitoring_service.context)
     assert [e.event for e in query()] == []
 
@@ -134,7 +134,7 @@ def test_first_allowed_monitoring(
 
     # Now we can try again. The first try mined a new block, so now we're one
     # block further and `monitor` should succeed.
-    wait_for_blocks(monitor_trigger.trigger_block_number - web3.eth.block_number)
+    wait_for_blocks(monitor_trigger.trigger_block_timestamp / 15 - web3.eth.block_number)
     handle_event(monitor_trigger.event, monitoring_service.context)
     assert [e.event for e in query()] == [MonitoringServiceEvent.NEW_BALANCE_PROOF_RECEIVED]
 
@@ -172,7 +172,7 @@ def test_e2e(  # pylint: disable=too-many-arguments,too-many-locals
     assert service_registry.functions.hasValidRegistration(monitoring_service.address).call()
 
     # each client does a transfer
-    channel_id = create_channel(c1, c2, settle_timeout=5)[0]
+    channel_id = create_channel(c1, c2)[0]
 
     shared_bp_args = dict(
         channel_identifier=channel_id,
