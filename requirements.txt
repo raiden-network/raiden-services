@@ -1,7 +1,7 @@
 raiden==3.0.0rc9
 
 sentry-sdk[flask]==1.5.3
-prometheus_client==0.12.0
+prometheus_client==0.13.0
 networkx==2.6.3
 
 jaeger-client==4.8.0
