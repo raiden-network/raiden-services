@@ -7,7 +7,6 @@ import pytest
 from eth_utils import decode_hex, to_canonical_address
 from web3 import Web3
 from web3.contract import Contract
-from tests.constants import DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT
 
 from pathfinding_service.model.token_network import TokenNetwork
 from pathfinding_service.service import PathfindingService
@@ -28,6 +27,7 @@ from raiden.utils.typing import (
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
 from raiden_contracts.utils.type_aliases import PrivateKey
 from raiden_libs.utils import private_key_to_address, to_checksum_address
+from tests.constants import DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT
 
 from ...libs.mocks.web3 import Web3Mock
 from ..utils import SimpleReachabilityContainer
@@ -316,7 +316,9 @@ def pathfinding_service_mock(
     pathfinding_service_mock_empty.token_networks = {
         token_network_model.address: token_network_model
     }
-    pathfinding_service_mock_empty.database.upsert_token_network(token_network_model.address, DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT)
+    pathfinding_service_mock_empty.database.upsert_token_network(
+        token_network_model.address, DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT
+    )
     pathfinding_service_mock_empty.matrix_listener.base_url = "https://matrix.server"
 
     yield pathfinding_service_mock_empty

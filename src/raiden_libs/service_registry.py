@@ -108,7 +108,9 @@ def checked_transact(
 ) -> TxReceipt:
 
     log.info(f"Starting: {task_name}")
-    transaction_hash = function_call.transact({"from": sender_address})
+    transaction_hash = function_call.transact(
+        {"from": sender_address}
+    )
 
     confirmation_msg = ""
     if wait_confirmation_interval:

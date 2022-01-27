@@ -22,11 +22,11 @@ def test_scheduled_events(ms_database: Database):
     token_network_address = TokenNetworkAddress(bytes([1] * 20))
     ms_database.conn.execute(
         "INSERT INTO token_network (address, settle_timeout) VALUES (?, ?)",
-        [to_checksum_address(token_network_address, DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT)],
+        [to_checksum_address(token_network_address), DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT],
     )
 
     event1 = ScheduledEvent(
-        trigger_block_timestamp=23 * 15,
+        trigger_timestamp=23 * 15,
         event=ActionMonitoringTriggeredEvent(
             token_network_address=token_network_address,
             channel_identifier=ChannelID(1),
@@ -39,7 +39,7 @@ def test_scheduled_events(ms_database: Database):
     assert ms_database.scheduled_event_count() == 1
 
     event2 = ScheduledEvent(
-        trigger_block_timestamp=24 * 15,
+        trigger_timestamp=24 * 15,
         event=ActionMonitoringTriggeredEvent(
             token_network_address=token_network_address,
             channel_identifier=ChannelID(1),
@@ -119,7 +119,8 @@ def test_saveing_multiple_channel(ms_database: Database):
     )
     tn_address2 = make_token_network_address()
     ms_database.conn.execute(
-        "INSERT INTO token_network (address, settle_timeout) VALUES (?, ?)", [to_checksum_address(tn_address2), DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT]
+        "INSERT INTO token_network (address, settle_timeout) VALUES (?, ?)",
+        [to_checksum_address(tn_address2), DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT],
     )
 
     channel1 = create_channel()
@@ -159,7 +160,8 @@ def test_purge_old_monitor_requests(
     # Channel 1 exists in the db
     token_network_address = req_mons[0].balance_proof.token_network_address
     ms_database.conn.execute(
-        "INSERT INTO token_network VALUES (?, ?)", [to_checksum_address(token_network_address), DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT]
+        "INSERT INTO token_network VALUES (?, ?)",
+        [to_checksum_address(token_network_address), DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT],
     )
     ms_database.upsert_channel(
         Channel(

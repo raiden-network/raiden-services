@@ -123,7 +123,7 @@ def test_first_allowed_monitoring(
     # This should be only one block before, but we trigger one block too late
     # to work around parity's gas estimation. See
     # https://github.com/raiden-network/raiden-services/pull/728
-    wait_for_blocks(monitor_trigger.trigger_block_timestamp / 15 - web3.eth.block_number - 2)
+    wait_for_blocks(monitor_trigger.trigger_timestamp / 15 - web3.eth.block_number - 2)
     handle_event(monitor_trigger.event, monitoring_service.context)
     assert [e.event for e in query()] == []
 
@@ -134,7 +134,7 @@ def test_first_allowed_monitoring(
 
     # Now we can try again. The first try mined a new block, so now we're one
     # block further and `monitor` should succeed.
-    wait_for_blocks(monitor_trigger.trigger_block_timestamp / 15 - web3.eth.block_number)
+    wait_for_blocks(monitor_trigger.trigger_timestamp / 15 - web3.eth.block_number)
     handle_event(monitor_trigger.event, monitoring_service.context)
     assert [e.event for e in query()] == [MonitoringServiceEvent.NEW_BALANCE_PROOF_RECEIVED]
 

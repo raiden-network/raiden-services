@@ -45,14 +45,14 @@ def test_trigger_scheduled_events(monitoring_service: MonitoringService):
 
     current_confirmed_block = monitoring_service.context.latest_confirmed_block
     # Trigger the event on a currently unconfirmed block
-    trigger_block_timestamp = (current_confirmed_block + 1) * 15
+    trigger_timestamp = (current_confirmed_block + 1) * 15
 
-    assert len(monitoring_service.database.get_scheduled_events(trigger_block_timestamp)) == 0
+    assert len(monitoring_service.database.get_scheduled_events(trigger_timestamp)) == 0
     monitoring_service.context.database.upsert_scheduled_event(
-        ScheduledEvent(trigger_block_timestamp=trigger_block_timestamp, event=triggered_event)
+        ScheduledEvent(trigger_timestamp=trigger_timestamp, event=triggered_event)
     )
-    assert len(monitoring_service.database.get_scheduled_events(trigger_block_timestamp)) == 1
+    assert len(monitoring_service.database.get_scheduled_events(trigger_timestamp)) == 1
 
     # Now run `_trigger_scheduled_events` and see if the event is removed
     monitoring_service._trigger_scheduled_events()  # pylint: disable=protected-access
-    assert len(monitoring_service.database.get_scheduled_events(trigger_block_timestamp)) == 0
+    assert len(monitoring_service.database.get_scheduled_events(trigger_timestamp)) == 0

@@ -5,10 +5,10 @@ from raiden.utils.typing import (
     BlockNumber,
     ChannelID,
     Nonce,
+    Timestamp,
     TokenAddress,
     TokenAmount,
     TokenNetworkAddress,
-    Timestamp
 )
 
 

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from raiden.utils.typing import Address, ChannelID, TokenNetworkAddress
+from raiden.utils.typing import Address, ChannelID, Timestamp, TokenNetworkAddress
 from raiden_libs.events import Event
 
 
@@ -8,7 +8,7 @@ from raiden_libs.events import Event
 class ScheduledEvent(Event):
     """An event to be triggered a t a certain block number."""
 
-    trigger_block_timestamp: int
+    trigger_timestamp: Timestamp
     event: Event
 
 

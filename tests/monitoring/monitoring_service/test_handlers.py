@@ -1,5 +1,6 @@
 # pylint: disable=redefined-outer-name,too-many-lines
 import dataclasses
+from datetime import datetime
 from typing import Optional
 from unittest.mock import Mock, patch
 
@@ -73,8 +74,8 @@ def assert_channel_state(context: Context, state: ChannelState):
 
 def create_default_token_network(context: Context) -> None:
     context.database.conn.execute(
-        "INSERT INTO token_network (address) VALUES (?)",
-        [to_checksum_address(DEFAULT_TOKEN_NETWORK_ADDRESS)],
+        "INSERT INTO token_network (address, settle_timeout) VALUES (?, ?)",
+        [to_checksum_address(DEFAULT_TOKEN_NETWORK_ADDRESS), DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT],
     )
 
 
@@ -230,13 +231,13 @@ def test_channel_closed_event_handler_closes_existing_channel(context: Context):
 
 def test_channel_closed_event_handler_idempotency(context: Context):
     context = setup_state_with_open_channel(context)
-    context.web3.eth.block_number = BlockNumber(60)
+    current_block = int(datetime.utcnow().timestamp() // 15)
 
     event = ReceiveChannelClosedEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
         closing_participant=DEFAULT_PARTICIPANT2,
-        block_number=BlockNumber(62),
+        block_number=BlockNumber(current_block + 1),
     )
     channel_closed_event_handler(event, context)
 
@@ -313,12 +314,13 @@ def test_channel_closed_event_handler_trigger_action_monitor_event_with_monitor_
     context = setup_state_with_open_channel(context)
     # add MR to DB
     context.database.upsert_monitor_request(create_signed_monitor_request())
+    current_block_number = int(datetime.utcnow().timestamp() // 15)
 
     event = ReceiveChannelClosedEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
         closing_participant=DEFAULT_PARTICIPANT2,
-        block_number=BlockNumber(152),
+        block_number=BlockNumber(current_block_number + 1),
     )
 
     channel_closed_event_handler(event, context)
@@ -329,12 +331,13 @@ def test_channel_closed_event_handler_trigger_action_monitor_event_without_monit
     context: Context,
 ):
     context = setup_state_with_open_channel(context)
+    current_block_number = int(datetime.utcnow().timestamp() // 15)
 
     event = ReceiveChannelClosedEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
         closing_participant=DEFAULT_PARTICIPANT2,
-        block_number=BlockNumber(152),
+        block_number=BlockNumber(current_block_number + 1),
     )
 
     channel_closed_event_handler(event, context)
@@ -537,12 +540,12 @@ def test_monitor_new_balance_proof_event_handler_sets_update_status(context: Con
     assert channel.update_status.nonce == 2
     assert channel.update_status.update_sender_address == bytes([4] * 20)
 
-    # closing block + 1 * avg. time per block
-    expected_trigger_timestamp = (52 + 1) * 15
+    # closing block + 1 * avg. time per block + token network settle timeout
+    expected_trigger_timestamp = (52 + 1) * 15 + context.database.get_token_network_settle_timeout(channel.token_network_address)
 
     scheduled_claim_event = get_scheduled_claim_event(context.database)
     assert scheduled_claim_event is not None
-    assert scheduled_claim_event.trigger_block_timestamp == expected_trigger_timestamp
+    assert scheduled_claim_event.trigger_timestamp == expected_trigger_timestamp
 
     new_balance_event2 = ReceiveMonitoringNewBalanceProofEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
@@ -567,7 +570,7 @@ def test_monitor_new_balance_proof_event_handler_sets_update_status(context: Con
 
     scheduled_claim_event = get_scheduled_claim_event(context.database)
     assert scheduled_claim_event is not None
-    assert scheduled_claim_event.trigger_block_timestamp == expected_trigger_timestamp
+    assert scheduled_claim_event.trigger_timestamp == expected_trigger_timestamp
 
 
 def test_monitor_new_balance_proof_event_handler_idempotency(context: Context):

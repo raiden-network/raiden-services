@@ -68,14 +68,14 @@ CREATE TABLE waiting_transactions (
 );
 
 CREATE TABLE scheduled_events (
-    trigger_block_timestamp    HEX_INT     NOT NULL,
+    trigger_timestamp    HEX_INT     NOT NULL,
     event_type              INT NOT NULL CHECK (event_type >= 0 AND event_type <=1),
 
     token_network_address   CHAR(42)    NOT NULL,
     channel_identifier      HEX_INT     NOT NULL,
     non_closing_participant CHAR(42)    NOT NULL,
 
-    PRIMARY KEY (trigger_block_timestamp, event_type, token_network_address, channel_identifier, non_closing_participant),
+    PRIMARY KEY (trigger_timestamp, event_type, token_network_address, channel_identifier, non_closing_participant),
     FOREIGN KEY (token_network_address)
         REFERENCES token_network(address)
 );

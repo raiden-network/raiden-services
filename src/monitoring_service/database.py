@@ -164,7 +164,7 @@ class SharedDatabase(BaseDatabase):
     def upsert_scheduled_event(self, event: ScheduledEvent) -> None:
         contained_event: SubEvent = event.event
         values = [
-            hex256(event.trigger_block_timestamp),
+            hex256(event.trigger_timestamp),
             EVENT_TYPE_ID_MAP[type(contained_event)],
             to_checksum_address(contained_event.token_network_address),
             hex256(contained_event.channel_identifier),
@@ -179,7 +179,7 @@ class SharedDatabase(BaseDatabase):
         rows = self.conn.execute(
             """
                 SELECT * FROM scheduled_events
-                WHERE trigger_block_timestamp <= ?
+                WHERE trigger_timestamp <= ?
             """,
             [hex256(max_trigger_timestamp)],
         ).fetchall()
@@ -192,16 +192,14 @@ class SharedDatabase(BaseDatabase):
                 row["non_closing_participant"],
             )
 
-            return ScheduledEvent(
-                trigger_block_timestamp=row["trigger_block_timestamp"], event=sub_event
-            )
+            return ScheduledEvent(trigger_timestamp=row["trigger_timestamp"], event=sub_event)
 
         return [create_scheduled_event(row) for row in rows]
 
     def remove_scheduled_event(self, event: ScheduledEvent) -> None:
         contained_event: SubEvent = event.event
         values = [
-            hex256(event.trigger_block_timestamp),
+            hex256(event.trigger_timestamp),
             to_checksum_address(contained_event.token_network_address),
             hex256(contained_event.channel_identifier),
             contained_event.non_closing_participant,
@@ -209,7 +207,7 @@ class SharedDatabase(BaseDatabase):
         self.conn.execute(
             """
                 DELETE FROM scheduled_events
-                WHERE trigger_block_timestamp = ?
+                WHERE trigger_timestamp = ?
                     AND token_network_address = ?
                     AND channel_identifier = ?
                     AND non_closing_participant =?

@@ -43,7 +43,10 @@ def a(int_addr) -> Address:  # pylint: disable=invalid-name
 
 class TokenNetworkForTests(TokenNetwork):
     def __init__(self, channels: List[dict], default_capacity: TA = TA(1000)):
-        super().__init__(token_network_address=TokenNetworkAddress(a(255)),  settle_timeout=DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT)
+        super().__init__(
+            token_network_address=TokenNetworkAddress(a(255)),
+            settle_timeout=DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT,
+        )
 
         # open channels
         channel_ids = itertools.count(100)

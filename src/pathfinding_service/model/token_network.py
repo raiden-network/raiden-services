@@ -26,11 +26,11 @@ from raiden.utils.typing import (
     PaymentAmount,
     PaymentWithFeeAmount,
     PeerCapabilities,
+    Timestamp,
     TokenAmount,
     TokenNetworkAddress,
 )
 from raiden_libs.utils import to_checksum_address
-from ulid import Timestamp
 
 log = structlog.get_logger(__name__)
 

@@ -173,14 +173,9 @@ class MonitoringService:
             handle_event(event, self.context)
 
     def _trigger_scheduled_events(self) -> None:
-        """Trigger scheduled events
-
-        Here `latest_block` is used instead of `latest_confirmed_block`, because triggered
-        events only rely on block number, and not on certain events that might change during
-        a chain reorg.
-        """
+        timestamp_now = datetime.utcnow().timestamp()
         triggered_events = self.context.database.get_scheduled_events(
-            max_trigger_timestamp=self.context.latest_timestamp
+            max_trigger_timestamp=timestamp_now
         )
         for scheduled_event in triggered_events:
             event = scheduled_event.event

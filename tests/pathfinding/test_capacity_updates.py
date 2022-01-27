@@ -36,7 +36,10 @@ from tests.constants import (
 
 
 def setup_channel(service: PathfindingService) -> TokenNetwork:
-    token_network = TokenNetwork(token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS, settle_timeout=DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT)
+    token_network = TokenNetwork(
+        token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
+        settle_timeout=DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT,
+    )
     service.token_networks[token_network.address] = token_network
 
     token_network.handle_channel_opened_event(

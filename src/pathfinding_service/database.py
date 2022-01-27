@@ -228,7 +228,8 @@ class PFSDatabase(BaseDatabase):
         with self._cursor() as cursor:
             for row in cursor.execute("SELECT address, settle_timeout FROM token_network"):
                 yield TokenNetwork(
-                    token_network_address=TokenNetworkAddress(to_canonical_address(row[0])), settle_timeout=row[1]
+                    token_network_address=TokenNetworkAddress(to_canonical_address(row[0])),
+                    settle_timeout=row[1],
                 )
 
     def prepare_feedback(

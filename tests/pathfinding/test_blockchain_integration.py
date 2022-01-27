@@ -78,7 +78,7 @@ def test_pfs_with_mocked_client(  # pylint: disable=too-many-arguments
         p2_capacity,
         _p2_fee,
         _p2_reveal_timeout,
-        _p2_reachability
+        _p2_reachability,
     ) in channel_descriptions_case_1:
         # order is important here because we check order later
         channel_id = create_channel(clients[p1_index], clients[p2_index])[0]
