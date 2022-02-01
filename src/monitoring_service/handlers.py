@@ -358,7 +358,9 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context) -> N
         # Unfortunately, parity does the gas estimation on the current block
         # instead of the next one, so we have to wait for the first allowed
         # block to be finished to send the transaction successfully on parity.
-        closing_block_timestamp = context.web3.eth.get_block(channel.closing_block).timestamp
+        closing_block_timestamp = context.web3.eth.get_block(
+            channel.closing_block
+        ).timestamp  # type: ignore
         token_network_timeout = context.database.get_token_network_settle_timeout(
             channel.token_network_address
         )

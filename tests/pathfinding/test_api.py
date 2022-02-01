@@ -342,20 +342,34 @@ def test_get_paths(api_url: str, addresses: List[Address], token_network_model: 
 
     data = {"from": hex_addrs[0], "to": hex_addrs[2], "value": 10, "max_paths": DEFAULT_MAX_PATHS}
     response = requests.post(url, json=data)
+
     assert response.status_code == 200
+
     paths = response.json()["result"]
-    assert len(paths) == 1
-    assert paths == [
-        {
-            "path": [hex_addrs[0], hex_addrs[1], hex_addrs[2]],
-            "address_metadata": {
-                hex_addrs[0]: get_address_metadata(hex_addrs[0]),
-                hex_addrs[1]: get_address_metadata(hex_addrs[1]),
-                hex_addrs[2]: get_address_metadata(hex_addrs[2]),
-            },
-            "estimated_fee": 0,
-        }
-    ]
+
+    assert len(paths) == 2
+
+    assert paths[0] == {
+        "path": [hex_addrs[0], hex_addrs[1], hex_addrs[2]],
+        "address_metadata": {
+            hex_addrs[0]: get_address_metadata(hex_addrs[0]),
+            hex_addrs[1]: get_address_metadata(hex_addrs[1]),
+            hex_addrs[2]: get_address_metadata(hex_addrs[2]),
+        },
+        "estimated_fee": 0,
+    }
+
+    assert paths[1] == {
+        "path": [hex_addrs[0], hex_addrs[1], hex_addrs[4], hex_addrs[3], hex_addrs[2]],
+        "address_metadata": {
+            hex_addrs[0]: get_address_metadata(hex_addrs[0]),
+            hex_addrs[1]: get_address_metadata(hex_addrs[1]),
+            hex_addrs[2]: get_address_metadata(hex_addrs[2]),
+            hex_addrs[3]: get_address_metadata(hex_addrs[3]),
+            hex_addrs[4]: get_address_metadata(hex_addrs[4]),
+        },
+        "estimated_fee": 0,
+    }
 
     # check default value for num_path
     data = {"from": hex_addrs[0], "to": hex_addrs[2], "value": 10}
@@ -403,7 +417,7 @@ def test_payment_with_new_iou_rejected(  # pylint: disable=too-many-locals
         api_sut.pathfinding_service.address,
         one_to_n_address=api_sut.one_to_n_address,
         amount=100,
-        claimable_until=1_234_567,
+        claimable_until=int(datetime.utcnow().timestamp()) + 1_234_567,
     )
     first_iou_dict = iou.Schema().dump(iou)
     second_iou = make_iou(
@@ -411,7 +425,7 @@ def test_payment_with_new_iou_rejected(  # pylint: disable=too-many-locals
         api_sut.pathfinding_service.address,
         one_to_n_address=api_sut.one_to_n_address,
         amount=200,
-        claimable_until=1_234_568,
+        claimable_until=int(datetime.utcnow().timestamp()) + 1_234_568,
     )
     second_iou_dict = second_iou.Schema().dump(second_iou)
 

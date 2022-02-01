@@ -201,13 +201,13 @@ def test_channel_opened_event_handler_adds_channel(context: Context):
 
 def test_channel_closed_event_handler_closes_existing_channel(context: Context):
     context = setup_state_with_open_channel(context)
-    context.web3.eth.block_number = BlockNumber(60)
+    current_block = int(datetime.utcnow().timestamp() // 15)
 
     event = ReceiveChannelClosedEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
         closing_participant=DEFAULT_PARTICIPANT2,
-        block_number=BlockNumber(152),
+        block_number=BlockNumber(current_block + 1),
     )
 
     channel_closed_event_handler(event, context)
@@ -218,7 +218,7 @@ def test_channel_closed_event_handler_closes_existing_channel(context: Context):
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
         channel_identifier=DEFAULT_CHANNEL_IDENTIFIER,
         closing_participant=DEFAULT_PARTICIPANT2,
-        block_number=BlockNumber(52),
+        block_number=BlockNumber(current_block),
     )
     channel_closed_event_handler(event, context)
 
@@ -541,7 +541,9 @@ def test_monitor_new_balance_proof_event_handler_sets_update_status(context: Con
     assert channel.update_status.update_sender_address == bytes([4] * 20)
 
     # closing block + 1 * avg. time per block + token network settle timeout
-    expected_trigger_timestamp = (52 + 1) * 15 + context.database.get_token_network_settle_timeout(channel.token_network_address)
+    expected_trigger_timestamp = (52 + 1) * 15 + context.database.get_token_network_settle_timeout(
+        channel.token_network_address
+    )
 
     scheduled_claim_event = get_scheduled_claim_event(context.database)
     assert scheduled_claim_event is not None
@@ -720,7 +722,7 @@ def test_action_monitoring_rescheduling_when_user_lacks_funds(context: Context):
         non_closing_participant=DEFAULT_PARTICIPANT2,
     )
     scheduled_events_before = context.database.get_scheduled_events(
-        max_trigger_timestamp=10000 * 15
+        max_trigger_timestamp=datetime.utcnow().timestamp()
     )
 
     # Try to call monitor when the user has insufficient funds
@@ -731,7 +733,7 @@ def test_action_monitoring_rescheduling_when_user_lacks_funds(context: Context):
     # Now the event must have been rescheduled
     # TODO: check that the event is rescheduled to trigger at the right block
     scheduled_events_after = context.database.get_scheduled_events(
-        max_trigger_timestamp=10000 * 15
+        max_trigger_timestamp=datetime.utcnow().timestamp()
     )
     new_events = set(scheduled_events_after) - set(scheduled_events_before)
     assert len(new_events) == 1

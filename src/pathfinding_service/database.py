@@ -6,7 +6,6 @@ from uuid import UUID
 
 import structlog
 from eth_utils import to_canonical_address
-from web3.types import Timestamp
 
 from pathfinding_service.model import IOU
 from pathfinding_service.model.channel import Channel
@@ -21,6 +20,7 @@ from raiden.utils.typing import (
     ChainID,
     ChannelID,
     FeeAmount,
+    Timestamp,
     TokenAmount,
     TokenNetworkAddress,
 )
@@ -122,8 +122,8 @@ class PFSDatabase(BaseDatabase):
         sender: Optional[Address] = None,
         claimable_until: Optional[Timestamp] = None,
         claimed: Optional[bool] = None,
-        expires_after: Optional[BlockNumber] = None,
-        expires_before: Optional[BlockNumber] = None,
+        claimable_until_after: Optional[Timestamp] = None,
+        claimable_until_before: Optional[Timestamp] = None,
         amount_at_least: Optional[TokenAmount] = None,
     ) -> Iterator[IOU]:
         query = """
@@ -141,12 +141,12 @@ class PFSDatabase(BaseDatabase):
         if claimed is not None:
             query += " AND claimed = ?"
             args.append(claimed)
-        if expires_before is not None:
+        if claimable_until_before is not None:
             query += " AND claimable_until < ?"
-            args.append(hex256(expires_before))
-        if expires_after is not None:
+            args.append(hex256(claimable_until_before))
+        if claimable_until_after is not None:
             query += " AND claimable_until > ?"
-            args.append(hex256(expires_after))
+            args.append(hex256(claimable_until_after))
         if amount_at_least is not None:
             query += " AND amount >= ?"
             args.append(hex256(amount_at_least))

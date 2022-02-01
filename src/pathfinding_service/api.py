@@ -263,8 +263,9 @@ def process_payment(  # pylint: disable=too-many-branches
 
     # Compare with known IOU
     latest_block = pathfinding_service.blockchain_state.latest_committed_block
-    latest_timestamp = pathfinding_service.web3.eth.get_block(latest_block).timestamp
+    timestamp_now = datetime.utcnow().timestamp()
     active_iou = pathfinding_service.database.get_iou(sender=iou.sender, claimed=False)
+
     if active_iou:
         if active_iou.claimable_until != iou.claimable_until:
             raise exceptions.UseThisIOU(iou=active_iou.Schema().dump(active_iou))
@@ -277,7 +278,7 @@ def process_payment(  # pylint: disable=too-many-branches
         if claimed_iou:
             raise exceptions.IOUAlreadyClaimed
 
-        min_expiry = latest_timestamp + MIN_IOU_EXPIRY
+        min_expiry = timestamp_now + MIN_IOU_EXPIRY
         if iou.claimable_until < min_expiry:
             raise exceptions.IOUExpiredTooEarly(min_expiry=min_expiry)
         expected_amount = service_fee

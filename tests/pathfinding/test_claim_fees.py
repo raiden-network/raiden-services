@@ -11,7 +11,7 @@ from pathfinding_service.claim_fees import claim_ious, get_claimable_ious, main
 from pathfinding_service.model import IOU
 from pathfinding_service.service import PathfindingService
 from raiden.utils.signer import LocalSigner
-from raiden.utils.typing import BlockNumber, ChainID, Signature, TokenAmount
+from raiden.utils.typing import ChainID, Signature, TokenAmount
 from tests.libs.mocks.web3 import Web3Mock
 from tests.utils import save_metrics_state
 
@@ -34,7 +34,7 @@ def test_metrics_iou(  # pylint: disable=too-many-locals
         sender=account,
         receiver=pfs.address,
         amount=TokenAmount(100),
-        claimable_until=100 * 15,
+        claimable_until=web3.eth.get_block("latest").timestamp + 100,  # type: ignore
         signature=Signature(bytes([1] * 64)),
         chain_id=ChainID(61),
         one_to_n_address=to_canonical_address(one_to_n_contract.address),
@@ -88,7 +88,7 @@ def test_claim_fees(  # pylint: disable=too-many-locals
         dict(sender=accounts[3], amount=103, deposit=99),  # insufficient deposit
         dict(sender=accounts[4], amount=104, claimed=True),  # already claimed
         dict(sender=accounts[4], amount=99),  # too low amount
-        dict(sender=accounts[5], claimable_until=1000 * 15, amount=104),  # does not expire, yet
+        dict(sender=accounts[5], claimable_until=100 * 15, amount=104),  # does not expire, yet
         dict(
             sender=accounts[6],
             claimable_until=web3.eth.get_block(
@@ -106,7 +106,9 @@ def test_claim_fees(  # pylint: disable=too-many-locals
             sender=iou_dict["sender"],
             receiver=pfs.address,
             amount=TokenAmount(iou_dict["amount"]),
-            claimable_until=iou_dict.get("claimable_until", 100 * 15),
+            claimable_until=iou_dict.get(
+                "claimable_until", web3.eth.get_block("latest").timestamp + 100  # type: ignore
+            ),
             signature=Signature(bytes([1] * 64)),  # dummy, replaced below
             chain_id=ChainID(61),
             one_to_n_address=to_canonical_address(one_to_n_contract.address),
@@ -120,11 +122,13 @@ def test_claim_fees(  # pylint: disable=too-many-locals
 
     # Check if the right IOUs are considered to be claimable
     expected_claimable = ious[:4]
+    timestamp_now = web3.eth.get_block("latest").timestamp  # type: ignore
+
     claimable_ious = list(
         get_claimable_ious(
             database=pfs.database,
-            expires_after=web3.eth.block_number,
-            expires_before=BlockNumber(1000),
+            claimable_until_after=timestamp_now,
+            claimable_until_before=timestamp_now + 10000,  # TODO: use proper boundaries
             claim_cost_rdn=TokenAmount(100),
         )
     )

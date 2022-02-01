@@ -21,7 +21,7 @@ DEFAULT_INFO_MESSAGE = "This is your favorite PFS."
 
 # When a new IOU session is started, this is the minimum number of seconds
 # between the current block and `expiration_timestamp`.
-MIN_IOU_EXPIRY: int = 7 * 24 * 60 * 4
+MIN_IOU_EXPIRY: int = 60 * 60 * 24 * 7  # one week
 
 MAX_AGE_OF_IOU_REQUESTS: timedelta = timedelta(hours=1)
 MAX_AGE_OF_FEEDBACK_REQUESTS: timedelta = timedelta(minutes=10)
