@@ -125,11 +125,13 @@ def channel_closed_event_handler(event: Event, context: Context) -> None:
 
     # Check if the settle timeout is already over.
     # This is important when starting up the MS.
-    timestamp_of_block = context.web3.eth.get_block(event.block_number).timestamp  # type: ignore
+    timestamp_of_closing_block = Timestamp(
+        context.web3.eth.get_block(event.block_number).timestamp  # type: ignore
+    )
     settle_timeout = context.database.get_token_network_settle_timeout(event.token_network_address)
-    settle_until = timestamp_of_block + settle_timeout
-    timestamp_now = datetime.utcnow().timestamp()
-    settle_period_over = settle_until < timestamp_now
+    settleable_after = Timestamp(timestamp_of_closing_block + settle_timeout)
+    timestamp_now = Timestamp(int(datetime.utcnow().timestamp()))
+    settle_period_over = settleable_after < timestamp_now
 
     if not settle_period_over:
         # Trigger the monitoring action event handler, this will check if a
@@ -176,7 +178,7 @@ def channel_closed_event_handler(event: Event, context: Context) -> None:
             "Settle period timeout is in the past, skipping",
             token_network_address=event.token_network_address,
             identifier=channel.identifier,
-            settle_until=settle_until,
+            settle_until=settleable_after,
             latest_committed_block=context.latest_committed_block,
             latest_confirmed_block=context.latest_confirmed_block,
         )
@@ -358,13 +360,16 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context) -> N
         # Unfortunately, parity does the gas estimation on the current block
         # instead of the next one, so we have to wait for the first allowed
         # block to be finished to send the transaction successfully on parity.
-        closing_block_timestamp = context.web3.eth.get_block(
-            channel.closing_block
-        ).timestamp  # type: ignore
-        token_network_timeout = context.database.get_token_network_settle_timeout(
+        closing_block_timestamp = Timestamp(
+            context.web3.eth.get_block(channel.closing_block).timestamp  # type: ignore
+        )
+        settle_timeout = context.database.get_token_network_settle_timeout(
             channel.token_network_address
         )
-        trigger_timestamp = closing_block_timestamp + 15 + token_network_timeout
+        settleable_after = Timestamp(closing_block_timestamp + settle_timeout)
+        # TODO:
+        # Find approach how to deal with time differences between services and
+        # blockchain node to not send transactions too early or act on them.
 
         # trigger the claim reward action by an event
         triggered_event = ActionClaimRewardTriggeredEvent(
@@ -378,7 +383,7 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context) -> N
             token_network_address=event.token_network_address,
             identifier=channel.identifier,
             scheduled_event=triggered_event,
-            trigger_timestamp=trigger_timestamp,
+            trigger_timestamp=settleable_after,
             closing_block=channel.closing_block,
         )
 
@@ -386,7 +391,7 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context) -> N
         # If the event is already scheduled (e.g. after a restart) the DB takes care that
         # it is only stored once
         context.database.upsert_scheduled_event(
-            ScheduledEvent(trigger_timestamp=trigger_timestamp, event=triggered_event)
+            ScheduledEvent(trigger_timestamp=settleable_after, event=triggered_event)
         )
 
 
@@ -499,7 +504,7 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
             min_reward=context.min_reward,
         )
 
-        timestamp_now = datetime.utcnow().timestamp()
+        timestamp_now = Timestamp(int(datetime.utcnow().timestamp()))
         context.database.upsert_scheduled_event(
             ScheduledEvent(trigger_timestamp=timestamp_now, event=event)
         )

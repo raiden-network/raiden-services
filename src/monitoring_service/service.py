@@ -1,6 +1,6 @@
 import sys
 from datetime import datetime
-from typing import Dict
+from typing import Callable, Dict
 
 import gevent
 import sentry_sdk
@@ -20,7 +20,13 @@ from monitoring_service.constants import (
 )
 from monitoring_service.database import Database
 from monitoring_service.handlers import HANDLERS, Context
-from raiden.utils.typing import BlockNumber, BlockTimeout, ChainID, MonitoringServiceAddress
+from raiden.utils.typing import (
+    BlockNumber,
+    BlockTimeout,
+    ChainID,
+    MonitoringServiceAddress,
+    Timestamp,
+)
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
     CONTRACT_SERVICE_REGISTRY,
@@ -96,6 +102,7 @@ class MonitoringService:
         required_confirmations: BlockTimeout,
         poll_interval: float,
         min_reward: int = 0,
+        get_timestamp_now: Callable = lambda: int(datetime.utcnow().timestamp()),
     ):
         self.web3 = web3
         self.chain_id = ChainID(web3.eth.chain_id)
@@ -104,6 +111,7 @@ class MonitoringService:
         self.poll_interval = poll_interval
         self.service_registry = contracts[CONTRACT_SERVICE_REGISTRY]
         self.token_network_registry = contracts[CONTRACT_TOKEN_NETWORK_REGISTRY]
+        self.get_timestamp_now = get_timestamp_now
 
         web3.middleware_onion.add(construct_sign_and_send_raw_middleware(private_key))
 
@@ -173,7 +181,7 @@ class MonitoringService:
             handle_event(event, self.context)
 
     def _trigger_scheduled_events(self) -> None:
-        timestamp_now = datetime.utcnow().timestamp()
+        timestamp_now = Timestamp(self.get_timestamp_now())
         triggered_events = self.context.database.get_scheduled_events(
             max_trigger_timestamp=timestamp_now
         )
@@ -239,7 +247,7 @@ class MonitoringService:
                   )
             """
             )
-            before_this_is_old = datetime.utcnow() - KEEP_MRS_WITHOUT_CHANNEL
+            before_this_is_old = self.get_timestamp_now() - KEEP_MRS_WITHOUT_CHANNEL
             self.context.database.conn.execute(
                 """
                 DELETE FROM monitor_request

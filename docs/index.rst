@@ -177,7 +177,7 @@ Claim Pathfinding Fees
 If you are running the Pathfinding Service with ``--service-fee``, the service
 fees will need to be claimed to actually reach your wallet. Claiming fees less
 frequently will reduce the Ethereum transactions costs spent while claiming,
-while not claiming for a long time might make you miss the expiration block for
+while not claiming for a long time might make you miss the expiration time for
 your claims. The ``claim-pfs-fees`` script helps doing this in a profitable and
 reasonably easy way. You must use the same ``keystore`` and ``state-db`` as for
 running the Pathfinding Service.

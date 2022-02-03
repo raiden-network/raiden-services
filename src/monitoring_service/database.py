@@ -22,6 +22,7 @@ from raiden.utils.typing import (
     ChainID,
     ChannelID,
     MonitoringServiceAddress,
+    Timestamp,
     TokenNetworkAddress,
     TransactionHash,
 )
@@ -175,7 +176,7 @@ class SharedDatabase(BaseDatabase):
         )
         self.conn.execute(upsert_sql, values)
 
-    def get_scheduled_events(self, max_trigger_timestamp: int) -> List[ScheduledEvent]:
+    def get_scheduled_events(self, max_trigger_timestamp: Timestamp) -> List[ScheduledEvent]:
         rows = self.conn.execute(
             """
                 SELECT * FROM scheduled_events

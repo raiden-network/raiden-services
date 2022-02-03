@@ -1,4 +1,5 @@
 import random
+from datetime import datetime, timedelta
 
 from monitoring_service.database import Database
 from monitoring_service.events import ActionMonitoringTriggeredEvent, ScheduledEvent
@@ -174,13 +175,14 @@ def test_purge_old_monitor_requests(
 
     # The request for channel 2 is recent (default), but the one for channel 3
     # has been added 16 minutes ago.
+    saved_at = (datetime.utcnow() - timedelta(minutes=16)).timestamp()
     ms_database.conn.execute(
         """
         UPDATE monitor_request
-        SET saved_at = datetime('now', '-16 minutes')
+        SET saved_at = ?
         WHERE channel_identifier = ?
         """,
-        [hex256(3)],
+        [saved_at, hex256(3)],
     )
 
     monitoring_service._purge_old_monitor_requests()  # pylint: disable=protected-access

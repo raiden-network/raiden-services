@@ -540,8 +540,8 @@ def test_monitor_new_balance_proof_event_handler_sets_update_status(context: Con
     assert channel.update_status.nonce == 2
     assert channel.update_status.update_sender_address == bytes([4] * 20)
 
-    # closing block + 1 * avg. time per block + token network settle timeout
-    expected_trigger_timestamp = (52 + 1) * 15 + context.database.get_token_network_settle_timeout(
+    # closing block * avg. time per block + token network settle timeout
+    expected_trigger_timestamp = 52 * 15 + context.database.get_token_network_settle_timeout(
         channel.token_network_address
     )
 
