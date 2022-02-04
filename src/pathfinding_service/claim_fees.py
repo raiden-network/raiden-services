@@ -31,10 +31,10 @@ GAS_COST_SAFETY_MARGIN = 1.1
     help="Current RDN/ETH price, used to check claimed amount > transaction cost",
 )
 @click.option(
-    "--claimable-until-within",
+    "--expire-within",
     default=60 * 60 * 24 * 7,  # one week
     type=click.IntRange(min=1),
-    help="Only IOUs which are claimable until the time range of now plus this number of seconds will be claimed",  # noqa: E501
+    help="Only IOUs which expire withing this number of blocks will be claimed",
 )
 @common_options("raiden-pathfinding-service")
 def main(

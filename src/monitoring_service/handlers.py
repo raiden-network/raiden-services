@@ -58,10 +58,6 @@ class Context:
     def latest_confirmed_block(self) -> BlockNumber:
         return BlockNumber(self.get_latest_unconfirmed_block() - self.required_confirmations)
 
-    @property
-    def latest_timestamp(self) -> int:
-        return self.web3.eth.get_block("latest").timestamp  # type: ignore
-
     def get_latest_unconfirmed_block(self) -> BlockNumber:
         return self.web3.eth.block_number
 
@@ -349,7 +345,6 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context) -> N
 
         context.database.upsert_channel(channel)
 
-    # breakpoint()
     # check if this was our update, if so schedule the call of
     # `claimReward` it will be checked there that our update was the latest one
     if event.ms_address == context.ms_state.address:

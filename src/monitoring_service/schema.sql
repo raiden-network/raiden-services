@@ -10,7 +10,7 @@ INSERT INTO blockchain DEFAULT VALUES;
 
 CREATE TABLE token_network (
     address                 CHAR(42) PRIMARY KEY,
-    settle_timeout          INT
+    settle_timeout          HEX_INT
 );
 
 
