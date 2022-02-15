@@ -3,6 +3,7 @@ from typing import Callable
 import gevent
 from web3 import Web3
 from web3.contract import Contract
+from web3.gas_strategies.rpc import rpc_gas_price_strategy
 
 from raiden.utils.typing import BlockNumber
 from raiden_contracts.constants import CONTRACT_SERVICE_REGISTRY
@@ -32,11 +33,7 @@ def test_registration(
     pk1 = get_private_key(account)
     addr1 = private_key_to_address(pk1)
 
-    # Add s simple gas price strategy, this is needed for the price estimate
-    def fixed_gas_price_strategy(_web3, _transaction_params):
-        return 1
-
-    web3.eth.set_gas_price_strategy(fixed_gas_price_strategy)
+    web3.eth.set_gas_price_strategy(rpc_gas_price_strategy)
 
     assert service_registry.functions.hasValidRegistration(account).call() is False
     assert service_registry.functions.urls(account).call() == ""

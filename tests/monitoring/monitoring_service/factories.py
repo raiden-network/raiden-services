@@ -12,7 +12,6 @@ from raiden.constants import UINT256_MAX
 from raiden.tests.utils.factories import make_transaction_hash
 from raiden.utils.typing import (
     BlockNumber,
-    BlockTimeout,
     ChainID,
     ChannelID,
     Nonce,
@@ -36,7 +35,7 @@ DEFAULT_PARTICIPANT2 = private_key_to_address(DEFAULT_PRIVATE_KEY2)
 DEFAULT_PRIVATE_KEY_OTHER = PrivateKey(decode_hex("0x" + "3" * 64))
 DEFAULT_PARTICIPANT_OTHER = private_key_to_address(DEFAULT_PRIVATE_KEY_OTHER)
 DEFAULT_REWARD_AMOUNT = TokenAmount(1)
-DEFAULT_SETTLE_TIMEOUT = BlockTimeout(100)
+DEFAULT_SETTLE_TIMEOUT = 100 * 15  # time in seconds
 
 
 def create_signed_monitor_request(
@@ -73,7 +72,6 @@ def create_channel(update_status: Optional[OnChainUpdateStatus] = None) -> Chann
         identifier=DEFAULT_CHANNEL_IDENTIFIER,
         participant1=DEFAULT_PARTICIPANT1,
         participant2=DEFAULT_PARTICIPANT2,
-        settle_timeout=random.randint(0, UINT256_MAX),
         state=random.choice(list(ChannelState)),
         closing_block=BlockNumber(random.randint(0, UINT256_MAX)),
         closing_participant=DEFAULT_PARTICIPANT1,

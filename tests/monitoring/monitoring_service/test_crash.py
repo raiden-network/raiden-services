@@ -28,7 +28,7 @@ from raiden_contracts.utils.type_aliases import PrivateKey
 from raiden_libs.events import ReceiveChannelOpenedEvent, UpdatedHeadBlockEvent
 from raiden_libs.states import BlockchainState
 from raiden_libs.utils import to_checksum_address
-from tests.constants import TEST_MSC_ADDRESS
+from tests.constants import DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT, TEST_MSC_ADDRESS
 
 from ...libs.mocks.web3 import ContractMock, Web3Mock
 
@@ -66,7 +66,6 @@ def test_crash(
                 channel_identifier=channel_identifier,
                 participant1=c1,
                 participant2=c2,
-                settle_timeout=BlockTimeout(20),
                 block_number=BlockNumber(0),
             )
         ],
@@ -115,8 +114,8 @@ def test_crash(
         ms.database.conn.create_function("CURRENT_TIMESTAMP", 1, lambda: "2000-01-01")
 
         ms.database.conn.execute(
-            "INSERT INTO token_network(address) VALUES (?)",
-            [to_checksum_address(token_network_address)],
+            "INSERT INTO token_network (address, settle_timeout) VALUES (?, ?)",
+            [to_checksum_address(token_network_address), DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT],
         )
         ms.context.ms_state.blockchain_state.token_network_addresses = [token_network_address]
         ms.database.upsert_monitor_request(monitor_request)

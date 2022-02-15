@@ -8,7 +8,8 @@ CREATE TABLE blockchain (
 INSERT INTO blockchain DEFAULT VALUES;
 
 CREATE TABLE token_network (
-    address                 CHAR(42) PRIMARY KEY
+    address                 CHAR(42) PRIMARY KEY,
+    settle_timeout          HEX_INT
 );
 
 CREATE TABLE channel (
@@ -16,7 +17,6 @@ CREATE TABLE channel (
     channel_id      HEX_INT NOT NULL,
     participant1    CHAR(42) NOT NULL,
     participant2    CHAR(42) NOT NULL,
-    settle_timeout  HEX_INT NOT NULL,
 
     -- From PFSCapacityUpdate
     capacity1       HEX_INT NOT NULL,
@@ -42,11 +42,11 @@ CREATE TABLE channel (
 CREATE TABLE iou (
     sender CHAR(42) NOT NULL,
     amount HEX_INT NOT NULL,
-    expiration_block HEX_INT NOT NULL,
+    claimable_until HEX_INT NOT NULL,
     signature CHAR(132) NOT NULL,
     claimed BOOL NOT NULL,
     one_to_n_address CHAR(42) NOT NULL,
-    PRIMARY KEY (sender, expiration_block)
+    PRIMARY KEY (sender, claimable_until)
 );
 
 CREATE UNIQUE INDEX one_active_session_per_sender

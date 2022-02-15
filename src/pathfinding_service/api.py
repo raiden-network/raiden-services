@@ -235,7 +235,7 @@ def process_payment(  # pylint: disable=too-many-branches
                 "Discarding IOU, service fee is 0",
                 sender=to_checksum_address(iou.sender),
                 total_amount=iou.amount,
-                expiration_block=iou.expiration_block,
+                claimable_until=iou.claimable_until,
             )
         else:
             log.debug("No IOU and service fee is 0")
@@ -248,7 +248,7 @@ def process_payment(  # pylint: disable=too-many-branches
         "Checking IOU",
         sender=to_checksum_address(iou.sender),
         total_amount=iou.amount,
-        expiration_block=iou.expiration_block,
+        claimable_until=iou.claimable_until,
     )
 
     # Basic IOU validity checks
@@ -263,21 +263,23 @@ def process_payment(  # pylint: disable=too-many-branches
 
     # Compare with known IOU
     latest_block = pathfinding_service.blockchain_state.latest_committed_block
+    timestamp_now = datetime.utcnow().timestamp()
     active_iou = pathfinding_service.database.get_iou(sender=iou.sender, claimed=False)
+
     if active_iou:
-        if active_iou.expiration_block != iou.expiration_block:
+        if active_iou.claimable_until != iou.claimable_until:
             raise exceptions.UseThisIOU(iou=active_iou.Schema().dump(active_iou))
 
         expected_amount = active_iou.amount + service_fee
     else:
         claimed_iou = pathfinding_service.database.get_iou(
-            sender=iou.sender, expiration_block=iou.expiration_block, claimed=True
+            sender=iou.sender, claimable_until=iou.claimable_until, claimed=True
         )
         if claimed_iou:
             raise exceptions.IOUAlreadyClaimed
 
-        min_expiry = latest_block + MIN_IOU_EXPIRY
-        if iou.expiration_block < min_expiry:
+        min_expiry = timestamp_now + MIN_IOU_EXPIRY
+        if iou.claimable_until < min_expiry:
             raise exceptions.IOUExpiredTooEarly(min_expiry=min_expiry)
         expected_amount = service_fee
     if iou.amount < expected_amount:
@@ -610,7 +612,7 @@ class DebugIOUResource(PathfinderResource):
                 dict(
                     sender=to_checksum_address(iou.sender),
                     amount=iou.amount,
-                    expiration_block=iou.expiration_block,
+                    claimable_until=iou.claimable_until,
                 ),
                 200,
             )

@@ -11,6 +11,7 @@ from raiden.utils.typing import (
     BlockNumber,
     MonitoringServiceAddress,
     Nonce,
+    Timestamp,
     TokenAmount,
     TokenNetworkAddress,
 )
@@ -34,7 +35,6 @@ def create_ms_contract_events_query(web3: Web3, contract_address: Address) -> Ca
 def test_first_allowed_monitoring(
     web3: Web3,
     monitoring_service_contract,
-    wait_for_blocks,
     service_registry,
     monitoring_service: MonitoringService,
     request_collector: RequestCollector,
@@ -55,7 +55,7 @@ def test_first_allowed_monitoring(
     assert service_registry.functions.hasValidRegistration(monitoring_service.address).call()
 
     # each client does a transfer
-    channel_id = create_channel(c1, c2, settle_timeout=10)[0]
+    channel_id = create_channel(c1, c2)[0]
 
     shared_bp_args = dict(
         channel_identifier=channel_id,
@@ -106,9 +106,15 @@ def test_first_allowed_monitoring(
     ).transact({"from": c2})
 
     monitoring_service._process_new_blocks(web3.eth.block_number)
+
+    timestamp_of_closing_block = Timestamp(web3.eth.get_block("latest").timestamp)  # type: ignore
+    settle_timeout = int(token_network.functions.settle_timeout().call())
+    settleable_after = Timestamp(timestamp_of_closing_block + settle_timeout)
+
     triggered_events = monitoring_service.database.get_scheduled_events(
-        max_trigger_block=BlockNumber(web3.eth.block_number + 10)
+        max_trigger_timestamp=settleable_after
     )
+
     assert len(triggered_events) == 1
 
     monitor_trigger = triggered_events[0]
@@ -118,12 +124,10 @@ def test_first_allowed_monitoring(
     )
     assert channel
 
-    # Calling monitor too early must fail. To test this, we call it two block
-    # before the trigger block.
-    # This should be only one block before, but we trigger one block too late
-    # to work around parity's gas estimation. See
-    # https://github.com/raiden-network/raiden-services/pull/728
-    wait_for_blocks(monitor_trigger.trigger_block_number - web3.eth.block_number - 2)
+    # Calling monitor too early must fail. To test this, we call a few seconds
+    # before the trigger timestamp.
+    web3.testing.timeTravel(monitor_trigger.trigger_timestamp - 5)  # type: ignore
+
     handle_event(monitor_trigger.event, monitoring_service.context)
     assert [e.event for e in query()] == []
 
@@ -134,7 +138,7 @@ def test_first_allowed_monitoring(
 
     # Now we can try again. The first try mined a new block, so now we're one
     # block further and `monitor` should succeed.
-    wait_for_blocks(monitor_trigger.trigger_block_number - web3.eth.block_number)
+    web3.testing.timeTravel(monitor_trigger.trigger_timestamp)  # type: ignore
     handle_event(monitor_trigger.event, monitoring_service.context)
     assert [e.event for e in query()] == [MonitoringServiceEvent.NEW_BALANCE_PROOF_RECEIVED]
 
@@ -143,7 +147,6 @@ def test_e2e(  # pylint: disable=too-many-arguments,too-many-locals
     web3,
     monitoring_service_contract,
     user_deposit_contract,
-    wait_for_blocks,
     service_registry,
     monitoring_service: MonitoringService,
     request_collector: RequestCollector,
@@ -172,7 +175,7 @@ def test_e2e(  # pylint: disable=too-many-arguments,too-many-locals
     assert service_registry.functions.hasValidRegistration(monitoring_service.address).call()
 
     # each client does a transfer
-    channel_id = create_channel(c1, c2, settle_timeout=5)[0]
+    channel_id = create_channel(c1, c2)[0]
 
     shared_bp_args = dict(
         channel_identifier=channel_id,
@@ -228,15 +231,20 @@ def test_e2e(  # pylint: disable=too-many-arguments,too-many-locals
     # Wait until the MS reacts, which it does after giving the client some time
     # to update the channel itself.
 
-    wait_for_blocks(2)  # 1 block for close + 1 block for triggering the event
+    timestamp_of_closing_block = Timestamp(web3.eth.get_block("latest").timestamp)
+    settle_timeout = int(token_network.functions.settle_timeout().call())
+    settleable_after = Timestamp(timestamp_of_closing_block + settle_timeout)
+
+    web3.testing.timeTravel(settleable_after - 1)
+    monitoring_service.get_timestamp_now = lambda: settleable_after - 1
+
     # Now give the monitoring service a chance to submit the missing BP
     gevent.sleep(0.01)
     assert [e.event for e in query()] == [MonitoringServiceEvent.NEW_BALANCE_PROOF_RECEIVED]
 
     # wait for settle timeout
-    # timeout is 5, but we've already waited 3 blocks before. Additionally one block is
-    # added to handle parity running gas estimation on current instead of next.
-    wait_for_blocks(3)
+    web3.testing.timeTravel(settleable_after + 1)
+    monitoring_service.get_timestamp_now = lambda: settleable_after + 1
 
     # Let the MS claim its reward
     gevent.sleep(0.01)

@@ -12,7 +12,7 @@ def test_save_and_load_iou(pathfinding_service_mock, make_iou):
     pfs = pathfinding_service_mock
     iou = make_iou(get_random_privkey(), pfs.address)
     pfs.database.upsert_iou(iou)
-    stored_iou = pfs.database.get_iou(iou.sender, iou.expiration_block)
+    stored_iou = pfs.database.get_iou(iou.sender, iou.claimable_until)
     assert stored_iou == iou
 
 
@@ -40,7 +40,9 @@ def test_process_payment_errors(
         )
 
     # expires too early
-    iou = make_iou(privkey, pfs.address, expiration_block=web3.eth.block_number + 5)
+    iou = make_iou(
+        privkey, pfs.address, claimable_until=web3.eth.get_block("latest").timestamp + 5 * 15
+    )
     with pytest.raises(exceptions.IOUExpiredTooEarly):
         test_payment(iou)
 
@@ -129,7 +131,7 @@ def test_process_payment(
     process_payment(iou, pfs, service_fee, one_to_n_address)
 
     # Make sure the client does not create new sessions unnecessarily
-    iou = make_iou(privkey, pfs.address, expiration_block=20000)
+    iou = make_iou(privkey, pfs.address, claimable_until=20000 * 15)
     with pytest.raises(exceptions.UseThisIOU):
         process_payment(iou, pfs, service_fee, one_to_n_address)
 

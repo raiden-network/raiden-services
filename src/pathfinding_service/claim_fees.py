@@ -1,4 +1,5 @@
 import sys
+from datetime import datetime
 from typing import Dict, Iterable, Tuple
 
 import click
@@ -10,7 +11,7 @@ from web3.gas_strategies.rpc import rpc_gas_price_strategy
 
 from pathfinding_service.database import PFSDatabase
 from pathfinding_service.model import IOU
-from raiden.utils.typing import BlockNumber, ChainID, TokenAmount
+from raiden.utils.typing import BlockNumber, ChainID, Timestamp, TokenAmount
 from raiden_contracts.constants import CONTRACT_ONE_TO_N
 from raiden_contracts.contract_manager import gas_measurements
 from raiden_libs.cli import blockchain_options, common_options
@@ -30,8 +31,8 @@ GAS_COST_SAFETY_MARGIN = 1.1
     help="Current RDN/ETH price, used to check claimed amount > transaction cost",
 )
 @click.option(
-    "--expires-within",
-    default=4 * 60 * 24 * 7,  # one week
+    "--expire-within",
+    default=60 * 60 * 24 * 7,  # one week
     type=click.IntRange(min=1),
     help="Only IOUs which expire withing this number of blocks will be claimed",
 )
@@ -43,7 +44,7 @@ def main(
     contracts: Dict[str, Contract],
     start_block: BlockNumber,
     rdn_per_eth: float,
-    expires_within: BlockNumber,
+    claimable_until_within: Timestamp,
 ) -> None:
     pfs_address = private_key_to_address(private_key)
     chain_id = ChainID(web3.eth.chain_id)
@@ -52,11 +53,12 @@ def main(
     )
 
     claim_cost_rdn = calc_claim_cost_rdn(web3, rdn_per_eth)
+    timestamp_now = int(datetime.utcnow().timestamp())
     ious = list(
         get_claimable_ious(
             database,
-            expires_after=web3.eth.block_number,
-            expires_before=BlockNumber(web3.eth.block_number + expires_within),
+            claimable_until_after=Timestamp(timestamp_now),
+            claimable_until_before=Timestamp(timestamp_now + claimable_until_within),
             claim_cost_rdn=claim_cost_rdn,
         )
     )
@@ -79,14 +81,14 @@ def calc_claim_cost_rdn(web3: Web3, rdn_per_eth: float) -> TokenAmount:
 
 def get_claimable_ious(
     database: PFSDatabase,
-    expires_after: BlockNumber,
-    expires_before: BlockNumber,
+    claimable_until_after: Timestamp,
+    claimable_until_before: Timestamp,
     claim_cost_rdn: TokenAmount,
 ) -> Iterable[IOU]:
     return database.get_ious(
         claimed=False,
-        expires_after=expires_after,
-        expires_before=expires_before,
+        claimable_until_after=claimable_until_after,
+        claimable_until_before=claimable_until_before,
         amount_at_least=claim_cost_rdn,
     )
 
@@ -105,7 +107,7 @@ def claim_ious(
             sender=iou.sender,
             receiver=iou.receiver,
             amount=iou.amount,
-            expiration_block=iou.expiration_block,
+            claimable_until=iou.claimable_until,
             signature=iou.signature,
         )
         transferrable = claim.call()

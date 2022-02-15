@@ -85,7 +85,6 @@ def test_ignore_mr_for_closed_channel(
             token_network_address=request_monitoring.balance_proof.token_network_address,
             participant1=Address(b"1" * 20),
             participant2=Address(b"2" * 20),
-            settle_timeout=10,
             closing_block=closing_block if closing_block else None,
         )
     )

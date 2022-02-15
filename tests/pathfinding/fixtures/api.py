@@ -1,5 +1,6 @@
 # pylint: disable=redefined-outer-name
 from typing import Iterator
+from unittest.mock import Mock
 
 import pytest
 
@@ -25,6 +26,11 @@ def api_sut(
     populate_token_network_case_1,  # pylint: disable=unused-argument
 ) -> Iterator[PFSApi]:
     pathfinding_service_mock.matrix_listener.user_manager = reachability_state
+    pathfinding_service_mock.web3.eth.get_block = lambda x: Mock(
+        timestamp=pathfinding_service_mock.blockchain_state.latest_committed_block * 15
+        if x == "latest"
+        else x * 15
+    )
     api = PFSApi(
         pathfinding_service=pathfinding_service_mock,
         one_to_n_address=Address(bytes([1] * 20)),

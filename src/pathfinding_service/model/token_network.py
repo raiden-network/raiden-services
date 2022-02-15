@@ -10,11 +10,7 @@ import structlog
 from networkx import DiGraph
 from networkx.exception import NetworkXNoPath, NodeNotFound
 
-from pathfinding_service.constants import (
-    DEFAULT_SETTLE_TO_REVEAL_TIMEOUT_RATIO,
-    DIVERSITY_PEN_DEFAULT,
-    FEE_PEN_DEFAULT,
-)
+from pathfinding_service.constants import DIVERSITY_PEN_DEFAULT, FEE_PEN_DEFAULT
 from pathfinding_service.exceptions import InconsistentInternalState, InvalidFeeUpdate
 from pathfinding_service.model.channel import Channel, ChannelView, FeeSchedule
 from pathfinding_service.typing import AddressReachabilityProtocol
@@ -25,12 +21,12 @@ from raiden.tests.utils.mediation_fees import get_amount_with_fees
 from raiden.utils.typing import (
     Address,
     Balance,
-    BlockTimeout,
     ChannelID,
     FeeAmount,
     PaymentAmount,
     PaymentWithFeeAmount,
     PeerCapabilities,
+    Timestamp,
     TokenAmount,
     TokenNetworkAddress,
 )
@@ -211,19 +207,6 @@ class Path:
                 )
                 return None
 
-            # Check if settle_timeout / reveal_timeout >= default ratio
-            ratio = edge["view"].settle_timeout / edge["view"].reveal_timeout
-            if ratio < DEFAULT_SETTLE_TO_REVEAL_TIMEOUT_RATIO:
-                log.debug(
-                    "Path invalid because of too low reveal timeout ratio",
-                    edge=edge,
-                    settle_timeout=edge["view"].settle_timeout,
-                    reveal_timeout=edge["view"].reveal_timeout,
-                    ratio=ratio,
-                    required_ratio=DEFAULT_SETTLE_TO_REVEAL_TIMEOUT_RATIO,
-                )
-                return None
-
         # Calculate fees
         # This implicitely checks that the channels have sufficient capacity
         return self._calculate_fees()
@@ -254,11 +237,12 @@ class Path:
 class TokenNetwork:
     """Manages a token network for pathfinding."""
 
-    def __init__(self, token_network_address: TokenNetworkAddress):
+    def __init__(self, token_network_address: TokenNetworkAddress, settle_timeout: Timestamp):
         """Initializes a new TokenNetwork."""
 
         self.address = token_network_address
         self.channel_id_to_addresses: Dict[ChannelID, Tuple[Address, Address]] = {}
+        self.settle_timeout = settle_timeout
         self.G = DiGraph()
 
     def __repr__(self) -> str:
@@ -272,7 +256,6 @@ class TokenNetwork:
         channel_identifier: ChannelID,
         participant1: Address,
         participant2: Address,
-        settle_timeout: BlockTimeout,
     ) -> Channel:
         """Register the channel in the graph, add participants to graph if necessary.
 
@@ -288,7 +271,6 @@ class TokenNetwork:
             channel_id=channel_identifier,
             participant1=participant1,
             participant2=participant2,
-            settle_timeout=settle_timeout,
         )
 
         for cv in channel.views:
