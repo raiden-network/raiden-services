@@ -127,9 +127,9 @@ def channel_closed_event_handler(event: Event, context: Context) -> None:
     settle_timeout = context.database.get_token_network_settle_timeout(event.token_network_address)
     settleable_after = Timestamp(timestamp_of_closing_block + settle_timeout)
     timestamp_now = Timestamp(int(datetime.utcnow().timestamp()))
-    settle_period_over = settleable_after < timestamp_now
+    update_balance_proof_period_is_over =  settleable_after < timestamp_now
 
-    if not settle_period_over:
+    if not update_balance_proof_period_is_over:
         # Trigger the monitoring action event handler, this will check if a
         # valid MR is available.
         # This enables the client to send a late MR
@@ -171,10 +171,10 @@ def channel_closed_event_handler(event: Event, context: Context) -> None:
         )
     else:
         log.warning(
-            "Settle period timeout is in the past, skipping",
+            "Update balance proof period is in the past, skipping",
             token_network_address=event.token_network_address,
             identifier=channel.identifier,
-            settle_until=settleable_after,
+            settleable_after=settleable_after,
             latest_committed_block=context.latest_committed_block,
             latest_confirmed_block=context.latest_confirmed_block,
         )
