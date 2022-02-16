@@ -1,5 +1,7 @@
+from datetime import datetime
 from typing import Callable
 from unittest.mock import Mock, patch
+from raiden_libs.constants import UDC_SECURITY_MARGIN_FACTOR_MS
 
 from web3 import Web3
 
@@ -10,8 +12,9 @@ from raiden.tests.utils.factories import (
     make_channel_identifier,
     make_transaction_hash,
 )
-from tests.monitoring.monitoring_service.factories import DEFAULT_TOKEN_NETWORK_ADDRESS
-from tests.monitoring.monitoring_service.test_handlers import create_default_token_network
+import web3
+from tests.monitoring.monitoring_service.factories import DEFAULT_TOKEN_NETWORK_ADDRESS, create_channel, create_signed_monitor_request
+from tests.monitoring.monitoring_service.test_handlers import context, create_default_token_network
 
 
 def test_check_pending_transactions(
@@ -32,7 +35,7 @@ def test_check_pending_transactions(
                 wait_for_blocks(1)
 
 
-def test_trigger_scheduled_events(monitoring_service: MonitoringService):
+def test_trigger_scheduled_events(web3: Web3, monitoring_service: MonitoringService):
     monitoring_service.context.required_confirmations = 5
 
     create_default_token_network(monitoring_service.context)
@@ -43,9 +46,7 @@ def test_trigger_scheduled_events(monitoring_service: MonitoringService):
         non_closing_participant=make_address(),
     )
 
-    current_confirmed_block = monitoring_service.context.latest_confirmed_block
-    # Trigger the event on a currently unconfirmed block
-    trigger_timestamp = (current_confirmed_block + 1) * 15
+    trigger_timestamp = int(datetime.utcnow().timestamp())
 
     assert len(monitoring_service.database.get_scheduled_events(trigger_timestamp)) == 0
     monitoring_service.context.database.upsert_scheduled_event(

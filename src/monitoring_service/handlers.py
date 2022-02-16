@@ -1,8 +1,10 @@
 from dataclasses import dataclass
 from datetime import datetime
+from monitoring_service.exceptions import TransactionTooEarlyException
 
 import structlog
 from eth_utils import encode_hex
+from eth_tester.exceptions import TransactionFailed
 from web3 import Web3
 from web3.contract import Contract
 
@@ -204,19 +206,20 @@ def non_closing_balance_proof_updated_event_handler(event: Event, context: Conte
         identifier=event.channel_identifier,
     )
 
-    if event.closing_participant == channel.participant1:
-        non_closing_participant = channel.participant2
-    elif event.closing_participant == channel.participant2:
-        non_closing_participant = channel.participant1
-    else:
+    participant1 = channel.participant1
+    participant2 = channel.participant2
+    closing_participant = event.closing_participant
+    if closing_participant not in (participant1, participant2):
         log.error(
             "Update event contains invalid closing participant",
-            participant1=channel.participant1,
-            participant2=channel.participant2,
-            closing_participant=event.closing_participant,
+            participant1=participant1,
+            participant2=participant2,
+            closing_participant=closing_participant,
         )
         metrics.get_metrics_for_label(metrics.ERRORS_LOGGED, metrics.ErrorCategory.PROTOCOL).inc()
         return
+
+    non_closing_participant = participant1 if closing_participant == participant2 else participant2
 
     # check for known update calls and update accordingly
     if channel.update_status is None:
@@ -231,7 +234,6 @@ def non_closing_balance_proof_updated_event_handler(event: Event, context: Conte
             update_sender_address=non_closing_participant, nonce=event.nonce
         )
 
-        context.database.upsert_channel(channel)
     else:
         # nonce not bigger, should never happen as it is checked in the contract
         if event.nonce <= channel.update_status.nonce:
@@ -255,7 +257,7 @@ def non_closing_balance_proof_updated_event_handler(event: Event, context: Conte
         channel.update_status.nonce = event.nonce
         channel.update_status.update_sender_address = non_closing_participant
 
-        context.database.upsert_channel(channel)
+    context.database.upsert_channel(channel)
 
 
 def channel_settled_event_handler(event: Event, context: Context) -> None:
@@ -318,7 +320,6 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context) -> N
             update_sender_address=event.ms_address, nonce=event.nonce
         )
 
-        context.database.upsert_channel(channel)
     else:
         # nonce not bigger, should never happen as it is checked in the contract
         if event.nonce < update_status.nonce:
@@ -343,7 +344,7 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context) -> N
         update_status.nonce = event.nonce
         update_status.update_sender_address = event.ms_address
 
-        context.database.upsert_channel(channel)
+    context.database.upsert_channel(channel)
 
     # check if this was our update, if so schedule the call of
     # `claimReward` it will be checked there that our update was the latest one
@@ -382,7 +383,7 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context) -> N
             closing_block=channel.closing_block,
         )
 
-        # Add scheduled event if it not exists yet
+        # Add scheduled event if it doesn't exist yet
         # If the event is already scheduled (e.g. after a restart) the DB takes care that
         # it is only stored once
         context.database.upsert_scheduled_event(
@@ -532,6 +533,8 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
             )
         )
     except Exception as exc:  # pylint: disable=broad-except
+        if isinstance(exc, TransactionFailed) and "not allowed to monitor" in exc.args[0]:
+            raise TransactionTooEarlyException
         first_allowed = _first_allowed_timestamp_to_monitor(
             event.token_network_address, channel, context
         )

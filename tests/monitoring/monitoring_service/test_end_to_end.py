@@ -1,7 +1,10 @@
+from datetime import datetime
+import sched
 from typing import Callable
 
 import gevent
 from eth_utils import decode_hex, encode_hex, to_canonical_address
+from monitoring_service.handlers import _first_allowed_timestamp_to_monitor
 from web3 import Web3
 
 from monitoring_service.service import MonitoringService, handle_event
@@ -141,6 +144,108 @@ def test_first_allowed_monitoring(
     web3.testing.timeTravel(monitor_trigger.trigger_timestamp)  # type: ignore
     handle_event(monitor_trigger.event, monitoring_service.context)
     assert [e.event for e in query()] == [MonitoringServiceEvent.NEW_BALANCE_PROOF_RECEIVED]
+
+
+def test_testing_test_test(
+    web3: Web3,
+    monitoring_service_contract,
+    service_registry,
+    monitoring_service: MonitoringService,
+    request_collector: RequestCollector,
+    deposit_to_udc,
+    create_channel,
+    token_network,
+    get_accounts,
+    get_private_key,
+):
+    # pylint: disable=too-many-arguments,too-many-locals,protected-access
+    c1, c2 = get_accounts(2)
+
+    # add deposit for c1
+    node_deposit = 10
+    deposit_to_udc(c1, node_deposit)
+
+    # each client does a transfer
+    channel_id = create_channel(c1, c2)[0]
+
+    shared_bp_args = dict(
+        channel_identifier=channel_id,
+        token_network_address=decode_hex(token_network.address),
+        chain_id=monitoring_service.chain_id,
+        additional_hash="0x%064x" % 0,
+        locked_amount=TokenAmount(0),
+        locksroot=encode_hex(LOCKSROOT_OF_NO_LOCKS),
+    )
+    transferred_c1 = 5
+    balance_proof_c1 = HashedBalanceProof(
+        nonce=Nonce(1),
+        transferred_amount=transferred_c1,
+        priv_key=get_private_key(c1),
+        **shared_bp_args,
+    )
+    transferred_c2 = 6
+    balance_proof_c2 = HashedBalanceProof(
+        nonce=Nonce(2),
+        transferred_amount=transferred_c2,
+        priv_key=get_private_key(c2),
+        **shared_bp_args,
+    )
+    monitoring_service._process_new_blocks(web3.eth.block_number)
+    assert len(monitoring_service.context.database.get_token_network_addresses()) > 0
+
+    # c1 asks MS to monitor the channel
+    reward_amount = TokenAmount(1)
+    request_monitoring = balance_proof_c2.get_request_monitoring(
+        privkey=get_private_key(c1),
+        reward_amount=reward_amount,
+        monitoring_service_contract_address=MonitoringServiceAddress(
+            to_canonical_address(monitoring_service_contract.address)
+        ),
+    )
+    request_collector.on_monitor_request(request_monitoring)
+
+    # c2 closes the channel
+    token_network.functions.closeChannel(
+        channel_id,
+        c1,
+        c2,
+        balance_proof_c1.balance_hash,
+        balance_proof_c1.nonce,
+        balance_proof_c1.additional_hash,
+        balance_proof_c1.signature,
+        balance_proof_c1.get_counter_signature(get_private_key(c2)),
+    ).transact({"from": c2})
+
+    monitoring_service._process_new_blocks(web3.eth.block_number)
+
+    timestamp_of_closing_block = Timestamp(web3.eth.get_block("latest").timestamp)  # type: ignore
+    settle_timeout = int(token_network.functions.settle_timeout().call())
+    settleable_after = Timestamp(timestamp_of_closing_block + settle_timeout)
+
+    scheduled_events = monitoring_service.database.get_scheduled_events(
+        max_trigger_timestamp=settleable_after
+    )
+
+    channel = monitoring_service.database.get_channel(
+        token_network_address=TokenNetworkAddress(to_canonical_address(token_network.address)),
+        channel_id=channel_id,
+    )
+
+    monitor_trigger = _first_allowed_timestamp_to_monitor(
+            scheduled_events[0].event.token_network_address, channel, monitoring_service.context
+        )
+
+    assert len(scheduled_events) == 1
+    assert scheduled_events[0].trigger_timestamp == monitor_trigger
+
+    # Calling monitor too early must fail
+    monitoring_service.get_timestamp_now = lambda: settleable_after
+    monitoring_service._trigger_scheduled_events()  # pylint: disable=protected-access
+
+    # Failed event is rescheduled to run on the next iteration
+    scheduled_events = monitoring_service.database.get_scheduled_events(settleable_after)
+    assert len(scheduled_events) == 1
+    assert scheduled_events[0].trigger_timestamp != monitor_trigger
 
 
 def test_e2e(  # pylint: disable=too-many-arguments,too-many-locals
