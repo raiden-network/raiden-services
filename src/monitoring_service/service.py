@@ -19,6 +19,8 @@ from monitoring_service.constants import (
     KEEP_MRS_WITHOUT_CHANNEL,
 )
 from monitoring_service.database import Database
+from monitoring_service.events import ScheduledEvent
+from monitoring_service.exceptions import TransactionTooEarlyException
 from monitoring_service.handlers import HANDLERS, Context
 from raiden.utils.typing import (
     BlockNumber,
@@ -84,6 +86,14 @@ def handle_event(event: Event, context: Context) -> None:
                 log.debug(
                     "Processed event",
                     num_scheduled_events=context.database.scheduled_event_count(),
+                )
+            except TransactionTooEarlyException:
+                # When events are executed too early, they are rescheduled for retry.
+                log.debug("Event executed too early", handled_event=event)
+                context.database.upsert_scheduled_event(
+                    ScheduledEvent(
+                        trigger_timestamp=int(datetime.utcnow().timestamp()), event=event
+                    )
                 )
             except Exception as ex:  # pylint: disable=broad-except
                 log.error("Error during event handler", handled_event=event, exc_info=ex)

@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 
 import structlog
+from eth_tester.exceptions import TransactionFailed
 from eth_utils import encode_hex
 from web3 import Web3
 from web3.contract import Contract
@@ -13,6 +14,7 @@ from monitoring_service.events import (
     ActionMonitoringTriggeredEvent,
     ScheduledEvent,
 )
+from monitoring_service.exceptions import TransactionTooEarlyException
 from monitoring_service.states import (
     Channel,
     MonitoringServiceState,
@@ -127,7 +129,7 @@ def channel_closed_event_handler(event: Event, context: Context) -> None:
     settle_timeout = context.database.get_token_network_settle_timeout(event.token_network_address)
     settleable_after = Timestamp(timestamp_of_closing_block + settle_timeout)
     timestamp_now = Timestamp(int(datetime.utcnow().timestamp()))
-    update_balance_proof_period_is_over =  settleable_after < timestamp_now
+    update_balance_proof_period_is_over = settleable_after < timestamp_now
 
     if not update_balance_proof_period_is_over:
         # Trigger the monitoring action event handler, this will check if a
@@ -231,7 +233,6 @@ def non_closing_balance_proof_updated_event_handler(event: Event, context: Conte
             update_sender_address=non_closing_participant, nonce=event.nonce
         )
 
-        context.database.upsert_channel(channel)
     else:
         # nonce not bigger, should never happen as it is checked in the contract
         if event.nonce <= channel.update_status.nonce:
@@ -255,7 +256,7 @@ def non_closing_balance_proof_updated_event_handler(event: Event, context: Conte
         channel.update_status.nonce = event.nonce
         channel.update_status.update_sender_address = non_closing_participant
 
-        context.database.upsert_channel(channel)
+    context.database.upsert_channel(channel)
 
 
 def channel_settled_event_handler(event: Event, context: Context) -> None:
@@ -318,7 +319,6 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context) -> N
             update_sender_address=event.ms_address, nonce=event.nonce
         )
 
-        context.database.upsert_channel(channel)
     else:
         # nonce not bigger, should never happen as it is checked in the contract
         if event.nonce < update_status.nonce:
@@ -343,7 +343,7 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context) -> N
         update_status.nonce = event.nonce
         update_status.update_sender_address = event.ms_address
 
-        context.database.upsert_channel(channel)
+    context.database.upsert_channel(channel)
 
     # check if this was our update, if so schedule the call of
     # `claimReward` it will be checked there that our update was the latest one
@@ -382,7 +382,7 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context) -> N
             closing_block=channel.closing_block,
         )
 
-        # Add scheduled event if it not exists yet
+        # Add scheduled event if it doesn't exist yet
         # If the event is already scheduled (e.g. after a restart) the DB takes care that
         # it is only stored once
         context.database.upsert_scheduled_event(
@@ -532,6 +532,8 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
             )
         )
     except Exception as exc:  # pylint: disable=broad-except
+        if isinstance(exc, TransactionFailed) and "not allowed to monitor" in exc.args[0]:
+            raise TransactionTooEarlyException
         first_allowed = _first_allowed_timestamp_to_monitor(
             event.token_network_address, channel, context
         )
