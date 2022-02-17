@@ -188,7 +188,7 @@ In addition to the mandatory parameters, the following parameters are useful to 
     The RDN/ETH price used to calculate whether the value of a fee IOU exceeds
     the transactions costs to claim it.
 
-``--claimable-until-within``
+``--expire-within``
     Only IOUs which are claimable until the time range of now plus this number
     of seconds will be claimed. Reducing this number gives the IOUs more time to
     accumulate a higher amount, allowing higher amounts to be claimed with the
