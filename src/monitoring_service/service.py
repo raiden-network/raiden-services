@@ -88,11 +88,13 @@ def handle_event(event: Event, context: Context) -> None:
                     num_scheduled_events=context.database.scheduled_event_count(),
                 )
             except TransactionTooEarlyException:
-                # When events are executed too early, they are rescheduled for retry.
-                log.debug("Event executed too early", handled_event=event)
+                log.debug(
+                    "Event executed too early. Rescheduling for retry",
+                    handled_event=event
+                )
                 context.database.upsert_scheduled_event(
                     ScheduledEvent(
-                        trigger_timestamp=int(datetime.utcnow().timestamp()), event=event
+                        trigger_timestamp=int(datetime.utcnow().timestamp()) + 10, event=event
                     )
                 )
             except Exception as ex:  # pylint: disable=broad-except

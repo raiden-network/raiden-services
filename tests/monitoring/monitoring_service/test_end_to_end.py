@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Callable
 
 import gevent
@@ -233,16 +234,18 @@ def test_reschedule_too_early_events(
     )
 
     assert len(scheduled_events) == 1
-    assert scheduled_events[0].trigger_timestamp == monitor_trigger
+    first_trigger_timestamp = scheduled_events[0].trigger_timestamp
+    assert first_trigger_timestamp == monitor_trigger
 
     # Calling monitor too early must fail
+    now = int(datetime.utcnow().timestamp())
     monitoring_service.get_timestamp_now = lambda: settleable_after
     monitoring_service._trigger_scheduled_events()  # pylint: disable=protected-access
 
     # Failed event is rescheduled to run on the next iteration
-    scheduled_events = monitoring_service.database.get_scheduled_events(settleable_after)
+    scheduled_events = monitoring_service.database.get_scheduled_events(settleable_after + 10)
     assert len(scheduled_events) == 1
-    assert scheduled_events[0].trigger_timestamp != monitor_trigger
+    assert scheduled_events[0].trigger_timestamp > now
 
 
 def test_e2e(  # pylint: disable=too-many-arguments,too-many-locals

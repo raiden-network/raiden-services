@@ -533,7 +533,8 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
             )
         )
     except Exception as exc:  # pylint: disable=broad-except
-        if isinstance(exc, TransactionFailed) and "not allowed to monitor" in exc.args[0]:
+        error_message = exc.args[0]
+        if isinstance(exc, TransactionFailed) and "not allowed to monitor" in error_message:
             raise TransactionTooEarlyException
         first_allowed = _first_allowed_timestamp_to_monitor(
             event.token_network_address, channel, context
