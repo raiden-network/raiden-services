@@ -181,7 +181,7 @@ class BaseDatabase:
         with self._cursor() as cursor:
             cursor.execute(
                 "INSERT OR REPLACE INTO token_network VALUES (?, ?)",
-                [to_checksum_address(token_network_address), settle_timeout],
+                [to_checksum_address(token_network_address), hex(settle_timeout)],
             )
 
     def get_token_network_addresses(self) -> List[TokenNetworkAddress]:

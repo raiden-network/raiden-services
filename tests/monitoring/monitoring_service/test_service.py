@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Callable
 from unittest.mock import Mock, patch
 
@@ -11,6 +12,7 @@ from raiden.tests.utils.factories import (
     make_transaction_hash,
 )
 from tests.monitoring.monitoring_service.factories import DEFAULT_TOKEN_NETWORK_ADDRESS
+
 from tests.monitoring.monitoring_service.test_handlers import create_default_token_network
 
 
@@ -43,9 +45,7 @@ def test_trigger_scheduled_events(monitoring_service: MonitoringService):
         non_closing_participant=make_address(),
     )
 
-    current_confirmed_block = monitoring_service.context.latest_confirmed_block
-    # Trigger the event on a currently unconfirmed block
-    trigger_timestamp = (current_confirmed_block + 1) * 15
+    trigger_timestamp = int(datetime.utcnow().timestamp())
 
     assert len(monitoring_service.database.get_scheduled_events(trigger_timestamp)) == 0
     monitoring_service.context.database.upsert_scheduled_event(

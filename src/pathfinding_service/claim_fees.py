@@ -44,7 +44,7 @@ def main(
     contracts: Dict[str, Contract],
     start_block: BlockNumber,
     rdn_per_eth: float,
-    claimable_until_within: Timestamp,
+    expire_within: Timestamp,
 ) -> None:
     pfs_address = private_key_to_address(private_key)
     chain_id = ChainID(web3.eth.chain_id)
@@ -58,7 +58,7 @@ def main(
         get_claimable_ious(
             database,
             claimable_until_after=Timestamp(timestamp_now),
-            claimable_until_before=Timestamp(timestamp_now + claimable_until_within),
+            claimable_until_before=Timestamp(timestamp_now + expire_within),
             claim_cost_rdn=claim_cost_rdn,
         )
     )
