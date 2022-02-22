@@ -88,10 +88,7 @@ def handle_event(event: Event, context: Context) -> None:
                     num_scheduled_events=context.database.scheduled_event_count(),
                 )
             except TransactionTooEarlyException:
-                log.debug(
-                    "Event executed too early. Rescheduling for retry",
-                    handled_event=event
-                )
+                log.debug("Event executed too early. Rescheduling for retry", handled_event=event)
                 context.database.upsert_scheduled_event(
                     ScheduledEvent(
                         trigger_timestamp=int(datetime.utcnow().timestamp()) + 10, event=event
