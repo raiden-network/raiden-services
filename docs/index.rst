@@ -30,14 +30,14 @@ The Raiden services are available through the pip package
 ``raiden-services``. As there is currently a lot of development activity, we
 recommend to use the latest version from git right now.
 
-The Raiden services require Python 3.7. To install the latest version of
+The Raiden services require Python 3.8+. To install the latest version of
 the services follow these instructions:
 
 .. code:: bash
 
     git clone git@github.com:raiden-network/raiden-services.git
     cd raiden-services
-    virtualenv -p python3.7 venv
+    virtualenv -p python3.8 venv
     source venv/bin/activate
     pip install -U -r requirements-dev.txt
     pip install -e .

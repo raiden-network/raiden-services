@@ -29,14 +29,14 @@ To become a service provider, follow the instructions in the [Raiden Service Bun
 
 ## Developers
 
-The Raiden Services require Python 3.7+.
+The Raiden Services require Python 3.8+.
 
 To install the latest development version of the services run the following commands:
 
 ```sh
 git clone git@github.com:raiden-network/raiden-services.git
 cd raiden-services
-virtualenv -p python3.7 venv
+virtualenv -p python3.8 venv
 source venv/bin/activate
 make install-dev
 ```
