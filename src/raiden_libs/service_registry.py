@@ -224,7 +224,7 @@ def get_token_formatter(
     def format_token_amount(amount: float) -> str:
         if amount == 0:
             return f"0 {symbol}"
-        amount /= 10 ** decimals
+        amount /= 10**decimals
         show_dec = max(-floor(log10(abs(amount)) + 1) + min_sig_figures, 0)
         return ("{:." + str(show_dec) + "f} {}").format(amount, symbol)
 
