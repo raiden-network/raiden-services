@@ -9,7 +9,8 @@ import structlog
 from dbapi_opentracing import ConnectionTracing
 from eth_utils import to_canonical_address
 
-from raiden.utils.typing import Address, BlockNumber, ChainID, Timestamp, TokenNetworkAddress
+from raiden.utils.typing import Address, BlockNumber, Timestamp, TokenNetworkAddress
+from raiden_contracts.utils.type_aliases import ChainID
 from raiden_libs.states import BlockchainState
 from raiden_libs.utils import to_checksum_address
 

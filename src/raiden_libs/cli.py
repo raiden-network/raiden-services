@@ -23,7 +23,7 @@ from web3.types import Wei
 
 from pathfinding_service.middleware import http_retry_with_backoff_middleware
 from raiden.utils.cli import EnumChoiceType, GasPriceChoiceType
-from raiden.utils.typing import Address, BlockNumber, ChainID
+from raiden.utils.typing import Address, BlockNumber
 from raiden_contracts.constants import (
     CONTRACT_DEPOSIT,
     CONTRACT_MONITORING_SERVICE,
@@ -34,7 +34,7 @@ from raiden_contracts.constants import (
     CONTRACTS_VERSION,
 )
 from raiden_contracts.contract_manager import ContractDevEnvironment
-from raiden_contracts.utils.type_aliases import PrivateKey
+from raiden_contracts.utils.type_aliases import ChainID, PrivateKey
 from raiden_libs.contract_info import CONTRACT_MANAGER, get_contract_addresses_and_start_block
 from raiden_libs.logging import setup_logging
 

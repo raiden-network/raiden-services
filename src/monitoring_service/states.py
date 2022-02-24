@@ -14,8 +14,6 @@ from raiden.utils.typing import (
     Address,
     BalanceHash,
     BlockNumber,
-    ChainID,
-    ChannelID,
     MonitoringServiceAddress,
     Nonce,
     Signature,
@@ -25,7 +23,7 @@ from raiden.utils.typing import (
 )
 from raiden_contracts.constants import ChannelState, MessageTypeId
 from raiden_contracts.utils.proofs import pack_balance_proof, pack_reward_proof
-from raiden_contracts.utils.type_aliases import PrivateKey
+from raiden_contracts.utils.type_aliases import ChainID, ChannelID, PrivateKey
 from raiden_libs.states import BlockchainState
 from raiden_libs.utils import to_checksum_address
 

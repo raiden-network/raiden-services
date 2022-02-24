@@ -38,8 +38,8 @@ from raiden.settings import (
 from raiden.storage.serialization.serializer import MessageSerializer
 from raiden.utils.cli import get_matrix_servers
 from raiden.utils.signer import LocalSigner
-from raiden.utils.typing import Address, ChainID
-from raiden_contracts.utils.type_aliases import PrivateKey
+from raiden.utils.typing import Address
+from raiden_contracts.utils.type_aliases import ChainID, PrivateKey
 from raiden_libs.tracing import matrix_client_enable_requests_tracing
 from raiden_libs.user_address import MultiClientUserAddressManager
 from raiden_libs.utils import to_checksum_address
