@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+from typing import Optional
 from uuid import uuid4
 
 import pkg_resources
@@ -14,16 +15,7 @@ from pathfinding_service.model.feedback import FeedbackToken
 from raiden.network.transport.matrix import AddressReachability
 from raiden.tests.utils.factories import make_address, make_signer
 from raiden.utils.signer import LocalSigner
-from raiden.utils.typing import (
-    Address,
-    Callable,
-    ChainID,
-    FeeAmount,
-    List,
-    Optional,
-    Signature,
-    TokenAmount,
-)
+from raiden.utils.typing import Address, Callable, ChainID, FeeAmount, List, Signature, TokenAmount
 from raiden_contracts.tests.utils import get_random_privkey
 from raiden_contracts.utils.type_aliases import PrivateKey
 from raiden_libs.utils import private_key_to_address, to_checksum_address

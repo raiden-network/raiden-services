@@ -1,10 +1,10 @@
 import sys
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import structlog
 from eth_utils import to_canonical_address
 
-from raiden.utils.typing import Address, BlockNumber, ChainID, Optional
+from raiden.utils.typing import Address, BlockNumber, ChainID
 from raiden_contracts.contract_manager import (
     ContractDevEnvironment,
     ContractManager,
