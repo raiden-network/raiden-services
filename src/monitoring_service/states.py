@@ -10,9 +10,7 @@ from raiden.messages.monitoring_service import RequestMonitoring, SignedBlindedB
 from raiden.utils.keys import privatekey_to_address
 from raiden.utils.signer import LocalSigner, recover
 from raiden.utils.typing import (
-    AdditionalHash,
     Address,
-    BalanceHash,
     BlockNumber,
     MonitoringServiceAddress,
     Nonce,
@@ -22,7 +20,14 @@ from raiden.utils.typing import (
 )
 from raiden_contracts.constants import ChannelState, MessageTypeId
 from raiden_contracts.utils.proofs import pack_balance_proof, pack_reward_proof
-from raiden_contracts.utils.type_aliases import ChainID, ChannelID, PrivateKey, Signature
+from raiden_contracts.utils.type_aliases import (
+    AdditionalHash,
+    BalanceHash,
+    ChainID,
+    ChannelID,
+    PrivateKey,
+    Signature,
+)
 from raiden_libs.states import BlockchainState
 from raiden_libs.utils import to_checksum_address
 
