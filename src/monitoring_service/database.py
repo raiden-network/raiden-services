@@ -177,10 +177,14 @@ class SharedDatabase(BaseDatabase):
         self.conn.execute(upsert_sql, values)
 
     def get_scheduled_events(self, max_trigger_timestamp: Timestamp) -> List[ScheduledEvent]:
+        """Return all scheduled events before max_trigger_timestamp
+
+        The events with the earliest trigger_timestamp are returned first."""
         rows = self.conn.execute(
             """
                 SELECT * FROM scheduled_events
                 WHERE trigger_timestamp <= ?
+                ORDER BY trigger_timestamp
             """,
             [hex256(max_trigger_timestamp)],
         ).fetchall()
