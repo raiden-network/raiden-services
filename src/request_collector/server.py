@@ -1,5 +1,5 @@
 import sys
-from typing import Optional
+from typing import List, Optional
 
 import gevent
 import structlog
@@ -14,7 +14,7 @@ from raiden.constants import DeviceIDs
 from raiden.exceptions import InvalidSignature
 from raiden.messages.abstract import Message
 from raiden.messages.monitoring_service import RequestMonitoring
-from raiden.utils.typing import List, TokenNetworkAddress
+from raiden.utils.typing import TokenNetworkAddress
 from raiden_contracts.utils.type_aliases import PrivateKey
 from raiden_libs.constants import MATRIX_START_TIMEOUT
 from raiden_libs.matrix import MatrixListener
