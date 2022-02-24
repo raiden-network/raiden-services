@@ -25,9 +25,9 @@ from pathfinding_service.typing import DeferableMessage
 from raiden.constants import UINT256_MAX, DeviceIDs
 from raiden.messages.abstract import Message
 from raiden.messages.path_finding_service import PFSCapacityUpdate, PFSFeeUpdate
-from raiden.utils.typing import BlockNumber, BlockTimeout, ChainID, TokenNetworkAddress
+from raiden.utils.typing import BlockNumber, BlockTimeout, TokenNetworkAddress
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
-from raiden_contracts.utils.type_aliases import PrivateKey
+from raiden_contracts.utils.type_aliases import ChainID, PrivateKey
 from raiden_libs.blockchain import get_blockchain_events_adaptive
 from raiden_libs.constants import MATRIX_START_TIMEOUT
 from raiden_libs.events import (

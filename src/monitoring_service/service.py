@@ -22,13 +22,7 @@ from monitoring_service.constants import (
 from monitoring_service.database import Database
 from monitoring_service.exceptions import TransactionTooEarlyException
 from monitoring_service.handlers import HANDLERS, Context
-from raiden.utils.typing import (
-    BlockNumber,
-    BlockTimeout,
-    ChainID,
-    MonitoringServiceAddress,
-    Timestamp,
-)
+from raiden.utils.typing import BlockNumber, BlockTimeout, MonitoringServiceAddress, Timestamp
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
     CONTRACT_SERVICE_REGISTRY,
@@ -36,7 +30,7 @@ from raiden_contracts.constants import (
     CONTRACT_USER_DEPOSIT,
 )
 from raiden_contracts.contract_manager import gas_measurements
-from raiden_contracts.utils.type_aliases import PrivateKey
+from raiden_contracts.utils.type_aliases import ChainID, PrivateKey
 from raiden_libs.blockchain import get_blockchain_events_adaptive
 from raiden_libs.events import Event
 from raiden_libs.utils import private_key_to_address

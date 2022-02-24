@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
-from raiden.utils.typing import Address, ChannelID, Timestamp, TokenNetworkAddress
+from raiden.utils.typing import Address, Timestamp, TokenNetworkAddress
+from raiden_contracts.utils.type_aliases import ChannelID
 from raiden_libs.events import Event
 
 

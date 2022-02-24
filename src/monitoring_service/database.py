@@ -19,13 +19,12 @@ from monitoring_service.states import (
 from raiden.utils.typing import (
     Address,
     BlockNumber,
-    ChainID,
-    ChannelID,
     MonitoringServiceAddress,
     Timestamp,
     TokenNetworkAddress,
     TransactionHash,
 )
+from raiden_contracts.utils.type_aliases import ChainID, ChannelID
 from raiden_libs.database import BaseDatabase, hex256
 from raiden_libs.utils import to_checksum_address
 

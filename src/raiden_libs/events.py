@@ -3,13 +3,13 @@ from dataclasses import dataclass
 from raiden.utils.typing import (
     Address,
     BlockNumber,
-    ChannelID,
     Nonce,
     Timestamp,
     TokenAddress,
     TokenAmount,
     TokenNetworkAddress,
 )
+from raiden_contracts.utils.type_aliases import ChannelID
 
 
 @dataclass(frozen=True)

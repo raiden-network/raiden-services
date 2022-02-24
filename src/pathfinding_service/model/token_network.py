@@ -21,7 +21,6 @@ from raiden.tests.utils.mediation_fees import get_amount_with_fees
 from raiden.utils.typing import (
     Address,
     Balance,
-    ChannelID,
     FeeAmount,
     PaymentAmount,
     PaymentWithFeeAmount,
@@ -30,6 +29,7 @@ from raiden.utils.typing import (
     TokenAmount,
     TokenNetworkAddress,
 )
+from raiden_contracts.utils.type_aliases import ChannelID
 from raiden_libs.utils import to_checksum_address
 
 log = structlog.get_logger(__name__)

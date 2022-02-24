@@ -9,14 +9,8 @@ from marshmallow_dataclass import add_schema
 from pathfinding_service.constants import DEFAULT_REVEAL_TIMEOUT
 from pathfinding_service.exceptions import InvalidFeeUpdate
 from raiden.transfer.mediated_transfer.mediation_fee import FeeScheduleState as FeeScheduleRaiden
-from raiden.utils.typing import (
-    Address,
-    BlockTimeout,
-    ChannelID,
-    Nonce,
-    TokenAmount,
-    TokenNetworkAddress,
-)
+from raiden.utils.typing import Address, BlockTimeout, Nonce, TokenAmount, TokenNetworkAddress
+from raiden_contracts.utils.type_aliases import ChannelID
 from raiden_libs.marshmallow import ChecksumAddress
 from raiden_libs.utils import to_checksum_address
 

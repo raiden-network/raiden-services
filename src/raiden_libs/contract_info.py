@@ -4,13 +4,14 @@ from typing import Dict, List, Optional, Tuple
 import structlog
 from eth_utils import to_canonical_address
 
-from raiden.utils.typing import Address, BlockNumber, ChainID
+from raiden.utils.typing import Address, BlockNumber
 from raiden_contracts.contract_manager import (
     ContractDevEnvironment,
     ContractManager,
     contracts_precompiled_path,
     get_contracts_deployment_info,
 )
+from raiden_contracts.utils.type_aliases import ChainID
 
 log = structlog.get_logger(__name__)
 CONTRACT_MANAGER = ContractManager(contracts_precompiled_path())

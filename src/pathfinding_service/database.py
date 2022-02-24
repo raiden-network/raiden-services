@@ -17,13 +17,12 @@ from raiden.storage.serialization.serializer import JSONSerializer
 from raiden.utils.typing import (
     Address,
     BlockNumber,
-    ChainID,
-    ChannelID,
     FeeAmount,
     Timestamp,
     TokenAmount,
     TokenNetworkAddress,
 )
+from raiden_contracts.utils.type_aliases import ChainID, ChannelID
 from raiden_libs.database import BaseDatabase, hex256
 from raiden_libs.utils import to_checksum_address
 
