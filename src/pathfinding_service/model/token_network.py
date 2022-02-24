@@ -26,10 +26,9 @@ from raiden.utils.typing import (
     PaymentWithFeeAmount,
     PeerCapabilities,
     Timestamp,
-    TokenAmount,
     TokenNetworkAddress,
 )
-from raiden_contracts.utils.type_aliases import ChannelID
+from raiden_contracts.utils.type_aliases import ChannelID, TokenAmount
 from raiden_libs.utils import to_checksum_address
 
 log = structlog.get_logger(__name__)

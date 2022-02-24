@@ -6,10 +6,9 @@ from raiden.utils.typing import (
     Nonce,
     Timestamp,
     TokenAddress,
-    TokenAmount,
     TokenNetworkAddress,
 )
-from raiden_contracts.utils.type_aliases import ChannelID
+from raiden_contracts.utils.type_aliases import ChannelID, TokenAmount
 
 
 @dataclass(frozen=True)

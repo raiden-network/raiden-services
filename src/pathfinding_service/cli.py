@@ -21,14 +21,14 @@ from pathfinding_service.api import PFSApi
 from pathfinding_service.constants import DEFAULT_INFO_MESSAGE, PFS_DISCLAIMER, PFS_START_TIMEOUT
 from pathfinding_service.service import PathfindingService
 from raiden.settings import DEFAULT_NUMBER_OF_BLOCK_CONFIRMATIONS
-from raiden.utils.typing import MYPY_ANNOTATION, BlockNumber, BlockTimeout, TokenAmount
+from raiden.utils.typing import MYPY_ANNOTATION, BlockNumber, BlockTimeout
 from raiden_contracts.constants import (
     CONTRACT_ONE_TO_N,
     CONTRACT_TOKEN_NETWORK_REGISTRY,
     CONTRACT_USER_DEPOSIT,
     ID_TO_CHAINNAME,
 )
-from raiden_contracts.utils.type_aliases import ChainID, PrivateKey
+from raiden_contracts.utils.type_aliases import ChainID, PrivateKey, TokenAmount
 from raiden_libs.blockchain import get_web3_provider_info
 from raiden_libs.cli import blockchain_options, common_options, setup_sentry
 from raiden_libs.constants import (

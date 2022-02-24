@@ -8,9 +8,9 @@ from marshmallow_dataclass import add_schema
 
 from raiden.exceptions import InvalidSignature
 from raiden.utils.signer import recover
-from raiden.utils.typing import Address, Timestamp, TokenAmount
+from raiden.utils.typing import Address, Timestamp
 from raiden_contracts.constants import MessageTypeId
-from raiden_contracts.utils.type_aliases import ChainID, Signature
+from raiden_contracts.utils.type_aliases import ChainID, Signature, TokenAmount
 from raiden_libs.marshmallow import ChecksumAddress, HexedBytes
 
 

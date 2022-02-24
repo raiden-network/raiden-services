@@ -18,7 +18,6 @@ from raiden.utils.typing import (
     BlockNumber,
     BlockTimeout,
     TokenAddress,
-    TokenAmount,
     TokenNetworkAddress,
 )
 from raiden_contracts.constants import (
@@ -28,6 +27,7 @@ from raiden_contracts.constants import (
     ChannelEvent,
     MonitoringServiceEvent,
 )
+from raiden_contracts.utils.type_aliases import TokenAmount
 from raiden_libs.contract_info import CONTRACT_MANAGER
 from raiden_libs.events import (
     Event,
