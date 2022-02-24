@@ -39,29 +39,8 @@ from raiden_contracts.tests.fixtures import (  # noqa
     user_deposit_whole_balance_limit,
     web3,
 )
-from raiden_libs.cli import start_profiler
 
 from .libs.fixtures import *  # noqa
-
-# from raiden_contracts.tests.fixtures import *  # isort:skip
-
-
-def pytest_addoption(parser):
-    # Using this will create a stack profile for all selected tests. If you
-    # want to profile only a single test, use pytest to limit the test
-    # selection.
-    # Use https://github.com/brendangregg/FlameGraph to view the results.
-    parser.addoption("--flamegraph", default=None, help="Dir in which to save stack profile.")
-
-
-@pytest.fixture(autouse=True, scope="session")
-def flamegraph_profiler(request):
-    profiler = start_profiler(request.config.option.flamegraph)
-
-    yield
-
-    if profiler is not None:
-        profiler.stop()
 
 
 def _get_running_greenlets():
