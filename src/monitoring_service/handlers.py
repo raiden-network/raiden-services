@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from datetime import datetime
 
 import structlog
-from eth_tester.exceptions import TransactionFailed
 from eth_utils import encode_hex
 from web3 import Web3
 from web3.contract import Contract
@@ -530,8 +529,8 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
             )
         )
     except Exception as exc:  # pylint: disable=broad-except
-        error_message = exc.args[0]
-        if isinstance(exc, TransactionFailed) and "not allowed to monitor" in error_message:
+        error_message = exc.args[0] if len(exc.args) > 0 else ""
+        if "not allowed to monitor" in error_message:
             raise TransactionTooEarlyException
         first_allowed = _first_allowed_timestamp_to_monitor(
             event.token_network_address, channel, context
