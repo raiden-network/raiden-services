@@ -24,7 +24,7 @@ coverage>=4.5.4
 ipython==8.0.1
 pdbpp
 
-eth-tester[py-evm]==0.6.0b4
+eth-tester[py-evm]==0.6.0b6
 
 # Release
 bump2version
