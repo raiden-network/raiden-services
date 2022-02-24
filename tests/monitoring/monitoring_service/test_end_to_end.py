@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Callable
 
 import gevent
@@ -22,6 +21,7 @@ from raiden.utils.typing import (
 from raiden_contracts.constants import LOCKSROOT_OF_NO_LOCKS, MonitoringServiceEvent
 from raiden_libs.blockchain import query_blockchain_events
 from request_collector.server import RequestCollector
+from src.monitoring_service.constants import MAX_SCHEDULED_EVENTS_RETRY_FREQUENCY
 
 
 def create_ms_contract_events_query(web3: Web3, contract_address: Address) -> Callable:
@@ -241,14 +241,28 @@ def test_reschedule_too_early_events(
     assert first_trigger_timestamp == monitor_trigger
 
     # Calling monitor too early must fail
-    now = int(datetime.utcnow().timestamp())
     monitoring_service.get_timestamp_now = lambda: settleable_after
     monitoring_service._trigger_scheduled_events()  # pylint: disable=protected-access
+    assert monitoring_service.try_scheduled_events_after == pytest.approx(settleable_after, 100)
 
-    # Failed event is rescheduled to run on the next iteration
-    scheduled_events = monitoring_service.database.get_scheduled_events(settleable_after + 10)
+    # Failed event is still scheduled, since it was too early for it to succeed
+    scheduled_events = monitoring_service.database.get_scheduled_events(settleable_after)
     assert len(scheduled_events) == 1
-    assert scheduled_events[0].trigger_timestamp > now
+    # ...and it should be blocked from retrying for a while.
+    assert (
+        monitoring_service.try_scheduled_events_after
+        == monitoring_service.get_timestamp_now() + MAX_SCHEDULED_EVENTS_RETRY_FREQUENCY
+    )
+
+    # Now it could be executed, but won't due to MAX_SCHEDULED_EVENTS_RETRY_FREQUENCY
+    web3.testing.timeTravel(settleable_after - 1)  # type: ignore
+    monitoring_service._trigger_scheduled_events()  # pylint: disable=protected-access
+    assert len(monitoring_service.database.get_scheduled_events(settleable_after)) == 1
+
+    # Check that is does succeed if it wasn't for MAX_SCHEDULED_EVENTS_RETRY_FREQUENCY
+    monitoring_service.try_scheduled_events_after = monitoring_service.get_timestamp_now() - 1
+    monitoring_service._trigger_scheduled_events()  # pylint: disable=protected-access
+    assert len(monitoring_service.database.get_scheduled_events(settleable_after)) == 0
 
 
 def test_e2e(  # pylint: disable=too-many-arguments,too-many-locals
