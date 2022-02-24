@@ -16,7 +16,6 @@ from raiden.tests.utils.factories import make_address, make_signer
 from raiden.utils.signer import LocalSigner
 from raiden.utils.typing import (
     Address,
-    BlockNumber,
     Callable,
     ChainID,
     FeeAmount,
@@ -69,7 +68,7 @@ def test_get_paths_via_debug_endpoint_a(
                 "from": hex_addrs[0],
                 "to": hex_addrs[2],
                 "value": 10,
-                "max_paths": DEFAULT_MAX_PATHS,
+                "max_paths": 1,
             },
         )
         assert response.status_code == 200
@@ -201,7 +200,7 @@ def test_get_ious_via_debug_endpoint(
         sender=addresses[0],
         receiver=addresses[4],
         amount=TokenAmount(111),
-        expiration_block=BlockNumber(7619644),
+        claimable_until=7619644,
         signature=Signature(
             decode_hex("118a93e9fd0a3a1c3d6edbad194b5c9d95715c754881d80e23e985793b1e13de")
         ),
@@ -216,7 +215,7 @@ def test_get_ious_via_debug_endpoint(
     response_debug = requests.get(url_iou_debug)
     assert response_debug.status_code == 200
     response_iou = response_debug.json()
-    assert response_iou == {"sender": hex_addrs[0], "amount": 111, "expiration_block": 7619644}
+    assert response_iou == {"sender": hex_addrs[0], "amount": 111, "claimable_until": 7619644}
 
     # but there is no iou debug endpoint for a request of a sender not in the database
     url_iou_debug = api_url + f"/v1/_debug/ious/{hex_addrs[1]}"
@@ -297,7 +296,7 @@ def test_get_paths_validation(
     bad_iou_dict = {
         "amount": {"_hex": "0x64"},
         "chain_id": {"_hex": "0x05"},
-        "expiration_block": {"_hex": "0x188cba"},
+        "claimable_until": {"_hex": "0x188cba"},
         "one_to_n_address": "0x0000000000000000000000000000000000000000",
         "receiver": "0x94DEe8e391410A9ebbA791B187df2d993212c849",
         "sender": "0x2046F7341f15D0211ca1EBeFb19d029c4Bc4c4e7",
@@ -343,20 +342,34 @@ def test_get_paths(api_url: str, addresses: List[Address], token_network_model: 
 
     data = {"from": hex_addrs[0], "to": hex_addrs[2], "value": 10, "max_paths": DEFAULT_MAX_PATHS}
     response = requests.post(url, json=data)
+
     assert response.status_code == 200
+
     paths = response.json()["result"]
-    assert len(paths) == 1
-    assert paths == [
-        {
-            "path": [hex_addrs[0], hex_addrs[1], hex_addrs[2]],
-            "address_metadata": {
-                hex_addrs[0]: get_address_metadata(hex_addrs[0]),
-                hex_addrs[1]: get_address_metadata(hex_addrs[1]),
-                hex_addrs[2]: get_address_metadata(hex_addrs[2]),
-            },
-            "estimated_fee": 0,
-        }
-    ]
+
+    assert len(paths) == 2
+
+    assert paths[0] == {
+        "path": [hex_addrs[0], hex_addrs[1], hex_addrs[2]],
+        "address_metadata": {
+            hex_addrs[0]: get_address_metadata(hex_addrs[0]),
+            hex_addrs[1]: get_address_metadata(hex_addrs[1]),
+            hex_addrs[2]: get_address_metadata(hex_addrs[2]),
+        },
+        "estimated_fee": 0,
+    }
+
+    assert paths[1] == {
+        "path": [hex_addrs[0], hex_addrs[1], hex_addrs[4], hex_addrs[3], hex_addrs[2]],
+        "address_metadata": {
+            hex_addrs[0]: get_address_metadata(hex_addrs[0]),
+            hex_addrs[1]: get_address_metadata(hex_addrs[1]),
+            hex_addrs[2]: get_address_metadata(hex_addrs[2]),
+            hex_addrs[3]: get_address_metadata(hex_addrs[3]),
+            hex_addrs[4]: get_address_metadata(hex_addrs[4]),
+        },
+        "estimated_fee": 0,
+    }
 
     # check default value for num_path
     data = {"from": hex_addrs[0], "to": hex_addrs[2], "value": 10}
@@ -404,7 +417,7 @@ def test_payment_with_new_iou_rejected(  # pylint: disable=too-many-locals
         api_sut.pathfinding_service.address,
         one_to_n_address=api_sut.one_to_n_address,
         amount=100,
-        expiration_block=1_234_567,
+        claimable_until=int(datetime.utcnow().timestamp()) + 1_234_567,
     )
     first_iou_dict = iou.Schema().dump(iou)
     second_iou = make_iou(
@@ -412,7 +425,7 @@ def test_payment_with_new_iou_rejected(  # pylint: disable=too-many-locals
         api_sut.pathfinding_service.address,
         one_to_n_address=api_sut.one_to_n_address,
         amount=200,
-        expiration_block=1_234_568,
+        claimable_until=int(datetime.utcnow().timestamp()) + 1_234_568,
     )
     second_iou_dict = second_iou.Schema().dump(second_iou)
 

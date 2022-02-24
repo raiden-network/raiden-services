@@ -6,7 +6,7 @@ from pathfinding_service.model import TokenNetwork
 from pathfinding_service.model.token_network import Path, prune_graph
 from raiden.network.transport.matrix import AddressReachability
 from raiden.tests.utils.factories import make_address
-from raiden.utils.typing import Address, BlockTimeout, ChannelID, PaymentAmount
+from raiden.utils.typing import Address, ChannelID, PaymentAmount
 
 from .utils import SimpleReachabilityContainer
 
@@ -20,7 +20,6 @@ def test_tn_idempotency_of_channel_openings(
             channel_identifier=ChannelID(1),
             participant1=addresses[0],
             participant2=addresses[1],
-            settle_timeout=BlockTimeout(15),
         )
     # there should only be one channel
     assert len(token_network_model.channel_id_to_addresses) == 1
@@ -39,13 +38,11 @@ def test_tn_multiple_channels_for_two_participants_opened(
         channel_identifier=ChannelID(1),
         participant1=addresses[0],
         participant2=addresses[1],
-        settle_timeout=BlockTimeout(15),
     )
     token_network_model.handle_channel_opened_event(
         channel_identifier=ChannelID(2),
         participant1=addresses[0],
         participant2=addresses[1],
-        settle_timeout=BlockTimeout(15),
     )
 
     # now there should be two channels
@@ -106,13 +103,11 @@ def test_path_without_capacity(token_network_model: TokenNetwork, addresses: Lis
         channel_identifier=ChannelID(1),
         participant1=addresses[0],
         participant2=addresses[1],
-        settle_timeout=BlockTimeout(15),
     )
     token_network_model.handle_channel_opened_event(
         channel_identifier=ChannelID(2),
         participant1=addresses[1],
         participant2=addresses[2],
-        settle_timeout=BlockTimeout(15),
     )
 
     token_network_model.G[addresses[1]][addresses[2]]["view"].channel.capacity1 = 100
@@ -154,7 +149,6 @@ def test_check_path_request_errors(token_network_model, addresses):
         channel_identifier=ChannelID(1),
         participant1=a[0],
         participant2=a[1],
-        settle_timeout=BlockTimeout(15),
     )
     assert (
         token_network_model.check_path_request_errors(a[0], a[2], 100, reachability)
@@ -164,7 +158,6 @@ def test_check_path_request_errors(token_network_model, addresses):
         channel_identifier=ChannelID(1),
         participant1=a[1],
         participant2=a[2],
-        settle_timeout=BlockTimeout(15),
     )
 
     # Check capacities
@@ -186,7 +179,6 @@ def test_check_path_request_errors(token_network_model, addresses):
         channel_identifier=ChannelID(2),
         participant1=a[3],
         participant2=a[4],
-        settle_timeout=BlockTimeout(15),
     )
     token_network_model.G.edges[a[3], a[4]]["view"].capacity = 100
     reachability.reachabilities[a[4]] = AddressReachability.REACHABLE

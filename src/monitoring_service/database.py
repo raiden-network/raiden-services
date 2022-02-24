@@ -22,6 +22,7 @@ from raiden.utils.typing import (
     ChainID,
     ChannelID,
     MonitoringServiceAddress,
+    Timestamp,
     TokenNetworkAddress,
     TransactionHash,
 )
@@ -105,7 +106,6 @@ class SharedDatabase(BaseDatabase):
             hex256(channel.identifier),
             to_checksum_address(channel.participant1),
             to_checksum_address(channel.participant2),
-            hex256(channel.settle_timeout),
             channel.state,
             hex256(channel.closing_block) if channel.closing_block else None,
             channel.closing_participant,
@@ -165,7 +165,7 @@ class SharedDatabase(BaseDatabase):
     def upsert_scheduled_event(self, event: ScheduledEvent) -> None:
         contained_event: SubEvent = event.event
         values = [
-            hex256(event.trigger_block_number),
+            hex256(event.trigger_timestamp),
             EVENT_TYPE_ID_MAP[type(contained_event)],
             to_checksum_address(contained_event.token_network_address),
             hex256(contained_event.channel_identifier),
@@ -176,13 +176,17 @@ class SharedDatabase(BaseDatabase):
         )
         self.conn.execute(upsert_sql, values)
 
-    def get_scheduled_events(self, max_trigger_block: BlockNumber) -> List[ScheduledEvent]:
+    def get_scheduled_events(self, max_trigger_timestamp: Timestamp) -> List[ScheduledEvent]:
+        """Return all scheduled events before max_trigger_timestamp
+
+        The events with the earliest trigger_timestamp are returned first."""
         rows = self.conn.execute(
             """
                 SELECT * FROM scheduled_events
-                WHERE trigger_block_number <= ?
+                WHERE trigger_timestamp <= ?
+                ORDER BY trigger_timestamp
             """,
-            [hex256(max_trigger_block)],
+            [hex256(max_trigger_timestamp)],
         ).fetchall()
 
         def create_scheduled_event(row: sqlite3.Row) -> ScheduledEvent:
@@ -193,16 +197,14 @@ class SharedDatabase(BaseDatabase):
                 row["non_closing_participant"],
             )
 
-            return ScheduledEvent(
-                trigger_block_number=row["trigger_block_number"], event=sub_event
-            )
+            return ScheduledEvent(trigger_timestamp=row["trigger_timestamp"], event=sub_event)
 
         return [create_scheduled_event(row) for row in rows]
 
     def remove_scheduled_event(self, event: ScheduledEvent) -> None:
         contained_event: SubEvent = event.event
         values = [
-            hex256(event.trigger_block_number),
+            hex256(event.trigger_timestamp),
             to_checksum_address(contained_event.token_network_address),
             hex256(contained_event.channel_identifier),
             contained_event.non_closing_participant,
@@ -210,7 +212,7 @@ class SharedDatabase(BaseDatabase):
         self.conn.execute(
             """
                 DELETE FROM scheduled_events
-                WHERE trigger_block_number = ?
+                WHERE trigger_timestamp = ?
                     AND token_network_address = ?
                     AND channel_identifier = ?
                     AND non_closing_participant =?

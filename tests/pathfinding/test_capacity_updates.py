@@ -25,6 +25,7 @@ from raiden.utils.typing import (
 from tests.constants import (
     DEFAULT_CHANNEL_ID,
     DEFAULT_TOKEN_NETWORK_ADDRESS,
+    DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT,
     PRIVATE_KEY_1,
     PRIVATE_KEY_1_ADDRESS,
     PRIVATE_KEY_2,
@@ -35,14 +36,16 @@ from tests.constants import (
 
 
 def setup_channel(service: PathfindingService) -> TokenNetwork:
-    token_network = TokenNetwork(token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS)
+    token_network = TokenNetwork(
+        token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
+        settle_timeout=DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT,
+    )
     service.token_networks[token_network.address] = token_network
 
     token_network.handle_channel_opened_event(
         channel_identifier=DEFAULT_CHANNEL_ID,
         participant1=PRIVATE_KEY_1_ADDRESS,
         participant2=PRIVATE_KEY_2_ADDRESS,
-        settle_timeout=BlockTimeout(15),
     )
 
     # Check that the new channel has id == 0

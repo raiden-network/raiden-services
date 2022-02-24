@@ -13,7 +13,6 @@ from pathfinding_service.model.channel import Channel
 from raiden.network.transport.matrix import AddressReachability
 from raiden.utils.typing import (
     Address,
-    BlockTimeout,
     ChannelID,
     FeeAmount,
     PaymentAmount,
@@ -32,7 +31,6 @@ def test_edge_weight(addresses):
     participant2 = addresses[1]
     capacity = TokenAmount(int(20 * 1e18))
     capacity_partner = TokenAmount(int(10 * 1e18))
-    settle_timeout = BlockTimeout(15)
     channel = Channel(
         token_network_address=TokenNetworkAddress(bytes([1])),
         channel_id=channel_id,
@@ -40,7 +38,6 @@ def test_edge_weight(addresses):
         participant2=participant2,
         capacity1=capacity,
         capacity2=capacity_partner,
-        settle_timeout=settle_timeout,
     )
     view, view_partner = channel.views
     amount = PaymentAmount(int(1e18))  # one RDN
@@ -120,17 +117,20 @@ def test_routing_simple(
     assert view01.capacity == 90
     assert view10.capacity == 60
 
-    # 0->2->3 is the shortest path, but has no capacity, so 0->1->4->3 is used
+    # 0->2->3 is the shortest path, but has no capacity.
+    # The remaining paths are 0->1->2->3 and 0->1->4->3.
     paths = token_network_model.get_paths(
         source=addresses[0],
         target=addresses[3],
         value=PaymentAmount(10),
-        max_paths=1,
+        max_paths=2,
         reachability_state=reachability_state,
     )
-    assert len(paths) == 1
-    assert paths[0].to_dict()["path"] == [hex_addrs[0], hex_addrs[1], hex_addrs[4], hex_addrs[3]]
+    assert len(paths) == 2
+    assert paths[0].to_dict()["path"] == [hex_addrs[0], hex_addrs[1], hex_addrs[2], hex_addrs[3]]
     assert paths[0].to_dict()["estimated_fee"] == 0
+    assert paths[1].to_dict()["path"] == [hex_addrs[0], hex_addrs[1], hex_addrs[4], hex_addrs[3]]
+    assert paths[1].to_dict()["estimated_fee"] == 0
 
     # Not connected.
     no_paths = token_network_model.get_paths(
@@ -194,10 +194,18 @@ def test_routing_result_order(
         max_paths=5,
         reachability_state=reachability_state,
     )
-    # 5 paths requested, but only 1 is available
-    assert len(paths) == 1
+    # 5 paths requested, but only 2 are available
+    assert len(paths) == 2
     assert paths[0].to_dict()["path"] == [hex_addrs[0], hex_addrs[1], hex_addrs[2]]
     assert paths[0].to_dict()["estimated_fee"] == 0
+    assert paths[1].to_dict()["path"] == [
+        hex_addrs[0],
+        hex_addrs[1],
+        hex_addrs[4],
+        hex_addrs[3],
+        hex_addrs[2],
+    ]
+    assert paths[1].to_dict()["estimated_fee"] == 0
 
 
 def addresses_to_indexes(path, addresses):

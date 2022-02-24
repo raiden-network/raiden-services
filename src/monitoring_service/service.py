@@ -1,6 +1,6 @@
 import sys
 from datetime import datetime
-from typing import Dict
+from typing import Callable, Dict
 
 import gevent
 import sentry_sdk
@@ -17,10 +17,18 @@ from monitoring_service.constants import (
     DEFAULT_GAS_BUFFER_FACTOR,
     DEFAULT_GAS_CHECK_BLOCKS,
     KEEP_MRS_WITHOUT_CHANNEL,
+    MAX_SCHEDULED_EVENTS_RETRY_FREQUENCY,
 )
 from monitoring_service.database import Database
+from monitoring_service.exceptions import TransactionTooEarlyException
 from monitoring_service.handlers import HANDLERS, Context
-from raiden.utils.typing import BlockNumber, BlockTimeout, ChainID, MonitoringServiceAddress
+from raiden.utils.typing import (
+    BlockNumber,
+    BlockTimeout,
+    ChainID,
+    MonitoringServiceAddress,
+    Timestamp,
+)
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
     CONTRACT_SERVICE_REGISTRY,
@@ -79,6 +87,8 @@ def handle_event(event: Event, context: Context) -> None:
                     "Processed event",
                     num_scheduled_events=context.database.scheduled_event_count(),
                 )
+            except TransactionTooEarlyException:
+                raise  # handled in _trigger_scheduled_events
             except Exception as ex:  # pylint: disable=broad-except
                 log.error("Error during event handler", handled_event=event, exc_info=ex)
                 sentry_sdk.capture_exception(ex)
@@ -96,6 +106,7 @@ class MonitoringService:
         required_confirmations: BlockTimeout,
         poll_interval: float,
         min_reward: int = 0,
+        get_timestamp_now: Callable = lambda: int(datetime.utcnow().timestamp()),
     ):
         self.web3 = web3
         self.chain_id = ChainID(web3.eth.chain_id)
@@ -104,6 +115,8 @@ class MonitoringService:
         self.poll_interval = poll_interval
         self.service_registry = contracts[CONTRACT_SERVICE_REGISTRY]
         self.token_network_registry = contracts[CONTRACT_TOKEN_NETWORK_REGISTRY]
+        self.get_timestamp_now = get_timestamp_now
+        self.try_scheduled_events_after = get_timestamp_now()
 
         web3.middleware_onion.add(construct_sign_and_send_raw_middleware(private_key))
 
@@ -173,20 +186,34 @@ class MonitoringService:
             handle_event(event, self.context)
 
     def _trigger_scheduled_events(self) -> None:
-        """Trigger scheduled events
-
-        Here `latest_block` is used instead of `latest_confirmed_block`, because triggered
-        events only rely on block number, and not on certain events that might change during
-        a chain reorg.
-        """
+        timestamp_now = Timestamp(self.get_timestamp_now())
+        if timestamp_now < self.try_scheduled_events_after:
+            return
         triggered_events = self.context.database.get_scheduled_events(
-            max_trigger_block=self.context.get_latest_unconfirmed_block()
+            max_trigger_timestamp=timestamp_now
         )
         for scheduled_event in triggered_events:
             event = scheduled_event.event
 
-            handle_event(event, self.context)
-            self.context.database.remove_scheduled_event(scheduled_event)
+            try:
+                handle_event(event, self.context)
+            except TransactionTooEarlyException:
+                log.debug(
+                    "Event executed too early. "
+                    "Retry later and don't try any other scheduled events right now.",
+                    handled_event=event,
+                )
+                # When the scheduled event with the lowest timestamp fails with
+                # a TransactionTooEarlyException, then we know that all other
+                # events would do that, too. So there is no reason to continue
+                # executing scheduled events at the moment.
+                self.try_scheduled_events_after = (
+                    self.get_timestamp_now() + MAX_SCHEDULED_EVENTS_RETRY_FREQUENCY
+                )
+                break
+            else:
+                # If no exception was raised, we won't have to execute this transaction again,
+                self.context.database.remove_scheduled_event(scheduled_event)
 
     def _check_pending_transactions(self) -> None:
         """Checks if pending transaction have been mined and confirmed.
@@ -244,7 +271,7 @@ class MonitoringService:
                   )
             """
             )
-            before_this_is_old = datetime.utcnow() - KEEP_MRS_WITHOUT_CHANNEL
+            before_this_is_old = self.get_timestamp_now() - KEEP_MRS_WITHOUT_CHANNEL
             self.context.database.conn.execute(
                 """
                 DELETE FROM monitor_request

@@ -8,7 +8,7 @@ from marshmallow_dataclass import add_schema
 
 from raiden.exceptions import InvalidSignature
 from raiden.utils.signer import recover
-from raiden.utils.typing import Address, BlockNumber, ChainID, Signature, TokenAmount
+from raiden.utils.typing import Address, ChainID, Signature, Timestamp, TokenAmount
 from raiden_contracts.constants import MessageTypeId
 from raiden_libs.marshmallow import ChecksumAddress, HexedBytes
 
@@ -20,7 +20,7 @@ class IOU:
     sender: Address = field(metadata={"marshmallow_field": ChecksumAddress()})
     receiver: Address = field(metadata={"marshmallow_field": ChecksumAddress()})
     amount: TokenAmount
-    expiration_block: BlockNumber
+    claimable_until: Timestamp
     one_to_n_address: Address = field(metadata={"marshmallow_field": ChecksumAddress()})
     chain_id: ChainID
     signature: Signature = field(metadata={"marshmallow_field": HexedBytes()})
@@ -35,7 +35,7 @@ class IOU:
             + self.sender
             + self.receiver
             + encode_single("uint256", self.amount)
-            + encode_single("uint256", self.expiration_block)
+            + encode_single("uint256", self.claimable_until)
         )
 
     def is_signature_valid(self) -> bool:
@@ -49,5 +49,5 @@ class IOU:
     def session_id(self) -> str:
         """Session ID as used for OneToN.settled_sessions"""
         return encode_hex(
-            keccak(self.receiver + self.sender + encode_single("uint256", self.expiration_block))
+            keccak(self.receiver + self.sender + encode_single("uint256", self.claimable_until))
         )

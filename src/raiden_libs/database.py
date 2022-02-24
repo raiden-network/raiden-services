@@ -9,7 +9,7 @@ import structlog
 from dbapi_opentracing import ConnectionTracing
 from eth_utils import to_canonical_address
 
-from raiden.utils.typing import Address, BlockNumber, ChainID, TokenNetworkAddress
+from raiden.utils.typing import Address, BlockNumber, ChainID, Timestamp, TokenNetworkAddress
 from raiden_libs.states import BlockchainState
 from raiden_libs.utils import to_checksum_address
 
@@ -47,7 +47,7 @@ def hex256(x: int) -> str:
     # '+' forces the sign
     # '#' adds the '0x'
     # '067' pads to 67 chars
-    return "{0:+#067x}".format(x)
+    return "{0:+#067x}".format(int(x))
 
 
 class BaseDatabase:
@@ -175,11 +175,13 @@ class BaseDatabase:
                 "UPDATE blockchain SET latest_committed_block = ?", [latest_committed_block]
             )
 
-    def upsert_token_network(self, token_network_address: TokenNetworkAddress) -> None:
+    def upsert_token_network(
+        self, token_network_address: TokenNetworkAddress, settle_timeout: Timestamp
+    ) -> None:
         with self._cursor() as cursor:
             cursor.execute(
-                "INSERT OR REPLACE INTO token_network VALUES (?)",
-                [to_checksum_address(token_network_address)],
+                "INSERT OR REPLACE INTO token_network VALUES (?, ?)",
+                [to_checksum_address(token_network_address), hex(settle_timeout)],
             )
 
     def get_token_network_addresses(self) -> List[TokenNetworkAddress]:
@@ -188,3 +190,12 @@ class BaseDatabase:
                 TokenNetworkAddress(to_canonical_address(row[0]))
                 for row in cursor.execute("SELECT address FROM token_network")
             ]
+
+    def get_token_network_settle_timeout(
+        self, token_network_address: TokenNetworkAddress
+    ) -> Timestamp:
+        with self._cursor() as cursor:
+            return cursor.execute(
+                "SELECT settle_timeout FROM token_network WHERE address = ?",
+                [to_checksum_address(token_network_address)],
+            ).fetchone()[0]

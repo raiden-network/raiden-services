@@ -600,12 +600,12 @@ def withdraw(
         sys.exit(1)
 
     # Can we withdraw already?
-    release_at = deposit_contract.functions.release_at().call()
+    withdrawable_after = deposit_contract.functions.withdrawable_after().call()
     deprecated = service_registry_contract.functions.deprecated().call()
-    if web3.eth.get_block("latest")["timestamp"] < release_at and not deprecated:
+    if web3.eth.get_block("latest")["timestamp"] < withdrawable_after and not deprecated:
         log.error(
             "Too early to withdraw",
-            released_at_utc=datetime.utcfromtimestamp(release_at).isoformat(),
+            released_at_utc=datetime.utcfromtimestamp(withdrawable_after).isoformat(),
         )
         sys.exit(1)
 

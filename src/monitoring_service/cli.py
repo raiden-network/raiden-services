@@ -22,8 +22,9 @@ from raiden_contracts.constants import (
     CONTRACT_SERVICE_REGISTRY,
     CONTRACT_TOKEN_NETWORK_REGISTRY,
     CONTRACT_USER_DEPOSIT,
+    ID_TO_CHAINNAME,
 )
-from raiden_contracts.utils.type_aliases import PrivateKey
+from raiden_contracts.utils.type_aliases import ChainID, PrivateKey
 from raiden_libs.blockchain import get_web3_provider_info
 from raiden_libs.cli import blockchain_options, common_options, setup_sentry
 from raiden_libs.constants import (
@@ -63,7 +64,6 @@ log = structlog.get_logger(__name__)
 )
 @click.option(
     "--confirmations",
-    default=DEFAULT_NUMBER_OF_BLOCK_CONFIRMATIONS,
     type=click.IntRange(min=0),
     help="Number of block confirmations to wait for",
 )
@@ -108,6 +108,16 @@ def main(  # pylint: disable=too-many-arguments,too-many-locals
     click.secho(MS_DISCLAIMER, fg="yellow")
     if not accept_disclaimer:
         click.confirm(CONFIRMATION_OF_UNDERSTANDING, abort=True)
+
+    if not confirmations:
+        chain_id = ChainID(web3.eth.chain_id)
+        confirmations = (
+            BlockTimeout(0)
+            if "arbitrum" in ID_TO_CHAINNAME.get(chain_id, "")
+            else DEFAULT_NUMBER_OF_BLOCK_CONFIRMATIONS
+        )
+        log.info("Setting number of confirmation blocks", confirmations=confirmations)
+
     log.info("Using RPC endpoint", rpc_url=get_web3_provider_info(web3))
     hex_addresses = {
         name: to_checksum_address(contract.address) for name, contract in contracts.items()

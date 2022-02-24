@@ -1,9 +1,12 @@
 from typing import Callable
 
 import gevent
+import pytest
 from eth_utils import decode_hex, encode_hex, to_canonical_address
 from web3 import Web3
 
+from monitoring_service.exceptions import TransactionTooEarlyException
+from monitoring_service.handlers import _first_allowed_timestamp_to_monitor
 from monitoring_service.service import MonitoringService, handle_event
 from monitoring_service.states import HashedBalanceProof
 from raiden.utils.typing import (
@@ -11,12 +14,14 @@ from raiden.utils.typing import (
     BlockNumber,
     MonitoringServiceAddress,
     Nonce,
+    Timestamp,
     TokenAmount,
     TokenNetworkAddress,
 )
 from raiden_contracts.constants import LOCKSROOT_OF_NO_LOCKS, MonitoringServiceEvent
 from raiden_libs.blockchain import query_blockchain_events
 from request_collector.server import RequestCollector
+from src.monitoring_service.constants import MAX_SCHEDULED_EVENTS_RETRY_FREQUENCY
 
 
 def create_ms_contract_events_query(web3: Web3, contract_address: Address) -> Callable:
@@ -34,7 +39,6 @@ def create_ms_contract_events_query(web3: Web3, contract_address: Address) -> Ca
 def test_first_allowed_monitoring(
     web3: Web3,
     monitoring_service_contract,
-    wait_for_blocks,
     service_registry,
     monitoring_service: MonitoringService,
     request_collector: RequestCollector,
@@ -55,7 +59,7 @@ def test_first_allowed_monitoring(
     assert service_registry.functions.hasValidRegistration(monitoring_service.address).call()
 
     # each client does a transfer
-    channel_id = create_channel(c1, c2, settle_timeout=10)[0]
+    channel_id = create_channel(c1, c2)[0]
 
     shared_bp_args = dict(
         channel_identifier=channel_id,
@@ -106,9 +110,15 @@ def test_first_allowed_monitoring(
     ).transact({"from": c2})
 
     monitoring_service._process_new_blocks(web3.eth.block_number)
+
+    timestamp_of_closing_block = Timestamp(web3.eth.get_block("latest").timestamp)  # type: ignore
+    settle_timeout = int(token_network.functions.settle_timeout().call())
+    settleable_after = Timestamp(timestamp_of_closing_block + settle_timeout)
+
     triggered_events = monitoring_service.database.get_scheduled_events(
-        max_trigger_block=BlockNumber(web3.eth.block_number + 10)
+        max_trigger_timestamp=settleable_after
     )
+
     assert len(triggered_events) == 1
 
     monitor_trigger = triggered_events[0]
@@ -118,13 +128,12 @@ def test_first_allowed_monitoring(
     )
     assert channel
 
-    # Calling monitor too early must fail. To test this, we call it two block
-    # before the trigger block.
-    # This should be only one block before, but we trigger one block too late
-    # to work around parity's gas estimation. See
-    # https://github.com/raiden-network/raiden-services/pull/728
-    wait_for_blocks(monitor_trigger.trigger_block_number - web3.eth.block_number - 2)
-    handle_event(monitor_trigger.event, monitoring_service.context)
+    # Calling monitor too early must fail. To test this, we call a few seconds
+    # before the trigger timestamp.
+    web3.testing.timeTravel(monitor_trigger.trigger_timestamp - 5)  # type: ignore
+
+    with pytest.raises(TransactionTooEarlyException):
+        handle_event(monitor_trigger.event, monitoring_service.context)
     assert [e.event for e in query()] == []
 
     # If our `monitor` call fails, we won't try again. Force a retry in this
@@ -134,16 +143,132 @@ def test_first_allowed_monitoring(
 
     # Now we can try again. The first try mined a new block, so now we're one
     # block further and `monitor` should succeed.
-    wait_for_blocks(monitor_trigger.trigger_block_number - web3.eth.block_number)
+    web3.testing.timeTravel(monitor_trigger.trigger_timestamp)  # type: ignore
     handle_event(monitor_trigger.event, monitoring_service.context)
     assert [e.event for e in query()] == [MonitoringServiceEvent.NEW_BALANCE_PROOF_RECEIVED]
+
+
+def test_reschedule_too_early_events(
+    web3: Web3,
+    monitoring_service_contract,
+    monitoring_service: MonitoringService,
+    request_collector: RequestCollector,
+    deposit_to_udc,
+    create_channel,
+    token_network,
+    get_accounts,
+    get_private_key,
+):
+    # pylint: disable=too-many-arguments,too-many-locals,protected-access
+    c1, c2 = get_accounts(2)
+
+    # add deposit for c1
+    node_deposit = 10
+    deposit_to_udc(c1, node_deposit)
+
+    # each client does a transfer
+    channel_id = create_channel(c1, c2)[0]
+
+    shared_bp_args = dict(
+        channel_identifier=channel_id,
+        token_network_address=decode_hex(token_network.address),
+        chain_id=monitoring_service.chain_id,
+        additional_hash="0x%064x" % 0,
+        locked_amount=TokenAmount(0),
+        locksroot=encode_hex(LOCKSROOT_OF_NO_LOCKS),
+    )
+    transferred_c1 = 5
+    balance_proof_c1 = HashedBalanceProof(
+        nonce=Nonce(1),
+        transferred_amount=transferred_c1,
+        priv_key=get_private_key(c1),
+        **shared_bp_args,
+    )
+    transferred_c2 = 6
+    balance_proof_c2 = HashedBalanceProof(
+        nonce=Nonce(2),
+        transferred_amount=transferred_c2,
+        priv_key=get_private_key(c2),
+        **shared_bp_args,
+    )
+    monitoring_service._process_new_blocks(web3.eth.block_number)
+    assert len(monitoring_service.context.database.get_token_network_addresses()) > 0
+
+    # c1 asks MS to monitor the channel
+    reward_amount = TokenAmount(1)
+    request_monitoring = balance_proof_c2.get_request_monitoring(
+        privkey=get_private_key(c1),
+        reward_amount=reward_amount,
+        monitoring_service_contract_address=MonitoringServiceAddress(
+            to_canonical_address(monitoring_service_contract.address)
+        ),
+    )
+    request_collector.on_monitor_request(request_monitoring)
+
+    # c2 closes the channel
+    token_network.functions.closeChannel(
+        channel_id,
+        c1,
+        c2,
+        balance_proof_c1.balance_hash,
+        balance_proof_c1.nonce,
+        balance_proof_c1.additional_hash,
+        balance_proof_c1.signature,
+        balance_proof_c1.get_counter_signature(get_private_key(c2)),
+    ).transact({"from": c2})
+
+    monitoring_service._process_new_blocks(web3.eth.block_number)
+
+    timestamp_of_closing_block = Timestamp(web3.eth.get_block("latest").timestamp)  # type: ignore
+    settle_timeout = int(token_network.functions.settle_timeout().call())
+    settleable_after = Timestamp(timestamp_of_closing_block + settle_timeout)
+
+    scheduled_events = monitoring_service.database.get_scheduled_events(
+        max_trigger_timestamp=settleable_after
+    )
+
+    channel = monitoring_service.database.get_channel(
+        token_network_address=TokenNetworkAddress(to_canonical_address(token_network.address)),
+        channel_id=channel_id,
+    )
+
+    monitor_trigger = _first_allowed_timestamp_to_monitor(
+        scheduled_events[0].event.token_network_address, channel, monitoring_service.context
+    )
+
+    assert len(scheduled_events) == 1
+    first_trigger_timestamp = scheduled_events[0].trigger_timestamp
+    assert first_trigger_timestamp == monitor_trigger
+
+    # Calling monitor too early must fail
+    monitoring_service.get_timestamp_now = lambda: settleable_after
+    monitoring_service._trigger_scheduled_events()  # pylint: disable=protected-access
+    assert monitoring_service.try_scheduled_events_after == pytest.approx(settleable_after, 100)
+
+    # Failed event is still scheduled, since it was too early for it to succeed
+    scheduled_events = monitoring_service.database.get_scheduled_events(settleable_after)
+    assert len(scheduled_events) == 1
+    # ...and it should be blocked from retrying for a while.
+    assert (
+        monitoring_service.try_scheduled_events_after
+        == monitoring_service.get_timestamp_now() + MAX_SCHEDULED_EVENTS_RETRY_FREQUENCY
+    )
+
+    # Now it could be executed, but won't due to MAX_SCHEDULED_EVENTS_RETRY_FREQUENCY
+    web3.testing.timeTravel(settleable_after - 1)  # type: ignore
+    monitoring_service._trigger_scheduled_events()  # pylint: disable=protected-access
+    assert len(monitoring_service.database.get_scheduled_events(settleable_after)) == 1
+
+    # Check that is does succeed if it wasn't for MAX_SCHEDULED_EVENTS_RETRY_FREQUENCY
+    monitoring_service.try_scheduled_events_after = monitoring_service.get_timestamp_now() - 1
+    monitoring_service._trigger_scheduled_events()  # pylint: disable=protected-access
+    assert len(monitoring_service.database.get_scheduled_events(settleable_after)) == 0
 
 
 def test_e2e(  # pylint: disable=too-many-arguments,too-many-locals
     web3,
     monitoring_service_contract,
     user_deposit_contract,
-    wait_for_blocks,
     service_registry,
     monitoring_service: MonitoringService,
     request_collector: RequestCollector,
@@ -172,7 +297,7 @@ def test_e2e(  # pylint: disable=too-many-arguments,too-many-locals
     assert service_registry.functions.hasValidRegistration(monitoring_service.address).call()
 
     # each client does a transfer
-    channel_id = create_channel(c1, c2, settle_timeout=5)[0]
+    channel_id = create_channel(c1, c2)[0]
 
     shared_bp_args = dict(
         channel_identifier=channel_id,
@@ -228,15 +353,20 @@ def test_e2e(  # pylint: disable=too-many-arguments,too-many-locals
     # Wait until the MS reacts, which it does after giving the client some time
     # to update the channel itself.
 
-    wait_for_blocks(2)  # 1 block for close + 1 block for triggering the event
+    timestamp_of_closing_block = Timestamp(web3.eth.get_block("latest").timestamp)
+    settle_timeout = int(token_network.functions.settle_timeout().call())
+    settleable_after = Timestamp(timestamp_of_closing_block + settle_timeout)
+
+    web3.testing.timeTravel(settleable_after - 1)
+    monitoring_service.get_timestamp_now = lambda: settleable_after - 1
+
     # Now give the monitoring service a chance to submit the missing BP
     gevent.sleep(0.01)
     assert [e.event for e in query()] == [MonitoringServiceEvent.NEW_BALANCE_PROOF_RECEIVED]
 
     # wait for settle timeout
-    # timeout is 5, but we've already waited 3 blocks before. Additionally one block is
-    # added to handle parity running gas estimation on current instead of next.
-    wait_for_blocks(3)
+    web3.testing.timeTravel(settleable_after + 1)
+    monitoring_service.get_timestamp_now = lambda: settleable_after + 1
 
     # Let the MS claim its reward
     gevent.sleep(0.01)
