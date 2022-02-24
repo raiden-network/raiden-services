@@ -14,7 +14,6 @@ from raiden.utils.typing import (
     BlockNumber,
     MonitoringServiceAddress,
     Nonce,
-    TokenAmount,
     TokenNetworkAddress,
     TransactionHash,
 )
@@ -27,6 +26,7 @@ from raiden_contracts.utils.type_aliases import (
     ChannelID,
     PrivateKey,
     Signature,
+    TokenAmount,
 )
 from raiden_libs.states import BlockchainState
 from raiden_libs.utils import to_checksum_address

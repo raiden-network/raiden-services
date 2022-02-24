@@ -1,6 +1,6 @@
 from prometheus_client import Counter
 
-from raiden.utils.typing import TokenAmount
+from raiden_contracts.utils.type_aliases import TokenAmount
 from raiden_libs.metrics import (  # noqa: F401, pylint: disable=unused-import
     ERRORS_LOGGED,
     EVENTS_EXCEPTIONS_RAISED,

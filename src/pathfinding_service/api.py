@@ -43,10 +43,9 @@ from raiden.utils.typing import (
     BlockNumber,
     PaymentAmount,
     PeerCapabilities,
-    TokenAmount,
     TokenNetworkAddress,
 )
-from raiden_contracts.utils.type_aliases import Signature
+from raiden_contracts.utils.type_aliases import Signature, TokenAmount
 from raiden_libs.api import ApiWithErrorHandler
 from raiden_libs.blockchain import get_pessimistic_udc_balance
 from raiden_libs.constants import UDC_SECURITY_MARGIN_FACTOR_PFS

@@ -14,15 +14,8 @@ from pathfinding_service.model.token_network import TokenNetwork
 from pathfinding_service.typing import DeferableMessage
 from raiden.messages.path_finding_service import PFSCapacityUpdate
 from raiden.storage.serialization.serializer import JSONSerializer
-from raiden.utils.typing import (
-    Address,
-    BlockNumber,
-    FeeAmount,
-    Timestamp,
-    TokenAmount,
-    TokenNetworkAddress,
-)
-from raiden_contracts.utils.type_aliases import ChainID, ChannelID
+from raiden.utils.typing import Address, BlockNumber, FeeAmount, Timestamp, TokenNetworkAddress
+from raiden_contracts.utils.type_aliases import ChainID, ChannelID, TokenAmount
 from raiden_libs.database import BaseDatabase, hex256
 from raiden_libs.utils import to_checksum_address
 
