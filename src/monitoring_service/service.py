@@ -17,6 +17,7 @@ from monitoring_service.constants import (
     DEFAULT_GAS_BUFFER_FACTOR,
     DEFAULT_GAS_CHECK_BLOCKS,
     KEEP_MRS_WITHOUT_CHANNEL,
+    MAX_SCHEDULED_EVENTS_RETRY_FREQUENCY,
 )
 from monitoring_service.database import Database
 from monitoring_service.exceptions import TransactionTooEarlyException
@@ -115,6 +116,7 @@ class MonitoringService:
         self.service_registry = contracts[CONTRACT_SERVICE_REGISTRY]
         self.token_network_registry = contracts[CONTRACT_TOKEN_NETWORK_REGISTRY]
         self.get_timestamp_now = get_timestamp_now
+        self.try_scheduled_events_after = get_timestamp_now()
 
         web3.middleware_onion.add(construct_sign_and_send_raw_middleware(private_key))
 
@@ -185,6 +187,8 @@ class MonitoringService:
 
     def _trigger_scheduled_events(self) -> None:
         timestamp_now = Timestamp(self.get_timestamp_now())
+        if timestamp_now < self.try_scheduled_events_after:
+            return
         triggered_events = self.context.database.get_scheduled_events(
             max_trigger_timestamp=timestamp_now
         )
@@ -203,6 +207,9 @@ class MonitoringService:
                 # a TransactionTooEarlyException, then we know that all other
                 # events would do that, too. So there is no reason to continue
                 # executing scheduled events at the moment.
+                self.try_scheduled_events_after = (
+                    self.get_timestamp_now() + MAX_SCHEDULED_EVENTS_RETRY_FREQUENCY
+                )
                 break
             else:
                 # If no exception was raised, we won't have to execute this transaction again,
