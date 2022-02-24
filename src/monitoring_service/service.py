@@ -19,7 +19,6 @@ from monitoring_service.constants import (
     KEEP_MRS_WITHOUT_CHANNEL,
 )
 from monitoring_service.database import Database
-from monitoring_service.events import ScheduledEvent
 from monitoring_service.exceptions import TransactionTooEarlyException
 from monitoring_service.handlers import HANDLERS, Context
 from raiden.utils.typing import (
@@ -88,12 +87,7 @@ def handle_event(event: Event, context: Context) -> None:
                     num_scheduled_events=context.database.scheduled_event_count(),
                 )
             except TransactionTooEarlyException:
-                log.debug("Event executed too early. Rescheduling for retry", handled_event=event)
-                context.database.upsert_scheduled_event(
-                    ScheduledEvent(
-                        trigger_timestamp=int(datetime.utcnow().timestamp()) + 10, event=event
-                    )
-                )
+                raise  # handled in _trigger_scheduled_events
             except Exception as ex:  # pylint: disable=broad-except
                 log.error("Error during event handler", handled_event=event, exc_info=ex)
                 sentry_sdk.capture_exception(ex)
@@ -197,8 +191,22 @@ class MonitoringService:
         for scheduled_event in triggered_events:
             event = scheduled_event.event
 
-            handle_event(event, self.context)
-            self.context.database.remove_scheduled_event(scheduled_event)
+            try:
+                handle_event(event, self.context)
+            except TransactionTooEarlyException:
+                log.debug(
+                    "Event executed too early. "
+                    "Retry later and don't try any other scheduled events right now.",
+                    handled_event=event,
+                )
+                # When the scheduled event with the lowest timestamp fails with
+                # a TransactionTooEarlyException, then we know that all other
+                # events would do that, too. So there is no reason to continue
+                # executing scheduled events at the moment.
+                break
+            else:
+                # If no exception was raised, we won't have to execute this transaction again,
+                self.context.database.remove_scheduled_event(scheduled_event)
 
     def _check_pending_transactions(self) -> None:
         """Checks if pending transaction have been mined and confirmed.

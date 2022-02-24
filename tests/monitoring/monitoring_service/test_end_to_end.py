@@ -2,9 +2,11 @@ from datetime import datetime
 from typing import Callable
 
 import gevent
+import pytest
 from eth_utils import decode_hex, encode_hex, to_canonical_address
 from web3 import Web3
 
+from monitoring_service.exceptions import TransactionTooEarlyException
 from monitoring_service.handlers import _first_allowed_timestamp_to_monitor
 from monitoring_service.service import MonitoringService, handle_event
 from monitoring_service.states import HashedBalanceProof
@@ -130,7 +132,8 @@ def test_first_allowed_monitoring(
     # before the trigger timestamp.
     web3.testing.timeTravel(monitor_trigger.trigger_timestamp - 5)  # type: ignore
 
-    handle_event(monitor_trigger.event, monitoring_service.context)
+    with pytest.raises(TransactionTooEarlyException):
+        handle_event(monitor_trigger.event, monitoring_service.context)
     assert [e.event for e in query()] == []
 
     # If our `monitor` call fails, we won't try again. Force a retry in this
