@@ -1,7 +1,7 @@
 import os
 import sys
 from datetime import datetime, timedelta
-from typing import Callable, Dict, Iterable, List, Optional
+from typing import Callable, Dict, Iterable, List, Optional, Set
 from urllib.parse import urlparse
 
 import gevent
@@ -38,7 +38,7 @@ from raiden.settings import (
 from raiden.storage.serialization.serializer import MessageSerializer
 from raiden.utils.cli import get_matrix_servers
 from raiden.utils.signer import LocalSigner
-from raiden.utils.typing import Address, ChainID, Set
+from raiden.utils.typing import Address, ChainID
 from raiden_contracts.utils.type_aliases import PrivateKey
 from raiden_libs.tracing import matrix_client_enable_requests_tracing
 from raiden_libs.user_address import MultiClientUserAddressManager
