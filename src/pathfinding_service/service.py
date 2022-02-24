@@ -241,11 +241,12 @@ class PathfindingService(gevent.Greenlet):
 
     def handle_token_network_created(self, event: ReceiveTokenNetworkCreatedEvent) -> None:
         network_address = event.token_network_address
+        settle_timeout = event.settle_timeout
         if not self.follows_token_network(network_address):
             log.info("Found new token network", event_=event)
 
-            self.token_networks[network_address] = TokenNetwork(network_address)
-            self.database.upsert_token_network(network_address)
+            self.token_networks[network_address] = TokenNetwork(network_address, settle_timeout)
+            self.database.upsert_token_network(network_address, settle_timeout)
 
     def handle_channel_opened(self, event: ReceiveChannelOpenedEvent) -> None:
         token_network = self.get_token_network(event.token_network_address)
@@ -258,7 +259,6 @@ class PathfindingService(gevent.Greenlet):
             channel_identifier=event.channel_identifier,
             participant1=event.participant1,
             participant2=event.participant2,
-            settle_timeout=event.settle_timeout,
         )
         self.database.upsert_channel(channel)
 

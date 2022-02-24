@@ -27,6 +27,8 @@ from raiden.utils.typing import (
 )
 from raiden_libs.utils import to_checksum_address
 
+from tests.constants import DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT
+
 
 def db_has_feedback_for(database: PFSDatabase, token: FeedbackToken, route: List[Address]) -> bool:
     hexed_route = [to_checksum_address(e) for e in route]
@@ -220,21 +222,19 @@ def test_channels(pathfinding_service_mock):
 
     # register token network internally
     database = pathfinding_service_mock.database
-    database.upsert_token_network(token_network_address)
+    database.upsert_token_network(token_network_address, DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT)
 
     channel1 = Channel(
         token_network_address=token_network_address,
         channel_id=ChannelID(1),
         participant1=parts[0],
         participant2=parts[1],
-        settle_timeout=BlockTimeout(100),
     )
     channel2 = Channel(
         token_network_address=token_network_address,
         channel_id=ChannelID(2),
         participant1=parts[1],
         participant2=parts[2],
-        settle_timeout=BlockTimeout(100),
     )
 
     # Test `upsert_channel` and `get_channels`
@@ -266,22 +266,20 @@ def test_channel_constraints(pathfinding_service_mock):
 
     # register token network internally
     database = pathfinding_service_mock.database
-    database.upsert_token_network(token_network_address1)
-    database.upsert_token_network(token_network_address2)
+    database.upsert_token_network(token_network_address1, DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT)
+    database.upsert_token_network(token_network_address2, DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT)
 
     channel1 = Channel(
         token_network_address=token_network_address1,
         channel_id=ChannelID(1),
         participant1=parts[0],
         participant2=parts[1],
-        settle_timeout=BlockTimeout(100),
     )
     channel2 = Channel(
         token_network_address=token_network_address2,
         channel_id=ChannelID(1),
         participant1=parts[0],
         participant2=parts[1],
-        settle_timeout=BlockTimeout(100),
     )
 
     # Test `upsert_channel` and `get_channels`

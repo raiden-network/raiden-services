@@ -177,7 +177,7 @@ Claim Pathfinding Fees
 If you are running the Pathfinding Service with ``--service-fee``, the service
 fees will need to be claimed to actually reach your wallet. Claiming fees less
 frequently will reduce the Ethereum transactions costs spent while claiming,
-while not claiming for a long time might make you miss the expiration block for
+while not claiming for a long time might make you miss the expiration time for
 your claims. The ``claim-pfs-fees`` script helps doing this in a profitable and
 reasonably easy way. You must use the same ``keystore`` and ``state-db`` as for
 running the Pathfinding Service.
@@ -188,13 +188,13 @@ In addition to the mandatory parameters, the following parameters are useful to 
     The RDN/ETH price used to calculate whether the value of a fee IOU exceeds
     the transactions costs to claim it.
 
-``--expires-within``
-    Only IOUs which expire within this number of blocks will be claimed.
-    Reducing this number gives the IOUs more time to accumulate a higher
-    amount, allowing higher amounts to be claimed with the same Ethereum
-    transaction costs. Increasing this value makes it less likely for IOUs to
-    expire before being claimed, if you run ``claim-pfs-fees`` rarely or at
-    irregular intervals.
+``--expire-within``
+    Only IOUs which are claimable until the time range of now plus this number
+    of seconds will be claimed. Reducing this number gives the IOUs more time to
+    accumulate a higher amount, allowing higher amounts to be claimed with the
+    same Ethereum transaction costs. Increasing this value makes it less likely
+    for IOUs to expire before being claimed, if you run ``claim-pfs-fees``
+    rarely or at irregular intervals.
 
 
 Indices and tables

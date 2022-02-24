@@ -14,7 +14,6 @@ from raiden.transfer.mediated_transfer.mediation_fee import FeeScheduleState as 
 from raiden.utils.mediation_fees import ppm_fee_per_channel
 from raiden.utils.typing import (
     Address,
-    BlockTimeout,
     ChainID,
     ChannelID,
     FeeAmount as FA,
@@ -23,6 +22,7 @@ from raiden.utils.typing import (
     TokenAmount as TA,
     TokenNetworkAddress,
 )
+from tests.constants import DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT
 from tests.pathfinding.utils import SimpleReachabilityContainer
 
 
@@ -43,7 +43,10 @@ def a(int_addr) -> Address:  # pylint: disable=invalid-name
 
 class TokenNetworkForTests(TokenNetwork):
     def __init__(self, channels: List[dict], default_capacity: TA = TA(1000)):
-        super().__init__(token_network_address=TokenNetworkAddress(a(255)))
+        super().__init__(
+            token_network_address=TokenNetworkAddress(a(255)),
+            settle_timeout=DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT,
+        )
 
         # open channels
         channel_ids = itertools.count(100)
@@ -52,7 +55,6 @@ class TokenNetworkForTests(TokenNetwork):
                 channel_identifier=ChannelID(next(channel_ids)),
                 participant1=a(chan["participant1"]),
                 participant2=a(chan["participant2"]),
-                settle_timeout=BlockTimeout(100),
             )
 
             cv1: ChannelView = self.G[a(chan["participant1"])][a(chan["participant2"])]["view"]

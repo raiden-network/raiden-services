@@ -45,7 +45,6 @@ class Channel:
     channel_id: ChannelID
     participant1: Address = field(metadata={"marshmallow_field": ChecksumAddress(required=True)})
     participant2: Address = field(metadata={"marshmallow_field": ChecksumAddress(required=True)})
-    settle_timeout: BlockTimeout
     fee_schedule1: FeeSchedule = field(default_factory=FeeSchedule)
     fee_schedule2: FeeSchedule = field(default_factory=FeeSchedule)
 
@@ -86,10 +85,6 @@ class ChannelView:
     @property
     def participant2(self) -> Address:
         return self.channel.participant1 if self.reverse else self.channel.participant2
-
-    @property
-    def settle_timeout(self) -> int:
-        return self.channel.settle_timeout
 
     @property
     def token_network_address(self) -> TokenNetworkAddress:

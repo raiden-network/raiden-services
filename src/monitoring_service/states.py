@@ -43,7 +43,6 @@ class Channel:
     identifier: ChannelID
     participant1: Address
     participant2: Address
-    settle_timeout: int
     state: ChannelState = ChannelState.OPENED
     closing_block: Optional[BlockNumber] = None
     closing_participant: Optional[Address] = None
