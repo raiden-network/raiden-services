@@ -363,9 +363,6 @@ def monitor_new_balance_proof_event_handler(event: Event, context: Context) -> N
             channel.token_network_address
         )
         settleable_after = Timestamp(closing_block_timestamp + settle_timeout)
-        # TODO:
-        # Find approach how to deal with time differences between services and
-        # blockchain node to not send transactions too early or act on them.
 
         # trigger the claim reward action by an event
         triggered_event = ActionClaimRewardTriggeredEvent(
