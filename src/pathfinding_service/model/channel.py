@@ -1,6 +1,6 @@
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
-from typing import ClassVar, Tuple, Type
+from typing import ClassVar, Optional, Tuple, Type
 
 import marshmallow
 from marshmallow.fields import NaiveDateTime
@@ -14,7 +14,6 @@ from raiden.utils.typing import (
     BlockTimeout,
     ChannelID,
     Nonce,
-    Optional,
     TokenAmount,
     TokenNetworkAddress,
 )

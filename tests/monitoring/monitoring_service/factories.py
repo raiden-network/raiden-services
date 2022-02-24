@@ -1,4 +1,5 @@
 import random
+from typing import Optional
 
 from eth_utils import decode_hex
 
@@ -15,7 +16,6 @@ from raiden.utils.typing import (
     ChainID,
     ChannelID,
     Nonce,
-    Optional,
     TokenAddress,
     TokenAmount,
     TokenNetworkAddress,
