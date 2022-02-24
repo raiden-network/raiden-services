@@ -9,6 +9,7 @@ MIN_FILTER_INTERVAL: BlockTimeout = BlockTimeout(2)
 DEFAULT_GAS_BUFFER_FACTOR: int = 10
 DEFAULT_GAS_CHECK_BLOCKS: int = 100
 KEEP_MRS_WITHOUT_CHANNEL: int = 15 * 60  # 15 minutes
+MAX_SCHEDULED_EVENTS_RETRY_FREQUENCY = 10
 # Make sure this stays <= Raiden's MONITORING_REWARD until there is a way to
 # inform Raiden about the expected rewards.
 DEFAULT_MIN_REWARD = 5 * 10 ** 18
