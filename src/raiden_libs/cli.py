@@ -157,11 +157,12 @@ def blockchain_options(contracts: List[str]) -> Callable:
                 "Set the gas price for ethereum transactions. If not provided "
                 "the 'normal' gas price startegy is used.\n"
                 "Available options:\n"
-                '"fast" - transactions are usually mined within 60 seconds\n'
                 '"normal" - transactions are usually mined within 5 minutes\n'
+                '"fast" - transactions are usually mined within 60 seconds\n'
+                '"rpc" - using the current price defined by the connected RPC node\n'
                 "<GAS_PRICE> - use given gas price\n"
             ),
-            type=GasPriceChoiceType(["normal", "fast"]),
+            type=GasPriceChoiceType(["normal", "fast", "rpc"]),
             default="fast",
             show_default=True,
         ),
