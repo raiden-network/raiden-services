@@ -18,6 +18,8 @@ from sentry_sdk.integrations.flask import FlaskIntegration
 from sentry_sdk.integrations.logging import LoggingIntegration
 from web3 import HTTPProvider, Web3
 from web3.contract import Contract
+from web3.gas_strategies.rpc import rpc_gas_price_strategy
+from web3.gas_strategies.time_based import fast_gas_price_strategy
 from web3.middleware import geth_poa_middleware, simple_cache_middleware
 from web3.types import Wei
 
@@ -32,6 +34,7 @@ from raiden_contracts.constants import (
     CONTRACT_TOKEN_NETWORK_REGISTRY,
     CONTRACT_USER_DEPOSIT,
     CONTRACTS_VERSION,
+    ID_TO_CHAINNAME,
 )
 from raiden_contracts.contract_manager import ContractDevEnvironment
 from raiden_contracts.utils.type_aliases import ChainID, PrivateKey
@@ -163,7 +166,6 @@ def blockchain_options(contracts: List[str]) -> Callable:
                 "<GAS_PRICE> - use given gas price\n"
             ),
             type=GasPriceChoiceType(["normal", "fast", "rpc"]),
-            default="fast",
             show_default=True,
         ),
         click.Option(
@@ -230,7 +232,7 @@ def blockchain_options(contracts: List[str]) -> Callable:
 
 def connect_to_blockchain(
     eth_rpc: URI,
-    gas_price_strategy: Callable[[Web3, Any], Wei],
+    gas_price_strategy: Optional[Callable[[Web3, Any], Wei]],
     used_contracts: List[str],
     address_overwrites: Dict[str, Address],
     development_environment: ContractDevEnvironment,
@@ -254,6 +256,15 @@ def connect_to_blockchain(
     # Set gas price strategy
     # for that we also need a cache middleware, otherwise sampling is expensive
     web3.middleware_onion.add(simple_cache_middleware)
+
+    if not gas_price_strategy:
+        chain_id = ChainID(web3.eth.chain_id)
+        gas_price_strategy = (
+            rpc_gas_price_strategy
+            if "arbitrum" in ID_TO_CHAINNAME.get(chain_id, "")
+            else fast_gas_price_strategy
+        )
+
     web3.eth.setGasPriceStrategy(gas_price_strategy)
 
     # give web3 some time between retries before failing
