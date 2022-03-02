@@ -634,6 +634,11 @@ def action_claim_reward_triggered_event_handler(event: Event, context: Context) 
                 channel.claim_tx_hash = tx_hash
                 context.database.upsert_channel(channel)
         except Exception as exc:  # pylint: disable=broad-except
+            error_message = exc.args[0] if len(exc.args) > 0 else ""
+
+            if "channel not settled yet" in error_message:
+                raise TransactionTooEarlyException
+
             log.error("Sending tx failed", exc_info=True, err=exc)
 
             metrics.get_metrics_for_label(
