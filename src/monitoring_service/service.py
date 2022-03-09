@@ -1,5 +1,4 @@
 import sys
-from datetime import datetime
 from typing import Callable, Dict
 
 import gevent
@@ -33,7 +32,7 @@ from raiden_contracts.contract_manager import gas_measurements
 from raiden_contracts.utils.type_aliases import ChainID, PrivateKey
 from raiden_libs.blockchain import get_blockchain_events_adaptive
 from raiden_libs.events import Event
-from raiden_libs.utils import private_key_to_address
+from raiden_libs.utils import get_posix_utc_time_now, private_key_to_address
 
 log = structlog.get_logger(__name__)
 
@@ -100,7 +99,7 @@ class MonitoringService:
         required_confirmations: BlockTimeout,
         poll_interval: float,
         min_reward: int = 0,
-        get_timestamp_now: Callable = lambda: int(datetime.utcnow().timestamp()),
+        get_timestamp_now: Callable = get_posix_utc_time_now,
     ):
         self.web3 = web3
         self.chain_id = ChainID(web3.eth.chain_id)

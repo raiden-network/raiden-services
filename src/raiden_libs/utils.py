@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from functools import lru_cache
 from typing import Union
 
@@ -6,7 +7,7 @@ from coincurve import PrivateKey, PublicKey
 from eth_typing import AnyAddress, ChecksumAddress
 from eth_utils import keccak
 
-from raiden.utils.typing import Address
+from raiden.utils.typing import Address, Timestamp
 from raiden_contracts.utils.type_aliases import PrivateKey as PrivateKeyType
 
 
@@ -29,3 +30,8 @@ def private_key_to_address(private_key: PrivateKeyType) -> Address:
 @lru_cache(maxsize=5000)
 def to_checksum_address(value: Union[AnyAddress, str, bytes]) -> ChecksumAddress:
     return eth_utils.to_checksum_address(value)
+
+
+def get_posix_utc_time_now() -> Timestamp:
+    datetime_utc_now = datetime.now(tz=timezone.utc)
+    return Timestamp(int(datetime_utc_now.timestamp()))
