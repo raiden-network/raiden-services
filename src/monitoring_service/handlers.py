@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from datetime import datetime
 
 import structlog
 from eth_utils import encode_hex
@@ -35,6 +34,7 @@ from raiden_libs.events import (
     ReceiveTokenNetworkCreatedEvent,
     UpdatedHeadBlockEvent,
 )
+from raiden_libs.utils import get_posix_utc_time_now
 
 log = structlog.get_logger(__name__)
 
@@ -127,8 +127,7 @@ def channel_closed_event_handler(event: Event, context: Context) -> None:
     )
     settle_timeout = context.database.get_token_network_settle_timeout(event.token_network_address)
     settleable_after = Timestamp(timestamp_of_closing_block + settle_timeout)
-    timestamp_now = Timestamp(int(datetime.utcnow().timestamp()))
-    update_balance_proof_period_is_over = settleable_after < timestamp_now
+    update_balance_proof_period_is_over = settleable_after < get_posix_utc_time_now()
 
     if not update_balance_proof_period_is_over:
         # Trigger the monitoring action event handler, this will check if a
@@ -496,9 +495,8 @@ def action_monitoring_triggered_event_handler(event: Event, context: Context) ->
             min_reward=context.min_reward,
         )
 
-        timestamp_now = Timestamp(int(datetime.utcnow().timestamp()))
         context.database.upsert_scheduled_event(
-            ScheduledEvent(trigger_timestamp=timestamp_now, event=event)
+            ScheduledEvent(trigger_timestamp=get_posix_utc_time_now(), event=event)
         )
         return
 

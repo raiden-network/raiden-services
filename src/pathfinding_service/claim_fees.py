@@ -1,5 +1,4 @@
 import sys
-from datetime import datetime
 from typing import Dict, Iterable, Tuple
 
 import click
@@ -16,7 +15,7 @@ from raiden_contracts.constants import CONTRACT_ONE_TO_N
 from raiden_contracts.contract_manager import gas_measurements
 from raiden_contracts.utils.type_aliases import ChainID, TokenAmount
 from raiden_libs.cli import blockchain_options, common_options
-from raiden_libs.utils import private_key_to_address
+from raiden_libs.utils import get_posix_utc_time_now, private_key_to_address
 
 log = structlog.get_logger(__name__)
 
@@ -54,12 +53,12 @@ def main(
     )
 
     claim_cost_rdn = calc_claim_cost_rdn(web3, rdn_per_eth)
-    timestamp_now = int(datetime.utcnow().timestamp())
+    time_now = get_posix_utc_time_now()
     ious = list(
         get_claimable_ious(
             database,
-            claimable_until_after=Timestamp(timestamp_now),
-            claimable_until_before=Timestamp(timestamp_now + expire_within),
+            claimable_until_after=time_now,
+            claimable_until_before=Timestamp(time_now + expire_within),
             claim_cost_rdn=claim_cost_rdn,
         )
     )

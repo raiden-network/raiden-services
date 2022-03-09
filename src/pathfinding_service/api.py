@@ -51,7 +51,7 @@ from raiden_libs.blockchain import get_pessimistic_udc_balance
 from raiden_libs.constants import UDC_SECURITY_MARGIN_FACTOR_PFS
 from raiden_libs.exceptions import ApiException
 from raiden_libs.marshmallow import ChecksumAddress, HexedBytes
-from raiden_libs.utils import to_checksum_address
+from raiden_libs.utils import get_posix_utc_time_now, to_checksum_address
 
 log = structlog.get_logger(__name__)
 T = TypeVar("T")
@@ -262,7 +262,6 @@ def process_payment(  # pylint: disable=too-many-branches
 
     # Compare with known IOU
     latest_block = pathfinding_service.blockchain_state.latest_committed_block
-    timestamp_now = datetime.utcnow().timestamp()
     active_iou = pathfinding_service.database.get_iou(sender=iou.sender, claimed=False)
 
     if active_iou:
@@ -277,9 +276,11 @@ def process_payment(  # pylint: disable=too-many-branches
         if claimed_iou:
             raise exceptions.IOUAlreadyClaimed
 
-        min_expiry = timestamp_now + MIN_IOU_EXPIRY
+        min_expiry = get_posix_utc_time_now() + MIN_IOU_EXPIRY
         if iou.claimable_until < min_expiry:
-            raise exceptions.IOUExpiredTooEarly(min_expiry=min_expiry)
+            raise exceptions.IOUExpiredTooEarly(
+                min_expiry=min_expiry, claimable_until_received=iou.claimable_until
+            )
         expected_amount = service_fee
     if iou.amount < expected_amount:
         raise exceptions.InsufficientServicePayment(

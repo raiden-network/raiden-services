@@ -1,6 +1,5 @@
 # pylint: disable=redefined-outer-name,too-many-lines
 import dataclasses
-from datetime import datetime
 from typing import Optional
 from unittest.mock import Mock, patch
 
@@ -27,7 +26,7 @@ from monitoring_service.handlers import (
     updated_head_block_event_handler,
 )
 from monitoring_service.states import OnChainUpdateStatus
-from raiden.utils.typing import Address, BlockNumber, ChannelID, Nonce, TokenAmount
+from raiden.utils.typing import Address, BlockNumber, ChannelID, Nonce, Timestamp, TokenAmount
 from raiden_contracts.constants import ChannelState
 from raiden_contracts.tests.utils import get_random_privkey
 from raiden_contracts.utils.type_aliases import PrivateKey
@@ -42,7 +41,7 @@ from raiden_libs.events import (
     ReceiveNonClosingBalanceProofUpdatedEvent,
     ReceiveTokenNetworkCreatedEvent,
 )
-from raiden_libs.utils import to_checksum_address
+from raiden_libs.utils import get_posix_utc_time_now, to_checksum_address
 from tests.constants import DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT
 from tests.libs.mocks.web3 import Web3Mock
 from tests.monitoring.monitoring_service.factories import (
@@ -201,7 +200,7 @@ def test_channel_opened_event_handler_adds_channel(context: Context):
 
 def test_channel_closed_event_handler_closes_existing_channel(context: Context):
     context = setup_state_with_open_channel(context)
-    current_block = int(datetime.utcnow().timestamp() // 15)
+    current_block = get_posix_utc_time_now() // 15
 
     event = ReceiveChannelClosedEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
@@ -231,7 +230,7 @@ def test_channel_closed_event_handler_closes_existing_channel(context: Context):
 
 def test_channel_closed_event_handler_idempotency(context: Context):
     context = setup_state_with_open_channel(context)
-    current_block = int(datetime.utcnow().timestamp() // 15)
+    current_block = get_posix_utc_time_now() // 15
 
     event = ReceiveChannelClosedEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
@@ -314,7 +313,7 @@ def test_channel_closed_event_handler_trigger_action_monitor_event_with_monitor_
     context = setup_state_with_open_channel(context)
     # add MR to DB
     context.database.upsert_monitor_request(create_signed_monitor_request())
-    current_block_number = int(datetime.utcnow().timestamp() // 15)
+    current_block_number = get_posix_utc_time_now() // 15
 
     event = ReceiveChannelClosedEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
@@ -331,7 +330,7 @@ def test_channel_closed_event_handler_trigger_action_monitor_event_without_monit
     context: Context,
 ):
     context = setup_state_with_open_channel(context)
-    current_block_number = int(datetime.utcnow().timestamp() // 15)
+    current_block_number = get_posix_utc_time_now() // 15
 
     event = ReceiveChannelClosedEvent(
         token_network_address=DEFAULT_TOKEN_NETWORK_ADDRESS,
@@ -722,7 +721,7 @@ def test_action_monitoring_rescheduling_when_user_lacks_funds(context: Context):
         non_closing_participant=DEFAULT_PARTICIPANT2,
     )
     scheduled_events_before = context.database.get_scheduled_events(
-        max_trigger_timestamp=datetime.utcnow().timestamp()
+        max_trigger_timestamp=Timestamp(get_posix_utc_time_now())
     )
 
     # Try to call monitor when the user has insufficient funds
@@ -733,7 +732,7 @@ def test_action_monitoring_rescheduling_when_user_lacks_funds(context: Context):
     # Now the event must have been rescheduled
     # TODO: check that the event is rescheduled to trigger at the right block
     scheduled_events_after = context.database.get_scheduled_events(
-        max_trigger_timestamp=datetime.utcnow().timestamp()
+        max_trigger_timestamp=Timestamp(get_posix_utc_time_now())
     )
     new_events = set(scheduled_events_after) - set(scheduled_events_before)
     assert len(new_events) == 1

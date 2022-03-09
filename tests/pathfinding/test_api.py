@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional
-from uuid import uuid4
 
 import pkg_resources
 import pytest
@@ -15,10 +14,18 @@ from pathfinding_service.model.feedback import FeedbackToken
 from raiden.network.transport.matrix import AddressReachability
 from raiden.tests.utils.factories import make_address, make_signer
 from raiden.utils.signer import LocalSigner
-from raiden.utils.typing import Address, Callable, ChainID, FeeAmount, Signature, TokenAmount
+from raiden.utils.typing import (
+    Address,
+    Callable,
+    ChainID,
+    FeeAmount,
+    Signature,
+    Timestamp,
+    TokenAmount,
+)
 from raiden_contracts.tests.utils import get_random_privkey
 from raiden_contracts.utils.type_aliases import PrivateKey
-from raiden_libs.utils import private_key_to_address, to_checksum_address
+from raiden_libs.utils import get_posix_utc_time_now, private_key_to_address, to_checksum_address
 from tests.pathfinding.test_database import db_has_feedback_for
 from tests.pathfinding.utils import get_address_metadata, get_user_id_from_address
 
@@ -409,7 +416,7 @@ def test_payment_with_new_iou_rejected(  # pylint: disable=too-many-locals
         api_sut.pathfinding_service.address,
         one_to_n_address=api_sut.one_to_n_address,
         amount=100,
-        claimable_until=int(datetime.utcnow().timestamp()) + 1_234_567,
+        claimable_until=Timestamp(get_posix_utc_time_now() + 1_234_567),
     )
     first_iou_dict = iou.Schema().dump(iou)
     second_iou = make_iou(
@@ -417,7 +424,7 @@ def test_payment_with_new_iou_rejected(  # pylint: disable=too-many-locals
         api_sut.pathfinding_service.address,
         one_to_n_address=api_sut.one_to_n_address,
         amount=200,
-        claimable_until=int(datetime.utcnow().timestamp()) + 1_234_568,
+        claimable_until=Timestamp(get_posix_utc_time_now() + 1_234_568),
     )
     second_iou_dict = second_iou.Schema().dump(second_iou)
 
