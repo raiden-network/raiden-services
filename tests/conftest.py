@@ -37,6 +37,7 @@ from raiden_contracts.tests.fixtures import (  # noqa
     uninitialized_user_deposit_contract,
     user_deposit_contract,
     user_deposit_whole_balance_limit,
+    user_deposit_withdraw_timeout,
     web3,
 )
 
