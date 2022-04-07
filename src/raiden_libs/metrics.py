@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 from enum import Enum, unique
-from typing import Dict, Generator, Tuple
+from typing import Dict, Generator, Tuple, cast
 
 from prometheus_client import CollectorRegistry, Counter, Histogram, Metric
 from prometheus_client.context_managers import ExceptionCounter, Timer
@@ -82,7 +82,7 @@ def collect_event_metrics(event: Event) -> MetricsGenerator:
     ).time() as timer, EVENTS_EXCEPTIONS_RAISED.labels(
         event_type=event_type
     ).count_exceptions() as exception_counter:
-        yield (timer, exception_counter)
+        yield (cast(Timer, timer), cast(ExceptionCounter, exception_counter))
 
 
 @contextmanager
@@ -93,13 +93,8 @@ def collect_message_metrics(message: Message) -> MetricsGenerator:
     ).time() as timer, MESSAGES_EXCEPTIONS_RAISED.labels(
         message_type=message_type
     ).count_exceptions() as exception_counter:
-        yield (timer, exception_counter)
+        yield (cast(Timer, timer), cast(ExceptionCounter, exception_counter))
 
 
 def get_metrics_for_label(metric: Metric, enum: MetricsEnum) -> Metric:
-    return metric.labels(**enum.to_label_dict())
-
-
-def report_error(error_category: ErrorCategory) -> None:
-    """Convenience method to increase the error logged counter for a certain error category"""
-    get_metrics_for_label(ERRORS_LOGGED, error_category).inc()
+    return metric.labels(**enum.to_label_dict())  # type: ignore
