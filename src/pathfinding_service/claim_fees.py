@@ -120,7 +120,7 @@ def claim_ious(
 
     failures = 0
     while unchecked_txs:
-        for tx_hash, iou in unchecked_txs:
+        for tx_hash, iou in unchecked_txs.copy():
             try:
                 receipt = web3.eth.get_transaction_receipt(tx_hash)
             except TransactionNotFound:

@@ -16,5 +16,5 @@ class Web3Mock(Mock):
         self.eth.chain_id = 61
         self.eth.block_number = 100
 
-    def _get_child_mock(self, **kwargs):
+    def _get_child_mock(self, **kwargs):  # pylint: disable=arguments-differ
         return Mock(**kwargs)
