@@ -1,6 +1,6 @@
 git+https://github.com/raiden-network/raiden.git@arbitrum-v0.7.0#egg=raiden
 
-sentry-sdk[flask]==1.5.9
+sentry-sdk[flask]==1.5.10
 prometheus_client==0.14.1
 networkx==2.8
 
