@@ -1,5 +1,15 @@
 # Changelog
 
+### 2.0.0 (2022-04-29)
+
+* Update contracts to 0.50.0 (https://github.com/raiden-network/raiden-services/pull/1195)
+* Adapt to use timestamps instead of block numbers (https://github.com/raiden-network/raiden-services/pull/1144)
+* Reschedule too early transactions (https://github.com/raiden-network/raiden-services/pull/1152)
+* Automatically adapt number of confirmation blocks (https://github.com/raiden-network/raiden-services/pull/1156)
+* Optimize transaction retry algorithm (https://github.com/raiden-network/raiden-services/pull/1158)
+* Add new gas price strategy `rpc` (https://github.com/raiden-network/raiden-services/pull/1165)
+* Fix the usage of POSIX UTC timestamps (https://github.com/raiden-network/raiden-services/pull/1172)
+
 ### 1.0.0 (2021-12-08)
 * Update contracts to 0.40.0 (https://github.com/raiden-network/raiden-services/pull/1121)
 * Fix a bug when whitelisting users in Matrix (https://github.com/raiden-network/raiden-services/pull/1110)
