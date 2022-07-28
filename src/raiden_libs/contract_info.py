@@ -4,7 +4,7 @@ from typing import Dict, List, Optional, Tuple
 import structlog
 from eth_utils import to_canonical_address
 
-from raiden.utils.typing import Address, BlockNumber
+from raiden_common.utils.typing import Address, BlockNumber
 from raiden_contracts.contract_manager import (
     ContractDevEnvironment,
     ContractManager,

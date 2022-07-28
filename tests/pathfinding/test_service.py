@@ -5,17 +5,13 @@ from typing import List
 from unittest.mock import Mock, patch
 
 import pytest
-
-from pathfinding_service import metrics
-from pathfinding_service.model.token_network import PFSFeeUpdate
-from pathfinding_service.service import PathfindingService
-from raiden.constants import EMPTY_SIGNATURE
-from raiden.messages.synchronization import Processed
-from raiden.tests.utils.factories import make_privkey_address, make_token_network_address
-from raiden.transfer.identifiers import CanonicalIdentifier
-from raiden.transfer.mediated_transfer.mediation_fee import FeeScheduleState
-from raiden.utils.signer import LocalSigner
-from raiden.utils.typing import (
+from raiden_common.constants import EMPTY_SIGNATURE
+from raiden_common.messages.synchronization import Processed
+from raiden_common.tests.utils.factories import make_privkey_address, make_token_network_address
+from raiden_common.transfer.identifiers import CanonicalIdentifier
+from raiden_common.transfer.mediated_transfer.mediation_fee import FeeScheduleState
+from raiden_common.utils.signer import LocalSigner
+from raiden_common.utils.typing import (
     Address,
     BlockNumber,
     BlockTimeout,
@@ -28,6 +24,10 @@ from raiden.utils.typing import (
     TokenAmount,
     TokenNetworkAddress,
 )
+
+from pathfinding_service import metrics
+from pathfinding_service.model.token_network import PFSFeeUpdate
+from pathfinding_service.service import PathfindingService
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
 from raiden_contracts.tests.utils import get_random_privkey
 from raiden_contracts.utils.type_aliases import PrivateKey

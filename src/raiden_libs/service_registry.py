@@ -13,6 +13,9 @@ import structlog
 from eth_typing import HexStr
 from eth_utils import event_abi_to_log_topic, to_canonical_address, to_hex
 from hexbytes import HexBytes
+from raiden_common.blockchain.filters import decode_event
+from raiden_common.settings import DEFAULT_NUMBER_OF_BLOCK_CONFIRMATIONS
+from raiden_common.utils.typing import Address, BlockNumber
 from requests import RequestException
 from web3 import Web3
 from web3.contract import Contract, ContractFunction
@@ -20,9 +23,6 @@ from web3.logs import DISCARD
 from web3.middleware import construct_sign_and_send_raw_middleware
 from web3.types import FilterParams, TxReceipt
 
-from raiden.blockchain.filters import decode_event
-from raiden.settings import DEFAULT_NUMBER_OF_BLOCK_CONFIRMATIONS
-from raiden.utils.typing import Address, BlockNumber
 from raiden_contracts.constants import (
     CONTRACT_CUSTOM_TOKEN,
     CONTRACT_DEPOSIT,

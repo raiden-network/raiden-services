@@ -4,14 +4,14 @@ from unittest.mock import MagicMock, Mock
 import pytest
 from click.testing import CliRunner
 from eth_utils import decode_hex, to_canonical_address
+from raiden_common.utils.signer import LocalSigner
+from raiden_common.utils.typing import ChainID, Signature, TokenAmount
 from web3 import Web3
 
 from pathfinding_service import metrics
 from pathfinding_service.claim_fees import claim_ious, get_claimable_ious, main
 from pathfinding_service.model import IOU
 from pathfinding_service.service import PathfindingService
-from raiden.utils.signer import LocalSigner
-from raiden.utils.typing import ChainID, Signature, TokenAmount
 from tests.libs.mocks.web3 import Web3Mock
 from tests.utils import save_metrics_state
 

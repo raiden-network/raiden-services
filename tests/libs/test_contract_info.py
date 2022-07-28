@@ -1,7 +1,7 @@
 import pytest
 from eth_utils import decode_hex
 
-from raiden.utils.typing import Address, ChainID
+from raiden_common.utils.typing import Address, ChainID
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
     CONTRACT_TOKEN_NETWORK_REGISTRY,

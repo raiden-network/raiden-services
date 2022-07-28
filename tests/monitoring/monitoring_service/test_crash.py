@@ -3,11 +3,7 @@ from typing import List
 from unittest.mock import Mock
 
 from eth_utils import encode_hex, to_canonical_address
-
-from monitoring_service.events import ActionMonitoringTriggeredEvent
-from monitoring_service.service import MonitoringService
-from monitoring_service.states import HashedBalanceProof
-from raiden.utils.typing import (
+from raiden_common.utils.typing import (
     BlockNumber,
     BlockTimeout,
     ChainID,
@@ -16,6 +12,10 @@ from raiden.utils.typing import (
     TokenAmount,
     TokenNetworkAddress,
 )
+
+from monitoring_service.events import ActionMonitoringTriggeredEvent
+from monitoring_service.service import MonitoringService
+from monitoring_service.states import HashedBalanceProof
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
     CONTRACT_SERVICE_REGISTRY,

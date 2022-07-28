@@ -3,11 +3,11 @@ from typing import Iterator
 from unittest.mock import Mock
 
 import pytest
+from raiden_common.utils.typing import Address
 
 from pathfinding_service.api import PFSApi
 from pathfinding_service.constants import API_PATH
 from pathfinding_service.service import PathfindingService
-from raiden.utils.typing import Address
 from raiden_libs.constants import DEFAULT_API_HOST
 
 from ..utils import SimpleReachabilityContainer

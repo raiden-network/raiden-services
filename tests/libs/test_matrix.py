@@ -12,13 +12,11 @@ import gevent
 import pytest
 from eth_utils import encode_hex, to_canonical_address
 from gevent.event import AsyncResult
-
-from monitoring_service.states import HashedBalanceProof
-from raiden.constants import DeviceIDs
-from raiden.messages.monitoring_service import RequestMonitoring
-from raiden.network.transport.matrix.utils import DisplayNameCache
-from raiden.storage.serialization.serializer import DictSerializer, MessageSerializer
-from raiden.utils.typing import (
+from raiden_common.constants import DeviceIDs
+from raiden_common.messages.monitoring_service import RequestMonitoring
+from raiden_common.network.transport.matrix.utils import DisplayNameCache
+from raiden_common.storage.serialization.serializer import DictSerializer, MessageSerializer
+from raiden_common.utils.typing import (
     Address,
     Any,
     ChainID,
@@ -29,6 +27,8 @@ from raiden.utils.typing import (
     TokenAmount,
     TokenNetworkAddress,
 )
+
+from monitoring_service.states import HashedBalanceProof
 from raiden_contracts.tests.utils import LOCKSROOT_OF_NO_LOCKS, deepcopy
 from raiden_libs.matrix import (
     ClientManager,

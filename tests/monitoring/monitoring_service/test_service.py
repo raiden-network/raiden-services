@@ -1,16 +1,16 @@
 from typing import Callable
 from unittest.mock import Mock, patch
 
-from web3 import Web3
-
-from monitoring_service.events import ActionMonitoringTriggeredEvent, ScheduledEvent
-from monitoring_service.service import MonitoringService
-from raiden.tests.utils.factories import (
+from raiden_common.tests.utils.factories import (
     make_address,
     make_channel_identifier,
     make_transaction_hash,
 )
-from raiden.utils.typing import Timestamp
+from raiden_common.utils.typing import Timestamp
+from web3 import Web3
+
+from monitoring_service.events import ActionMonitoringTriggeredEvent, ScheduledEvent
+from monitoring_service.service import MonitoringService
 from raiden_libs.utils import get_posix_utc_time_now
 from tests.monitoring.monitoring_service.factories import DEFAULT_TOKEN_NETWORK_ADDRESS
 from tests.monitoring.monitoring_service.test_handlers import create_default_token_network

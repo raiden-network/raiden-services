@@ -5,16 +5,11 @@ from unittest.mock import Mock, patch
 
 import pytest
 from eth_utils import decode_hex, to_canonical_address
-from web3 import Web3
-from web3.contract import Contract
-
-from pathfinding_service.model.token_network import TokenNetwork
-from pathfinding_service.service import PathfindingService
-from raiden.constants import EMPTY_SIGNATURE
-from raiden.messages.path_finding_service import PFSCapacityUpdate
-from raiden.network.transport.matrix import AddressReachability
-from raiden.transfer.identifiers import CanonicalIdentifier
-from raiden.utils.typing import (
+from raiden_common.constants import EMPTY_SIGNATURE
+from raiden_common.messages.path_finding_service import PFSCapacityUpdate
+from raiden_common.network.transport.matrix import AddressReachability
+from raiden_common.transfer.identifiers import CanonicalIdentifier
+from raiden_common.utils.typing import (
     Address,
     BlockNumber,
     BlockTimeout,
@@ -24,6 +19,11 @@ from raiden.utils.typing import (
     TokenAmount,
     TokenNetworkAddress,
 )
+from web3 import Web3
+from web3.contract import Contract
+
+from pathfinding_service.model.token_network import TokenNetwork
+from pathfinding_service.service import PathfindingService
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
 from raiden_contracts.utils.type_aliases import PrivateKey
 from raiden_libs.utils import private_key_to_address, to_checksum_address

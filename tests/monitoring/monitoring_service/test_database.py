@@ -1,13 +1,14 @@
 import random
 from datetime import datetime, timedelta
 
+from raiden_common.constants import UINT256_MAX
+from raiden_common.tests.utils.factories import make_token_network_address
+from raiden_common.utils.typing import Address, ChannelID, TokenNetworkAddress, TransactionHash
+
 from monitoring_service.database import Database
 from monitoring_service.events import ActionMonitoringTriggeredEvent, ScheduledEvent
 from monitoring_service.service import MonitoringService
 from monitoring_service.states import Channel, OnChainUpdateStatus
-from raiden.constants import UINT256_MAX
-from raiden.tests.utils.factories import make_token_network_address
-from raiden.utils.typing import Address, ChannelID, TokenNetworkAddress, TransactionHash
 from raiden_libs.database import hex256
 from raiden_libs.utils import to_checksum_address
 from tests.constants import DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT

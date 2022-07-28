@@ -2,16 +2,9 @@ import random
 from typing import Optional
 
 from eth_utils import decode_hex
-
-from monitoring_service.states import (
-    Channel,
-    HashedBalanceProof,
-    MonitorRequest,
-    OnChainUpdateStatus,
-)
-from raiden.constants import UINT256_MAX
-from raiden.tests.utils.factories import make_transaction_hash
-from raiden.utils.typing import (
+from raiden_common.constants import UINT256_MAX
+from raiden_common.tests.utils.factories import make_transaction_hash
+from raiden_common.utils.typing import (
     BlockNumber,
     ChainID,
     ChannelID,
@@ -19,6 +12,13 @@ from raiden.utils.typing import (
     TokenAddress,
     TokenAmount,
     TokenNetworkAddress,
+)
+
+from monitoring_service.states import (
+    Channel,
+    HashedBalanceProof,
+    MonitorRequest,
+    OnChainUpdateStatus,
 )
 from raiden_contracts.constants import ChannelState
 from raiden_contracts.utils.type_aliases import PrivateKey

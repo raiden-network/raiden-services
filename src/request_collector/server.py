@@ -5,16 +5,16 @@ import gevent
 import structlog
 from eth_utils import encode_hex
 from gevent import Timeout
+from raiden_common.constants import DeviceIDs
+from raiden_common.exceptions import InvalidSignature
+from raiden_common.messages.abstract import Message
+from raiden_common.messages.monitoring_service import RequestMonitoring
+from raiden_common.utils.typing import TokenNetworkAddress
 from sentry_sdk import configure_scope
 
 from monitoring_service.constants import CHANNEL_CLOSE_MARGIN
 from monitoring_service.database import SharedDatabase
 from monitoring_service.states import MonitorRequest
-from raiden.constants import DeviceIDs
-from raiden.exceptions import InvalidSignature
-from raiden.messages.abstract import Message
-from raiden.messages.monitoring_service import RequestMonitoring
-from raiden.utils.typing import TokenNetworkAddress
 from raiden_contracts.utils.type_aliases import PrivateKey
 from raiden_libs.constants import MATRIX_START_TIMEOUT
 from raiden_libs.matrix import MatrixListener

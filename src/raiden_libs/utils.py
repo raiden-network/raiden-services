@@ -7,7 +7,7 @@ from coincurve import PrivateKey, PublicKey
 from eth_typing import AnyAddress, ChecksumAddress
 from eth_utils import keccak
 
-from raiden.utils.typing import Address, Timestamp
+from raiden_common.utils.typing import Address, Timestamp
 from raiden_contracts.utils.type_aliases import PrivateKey as PrivateKeyType
 
 

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from raiden.utils.typing import (
+from raiden_common.utils.typing import (
     Address,
     BlockNumber,
     Nonce,

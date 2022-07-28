@@ -4,6 +4,14 @@ from typing import List, Optional, Union
 
 import structlog
 from eth_utils import decode_hex, encode_hex, to_canonical_address, to_hex
+from raiden_common.utils.typing import (
+    Address,
+    BlockNumber,
+    MonitoringServiceAddress,
+    Timestamp,
+    TokenNetworkAddress,
+    TransactionHash,
+)
 
 from monitoring_service.events import (
     ActionClaimRewardTriggeredEvent,
@@ -15,14 +23,6 @@ from monitoring_service.states import (
     MonitoringServiceState,
     MonitorRequest,
     OnChainUpdateStatus,
-)
-from raiden.utils.typing import (
-    Address,
-    BlockNumber,
-    MonitoringServiceAddress,
-    Timestamp,
-    TokenNetworkAddress,
-    TransactionHash,
 )
 from raiden_contracts.utils.type_aliases import ChainID, ChannelID
 from raiden_libs.database import BaseDatabase, hex256

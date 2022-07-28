@@ -2,12 +2,12 @@
 from unittest.mock import Mock, patch
 
 import pytest
+from raiden_common.storage.serialization.serializer import DictSerializer
+from raiden_common.utils.typing import Address
 
 from monitoring_service.constants import CHANNEL_CLOSE_MARGIN
 from monitoring_service.database import Database
 from monitoring_service.states import Channel
-from raiden.storage.serialization.serializer import DictSerializer
-from raiden.utils.typing import Address
 from raiden_libs.utils import to_checksum_address
 
 

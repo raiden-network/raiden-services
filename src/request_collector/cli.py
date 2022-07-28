@@ -8,10 +8,10 @@ from typing import List
 
 import click
 import structlog
+from raiden_common.utils.cli import ChainChoiceType
 
 from monitoring_service.constants import MS_DISCLAIMER
 from monitoring_service.database import SharedDatabase
-from raiden.utils.cli import ChainChoiceType
 from raiden_contracts.utils.type_aliases import PrivateKey
 from raiden_libs.cli import common_options, setup_sentry
 from raiden_libs.constants import CONFIRMATION_OF_UNDERSTANDING

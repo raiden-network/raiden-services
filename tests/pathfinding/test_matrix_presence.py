@@ -7,9 +7,9 @@ from eth_utils import to_canonical_address
 from matrix_client.errors import MatrixRequestError
 from matrix_client.user import User
 
-from raiden.network.transport.matrix import AddressReachability, UserPresence
-from raiden.network.transport.matrix.utils import USERID_RE, DisplayNameCache
-from raiden.utils.typing import Address
+from raiden_common.network.transport.matrix import AddressReachability, UserPresence
+from raiden_common.network.transport.matrix.utils import USERID_RE, DisplayNameCache
+from raiden_common.utils.typing import Address
 from raiden_libs.user_address import UserAddressManager
 
 

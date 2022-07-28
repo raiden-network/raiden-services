@@ -9,11 +9,9 @@ from eth_utils import to_normalized_address
 from gevent.event import Event
 from matrix_client.errors import MatrixRequestError
 from matrix_client.user import User
-from structlog._config import BoundLoggerLazyProxy
-
-from raiden.api.v1.encoding import CapabilitiesSchema
-from raiden.network.transport.matrix.client import GMatrixClient, node_address_from_userid
-from raiden.network.transport.matrix.utils import (
+from raiden_common.api.v1.encoding import CapabilitiesSchema
+from raiden_common.network.transport.matrix.client import GMatrixClient, node_address_from_userid
+from raiden_common.network.transport.matrix.utils import (
     UNKNOWN_REACHABILITY_STATE,
     USER_PRESENCE_TO_ADDRESS_REACHABILITY,
     AddressReachability,
@@ -23,7 +21,9 @@ from raiden.network.transport.matrix.utils import (
     address_from_userid,
     validate_userid_signature,
 )
-from raiden.utils.typing import Address
+from raiden_common.utils.typing import Address
+from structlog._config import BoundLoggerLazyProxy
+
 from raiden_libs.utils import to_checksum_address
 
 log = structlog.get_logger(__name__)

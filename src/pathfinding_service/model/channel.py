@@ -5,11 +5,13 @@ from typing import ClassVar, Optional, Tuple, Type
 import marshmallow
 from marshmallow.fields import NaiveDateTime
 from marshmallow_dataclass import add_schema
+from raiden_common.transfer.mediated_transfer.mediation_fee import (
+    FeeScheduleState as FeeScheduleRaiden,
+)
+from raiden_common.utils.typing import Address, BlockTimeout, Nonce, TokenNetworkAddress
 
 from pathfinding_service.constants import DEFAULT_REVEAL_TIMEOUT
 from pathfinding_service.exceptions import InvalidFeeUpdate
-from raiden.transfer.mediated_transfer.mediation_fee import FeeScheduleState as FeeScheduleRaiden
-from raiden.utils.typing import Address, BlockTimeout, Nonce, TokenNetworkAddress
 from raiden_contracts.utils.type_aliases import ChannelID, TokenAmount
 from raiden_libs.marshmallow import ChecksumAddress
 from raiden_libs.utils import to_checksum_address

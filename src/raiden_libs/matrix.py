@@ -11,23 +11,18 @@ from gevent.greenlet import Greenlet
 from marshmallow import ValidationError
 from matrix_client.errors import MatrixRequestError
 from matrix_client.user import User
-
-from monitoring_service.constants import (
-    MATRIX_RATE_LIMIT_ALLOWED_BYTES,
-    MATRIX_RATE_LIMIT_RESET_INTERVAL,
-)
-from raiden.constants import DeviceIDs, Environment, MatrixMessageType, Networks
-from raiden.exceptions import SerializationError, TransportError
-from raiden.messages.abstract import Message, SignedMessage
-from raiden.network.transport.matrix.client import GMatrixClient, MatrixMessage
-from raiden.network.transport.matrix.utils import (
+from raiden_common.constants import DeviceIDs, Environment, MatrixMessageType, Networks
+from raiden_common.exceptions import SerializationError, TransportError
+from raiden_common.messages.abstract import Message, SignedMessage
+from raiden_common.network.transport.matrix.client import GMatrixClient, MatrixMessage
+from raiden_common.network.transport.matrix.utils import (
     DisplayNameCache,
     login,
     make_client,
     validate_user_id_signature,
 )
-from raiden.network.transport.utils import timeout_exponential_backoff
-from raiden.settings import (
+from raiden_common.network.transport.utils import timeout_exponential_backoff
+from raiden_common.settings import (
     DEFAULT_MATRIX_KNOWN_SERVERS,
     DEFAULT_TRANSPORT_MATRIX_RETRY_INTERVAL_INITIAL,
     DEFAULT_TRANSPORT_MATRIX_RETRY_INTERVAL_MAX,
@@ -35,10 +30,15 @@ from raiden.settings import (
     DEFAULT_TRANSPORT_MATRIX_SYNC_TIMEOUT,
     DEFAULT_TRANSPORT_RETRIES_BEFORE_BACKOFF,
 )
-from raiden.storage.serialization.serializer import MessageSerializer
-from raiden.utils.cli import get_matrix_servers
-from raiden.utils.signer import LocalSigner
-from raiden.utils.typing import Address
+from raiden_common.storage.serialization.serializer import MessageSerializer
+from raiden_common.utils.cli import get_matrix_servers
+from raiden_common.utils.signer import LocalSigner
+from raiden_common.utils.typing import Address
+
+from monitoring_service.constants import (
+    MATRIX_RATE_LIMIT_ALLOWED_BYTES,
+    MATRIX_RATE_LIMIT_RESET_INTERVAL,
+)
 from raiden_contracts.utils.type_aliases import ChainID, PrivateKey
 from raiden_libs.tracing import matrix_client_enable_requests_tracing
 from raiden_libs.user_address import MultiClientUserAddressManager

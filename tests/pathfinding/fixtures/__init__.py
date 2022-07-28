@@ -1,7 +1,7 @@
 import pytest
+from raiden_common.utils.typing import TokenNetworkAddress
 
 from pathfinding_service.model.token_network import TokenNetwork
-from raiden.utils.typing import TokenNetworkAddress
 from tests.constants import DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT
 
 from ..utils import SimpleReachabilityContainer

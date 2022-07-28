@@ -1,9 +1,9 @@
 import pytest
 from eth_utils import to_canonical_address
+from raiden_common.utils.typing import Address, TokenAmount
 
 import pathfinding_service.api
 from pathfinding_service import exceptions
-from raiden.utils.typing import Address, TokenAmount
 from raiden_contracts.tests.utils import get_random_privkey
 from raiden_libs.constants import UDC_SECURITY_MARGIN_FACTOR_PFS
 

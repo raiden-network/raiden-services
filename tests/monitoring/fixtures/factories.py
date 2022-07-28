@@ -1,9 +1,9 @@
 import pytest
 from eth_utils import encode_hex
+from raiden_common.messages.monitoring_service import RequestMonitoring
+from raiden_common.utils.typing import ChannelID, Nonce, TokenAmount, TokenNetworkAddress
 
 from monitoring_service.states import HashedBalanceProof
-from raiden.messages.monitoring_service import RequestMonitoring
-from raiden.utils.typing import ChannelID, Nonce, TokenAmount, TokenNetworkAddress
 from raiden_contracts.tests.utils.address import get_random_privkey
 from raiden_contracts.utils.type_aliases import ChainID, PrivateKey
 from raiden_libs.utils import private_key_to_address, to_checksum_address

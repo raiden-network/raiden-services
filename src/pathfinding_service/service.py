@@ -9,6 +9,10 @@ import sentry_sdk
 import structlog
 from eth_utils import to_canonical_address
 from gevent import Timeout
+from raiden_common.constants import UINT256_MAX, DeviceIDs
+from raiden_common.messages.abstract import Message
+from raiden_common.messages.path_finding_service import PFSCapacityUpdate, PFSFeeUpdate
+from raiden_common.utils.typing import BlockNumber, BlockTimeout, TokenNetworkAddress
 from web3 import Web3
 from web3.contract import Contract
 
@@ -22,10 +26,6 @@ from pathfinding_service.exceptions import (
 from pathfinding_service.model import IOU, TokenNetwork
 from pathfinding_service.model.channel import Channel
 from pathfinding_service.typing import DeferableMessage
-from raiden.constants import UINT256_MAX, DeviceIDs
-from raiden.messages.abstract import Message
-from raiden.messages.path_finding_service import PFSCapacityUpdate, PFSFeeUpdate
-from raiden.utils.typing import BlockNumber, BlockTimeout, TokenNetworkAddress
 from raiden_contracts.constants import CONTRACT_TOKEN_NETWORK_REGISTRY, CONTRACT_USER_DEPOSIT
 from raiden_contracts.utils.type_aliases import ChainID, PrivateKey
 from raiden_libs.blockchain import get_blockchain_events_adaptive

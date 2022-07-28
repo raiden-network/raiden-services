@@ -1,8 +1,9 @@
 from dataclasses import dataclass
 from typing import Optional
 
+from raiden_common.utils.typing import Address, BlockNumber, BlockTimeout
+
 from monitoring_service.constants import DEFAULT_FILTER_INTERVAL
-from raiden.utils.typing import Address, BlockNumber, BlockTimeout
 from raiden_contracts.utils.type_aliases import ChainID
 
 

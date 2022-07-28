@@ -9,16 +9,11 @@ import opentracing
 import structlog
 from networkx import DiGraph
 from networkx.exception import NetworkXNoPath, NodeNotFound
-
-from pathfinding_service.constants import DIVERSITY_PEN_DEFAULT, FEE_PEN_DEFAULT
-from pathfinding_service.exceptions import InconsistentInternalState, InvalidFeeUpdate
-from pathfinding_service.model.channel import Channel, ChannelView, FeeSchedule
-from pathfinding_service.typing import AddressReachabilityProtocol
-from raiden.messages.path_finding_service import PFSCapacityUpdate, PFSFeeUpdate
-from raiden.network.transport.matrix import UserPresence
-from raiden.network.transport.matrix.utils import AddressReachability
-from raiden.tests.utils.mediation_fees import get_amount_with_fees
-from raiden.utils.typing import (
+from raiden_common.messages.path_finding_service import PFSCapacityUpdate, PFSFeeUpdate
+from raiden_common.network.transport.matrix import UserPresence
+from raiden_common.network.transport.matrix.utils import AddressReachability
+from raiden_common.tests.utils.mediation_fees import get_amount_with_fees
+from raiden_common.utils.typing import (
     Address,
     Balance,
     FeeAmount,
@@ -28,6 +23,11 @@ from raiden.utils.typing import (
     Timestamp,
     TokenNetworkAddress,
 )
+
+from pathfinding_service.constants import DIVERSITY_PEN_DEFAULT, FEE_PEN_DEFAULT
+from pathfinding_service.exceptions import InconsistentInternalState, InvalidFeeUpdate
+from pathfinding_service.model.channel import Channel, ChannelView, FeeSchedule
+from pathfinding_service.typing import AddressReachabilityProtocol
 from raiden_contracts.utils.type_aliases import ChannelID, TokenAmount
 from raiden_libs.utils import to_checksum_address
 

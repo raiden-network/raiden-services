@@ -5,6 +5,14 @@ import structlog
 from eth_abi.codec import ABICodec
 from eth_utils import decode_hex, encode_hex, to_canonical_address
 from eth_utils.abi import event_abi_to_log_topic
+from raiden_common.constants import ETH_GET_LOGS_THRESHOLD_FAST, ETH_GET_LOGS_THRESHOLD_SLOW
+from raiden_common.utils.typing import (
+    Address,
+    BlockNumber,
+    BlockTimeout,
+    TokenAddress,
+    TokenNetworkAddress,
+)
 from requests.exceptions import ReadTimeout
 from web3 import EthereumTesterProvider, HTTPProvider, Web3
 from web3._utils.abi import filter_by_type
@@ -12,14 +20,6 @@ from web3.contract import Contract, get_event_data
 from web3.types import ABIEvent, FilterParams, LogReceipt
 
 from monitoring_service.constants import MAX_FILTER_INTERVAL, MIN_FILTER_INTERVAL
-from raiden.constants import ETH_GET_LOGS_THRESHOLD_FAST, ETH_GET_LOGS_THRESHOLD_SLOW
-from raiden.utils.typing import (
-    Address,
-    BlockNumber,
-    BlockTimeout,
-    TokenAddress,
-    TokenNetworkAddress,
-)
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
     CONTRACT_TOKEN_NETWORK,

@@ -6,16 +6,10 @@ import pkg_resources
 import pytest
 import requests
 from eth_utils import decode_hex, encode_hex, to_canonical_address, to_normalized_address
-
-from pathfinding_service import exceptions
-from pathfinding_service.api import DEFAULT_MAX_PATHS, PFSApi, last_failed_requests
-from pathfinding_service.constants import DEFAULT_INFO_MESSAGE
-from pathfinding_service.model import IOU, TokenNetwork
-from pathfinding_service.model.feedback import FeedbackToken
-from raiden.network.transport.matrix import AddressReachability
-from raiden.tests.utils.factories import make_address, make_signer
-from raiden.utils.signer import LocalSigner
-from raiden.utils.typing import (
+from raiden_common.network.transport.matrix import AddressReachability
+from raiden_common.tests.utils.factories import make_address, make_signer
+from raiden_common.utils.signer import LocalSigner
+from raiden_common.utils.typing import (
     Address,
     Callable,
     ChainID,
@@ -24,6 +18,12 @@ from raiden.utils.typing import (
     Timestamp,
     TokenAmount,
 )
+
+from pathfinding_service import exceptions
+from pathfinding_service.api import DEFAULT_MAX_PATHS, PFSApi, last_failed_requests
+from pathfinding_service.constants import DEFAULT_INFO_MESSAGE
+from pathfinding_service.model import IOU, TokenNetwork
+from pathfinding_service.model.feedback import FeedbackToken
 from raiden_contracts.tests.utils import get_random_privkey
 from raiden_contracts.utils.type_aliases import PrivateKey
 from raiden_libs.utils import get_posix_utc_time_now, private_key_to_address, to_checksum_address

@@ -3,6 +3,7 @@ from typing import Dict, Iterable, Tuple
 
 import click
 import structlog
+from raiden_common.utils.typing import BlockNumber, Timestamp
 from web3 import Web3
 from web3.contract import Contract
 from web3.exceptions import TransactionNotFound
@@ -10,7 +11,6 @@ from web3.gas_strategies.rpc import rpc_gas_price_strategy
 
 from pathfinding_service.database import PFSDatabase
 from pathfinding_service.model import IOU
-from raiden.utils.typing import BlockNumber, Timestamp
 from raiden_contracts.constants import CONTRACT_ONE_TO_N
 from raiden_contracts.contract_manager import gas_measurements
 from raiden_contracts.utils.type_aliases import ChainID, TokenAmount

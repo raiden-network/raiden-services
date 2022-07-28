@@ -1,7 +1,7 @@
 import textwrap
 from datetime import timedelta
 
-from raiden.utils.typing import BlockTimeout
+from raiden_common.utils.typing import BlockTimeout
 
 PFS_START_TIMEOUT = 300  # in seconds
 API_PATH: str = "/api"

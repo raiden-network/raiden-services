@@ -5,11 +5,11 @@ from unittest.mock import patch
 
 import pytest
 from eth_utils import to_canonical_address
+from raiden_common.utils.typing import Address, BlockNumber, BlockTimeout, MonitoringServiceAddress
 from web3 import Web3
 
 from monitoring_service.database import Database
 from monitoring_service.service import MonitoringService
-from raiden.utils.typing import Address, BlockNumber, BlockTimeout, MonitoringServiceAddress
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
     CONTRACT_SERVICE_REGISTRY,

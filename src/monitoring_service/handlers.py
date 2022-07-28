@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 import structlog
 from eth_utils import encode_hex
+from raiden_common.utils.typing import BlockNumber, Timestamp, TokenNetworkAddress, TransactionHash
 from web3 import Web3
 from web3.contract import Contract
 
@@ -19,7 +20,6 @@ from monitoring_service.states import (
     MonitorRequest,
     OnChainUpdateStatus,
 )
-from raiden.utils.typing import BlockNumber, Timestamp, TokenNetworkAddress, TransactionHash
 from raiden_contracts.constants import ChannelState
 from raiden_libs.blockchain import get_pessimistic_udc_balance
 from raiden_libs.constants import UDC_SECURITY_MARGIN_FACTOR_MS

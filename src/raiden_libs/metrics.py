@@ -5,7 +5,7 @@ from typing import Dict, Generator, Tuple, cast
 from prometheus_client import CollectorRegistry, Counter, Histogram, Metric
 from prometheus_client.context_managers import ExceptionCounter, Timer
 
-from raiden.messages.abstract import Message
+from raiden_common.messages.abstract import Message
 from raiden_libs.events import Event
 from raiden_libs.utils import camel_to_snake
 
