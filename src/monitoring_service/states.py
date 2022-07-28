@@ -3,13 +3,11 @@ from typing import Iterable, Optional
 
 from eth_typing.evm import HexAddress
 from eth_utils import decode_hex, encode_hex
-from web3 import Web3
-
-from raiden.constants import EMPTY_SIGNATURE
-from raiden.messages.monitoring_service import RequestMonitoring, SignedBlindedBalanceProof
-from raiden.utils.keys import privatekey_to_address
-from raiden.utils.signer import LocalSigner, recover
-from raiden.utils.typing import (
+from raiden_common.constants import EMPTY_SIGNATURE
+from raiden_common.messages.monitoring_service import RequestMonitoring, SignedBlindedBalanceProof
+from raiden_common.utils.keys import privatekey_to_address
+from raiden_common.utils.signer import LocalSigner, recover
+from raiden_common.utils.typing import (
     Address,
     BlockNumber,
     MonitoringServiceAddress,
@@ -17,6 +15,8 @@ from raiden.utils.typing import (
     TokenNetworkAddress,
     TransactionHash,
 )
+from web3 import Web3
+
 from raiden_contracts.constants import ChannelState, MessageTypeId
 from raiden_contracts.utils.proofs import pack_balance_proof, pack_reward_proof
 from raiden_contracts.utils.type_aliases import (

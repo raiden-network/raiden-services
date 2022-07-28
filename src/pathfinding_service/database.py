@@ -6,15 +6,21 @@ from uuid import UUID
 
 import structlog
 from eth_utils import to_canonical_address
+from raiden_common.messages.path_finding_service import PFSCapacityUpdate
+from raiden_common.storage.serialization.serializer import JSONSerializer
+from raiden_common.utils.typing import (
+    Address,
+    BlockNumber,
+    FeeAmount,
+    Timestamp,
+    TokenNetworkAddress,
+)
 
 from pathfinding_service.model import IOU
 from pathfinding_service.model.channel import Channel
 from pathfinding_service.model.feedback import FeedbackToken
 from pathfinding_service.model.token_network import TokenNetwork
 from pathfinding_service.typing import DeferableMessage
-from raiden.messages.path_finding_service import PFSCapacityUpdate
-from raiden.storage.serialization.serializer import JSONSerializer
-from raiden.utils.typing import Address, BlockNumber, FeeAmount, Timestamp, TokenNetworkAddress
 from raiden_contracts.utils.type_aliases import ChainID, ChannelID, TokenAmount
 from raiden_libs.database import BaseDatabase, hex256
 from raiden_libs.utils import to_checksum_address

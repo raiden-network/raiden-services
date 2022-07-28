@@ -1,11 +1,11 @@
 from typing import Callable
 
 import gevent
+from raiden_common.utils.typing import BlockNumber
 from web3 import Web3
 from web3.contract import Contract
 from web3.gas_strategies.rpc import rpc_gas_price_strategy
 
-from raiden.utils.typing import BlockNumber
 from raiden_contracts.constants import CONTRACT_SERVICE_REGISTRY
 from raiden_contracts.tests.utils.constants import DEFAULT_REGISTRATION_DURATION
 from raiden_libs.service_registry import info, register_account, withdraw

@@ -6,6 +6,12 @@ import sentry_sdk
 import structlog
 from eth_typing import Hash32
 from eth_utils import to_canonical_address
+from raiden_common.utils.typing import (
+    BlockNumber,
+    BlockTimeout,
+    MonitoringServiceAddress,
+    Timestamp,
+)
 from web3 import Web3
 from web3.contract import Contract
 from web3.exceptions import TransactionNotFound
@@ -21,7 +27,6 @@ from monitoring_service.constants import (
 from monitoring_service.database import Database
 from monitoring_service.exceptions import TransactionTooEarlyException
 from monitoring_service.handlers import HANDLERS, Context
-from raiden.utils.typing import BlockNumber, BlockTimeout, MonitoringServiceAddress, Timestamp
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
     CONTRACT_SERVICE_REGISTRY,

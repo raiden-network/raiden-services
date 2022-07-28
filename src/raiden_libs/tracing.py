@@ -1,6 +1,5 @@
+from raiden_common.network.transport.matrix.client import GMatrixClient
 from requests_opentracing import SessionTracing
-
-from raiden.network.transport.matrix.client import GMatrixClient
 
 
 def matrix_client_enable_requests_tracing(client: GMatrixClient) -> None:

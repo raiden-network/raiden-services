@@ -1,11 +1,10 @@
 from typing import Set, Union
 
+from raiden_common.messages.path_finding_service import PFSCapacityUpdate, PFSFeeUpdate
+from raiden_common.network.transport.matrix import UserPresence
+from raiden_common.network.transport.matrix.utils import AddressReachability
+from raiden_common.utils.typing import Address, PeerCapabilities
 from typing_extensions import Protocol
-
-from raiden.messages.path_finding_service import PFSCapacityUpdate, PFSFeeUpdate
-from raiden.network.transport.matrix import UserPresence
-from raiden.network.transport.matrix.utils import AddressReachability
-from raiden.utils.typing import Address, PeerCapabilities
 
 DeferableMessage = Union[PFSFeeUpdate, PFSCapacityUpdate]
 

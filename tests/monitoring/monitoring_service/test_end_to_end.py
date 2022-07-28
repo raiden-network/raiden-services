@@ -3,13 +3,7 @@ from typing import Callable
 import gevent
 import pytest
 from eth_utils import decode_hex, encode_hex, to_canonical_address
-from web3 import Web3
-
-from monitoring_service.exceptions import TransactionTooEarlyException
-from monitoring_service.handlers import _first_allowed_timestamp_to_monitor
-from monitoring_service.service import MonitoringService, handle_event
-from monitoring_service.states import HashedBalanceProof
-from raiden.utils.typing import (
+from raiden_common.utils.typing import (
     Address,
     BlockNumber,
     MonitoringServiceAddress,
@@ -18,6 +12,12 @@ from raiden.utils.typing import (
     TokenAmount,
     TokenNetworkAddress,
 )
+from web3 import Web3
+
+from monitoring_service.exceptions import TransactionTooEarlyException
+from monitoring_service.handlers import _first_allowed_timestamp_to_monitor
+from monitoring_service.service import MonitoringService, handle_event
+from monitoring_service.states import HashedBalanceProof
 from raiden_contracts.constants import LOCKSROOT_OF_NO_LOCKS, MonitoringServiceEvent
 from raiden_libs.blockchain import query_blockchain_events
 from request_collector.server import RequestCollector

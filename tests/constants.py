@@ -1,6 +1,11 @@
 from eth_utils import decode_hex
+from raiden_common.utils.typing import (
+    ChainID,
+    ChannelID,
+    MonitoringServiceAddress,
+    TokenNetworkAddress,
+)
 
-from raiden.utils.typing import ChainID, ChannelID, MonitoringServiceAddress, TokenNetworkAddress
 from raiden_libs.utils import private_key_to_address
 
 KEYSTORE_FILE_NAME = "keystore.txt"

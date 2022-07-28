@@ -7,16 +7,12 @@ from datetime import datetime, timezone
 
 import pytest
 from eth_utils import to_canonical_address
-
-from pathfinding_service.exceptions import InvalidFeeUpdate
-from pathfinding_service.model import TokenNetwork
-from pathfinding_service.service import DeferMessage, PathfindingService
-from raiden.constants import EMPTY_SIGNATURE
-from raiden.messages.path_finding_service import PFSFeeUpdate
-from raiden.transfer.identifiers import CanonicalIdentifier
-from raiden.transfer.mediated_transfer.mediation_fee import FeeScheduleState
-from raiden.utils.signer import LocalSigner
-from raiden.utils.typing import (
+from raiden_common.constants import EMPTY_SIGNATURE
+from raiden_common.messages.path_finding_service import PFSFeeUpdate
+from raiden_common.transfer.identifiers import CanonicalIdentifier
+from raiden_common.transfer.mediated_transfer.mediation_fee import FeeScheduleState
+from raiden_common.utils.signer import LocalSigner
+from raiden_common.utils.typing import (
     Address,
     ChainID,
     ChannelID,
@@ -24,6 +20,10 @@ from raiden.utils.typing import (
     ProportionalFeeAmount,
     TokenNetworkAddress,
 )
+
+from pathfinding_service.exceptions import InvalidFeeUpdate
+from pathfinding_service.model import TokenNetwork
+from pathfinding_service.service import DeferMessage, PathfindingService
 from tests.constants import (
     DEFAULT_CHANNEL_ID,
     DEFAULT_TOKEN_NETWORK_ADDRESS,

@@ -8,12 +8,12 @@ from typing import List
 from unittest.mock import Mock, patch
 
 from eth_utils import decode_hex, encode_hex, to_canonical_address
+from raiden_common.utils.typing import BlockNumber, BlockTimeout, Nonce, TokenNetworkAddress
 
 from monitoring_service.states import HashedBalanceProof
 from pathfinding_service.constants import DEFAULT_REVEAL_TIMEOUT
 from pathfinding_service.model import ChannelView
 from pathfinding_service.service import PathfindingService
-from raiden.utils.typing import BlockNumber, BlockTimeout, Nonce, TokenNetworkAddress
 from raiden_contracts.constants import (
     CONTRACT_TOKEN_NETWORK_REGISTRY,
     CONTRACT_USER_DEPOSIT,

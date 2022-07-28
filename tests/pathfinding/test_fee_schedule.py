@@ -3,16 +3,15 @@ from datetime import datetime
 from typing import List
 
 import pytest
-
-from pathfinding_service.model import ChannelView
-from pathfinding_service.model.token_network import TokenNetwork
-from raiden.constants import EMPTY_SIGNATURE
-from raiden.messages.path_finding_service import PFSFeeUpdate
-from raiden.network.transport.matrix.utils import AddressReachability
-from raiden.transfer.identifiers import CanonicalIdentifier
-from raiden.transfer.mediated_transfer.mediation_fee import FeeScheduleState as RaidenFeeSchedule
-from raiden.utils.mediation_fees import ppm_fee_per_channel
-from raiden.utils.typing import (
+from raiden_common.constants import EMPTY_SIGNATURE
+from raiden_common.messages.path_finding_service import PFSFeeUpdate
+from raiden_common.network.transport.matrix.utils import AddressReachability
+from raiden_common.transfer.identifiers import CanonicalIdentifier
+from raiden_common.transfer.mediated_transfer.mediation_fee import (
+    FeeScheduleState as RaidenFeeSchedule,
+)
+from raiden_common.utils.mediation_fees import ppm_fee_per_channel
+from raiden_common.utils.typing import (
     Address,
     ChainID,
     ChannelID,
@@ -22,6 +21,9 @@ from raiden.utils.typing import (
     TokenAmount as TA,
     TokenNetworkAddress,
 )
+
+from pathfinding_service.model import ChannelView
+from pathfinding_service.model.token_network import TokenNetwork
 from tests.constants import DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT
 from tests.pathfinding.utils import SimpleReachabilityContainer
 

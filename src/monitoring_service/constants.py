@@ -1,7 +1,7 @@
 import textwrap
 from datetime import timedelta
 
-from raiden.utils.typing import BlockTimeout
+from raiden_common.utils.typing import BlockTimeout
 
 DEFAULT_FILTER_INTERVAL: BlockTimeout = BlockTimeout(1_000)
 MAX_FILTER_INTERVAL: BlockTimeout = BlockTimeout(100_000)

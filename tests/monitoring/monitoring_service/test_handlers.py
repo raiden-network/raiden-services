@@ -4,6 +4,14 @@ from typing import Optional
 from unittest.mock import Mock, patch
 
 import pytest
+from raiden_common.utils.typing import (
+    Address,
+    BlockNumber,
+    ChannelID,
+    Nonce,
+    Timestamp,
+    TokenAmount,
+)
 
 from monitoring_service import metrics
 from monitoring_service.database import Database
@@ -26,7 +34,6 @@ from monitoring_service.handlers import (
     updated_head_block_event_handler,
 )
 from monitoring_service.states import OnChainUpdateStatus
-from raiden.utils.typing import Address, BlockNumber, ChannelID, Nonce, Timestamp, TokenAmount
 from raiden_contracts.constants import ChannelState
 from raiden_contracts.tests.utils import get_random_privkey
 from raiden_contracts.utils.type_aliases import PrivateKey

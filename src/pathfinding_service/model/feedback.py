@@ -2,8 +2,9 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from uuid import UUID, uuid4
 
+from raiden_common.utils.typing import TokenNetworkAddress
+
 from pathfinding_service.constants import MAX_AGE_OF_FEEDBACK_REQUESTS
-from raiden.utils.typing import TokenNetworkAddress
 
 
 @dataclass

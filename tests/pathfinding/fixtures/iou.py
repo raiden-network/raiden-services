@@ -1,10 +1,10 @@
 import pytest
 from eth_utils import encode_hex, to_canonical_address
+from raiden_common.utils.typing import Address
 from web3.contract import Contract
 
 from pathfinding_service.constants import MIN_IOU_EXPIRY
 from pathfinding_service.model import IOU
-from raiden.utils.typing import Address
 from raiden_contracts.utils.proofs import sign_one_to_n_iou
 from raiden_contracts.utils.type_aliases import ChainID, PrivateKey
 from raiden_libs.utils import private_key_to_address, to_checksum_address

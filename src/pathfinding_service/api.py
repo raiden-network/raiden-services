@@ -7,6 +7,7 @@ from uuid import UUID
 import marshmallow
 import opentracing
 import pkg_resources
+import raiden_common.utils.typing as raiden_typing
 import structlog
 from eth_utils import is_checksum_address, is_same_address, to_canonical_address
 from flask import Flask, Response, request
@@ -16,11 +17,20 @@ from gevent.pywsgi import WSGIServer
 from marshmallow import fields
 from marshmallow_dataclass import add_schema
 from prometheus_client import make_wsgi_app
+from raiden_common.exceptions import InvalidSignature
+from raiden_common.network.transport.matrix.utils import AddressReachability, UserPresence
+from raiden_common.utils.signer import recover
+from raiden_common.utils.typing import (
+    Address,
+    BlockNumber,
+    PaymentAmount,
+    PeerCapabilities,
+    TokenNetworkAddress,
+)
 from web3 import Web3
 from werkzeug.exceptions import NotFound
 from werkzeug.middleware.dispatcher import DispatcherMiddleware
 
-import raiden.utils.typing as raiden_typing
 from pathfinding_service import exceptions, metrics
 from pathfinding_service.constants import (
     API_PATH,
@@ -35,16 +45,6 @@ from pathfinding_service.model import IOU
 from pathfinding_service.model.feedback import FeedbackToken
 from pathfinding_service.model.token_network import Path, TokenNetwork
 from pathfinding_service.service import PathfindingService
-from raiden.exceptions import InvalidSignature
-from raiden.network.transport.matrix.utils import AddressReachability, UserPresence
-from raiden.utils.signer import recover
-from raiden.utils.typing import (
-    Address,
-    BlockNumber,
-    PaymentAmount,
-    PeerCapabilities,
-    TokenNetworkAddress,
-)
 from raiden_contracts.utils.type_aliases import Signature, TokenAmount
 from raiden_libs.api import ApiWithErrorHandler
 from raiden_libs.blockchain import get_pessimistic_udc_balance

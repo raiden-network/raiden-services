@@ -5,11 +5,11 @@ from unittest.mock import Mock
 import pytest
 from eth_typing import BlockNumber
 from eth_utils import decode_hex
+from raiden_common.utils.typing import BlockTimeout
 
 from monitoring_service.api import MSApi
 from monitoring_service.constants import API_PATH
 from monitoring_service.service import MonitoringService
-from raiden.utils.typing import BlockTimeout
 from raiden_contracts.constants import (
     CONTRACT_MONITORING_SERVICE,
     CONTRACT_SERVICE_REGISTRY,

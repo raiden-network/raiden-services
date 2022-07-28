@@ -6,9 +6,9 @@ from eth_abi import encode_single
 from eth_utils import encode_hex, is_same_address, keccak
 from marshmallow_dataclass import add_schema
 
-from raiden.exceptions import InvalidSignature
-from raiden.utils.signer import recover
-from raiden.utils.typing import Address, Timestamp
+from raiden_common.exceptions import InvalidSignature
+from raiden_common.utils.signer import recover
+from raiden_common.utils.typing import Address, Timestamp
 from raiden_contracts.constants import MessageTypeId
 from raiden_contracts.utils.type_aliases import ChainID, Signature, TokenAmount
 from raiden_libs.marshmallow import ChecksumAddress, HexedBytes

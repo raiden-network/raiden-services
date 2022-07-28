@@ -4,16 +4,16 @@ from unittest import mock
 
 from eth_utils import to_normalized_address
 
-from raiden.api.v1.encoding import CapabilitiesSchema
-from raiden.network.transport.matrix import AddressReachability, UserPresence
-from raiden.network.transport.matrix.utils import (
+from raiden_common.api.v1.encoding import CapabilitiesSchema
+from raiden_common.network.transport.matrix import AddressReachability, UserPresence
+from raiden_common.network.transport.matrix.utils import (
     DisplayNameCache,
     ReachabilityState,
     address_from_userid,
 )
-from raiden.settings import CapabilitiesConfig
-from raiden.utils.capabilities import capconfig_to_dict
-from raiden.utils.typing import Address, Dict
+from raiden_common.settings import CapabilitiesConfig
+from raiden_common.utils.capabilities import capconfig_to_dict
+from raiden_common.utils.typing import Address, Dict
 
 capabilities_schema = CapabilitiesSchema()
 

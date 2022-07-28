@@ -1,12 +1,12 @@
 from typing import List
 
 from networkx import DiGraph
+from raiden_common.network.transport.matrix import AddressReachability
+from raiden_common.tests.utils.factories import make_address
+from raiden_common.utils.typing import Address, ChannelID, PaymentAmount
 
 from pathfinding_service.model import TokenNetwork
 from pathfinding_service.model.token_network import Path, prune_graph
-from raiden.network.transport.matrix import AddressReachability
-from raiden.tests.utils.factories import make_address
-from raiden.utils.typing import Address, ChannelID, PaymentAmount
 
 from .utils import SimpleReachabilityContainer
 

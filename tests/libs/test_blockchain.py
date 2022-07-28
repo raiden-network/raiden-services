@@ -3,12 +3,12 @@ from unittest.mock import patch
 import eth_tester
 import pytest
 from eth_utils import to_canonical_address
+from raiden_common.utils.typing import Address, BlockNumber, ChainID
 from requests.exceptions import ReadTimeout
 from web3 import Web3
 from web3.contract import Contract
 
 from monitoring_service.constants import DEFAULT_FILTER_INTERVAL
-from raiden.utils.typing import Address, BlockNumber, ChainID
 from raiden_contracts.constants import EVENT_TOKEN_NETWORK_CREATED
 from raiden_libs.blockchain import (
     get_blockchain_events,

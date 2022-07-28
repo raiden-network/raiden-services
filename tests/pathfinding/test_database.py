@@ -3,20 +3,17 @@ from datetime import datetime
 from typing import List
 from uuid import uuid4
 
-from pathfinding_service.database import PFSDatabase
-from pathfinding_service.model.channel import Channel
-from pathfinding_service.model.feedback import FeedbackToken
-from raiden.constants import EMPTY_SIGNATURE
-from raiden.messages.path_finding_service import PFSCapacityUpdate, PFSFeeUpdate
-from raiden.tests.utils.factories import (
+from raiden_common.constants import EMPTY_SIGNATURE
+from raiden_common.messages.path_finding_service import PFSCapacityUpdate, PFSFeeUpdate
+from raiden_common.tests.utils.factories import (
     make_address,
     make_privkey_address,
     make_token_network_address,
 )
-from raiden.transfer.identifiers import CanonicalIdentifier
-from raiden.transfer.mediated_transfer.mediation_fee import FeeScheduleState
-from raiden.utils.signer import LocalSigner
-from raiden.utils.typing import (
+from raiden_common.transfer.identifiers import CanonicalIdentifier
+from raiden_common.transfer.mediated_transfer.mediation_fee import FeeScheduleState
+from raiden_common.utils.signer import LocalSigner
+from raiden_common.utils.typing import (
     Address,
     BlockTimeout,
     ChainID,
@@ -25,8 +22,11 @@ from raiden.utils.typing import (
     TokenAmount,
     TokenNetworkAddress,
 )
-from raiden_libs.utils import to_checksum_address
 
+from pathfinding_service.database import PFSDatabase
+from pathfinding_service.model.channel import Channel
+from pathfinding_service.model.feedback import FeedbackToken
+from raiden_libs.utils import to_checksum_address
 from tests.constants import DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT
 
 

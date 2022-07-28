@@ -6,12 +6,8 @@ from typing import List
 
 import pytest
 from eth_utils import to_canonical_address
-
-from pathfinding_service.constants import DIVERSITY_PEN_DEFAULT
-from pathfinding_service.model import ChannelView, TokenNetwork
-from pathfinding_service.model.channel import Channel
-from raiden.network.transport.matrix import AddressReachability
-from raiden.utils.typing import (
+from raiden_common.network.transport.matrix import AddressReachability
+from raiden_common.utils.typing import (
     Address,
     ChannelID,
     FeeAmount,
@@ -20,6 +16,10 @@ from raiden.utils.typing import (
     TokenAmount,
     TokenNetworkAddress,
 )
+
+from pathfinding_service.constants import DIVERSITY_PEN_DEFAULT
+from pathfinding_service.model import ChannelView, TokenNetwork
+from pathfinding_service.model.channel import Channel
 from raiden_libs.utils import to_checksum_address
 from tests.pathfinding.utils import SimpleReachabilityContainer
 

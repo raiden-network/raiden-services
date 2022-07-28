@@ -1,8 +1,9 @@
 from datetime import datetime, timedelta
 
+from raiden_common.utils.typing import TokenNetworkAddress
+
 from pathfinding_service.constants import MAX_AGE_OF_FEEDBACK_REQUESTS
 from pathfinding_service.model.feedback import FeedbackToken
-from raiden.utils.typing import TokenNetworkAddress
 
 
 def test_feedback_token_validity():

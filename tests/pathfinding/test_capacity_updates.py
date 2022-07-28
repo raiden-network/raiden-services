@@ -5,15 +5,11 @@ The Capacity Updates show different correct and incorrect values to test all edg
 """
 import pytest
 from eth_utils import to_canonical_address
-
-from pathfinding_service.exceptions import InvalidCapacityUpdate
-from pathfinding_service.model import TokenNetwork
-from pathfinding_service.service import DeferMessage, PathfindingService
-from raiden.constants import EMPTY_SIGNATURE, UINT256_MAX
-from raiden.messages.path_finding_service import PFSCapacityUpdate
-from raiden.transfer.identifiers import CanonicalIdentifier
-from raiden.utils.signer import LocalSigner
-from raiden.utils.typing import (
+from raiden_common.constants import EMPTY_SIGNATURE, UINT256_MAX
+from raiden_common.messages.path_finding_service import PFSCapacityUpdate
+from raiden_common.transfer.identifiers import CanonicalIdentifier
+from raiden_common.utils.signer import LocalSigner
+from raiden_common.utils.typing import (
     Address,
     BlockTimeout,
     ChainID,
@@ -22,6 +18,10 @@ from raiden.utils.typing import (
     TokenAmount as TA,
     TokenNetworkAddress,
 )
+
+from pathfinding_service.exceptions import InvalidCapacityUpdate
+from pathfinding_service.model import TokenNetwork
+from pathfinding_service.service import DeferMessage, PathfindingService
 from tests.constants import (
     DEFAULT_CHANNEL_ID,
     DEFAULT_TOKEN_NETWORK_ADDRESS,
