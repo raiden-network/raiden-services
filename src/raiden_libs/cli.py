@@ -14,6 +14,7 @@ import structlog
 from eth_account import Account
 from eth_typing import URI
 from eth_utils import is_checksum_address, to_canonical_address
+from raiden_common.blockchain.middleware import http_retry_with_backoff_middleware
 from raiden_common.utils.cli import EnumChoiceType, GasPriceChoiceType
 from raiden_common.utils.typing import Address, BlockNumber
 from sentry_sdk.integrations.flask import FlaskIntegration
@@ -25,7 +26,6 @@ from web3.gas_strategies.time_based import fast_gas_price_strategy
 from web3.middleware import geth_poa_middleware, simple_cache_middleware
 from web3.types import Wei
 
-from pathfinding_service.middleware import http_retry_with_backoff_middleware
 from raiden_contracts.constants import (
     CONTRACT_DEPOSIT,
     CONTRACT_MONITORING_SERVICE,
