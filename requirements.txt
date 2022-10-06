@@ -1,4 +1,4 @@
-raiden-common==0.1.3
+raiden-common==0.1.7
 
 sentry-sdk[flask]==1.9.0
 prometheus_client==0.14.1
