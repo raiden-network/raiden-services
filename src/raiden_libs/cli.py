@@ -265,7 +265,7 @@ def connect_to_blockchain(
             else fast_gas_price_strategy
         )
 
-    web3.eth.setGasPriceStrategy(gas_price_strategy)
+    web3.eth.set_gas_price_strategy(gas_price_strategy)
 
     # give web3 some time between retries before failing
     # TODO: find a way to to this type safe
