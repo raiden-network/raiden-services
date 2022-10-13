@@ -69,10 +69,10 @@ def main(
 
 
 def calc_claim_cost_rdn(web3: Web3, rdn_per_eth: float) -> TokenAmount:
-    web3.eth.setGasPriceStrategy(rpc_gas_price_strategy)
+    web3.eth.set_gas_price_strategy(rpc_gas_price_strategy)
     claim_cost_gas = gas_measurements()["OneToN.claim"]
 
-    gas_price = web3.eth.generateGasPrice()
+    gas_price = web3.eth.generate_gas_price()
     assert gas_price is not None, "Could not generate gas price"
 
     claim_cost_eth = claim_cost_gas * gas_price * GAS_COST_SAFETY_MARGIN

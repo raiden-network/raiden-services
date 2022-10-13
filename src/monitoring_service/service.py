@@ -47,7 +47,7 @@ def check_gas_reserve(web3: Web3, private_key: PrivateKey) -> None:
     gas_price = web3.eth.gas_price
     gas_limit = gas_measurements()["MonitoringService.monitor"]
     estimated_required_balance = gas_limit * gas_price * DEFAULT_GAS_BUFFER_FACTOR
-    estimated_required_balance_eth = Web3.fromWei(estimated_required_balance, "ether")
+    estimated_required_balance_eth = Web3.from_wei(estimated_required_balance, "ether")
     current_balance = web3.eth.get_balance(private_key_to_address(private_key))
     if current_balance < estimated_required_balance:
         log.error(
