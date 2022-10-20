@@ -38,6 +38,7 @@ from raiden_libs.matrix import (
     matrix_http_retry_delay,
 )
 from raiden_libs.user_address import MultiClientUserAddressManager
+from tests.constants import TEST_CHAIN_ID
 from tests.pathfinding.test_fee_updates import (
     PRIVATE_KEY_1,
     PRIVATE_KEY_1_ADDRESS,
@@ -54,7 +55,7 @@ def request_monitoring_message(token_network, get_accounts, get_private_key) -> 
     balance_proof_c2 = HashedBalanceProof(
         channel_identifier=ChannelID(1),
         token_network_address=TokenNetworkAddress(to_canonical_address(token_network.address)),
-        chain_id=ChainID(61),
+        chain_id=ChainID(TEST_CHAIN_ID),
         nonce=Nonce(2),
         additional_hash="0x%064x" % 0,
         transferred_amount=TokenAmount(1),
@@ -199,7 +200,7 @@ def test_matrix_listener_smoke_test(get_accounts, get_private_key):
     ):
         listener = MatrixListener(
             private_key=get_private_key(c1),
-            chain_id=ChainID(61),
+            chain_id=ChainID(TEST_CHAIN_ID),
             device_id=DeviceIDs.PFS,
             message_received_callback=lambda _: None,
         )

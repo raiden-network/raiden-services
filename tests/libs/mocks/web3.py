@@ -1,6 +1,7 @@
 from unittest.mock import Mock
 
 from raiden_contracts.tests.utils import get_random_address
+from tests.constants import TEST_CHAIN_ID
 
 
 class ContractMock(Mock):
@@ -13,7 +14,7 @@ class ContractMock(Mock):
 class Web3Mock(Mock):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.eth.chain_id = 61
+        self.eth.chain_id = TEST_CHAIN_ID
         self.eth.block_number = 100
 
     def _get_child_mock(self, **kwargs):  # pylint: disable=arguments-differ

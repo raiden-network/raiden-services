@@ -8,6 +8,7 @@ from pathfinding_service.model import IOU
 from raiden_contracts.utils.proofs import sign_one_to_n_iou
 from raiden_contracts.utils.type_aliases import ChainID, PrivateKey
 from raiden_libs.utils import private_key_to_address, to_checksum_address
+from tests.constants import TEST_CHAIN_ID
 
 
 @pytest.fixture
@@ -20,7 +21,7 @@ def make_iou(one_to_n_contract: Contract):
         amount=1,
         claimable_until=1000000000 * 15 + MIN_IOU_EXPIRY,
         one_to_n_address: Address = one_to_n_contract_address,
-        chain_id: ChainID = ChainID(61),
+        chain_id: ChainID = ChainID(TEST_CHAIN_ID),
     ) -> IOU:
         receiver_hex: str = to_checksum_address(receiver)
         iou_dict = {

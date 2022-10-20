@@ -32,6 +32,7 @@ from tests.constants import (
     PRIVATE_KEY_1_ADDRESS,
     PRIVATE_KEY_2_ADDRESS,
     PRIVATE_KEY_3,
+    TEST_CHAIN_ID,
 )
 
 
@@ -59,7 +60,7 @@ def setup_channel(service: PathfindingService) -> TokenNetwork:
 
 def get_fee_update_message(  # pylint: disable=too-many-arguments
     updating_participant: Address,
-    chain_id=ChainID(61),
+    chain_id=ChainID(TEST_CHAIN_ID),
     channel_identifier=DEFAULT_CHANNEL_ID,
     token_network_address: TokenNetworkAddress = DEFAULT_TOKEN_NETWORK_ADDRESS,
     fee_schedule: FeeScheduleState = FeeScheduleState(

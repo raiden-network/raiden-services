@@ -27,6 +27,7 @@ from pathfinding_service.model.feedback import FeedbackToken
 from raiden_contracts.tests.utils import get_random_privkey
 from raiden_contracts.utils.type_aliases import PrivateKey
 from raiden_libs.utils import get_posix_utc_time_now, private_key_to_address, to_checksum_address
+from tests.constants import TEST_CHAIN_ID
 from tests.pathfinding.test_database import db_has_feedback_for
 from tests.pathfinding.utils import get_address_metadata, get_user_id_from_address
 
@@ -205,7 +206,7 @@ def test_get_ious_via_debug_endpoint(
             decode_hex("118a93e9fd0a3a1c3d6edbad194b5c9d95715c754881d80e23e985793b1e13de")
         ),
         claimed=False,
-        chain_id=ChainID(61),
+        chain_id=ChainID(TEST_CHAIN_ID),
         one_to_n_address=api_sut_with_debug.one_to_n_address,
     )
     api_sut_with_debug.pathfinding_service.database.upsert_iou(iou)

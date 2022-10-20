@@ -24,7 +24,7 @@ from raiden_common.utils.typing import (
 
 from pathfinding_service.model import ChannelView
 from pathfinding_service.model.token_network import TokenNetwork
-from tests.constants import DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT
+from tests.constants import DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT, TEST_CHAIN_ID
 from tests.pathfinding.utils import SimpleReachabilityContainer
 
 
@@ -74,7 +74,7 @@ class TokenNetworkForTests(TokenNetwork):
         self.handle_channel_fee_update(
             PFSFeeUpdate(
                 canonical_identifier=CanonicalIdentifier(
-                    chain_identifier=ChainID(61),
+                    chain_identifier=ChainID(TEST_CHAIN_ID),
                     token_network_address=self.address,
                     channel_identifier=channel_id,
                 ),

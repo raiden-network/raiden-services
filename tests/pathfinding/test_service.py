@@ -41,7 +41,7 @@ from raiden_libs.events import (
 from raiden_libs.logging import format_to_hex
 from raiden_libs.states import BlockchainState
 from raiden_libs.utils import to_checksum_address
-from tests.constants import DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT
+from tests.constants import DEFAULT_TOKEN_NETWORK_SETTLE_TIMEOUT, TEST_CHAIN_ID
 from tests.utils import save_metrics_state
 
 from ..libs.mocks.web3 import ContractMock, Web3Mock
@@ -385,7 +385,7 @@ def test_update_fee(order, pathfinding_service_mock, token_network_model):
     )
     fee_update = PFSFeeUpdate(
         canonical_identifier=CanonicalIdentifier(
-            chain_identifier=ChainID(61),
+            chain_identifier=ChainID(TEST_CHAIN_ID),
             token_network_address=token_network_model.address,
             channel_identifier=ChannelID(1),
         ),
@@ -474,7 +474,7 @@ def test_logging_processor():
 
     message = PFSFeeUpdate(
         canonical_identifier=CanonicalIdentifier(
-            chain_identifier=ChainID(61),
+            chain_identifier=ChainID(TEST_CHAIN_ID),
             token_network_address=TokenNetworkAddress(address),
             channel_identifier=ChannelID(1),
         ),
