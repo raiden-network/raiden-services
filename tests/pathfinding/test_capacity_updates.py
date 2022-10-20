@@ -32,6 +32,7 @@ from tests.constants import (
     PRIVATE_KEY_2_ADDRESS,
     PRIVATE_KEY_3,
     PRIVATE_KEY_3_ADDRESS,
+    TEST_CHAIN_ID,
 )
 
 
@@ -60,7 +61,7 @@ def setup_channel(service: PathfindingService) -> TokenNetwork:
 def get_capacity_update_message(  # pylint: disable=too-many-arguments
     updating_participant: Address,
     other_participant: Address,
-    chain_id=ChainID(61),
+    chain_id=ChainID(TEST_CHAIN_ID),
     channel_identifier=DEFAULT_CHANNEL_ID,
     token_network_address: TokenNetworkAddress = DEFAULT_TOKEN_NETWORK_ADDRESS,
     updating_nonce=Nonce(1),

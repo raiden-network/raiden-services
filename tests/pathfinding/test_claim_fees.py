@@ -12,6 +12,7 @@ from pathfinding_service import metrics
 from pathfinding_service.claim_fees import claim_ious, get_claimable_ious, main
 from pathfinding_service.model import IOU
 from pathfinding_service.service import PathfindingService
+from tests.constants import TEST_CHAIN_ID
 from tests.libs.mocks.web3 import Web3Mock
 from tests.utils import save_metrics_state
 
@@ -36,7 +37,7 @@ def test_metrics_iou(  # pylint: disable=too-many-locals
         amount=TokenAmount(100),
         claimable_until=web3.eth.get_block("latest").timestamp + 100,  # type: ignore
         signature=Signature(bytes([1] * 64)),
-        chain_id=ChainID(61),
+        chain_id=ChainID(TEST_CHAIN_ID),
         one_to_n_address=to_canonical_address(one_to_n_contract.address),
         claimed=False,
     )
@@ -110,7 +111,7 @@ def test_claim_fees(  # pylint: disable=too-many-locals
                 "claimable_until", web3.eth.get_block("latest").timestamp + 100  # type: ignore
             ),
             signature=Signature(bytes([1] * 64)),  # dummy, replaced below
-            chain_id=ChainID(61),
+            chain_id=ChainID(TEST_CHAIN_ID),
             one_to_n_address=to_canonical_address(one_to_n_contract.address),
             claimed=iou_dict.get("claimed", False),
         )
