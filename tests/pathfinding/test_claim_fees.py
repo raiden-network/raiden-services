@@ -164,7 +164,7 @@ def test_claim_fees(  # pylint: disable=too-many-locals
 @pytest.fixture
 def mock_connect_to_blockchain(monkeypatch):
     web3_mock = Web3Mock()
-    web3_mock.eth.generateGasPrice.return_value = int(1e9)
+    web3_mock.eth.generate_gas_price.return_value = int(1e9)
     connect_mock = Mock(return_value=(web3_mock, MagicMock(), 0))
     monkeypatch.setattr("raiden_libs.cli.connect_to_blockchain", connect_mock)
 
